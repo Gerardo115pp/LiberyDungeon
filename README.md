@@ -21,10 +21,9 @@ Here're some of the project's best features:
 
 - **Self-hosted**: You can host your own streaming service, mainly focused on a local network. but you can also expose it to the internet.
 - **Keyboard focused**: Is not only possible to control all actions withing the app with the keyboard, but it's the primary way to do it. Inspired by Vim, I aimed to provide quick and efficient ways to navigate and manage your media collection.
-- **Integration with some media sources**: You can download media from external sources, but natively I added an interface to painlessly download media from YouTube.
+- **Integration with some media sources**: You can download media from external sources, but natively I added an interface to painlessly download media from 4chan. [Here is a list of recommended external tools](https://github.com/Gerardo115pp/LiberyDungeon/tree/master?tab=readme-ov-file#recommended-media-sources)
 
 ## Recommended Media sources
----
 
 Here are some tools i personally use to download media for the platform:
 
