@@ -1,0 +1,11 @@
+go 1.21
+
+use (
+	./Categories
+	./Downloads
+	./Medias
+	./Shared/go_shared
+	./Metadata
+	./JD
+	./Users
+)

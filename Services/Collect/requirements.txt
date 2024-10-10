@@ -1,0 +1,11 @@
+httpx==0.24.0
+fastapi==0.108.0
+uvicorn==0.22.0
+googleapis-common-protos==1.59.0
+protobuf==4.25.1
+wsproto==1.2.0
+grpcio==1.64.0
+# grpcio-tools==1.60.0
+beautifulsoup4==4.12.2
+bleach==6.1.0
+pyjwt>=2.8.0

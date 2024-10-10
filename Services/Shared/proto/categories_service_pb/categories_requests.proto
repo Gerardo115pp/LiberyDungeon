@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package categories_service;
+
+option go_package = "github.com/Gerardo115pp/libery-dungeon/libery_categories_service;categories_service_pb";
+
+message Category {
+    string uuid = 1;
+    string name = 2;
+    string fullpath = 3;
+    string parent = 4;
+}
+
+message CategoriesCluster {
+    string uuid = 1;
+    string name = 2;
+    string fs_path = 3;
+    string filter_category = 4;
+    string root_category = 5;
+}
+
+message CreateCategoryRequest {
+    string name = 1;
+    string parent = 2;
+    string cluster = 3;
+}
+
+message CreateCategoryResponse {
+    string uuid = 1;
+}
+
+message GetCategoryRequest {
+    string uuid = 1;
+}
+
+message GetCategoriesClusterRequest {
+    string uuid = 1;
+}
+
+message GetCategoryResponse {
+    Category category = 1;
+}
+
+message GetCategoriesClusterResponse {
+    CategoriesCluster cluster = 1;
+}
+
+service CategoriesService {
+    rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
+    rpc GetCategory(GetCategoryRequest) returns (GetCategoryResponse);
+    rpc GetCategoriesCluster(GetCategoriesClusterRequest) returns (GetCategoriesClusterResponse);
+}

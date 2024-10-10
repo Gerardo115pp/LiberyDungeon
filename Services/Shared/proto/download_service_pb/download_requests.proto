@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package download_service;
+
+option go_package = "github.com/Gerardo115pp/libery-dungeon/libery_downloads_service;downloads_service_pb";
+
+message DownloadImagesBatchRequest {
+    repeated string image_urls = 1;
+    string category_uuid = 2;
+    string cluster_token = 3;
+    optional string download_uuid = 4;
+}
+
+message DownloadBatchResponse {
+    string download_uuid = 1;
+}
+
+service DownloadService {
+    rpc DownloadImagesBatch(DownloadImagesBatchRequest) returns (DownloadBatchResponse);
+}
