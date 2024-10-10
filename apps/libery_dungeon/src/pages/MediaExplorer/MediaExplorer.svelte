@@ -498,7 +498,6 @@
             }
 
         /*=====  End of Keybinding  ======*/
-
         
         /*=============================================
         =            PlatformEvents            =
@@ -528,8 +527,6 @@
                 
         
         /*=====  End of PlatformEvents  ======*/
-        
-        
 
         /**
          * Restores hotkeys control to the categories explorer.
@@ -566,7 +563,7 @@
         /**
          * Navigates to the media viewer for the current category
          * @param {number} media_index
-        */
+         */
         const enterMediaViewer = (media_index) => {
             let href = `/${layout_properties.IS_MOBILE ? 'media-viewer-mobile' : 'media-viewer'}/${$current_category.uuid}`;
 
@@ -594,7 +591,7 @@
          * and then, only if the name filter is larger than 3 characters appends all the categories that contain the filter. 
          * 
          * @returns {void}
-        */
+         */
         const filterCategoriesByName = () => {
                 if (!category_filter_changed) return;
 
@@ -624,6 +621,23 @@
 
                 filtered_categories = exact_match.concat(start_match).concat(contains_match);
         }        
+
+        /**
+         * Focuse a given category by its uuid. Returns true if the category was found and focused, false otherwise.
+         * @param {string} category_uuid
+         * @returns {boolean}
+         */
+        const focusCategoryByUUID = (category_uuid) => {
+            const displayed_categories = getDisplayCategories();
+            const category_index = displayed_categories.findIndex(inner_category => inner_category.uuid === category_uuid);
+
+            if (category_index === -1) {
+                return false;
+            }
+
+            keyboard_focused_category = category_index;
+            return true
+        }
 
         /**
          * Get the ratio of categories per row that is been displayed in the user's viewport
@@ -709,7 +723,7 @@
         /**
          * Handles the drag enter event on the category name label.
          * @param {DragEvent} e
-        */
+         */
         const handleParentDragEnter = e => {
             console.debug(`Drag enter on parent category label. parent: ${$current_category.parent}`);
             if ($current_category.parent != null) {
@@ -723,7 +737,7 @@
         /**
          * Handles the drag over event on the category name label.
          * @param {DragEvent} e
-        */
+         */
         const handleParentDragOver = e => {
             if ($current_category.parent != null) {
                 e.preventDefault();
@@ -734,7 +748,7 @@
         /**
          * Handles the drag leave event on the category name label.
          * @param {DragEvent} e
-        */
+         */
         const handleParentDragLeave = e => {
             if ($current_category.parent != null) {
                 e.preventDefault();
@@ -746,7 +760,7 @@
         /**
          * Handles the drop event on the category name label. Attempts to move the dropped category to the parent of the current category.
          * @param {DragEvent} e
-        */
+         */
         const handleDropCategoryOnParent = async e => {
             const dragged_category_uuid = e.dataTransfer.getData("text/plain");
             category_over_parent_label = false;
@@ -789,7 +803,7 @@
 
         /**
          * Handles the hotkey context control requested by the explorer gallery.
-        */
+         */
         const handleGalleryRequestedControl = () => {
             media_display_as_gallery = true;
             shouldMoveToAnotherHotkeysContext(false, false, true, false);
@@ -830,7 +844,11 @@
             switch (true) {
                 case $current_category.isParentCategoryUUID(category_uuid):
                     console.log("Navigating to parent category");
-                    return navigateToParentCategory();
+                    const current_category_uuid = $current_category.uuid;
+                    await navigateToParentCategory();
+                    await tick();
+                    focusCategoryByUUID(current_category_uuid);
+                    return 
                 case $current_category.isChildCategoryUUID(category_uuid):
                     return navigateToChildCategory(category_uuid);
                 default:
@@ -843,7 +861,7 @@
         /**
          * Navigates to a child category using spa navigation.
          * @param {string} category_uuid
-        */
+         */
         const navigateToChildCategory = async (category_uuid) => {
             replaceState(`/dungeon-explorer/${category_uuid}`);
             $categories_tree.navigateToLeaf(category_uuid);
@@ -1029,7 +1047,7 @@
 
         /**
          * Yanks the selected category
-        */
+         */
         const yankSelectedCategory = async () => {
             if (!navigator.userActivation?.isActive) {
                 console.warn("Transient user activation required to copy the selected category");
@@ -1061,7 +1079,6 @@
 
             console.debug(`Copied category UUID(${selected_inner_category.uuid}) to clipboard`);    
         }
-            
     
     /*=====  End of Methods  ======*/
 
