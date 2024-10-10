@@ -9,6 +9,7 @@ conf_files/
 Start.sh
 Workshop/
 *~
+Docs/README.md
 /**/mysql_credential.json
 /**/node_modules/
 /**/public/
