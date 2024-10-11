@@ -181,6 +181,51 @@ class StackNode {
 /**
  * @template T
  */
+export class DoublyLinkedStackNode {
+    /** @type {T} */
+    #value;
+    /** @type {DoublyLinkedStackNode<T> | null} */
+    #next;
+    /** @type {DoublyLinkedStackNode<T> | null} */
+    #prev;
+
+    /**
+     * @param {T} value 
+     */
+    constructor(value) {
+        this.#value = value;
+        this.#next = null;
+        this.#prev = null;
+    }
+
+    get Value() {
+        return this.#value;
+    }
+
+    set Value(value) {
+        this.#value = value;
+    }
+
+    get Next() {
+        return this.#next;
+    }
+
+    set Next(next) {
+        this.#next = next;
+    }
+
+    get Prev() {
+        return this.#prev;
+    }
+
+    set Prev(prev) {
+        this.#prev = prev;
+    }
+}
+
+/**
+ * @template T
+ */
 export class Stack {
     /** @type {StackNode<T> | null} */
     #top;
@@ -236,6 +281,189 @@ export class Stack {
 
 
 
+}
+
+/**
+ * A stack with a max size. After the stack reaches the max size, adding a new element will remove the oldest element.
+ * @template T
+ */
+export class StackBuffer {
+    /**
+     * The max size of the stack
+     * @type {number}
+     */
+    #buffer_size;
+
+    /**
+     * The current size of the stack
+     * @type {number}
+     */
+    #size;
+
+    /**
+     * The top of the stack
+     * @type {DoublyLinkedStackNode<T> | null}
+     */
+    #top;
+
+    /**
+     * The bottom of the stack
+     * @type {DoublyLinkedStackNode<T> | null}
+     */
+    #bottom;
+
+    /**
+     * @param {number} buffer_size - the max size of the stack
+     */
+    constructor(buffer_size) {
+        if (buffer_size < 0) {
+            throw Error(`passed buffer_size: ${buffer_size}\nCannot create a StackBuffer with size smaller then 0.`);
+        }
+        this.#buffer_size = buffer_size;
+        this.#size = 0;
+        this.#top = null;
+        this.#bottom = null;
+    }
+
+    /**
+     * Adds a value to the stack.
+     * @param {T} value 
+     */
+    Add(value) {
+        /** @type {DoublyLinkedStackNode<T>} */
+        let new_node = new DoublyLinkedStackNode(value);
+
+        new_node.Next = this.#top;
+
+        if (this.#top != null) {
+            this.#top.Prev = new_node;
+        }
+
+        if (this.#bottom === null) {
+            this.#bottom = new_node
+        }
+
+        this.#size++;
+        this.#top = new_node;
+
+        this.#mantaineSize();
+        return;
+    }
+
+    /**
+     * Returns the stack buffer size
+     * @type {number}
+     */
+    get BufferSize() {
+        return this.#buffer_size;
+    }
+
+    /**
+     * Clears the stack state.
+     */
+    Clear() {
+        this.#top = null;
+        this.#bottom = null;
+        this.#size = 0;
+    }
+
+    /**
+     * checks if the stack has overflowed and in so, it deletes an item from the bottom. Call from Add only
+     */
+    #mantaineSize() {
+        if (this.#size <= this.#buffer_size) return;
+
+        let unlinked_node = this.#bottom;
+
+        this.#bottom = unlinked_node?.Prev ?? null;
+
+        if (this.#bottom != null) {
+            this.#bottom.Next = null;
+        }
+
+        this.#size--;
+    }
+
+    /**
+     * Returns the element on the top without removing it from the stack.
+     * @returns {T}
+     */
+    Peek() {
+        return this.#top?.Value ?? null;
+    }
+
+    /**
+     * Peeks the Nth element zero indexed element, starting from top. Where top is 0. If the element is out of bounds, returns null.
+     * Keep in mind, internally this is not an array, look up time is O(n). 
+     * @param {number} index
+     * @returns {T}
+     */
+    PeekN(index) {
+        if (index < 0 || index >= this.#size) return null;
+
+        let current_node = this.#top;
+
+        for (let h = 0; h < index && current_node != null; h++) {
+            current_node = current_node?.Next ?? null;
+        }
+
+        return current_node?.Value ?? null;
+    }
+
+    /**
+     * Returns and removes the element on the top of the stack. 
+     * @returns {T}
+     */
+    Pop() {
+        if (this.#top === null) return null;
+
+        if (this.#bottom === this.#top) {
+            this.#bottom = null;
+        }
+
+        let current_value = this.#top.Value;        
+
+        this.#top = this.#top?.Next ?? null;
+        this.#size--;
+
+        if (this.#top != null) {
+            this.#top.Prev = null;
+        }
+
+        return current_value;
+    }
+
+    /**
+     * Returns whether the stack is empty or not.
+     * @returns {boolean}
+     */
+    IsEmpty() {
+        return this.#top === null;
+    }
+
+    /**
+     * Returns whether the stack is full or not.
+     * @returns {boolean}
+     */
+    IsFull() {
+        return this.#size === this.#buffer_size;
+    }
+
+    /**
+     * Returns the available space before the stack starts droping older content.
+     * @type {number}
+     */
+    get Space() {
+        return this.#buffer_size - this.#size;
+    }
+
+    /**
+     * Returns the Size of the buffer
+     * @type {number}
+     */
+    get Size() {
+        return this.#size;
+    }
 }
 
 /*=====  End of Data structures  ======*/
