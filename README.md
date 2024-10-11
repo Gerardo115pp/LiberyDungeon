@@ -26,7 +26,6 @@ Here're some of the project's best features:
 
 
 ## Recommended Media sources
-
 Here are some tools i personally use to download media for the platform:
 
 ### [yt-dlp](https://github.com/yt-dlp/yt-dlp)
