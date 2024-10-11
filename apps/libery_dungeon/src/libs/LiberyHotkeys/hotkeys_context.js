@@ -36,7 +36,7 @@ export class HotkeyData {
      * @param {string} name the key's name e.g: 'a', 'esc', '-', etc
      * @param {function} callback the callback to be called when the key is pressed
      * @param {"keypress"|"keydown"|"keyup"} mode the mode of the keypress event
-     * @param {?string} description The hotkey's description. if the string is prefized with "<group_name>", `group_name` will be the hotkey's group if not it will be "General"
+     * @param {?string} description The hotkey's description. if the string is prefixed with "<group_name>", `group_name` will be the hotkey's group if not it will be "General"
      * @constructor
      */
     constructor(name, callback, mode, description) {
@@ -78,13 +78,13 @@ export class HotkeyData {
 
     /**
      * Registers the hotkey
-    */
+     */
     key_bind() {
         if (this.mode === "") {
-            Mousetrap.bind(this.name, this.callback)
+            // Mousetrap.bind(this.name, this.callback)
             return
         }
-        Mousetrap.bind(this.name, this.callback, this.mode)
+        // Mousetrap.bind(this.name, this.callback, this.mode)
     }
     
 }

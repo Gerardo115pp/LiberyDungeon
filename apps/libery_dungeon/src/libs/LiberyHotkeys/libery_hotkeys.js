@@ -143,7 +143,7 @@ export class HotkeyContextManager {
             throw new Error(`Context ${name} doesn't exist`);
         }
 
-        Mousetrap.reset();
+        // Mousetrap.reset();
 
         // If preserve_previous_context is true and the current context is not the one on the top of the stack, then add it to the stack. Prevents context duplication
         // also checks that there is a context loaded
@@ -214,14 +214,14 @@ export class HotkeyContextManager {
      * @param {function} callback the callback to be called when the key is pressed
      * @param {HotkeyRegisterOptions} options
      * @deprecated
-    */
+     */
     registerHotkey(hotkey, callback, options) {
         if (!hasWindowContext()) return;
 
         console.warn("In HotkeyContextManager.registerHotkey: This method is deprecated, use registerHotkeyOnContext instead.");
         
         options = {...default_hotkey_register_options, ...options};
-        Mousetrap.bind(hotkey, callback, options.mode)
+        // Mousetrap.bind(hotkey, callback, options.mode)
     }
 
     /**
@@ -270,7 +270,8 @@ export class HotkeyContextManager {
 
         console.warn("In HotkeyContextManager.unregisterHotkey: This method is deprecated, use unregisterHotkeyFromContext instead.");
 
-        return Mousetrap.unbind(hotkey, mode)
+        // return Mousetrap.unbind(hotkey, mode)
+        return true;
     }
 
     /**
@@ -292,7 +293,7 @@ export class HotkeyContextManager {
     unregisterCurrentContext() {
         if (!hasWindowContext() || !this.hasLoadedContext()) return;
 
-        Mousetrap.reset();
+        // Mousetrap.reset();
 
         this.#current_context = null;
         this.#current_context_name = undefined;
