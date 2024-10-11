@@ -20,7 +20,7 @@
         
             /**
              * Binds to add to the Transactions Management Tool hotkeys context.
-             * @type {Object<string, import('@libs/LiberyHotkeys/hotkeys_context').HotkeyDataParams>}
+             * @type {Object<string, import('@libs/LiberyHotkeys/hotkeys').HotkeyDataParams>}
              */ 
             const keybinds = {
                 ENTRY_FOCUS_MOVEMENT: {

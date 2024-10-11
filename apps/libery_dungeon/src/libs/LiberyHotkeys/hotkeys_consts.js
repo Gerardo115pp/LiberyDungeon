@@ -1,11 +1,4 @@
-const letterHotkeys = () => {
-    const characters_count = Array.from(Array(26).keys());
-    const abc = [...characters_count.map(i => String.fromCharCode(i + 97)), ...characters_count.map(i => String.fromCharCode(i + 65))];
 
-    return abc
-}
-
-export const letter_hotkeys = letterHotkeys();
 
 
 /*=============================================

@@ -1,104 +1,11 @@
 import { hasWindowContext } from "@libs/utils"
 import { HOTKEYS_GENERAL_GROUP } from "./hotkeys_consts"
 import Mousetrap from "mousetrap"
-
-/**
-* @typedef {Object} HotkeyDataParams
- * @property {string} key_combo
- * @property {function} handler 
- * @property {"keypress"|"keydown"|"keyup"} mode
- * @property {?string} description
-*/
-
-export class HotkeyData {
-    /**
-     * @type {string} the key's name e.g: 'a', 'esc', '-', etc
-     */
-    name
-
-    /**
-     * @type {function} the callback to be called when the key is pressed
-     */
-    callback
-
-    /**
-     * @type {"keypress"|"keydown"|"keyup"} the mode of the keypress event
-     */
-    mode
-
-    /**
-     * @type {string} the hotkey's description
-     * @default "<General>No information available"
-     */
-    #description
-
-    /**
-     * @param {string} name the key's name e.g: 'a', 'esc', '-', etc
-     * @param {function} callback the callback to be called when the key is pressed
-     * @param {"keypress"|"keydown"|"keyup"} mode the mode of the keypress event
-     * @param {?string} description The hotkey's description. if the string is prefixed with "<group_name>", `group_name` will be the hotkey's group if not it will be "General"
-     * @constructor
-     */
-    constructor(name, callback, mode, description) {
-        /** @type {string} the key's name e.g: 'a', 'esc', '-', etc */
-        this.name = name
-        /** @type {function} the callback to be called when the key is pressed */   
-        this.callback = callback
-        /** @type {"keypress"|"keydown"|"keyup"} the mode of the keypress event */
-        this.mode = mode
-        /** @type {string} the hotkey's description */
-        this.#description = description ?? "<General>No information available";
-    }
-
-    /**
-     * The clean hotkey's description string
-     * @returns {string}
-     */
-    get Description() {
-        return this.#description.replace(/<.*>/, "");
-    }
-
-    /**
-     * The hotkey's group
-     * @returns {string}
-     */
-    get Group() {
-        let hotkey_group = HOTKEYS_GENERAL_GROUP;
-        console.log(this)
-        
-        /** @type {RegExpMatchArray} */
-        let group_matches = this.#description.match(/<(.*)>/);
-
-        if (group_matches != null && group_matches[1] !== undefined) {
-            hotkey_group = group_matches[1];
-        }
-
-        return hotkey_group;
-    }
-
-    /**
-     * Registers the hotkey
-     */
-    key_bind() {
-        if (this.mode === "") {
-            // Mousetrap.bind(this.name, this.callback)
-            return
-        }
-        // Mousetrap.bind(this.name, this.callback, this.mode)
-    }
-    
-}
-
-/**
-* @typedef {Object} HotkeyRegisterOptions
- * @property {boolean} bind - If true the hotkey will be binded immediately. default is false
- * @property {?string} description - The hotkey's description   
- * @property {"keypress"|"keydown"|"keyup"} mode - The mode of the keypress event. Default is "keydown"
-*/
+import { HotkeyData,  } from "./hotkeys"
 
 /**
 * The default hotkey register options
- * @type {HotkeyRegisterOptions}
+ * @type {import('./hotkeys').HotkeyRegisterOptions}
  */
 export const default_hotkey_register_options = {
     bind: false,
@@ -138,7 +45,7 @@ export default class HotkeysContext {
      * @param {string} hotkey
      * @param {"keypress"|"keydown"|"keyup"} mode
      * @returns {boolean}
-    */
+     */
     hasHotkey(hotkey, mode="keydown") {
         return this.#keydown_hotkeys[hotkey] !== undefined;
     }
@@ -146,7 +53,7 @@ export default class HotkeysContext {
     /**
      * Returns the mode's hotkeys
      * @param {"keypress"|"keydown"|"keyup"} mode
-    */
+     */
     #modeHotkeys(mode) {
         switch (mode) {
             case "keydown":
@@ -163,8 +70,8 @@ export default class HotkeysContext {
      * If a array of hotkeys is passed, all of them will be registered with the same callback
      * @param {string|string[]} name
      * @param {function} callback
-     * @param {HotkeyRegisterOptions} options
-    */
+     * @param {import('./hotkeys').HotkeyRegisterOptions} options
+     */
     register(name, callback, options) {
         if (!hasWindowContext()) return;
 
@@ -174,7 +81,7 @@ export default class HotkeysContext {
 
         if (Array.isArray(name)) {
             for (const n of name) {
-                mode_hotkeys[n] = new HotkeyData(n, callback, options.mode, options.description)
+                mode_hotkeys[n] = new HotkeyData(n, callback, options)
                 if (options.bind) {
                     mode_hotkeys[n].key_bind()
                 }
@@ -182,7 +89,7 @@ export default class HotkeysContext {
             return
         }
 
-        mode_hotkeys[name] = new HotkeyData(name, callback, options.mode, options.description)
+        mode_hotkeys[name] = new HotkeyData(name, callback, options)
         if (options.bind) {
             mode_hotkeys[name].key_bind();
         }

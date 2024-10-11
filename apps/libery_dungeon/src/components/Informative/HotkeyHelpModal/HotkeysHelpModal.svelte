@@ -18,7 +18,7 @@
 
         /**
          * The list of hotkeys to display.
-         * @type {import('@libs/LiberyHotkeys/hotkeys_context').HotkeyData[]}
+         * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyData[]}
          */
         let current_hotkeys = [];
 

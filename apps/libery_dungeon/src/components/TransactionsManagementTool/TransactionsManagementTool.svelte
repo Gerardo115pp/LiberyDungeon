@@ -21,7 +21,7 @@
         =============================================*/
     
             /**
-             * @type {Object<string, import('@libs/LiberyHotkeys/hotkeys_context').HotkeyDataParams>}
+             * @type {Object<string, import('@libs/LiberyHotkeys/hotkeys').HotkeyDataParams>}
              */
             const keybinds ={
                 CLOSE_TMT_TOOL: {

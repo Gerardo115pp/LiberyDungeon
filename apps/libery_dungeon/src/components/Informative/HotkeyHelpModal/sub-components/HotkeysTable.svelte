@@ -9,8 +9,8 @@
     
         /**
          * The list of hotkeys to display.
-         * @type {import('@libs/LiberyHotkeys/hotkeys_context').HotkeyData[]}
-        */
+         * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyData[]}
+         */
         export let current_hotkeys;
 
         /**
@@ -56,8 +56,6 @@
     /*=====  End of Properties  ======*/
 
     onMount(() => {
-        console.log('current_hotkeys', current_hotkeys);
-
         hotkey_metadata = getHotkeysMetadata(current_hotkeys);
 
         general_hotkeys = hotkey_metadata[HOTKEYS_GENERAL_GROUP] ?? [];
@@ -71,11 +69,10 @@
     
         /**
          * Parses the hotkeys metadata from the hotkeys context.
-         * @param {import('@libs/LiberyHotkeys/hotkeys_context').HotkeyData[]} new_hotkeys
+         * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData[]} new_hotkeys
          * @returns {Object<string,HotkeyMetadata[]>}
          */
         const getHotkeysMetadata = new_hotkeys => {
-            console.log('new_hotkeys', new_hotkeys);
             const new_metadata = {};
             const same_description_lookup = new Map();
             let new_max_description_length = 0;
@@ -100,20 +97,18 @@
 
             max_description_length = new_max_description_length;
 
-            console.log('new_metadata', new_metadata);  
-
             return new_metadata;
         }
 
         /**
          * Converts a hotkey data to a hotkey metadata.
-         * @param {import('@libs/LiberyHotkeys/hotkeys_context').HotkeyData} hotkey_data
+         * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey_data
          * @returns {HotkeyMetadata}
          */ 
         const parseHotkeyDataToMetadata = hotkey_data => {
             /** @type {HotkeyMetadata} */
             let hotkey_metadata = {
-                hotkey: `'${hotkey_data.name}'`,
+                hotkey: `'${hotkey_data.key_combo}'`,
                 description: hotkey_data.Description, // Getter that removes the group tag.
                 group: hotkey_data.Group // Getter that returns an extracted group name or 'General' as default.
             }

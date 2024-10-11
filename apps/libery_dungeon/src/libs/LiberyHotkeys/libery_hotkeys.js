@@ -2,6 +2,7 @@ import Mousetrap from "mousetrap";
 import HotkeysContext, { default_hotkey_register_options } from "./hotkeys_context";
 import { hotkeys_context_events, dispatchHotkeysContextEvent } from "./hotkeys_events";
 import { Stack, canUseDOMEvents, hasWindowContext } from "@libs/utils";
+import { getHotkeysBinder, setupHotkeysBinder } from "./hotkeys_binder";
 
 export class HotkeyContextManager {
     /** @type {Object<string,HotkeysContext>} */
@@ -23,17 +24,31 @@ export class HotkeyContextManager {
      * @default ""
      */
     #last_context_load_requested = ""
+    /**
+     * The hotkeys key binder
+     * @type {import('./hotkeys_binder').HotkeysBinder}
+     */
+    #hotkeys_binder
 
     /**
      * 
      * @param {boolean} emit_events - if true the manager will emit the events defined on hotkeys_consts
      */
     constructor(emit_events) {
+        let global_hotkeys_binder = null;
+
         this.#contexts = {};
         this.#current_context = null;
         this.#current_context_name = undefined;
         this.#context_stack = new Stack();
         this.#emit_events = emit_events && canUseDOMEvents(); // Only emit events in a browser environment.
+
+        if (this.#emit_events) {
+            setupHotkeysBinder();
+            global_hotkeys_binder = getHotkeysBinder();
+        }
+
+        this.#hotkeys_binder = global_hotkeys_binder;
     }
 
     /**
@@ -50,6 +65,14 @@ export class HotkeyContextManager {
     */
     get ContextName() {
         return this.#current_context_name;
+    }
+
+    /**
+     * the hotkeys binder.
+     * @type {import('./hotkeys_binder').HotkeysBinder}
+     */
+    get Binder() {
+        return this.#hotkeys_binder;
     }
 
     /**
@@ -302,7 +325,11 @@ export class HotkeyContextManager {
     }
 }
 
-const global_hotkeys_manager = new HotkeyContextManager(true);
+/**
+ * The global hotkeys manager. null if the environment doesn't support event listeners
+ * @type {HotkeyContextManager | null}
+ */
+const global_hotkeys_manager = hasWindowContext() ? new HotkeyContextManager(true) : new HotkeyContextManager(false);
 
 if (globalThis.innerWidth != null) {
     window.global_hotkeys_manager = global_hotkeys_manager;
