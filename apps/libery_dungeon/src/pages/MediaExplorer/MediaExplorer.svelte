@@ -15,7 +15,7 @@
         import CreateNewCategoryTool from "./sub-components/CreateNewCategoryTool.svelte";
         import CategoryFolder from "@components/Categories/CategoryFolder.svelte";
         import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
-        import { letter_hotkeys, HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+        import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { CategoryLeaf, getCategory, getCategoryTree, moveCategory } from "@models/Categories";
         import LiberyHeadline from "@components/UI/LiberyHeadline.svelte";
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
@@ -454,7 +454,18 @@
                 if (!global_hotkeys_manager.hasContext(filter_hotkeys_context_name)) {
                     const filter_hotkeys_context = new HotkeysContext();
 
-                    filter_hotkeys_context.register(letter_hotkeys, (e, key) => {
+                    const letter_keys = [
+                        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
+                        "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+                        "u", "v", "w", "x", "y", "z"
+                    ];
+
+                    const upper_case_letter_keys = letter_keys.map(key => key.toUpperCase());
+
+                    const all_letter_keys = letter_keys.concat(upper_case_letter_keys);
+                    // TODO: When we implement metacharacter hotkeys, we should use \w instead of this.
+
+                    filter_hotkeys_context.register(all_letter_keys, (e, key) => {
                             category_name_filter += key;
                             
                             last_typing_time = Date.now();

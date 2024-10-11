@@ -9,7 +9,7 @@
         import { categories_tree, current_category } from '@stores/categories_tree';
         import { current_cluster } from '@stores/clusters';
         import { hotkeys_sheet_visible, layout_properties } from "@stores/layout";
-        import { letter_hotkeys, HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+        import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
         import { me_gallery_changes_manager, me_gallery_yanked_medias } from './me_gallery_state';
         import MeGalleryDisplayItem from './MEGalleryDisplayItem.svelte';

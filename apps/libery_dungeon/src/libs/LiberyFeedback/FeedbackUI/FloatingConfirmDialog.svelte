@@ -2,7 +2,7 @@
     import { onDestroy, onMount, tick } from "svelte";
     import { setConfirmResponse, confirm_message } from "../lf_utils";
     import { readable, writable, readonly } from "svelte/store";
-    import { letter_hotkeys, HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+    import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { hotkeys_sheet_visible, layout_properties } from "@stores/layout";
