@@ -220,9 +220,7 @@ export class HotkeyContextManager {
             throw new Error("No context loaded");
         }
 
-        for (const hotkey of this.#current_context.hotkeys) {
-            hotkey.key_bind()
-        }
+        this.#hotkeys_binder.setContext(this.#current_context);
     }
 
     /**

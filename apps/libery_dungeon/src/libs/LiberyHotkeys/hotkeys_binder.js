@@ -20,16 +20,36 @@ export class HotkeysBinder {
     #keyboard_past_keyups;
 
     /**
-     * keydown handler function
+     * keydown handler function bound to the HotkeyBinder instance so addEventListener wont override the this context with the EventTarget.
      * @type {function}
      */
     #bound_handleKeyDown;
 
     /**
-     * keyup handler function
+     * keyup handler function bound to the HotkeyBinder instance so addEventListener wont override the this context with the EventTarget.
      * @type {function}
      */
     #bound_handleKeyUp;
+
+    /**
+     * A map of Hotkey triggers -> HotkeyData for keydown events. 
+     * @type {Map<string, HotkeyData>}
+     */
+    #keydown_hotkey_triggers;
+
+    /**
+     * A map of Hotkey triggers -> HotkeyData for keyup events. 
+     * @type {Map<string, HotkeyData>}
+     */
+    #keyup_hotkey_triggers;
+
+    /**
+     * The current hotkey context.
+     * @type {import('./hotkeys_context').default | null}
+     * @default null
+     */
+    #current_hotkey_context;
+
 
     constructor() {
         if (globalThis.addEventListener === undefined) {
@@ -38,19 +58,48 @@ export class HotkeysBinder {
 
         this.#keyboard_past_keydowns = new StackBuffer(MAX_PAST_EVENTS);
         this.#keyboard_past_keyups = new StackBuffer(MAX_PAST_EVENTS);
+
+        this.#keydown_hotkey_triggers = new Map();
+        this.#keyup_hotkey_triggers = new Map();
         
         this.#bound_handleKeyDown = this.#handleKeyDown.bind(this);
         this.#bound_handleKeyUp = this.#handleKeyUp.bind(this);
+
+        this.#current_hotkey_context = null;
 
         this.#setup()
     }
 
     /**
+     * Drops the current hotkey context
+     * @returns {void}
+     */
+    dropContext() {
+        if (this.#current_hotkey_context == null) return;
+
+        this.#keydown_hotkey_triggers.clear();
+        this.#keyup_hotkey_triggers.clear();
+
+        this.#keyboard_past_keydowns.Clear(); // Prevent key strokes issued in previous contexts from affecting behavior in the new context.
+        this.#keyboard_past_keyups.Clear(); 
+
+        this.#current_hotkey_context = null;
+    }
+
+    /**
      * Cleans up the binder
      */
-    Destroy() {
+    destroy() {
         globalThis.removeEventListener("keydown", this.#handleKeyDown);
         globalThis.removeEventListener("keyup", this.#handleKeyUp);
+    }
+
+    /**
+     * Whether the binder has an active hotkey context or not.
+     * @type {boolean}
+     */
+    get HasContext() {
+        return this.#current_hotkey_context != null;
     }
 
     /**
@@ -90,6 +139,39 @@ export class HotkeysBinder {
     }
 
     /**
+     * Populates the hotkey triggers maps with the hotkeys from given context.
+     * @param {import('./hotkeys_context').default} context
+     * @returns {void}
+     */
+    #populateHotkeyTriggers(context) {
+        let hotkeys = context.hotkeys;
+
+        for (let hotkey of hotkeys) {
+            if (hotkey.Mode === "keydown") {
+                this.#keydown_hotkey_triggers.set(hotkey.Trigger, hotkey);
+            } else if (hotkey.Mode === "keyup") {
+                this.#keyup_hotkey_triggers.set(hotkey.Trigger, hotkey);
+            } else {
+                console.error(`Hotkey mode '${hotkey.Mode}' is not supported`)
+            }
+        }
+    }
+
+    /**
+     * Sets a new hotkey context. if there is already a context set, it will be disabled.
+     * @param {import('./hotkeys_context').default} new_context
+     */
+    setContext(new_context) {
+        if (this.#current_hotkey_context != null) {
+            this.dropContext();
+        }
+
+        this.#current_hotkey_context = new_context;
+
+        this.#populateHotkeyTriggers(new_context);
+    }
+
+    /**
      * Attaches the binder to the global this object
      */
     #setup() {
@@ -98,6 +180,10 @@ export class HotkeysBinder {
     }
 }
 
+/**
+ * The global hotkeys binder
+ * @type {HotkeysBinder | null}
+ */
 let GlobalHotkeysBinder = null;
 
 export const setupHotkeysBinder = () => {
@@ -109,7 +195,11 @@ export const setupHotkeysBinder = () => {
 }
 
 export const destroyHotkeysBinder = () => {
-    GlobalHotkeysBinder.Destroy();
+    if (GlobalHotkeysBinder == null) {
+        throw new Error("No hotkeys binder exists. Call setupHotkeysBinder before destroying it")
+    }
+
+    GlobalHotkeysBinder.destroy();
 
     GlobalHotkeysBinder = null;
 }

@@ -117,6 +117,13 @@
         export const NUMERIC_KEY = "\\d";
         export const LETTER_KEY = "\\w";
 
+        export const valid_fragment_identities = new Set([
+            ESCAPE_KEY, ENTER_KEY, SPACE_KEY, TAB_KEY, BACKSPACE_KEY, DELETE_KEY, INSERT_KEY,
+            HOME_KEY, END_KEY, PAGE_UP_KEY, PAGE_DOWN_KEY, ARROW_UP_KEY, ARROW_DOWN_KEY, ARROW_LEFT_KEY,
+            ARROW_RIGHT_KEY, CAPS_LOCK_KEY, NUM_LOCK_KEY, SCROLL_LOCK_KEY, NUMERIC_KEY, LETTER_KEY,
+            F1_KEY, F2_KEY, F3_KEY, F4_KEY, F5_KEY, F6_KEY, F7_KEY, F8_KEY, F9_KEY, F10_KEY, F11_KEY, F12_KEY
+        ]);
+
 /*=====  End of KEY MAPS  ======*/
 
 /*=============================================
@@ -144,15 +151,9 @@
 
         let is_special_character = character_producing_hotkeys.has(key);
 
-        let is_whitespace = whitespace_hotkeys.has(key);
+        let is_other_valid_identity = valid_fragment_identities.has(key);
 
-        let is_function_key = function_keys.has(key_in_uppercase);
-
-        let is_navigation_key = navigation_keys.has(key);
-
-        let is_editing_key = editing_keys.has(key);
-
-        return is_letter || is_number || is_special_character || is_whitespace || is_function_key || is_navigation_key || is_editing_key;
+        return is_letter || is_number || is_special_character || is_other_valid_identity;
     }
 
 /*=====  End of Matchers  ======*/

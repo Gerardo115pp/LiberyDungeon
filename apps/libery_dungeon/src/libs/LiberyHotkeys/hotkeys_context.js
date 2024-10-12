@@ -86,6 +86,12 @@ export default class HotkeysContext {
     #saveHotkey(name, callback, options) {
         const mode_hotkeys = this.#modeHotkeys(options.mode)
         const new_hotkey = new HotkeyData(name, callback, options)
+
+        if (!new_hotkey.Valid) {
+            console.error(`Hotkey: '${name}' is not valid`)
+            return
+        }
+
         mode_hotkeys.set(name, new_hotkey)
         if (options.bind) {
             console.warn("The bind option is deprecated and will be removed soon.");

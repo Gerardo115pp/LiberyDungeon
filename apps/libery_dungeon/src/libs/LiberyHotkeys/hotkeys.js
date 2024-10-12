@@ -74,7 +74,7 @@ export class HotkeyData {
         
         this.#unpackOptions(options)
         
-        this.is_valid = true;
+        this.#is_valid = true;
 
         this.#splitFragments()
     }
@@ -114,6 +114,38 @@ export class HotkeyData {
     }
 
     /**
+     * Whether the hotkey is a sequence or not.
+     * @returns {boolean}
+     */
+    get IsSequence() {
+        return this.#key_combo_fragments.length > 1;
+    }
+
+    /**
+     * The hotkey's mode
+     * @type {"keydown"|"keyup"}
+     */
+    get Mode() {
+        return this.#mode;
+    }
+
+    /**
+     * The hotkey's Trigger. a hotkey trigger is the key that caught in an event, should cause a verification to see if the hotkey has been entered.
+     * In the case of single fragment hotkeys, this is the first(and only) hotkey identity in a hotkey so for "a" -> 'a', "ctrl+shift+a" -> 'a', etc. In the case of a sequence (multi-fragment) hotkey, 
+     * this is the last fragment identity in the sequence. So e.g: "ctrl+shift+a shift+s" -> 's'.
+     * @type {string}
+     */
+    get Trigger() {
+        let trigger = this.Face;
+
+        if (this.IsSequence) {
+            trigger = this.Trail;
+        }
+
+        return trigger;
+    }
+
+    /**
      * The hotkey's combo. 
      * NOTE: I wrote it on snake_case to avoid breaking the existing user space of this library. But this is not a correct nomenclature. don't repeat this.
      * @returns {string}
@@ -145,6 +177,7 @@ export class HotkeyData {
         try {
             this.#key_combo_fragments = fragments.map((fragment) => new HotkeyFragment(fragment)); // If the fragment parsing finds invalid members, this will panic.
         } catch (error) {
+            console.error(`Error parsing hotkey: ${this.#key_combo}. Error: ${error}`);
             this.#is_valid = false;
         }
 
@@ -176,8 +209,8 @@ export class HotkeyData {
         this.#mode = options.mode
         this.#description = options.description
 
-        if (this.mode === "keypress") {
-            this.mode = "keydown" // Keypress is deprecated and will(someday) be removed according to MDN
+        if (this.#mode === "keypress") {
+            this.#mode = "keydown" // Keypress is deprecated and will(someday) be removed according to MDN
         }
     }
 
