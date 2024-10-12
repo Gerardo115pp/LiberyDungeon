@@ -33,13 +33,13 @@ export class HotkeysController {
 
     /**
      * A map of Hotkey triggers -> HotkeyData for keydown events. 
-     * @type {Map<string, HotkeyData>}
+     * @type {Map<string, HotkeyData[]>}
      */
     #keydown_hotkey_triggers;
 
     /**
-     * A map of Hotkey triggers -> HotkeyData for keyup events. 
-     * @type {Map<string, HotkeyData>}
+     * A map of Hotkey triggers -> HotkeyData[] for keyup events. 
+     * @type {Map<string, HotkeyData[]>}
      */
     #keyup_hotkey_triggers;
 
@@ -68,6 +68,20 @@ export class HotkeysController {
         this.#current_hotkey_context = null;
 
         this.#setup()
+    }
+
+    /**
+     * Sets a new hotkey context. if there is already a context set, it will be disabled.
+     * @param {import('./hotkeys_context').default} new_context
+     */
+    bindContext(new_context) {
+        if (this.#current_hotkey_context != null) {
+            this.dropContext();
+        }
+
+        this.#current_hotkey_context = new_context;
+
+        this.#populateHotkeyTriggers(new_context);
     }
 
     /**
@@ -123,6 +137,24 @@ export class HotkeysController {
     }
 
     /**
+     * Matches a Keyboard event with registered hotkeys
+     * @param {KeyboardEvent} event
+     */
+    #matchHotkey(event) {
+        let is_keydown = event.type === "keydown";
+        let is_keyup = event.type === "keyup";
+
+        if (!is_keydown && !is_keyup) {
+            throw new Error("Event type not supported")
+        }
+
+        let past_events = is_keydown ? this.#keyboard_past_keydowns : this.#keyboard_past_keyups;
+        let triggers = is_keydown ? this.#keydown_hotkey_triggers : this.#keyup_hotkey_triggers;
+
+
+    }
+
+    /**
      * The past keydown events stack.
      * @returns {StackBuffer<KeyboardEvent>}
      */
@@ -147,28 +179,25 @@ export class HotkeysController {
         let hotkeys = context.hotkeys;
 
         for (let hotkey of hotkeys) {
-            if (hotkey.Mode === "keydown") {
-                this.#keydown_hotkey_triggers.set(hotkey.Trigger, hotkey);
-            } else if (hotkey.Mode === "keyup") {
-                this.#keyup_hotkey_triggers.set(hotkey.Trigger, hotkey);
-            } else {
-                console.error(`Hotkey mode '${hotkey.Mode}' is not supported`)
+            if (hotkey.Mode !== "keydown" && hotkey.Mode !== "keyup") {
+                console.error(`Hotkey mode ${hotkey.Mode} is not supported. Skipping hotkey ${hotkey.KeyCombo}`);
+                continue;
             }
+
+            let triggers = hotkey.Mode === "keydown" ? this.#keydown_hotkey_triggers : this.#keyup_hotkey_triggers;
+
+            const hotkey_trigger = hotkey.Trigger;
+
+            let trigger_hotkeys = [];
+
+            if (triggers.has(hotkey_trigger)) {
+                trigger_hotkeys = triggers.get(hotkey_trigger);
+            }
+
+            trigger_hotkeys.push(hotkey);
+
+            triggers.set(hotkey_trigger, trigger_hotkeys);
         }
-    }
-
-    /**
-     * Sets a new hotkey context. if there is already a context set, it will be disabled.
-     * @param {import('./hotkeys_context').default} new_context
-     */
-    setContext(new_context) {
-        if (this.#current_hotkey_context != null) {
-            this.dropContext();
-        }
-
-        this.#current_hotkey_context = new_context;
-
-        this.#populateHotkeyTriggers(new_context);
     }
 
     /**
