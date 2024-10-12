@@ -1,18 +1,18 @@
 import { hasWindowContext } from "@libs/utils"
 import { HotkeyData, default_hotkey_register_options  } from "./hotkeys"
 
-
 export default class HotkeysContext {
-    /** @type{Object<string,HotkeyData>} */
+    /** @type {Map<string, HotkeyData>} */
     #keydown_hotkeys
-    /** @type {Object<string,HotkeyData>} */
+    /** @type {Map<string, HotkeyData>} */
     #keypress_hotkeys
-    /** @type {Object<string,HotkeyData>} */
+    /** @type {Map<string, HotkeyData>} */
     #keyup_hotkeys
+
     constructor() {
-        this.#keydown_hotkeys = {}
-        this.#keypress_hotkeys = {}
-        this.#keyup_hotkeys = {}
+        this.#keydown_hotkeys = new Map();
+        this.#keypress_hotkeys = new Map();
+        this.#keyup_hotkeys = new Map();
     }
 
     /**
@@ -20,11 +20,10 @@ export default class HotkeysContext {
      * @type {HotkeyData[]}
      */
     get hotkeys() {
-        let all_hotkeys = [];
+        let all_hotkeys = Array.from(this.#keydown_hotkeys.values());
 
-        all_hotkeys = all_hotkeys.concat(Object.values(this.#keydown_hotkeys))
-        all_hotkeys = all_hotkeys.concat(Object.values(this.#keypress_hotkeys))
-        all_hotkeys = all_hotkeys.concat(Object.values(this.#keyup_hotkeys))
+        all_hotkeys = all_hotkeys.concat(Array.from(this.#keypress_hotkeys.values()));
+        all_hotkeys = all_hotkeys.concat(Array.from(this.#keyup_hotkeys.values()));
 
         return all_hotkeys
     }
@@ -38,12 +37,13 @@ export default class HotkeysContext {
     hasHotkey(hotkey, mode="keydown") {
         let mode_hotkeys = this.#modeHotkeys(mode)
 
-        return mode_hotkeys[hotkey] !== undefined
+        return mode_hotkeys.has(hotkey);
     }
 
     /**
      * Returns the mode's hotkeys
      * @param {"keypress"|"keydown"|"keyup"} mode
+     * @returns {Map<string, HotkeyData>}
      */
     #modeHotkeys(mode) {
         switch (mode) {
@@ -85,10 +85,11 @@ export default class HotkeysContext {
      */
     #saveHotkey(name, callback, options) {
         const mode_hotkeys = this.#modeHotkeys(options.mode)
-        mode_hotkeys[name] = new HotkeyData(name, callback, options)
+        const new_hotkey = new HotkeyData(name, callback, options)
+        mode_hotkeys.set(name, new_hotkey)
         if (options.bind) {
             console.warn("The bind option is deprecated and will be removed soon.");
-            mode_hotkeys[name].key_bind();
+            new_hotkey.key_bind()
         }
     }
 
@@ -96,17 +97,19 @@ export default class HotkeysContext {
      * Unregister a hotkey on the context
      * @param {string|string[]} name could be a key name or an array of key names(keyboard keys)
      * @param {"keypress"|"keydown"|"keyup"} mode
-    */
+     */
     unregister(name, mode) {
         if (!hasWindowContext()) return;
 
         const mode_hotkeys = this.#modeHotkeys(mode) 
+
         if (Array.isArray(name)) {
             for (const key_name of name) {
-                delete mode_hotkeys[key_name]
+                mode_hotkeys.delete(key_name)
             }
             return
         }
-        delete mode_hotkeys[name]
+
+        mode_hotkeys.delete(name)
     }
 }
