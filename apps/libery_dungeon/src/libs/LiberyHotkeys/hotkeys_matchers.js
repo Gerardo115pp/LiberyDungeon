@@ -236,19 +236,22 @@ export class HotkeyFragment {
         if (!this.#control_modifier) {
             this.#control_modifier = member === CONTROL_KEY || member === COMMAND_KEY;
             is_control = this.#control_modifier;
+            valid_member = is_control;
         }
 
-        if (!this.#shift_modifier) {
+        if (!this.#shift_modifier && !valid_member) {
             this.#shift_modifier = member === SHIFT_KEY;
             is_shift = this.#shift_modifier;
+            valid_member = is_shift;
         }
 
-        if (!this.#alt_modifier) {
+        if (!this.#alt_modifier && !valid_member) {
             this.#alt_modifier = this.#alt_modifier || member === ALT_KEY || member === OPTIONS_KEY;
             is_alt = this.#alt_modifier;
+            valid_member = is_alt;
         }
 
-        if (!is_control && !is_shift && !is_alt) {
+        if (!is_control && !is_shift && !is_alt && !valid_member) {
             valid_member = isHotkeyIdentity(member);
 
             if (valid_member) {
@@ -271,6 +274,47 @@ export class HotkeyFragment {
      */
     get Identity() {
         return this.#fragment_identity;
+    }
+
+    /**
+     * Matches the hotkey fragment with a given KeyboardEvent
+     * @param {KeyboardEvent} event
+     * @returns {boolean}
+     */
+    match(event) {
+        let matched = true;
+        
+        if (!this.#matchIdentity(event)) {
+            matched = false;
+        }
+
+        if (matched && this.#control_modifier) {
+            matched = event.ctrlKey;
+        }
+
+        if (matched && this.#shift_modifier) {
+            matched = event.shiftKey;
+        }
+
+        if (matched && this.#alt_modifier) {
+            matched = event.altKey;
+        }
+
+        return matched;
+    }
+
+    /**
+     * Matches the identity of the fragment against the passed KeyboardEvent. considering how modifiers would affect the match.
+     * @param {KeyboardEvent} event
+     */
+    #matchIdentity(event) {
+        let key = event.key;
+
+        if (this.#shift_modifier) {
+            key = key.toLowerCase();
+        }
+
+        return key === this.#fragment_identity;
     }
 
     /**

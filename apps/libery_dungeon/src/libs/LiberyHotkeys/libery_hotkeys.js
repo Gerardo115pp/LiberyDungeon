@@ -2,7 +2,7 @@ import HotkeysContext from "./hotkeys_context";
 import  { default_hotkey_register_options } from "./hotkeys";
 import { hotkeys_context_events, dispatchHotkeysContextEvent } from "./hotkeys_events";
 import { Stack, canUseDOMEvents, hasWindowContext } from "@libs/utils";
-import { getHotkeysBinder, setupHotkeysBinder } from "./hotkeys_binder";
+import { destroyHotkeysBinder, getHotkeysBinder, setupHotkeysBinder } from "./hotkeys_binder";
 
 export class HotkeyContextManager {
     /** @type {Object<string,HotkeysContext>} */
@@ -23,12 +23,12 @@ export class HotkeyContextManager {
      * @type {string} 
      * @default ""
      */
-    #last_context_load_requested = ""
+    #last_context_load_requested = "";
     /**
      * The hotkeys key binder
      * @type {import('./hotkeys_binder').HotkeysController}
      */
-    #hotkeys_binder
+    #hotkeys_controller
 
     /**
      * 
@@ -36,6 +36,9 @@ export class HotkeyContextManager {
      */
     constructor(emit_events) {
         let global_hotkeys_binder = null;
+        if (getHotkeysBinder() !== null) {
+            destroyHotkeysBinder();
+        }
 
         this.#contexts = {};
         this.#current_context = null;
@@ -48,7 +51,7 @@ export class HotkeyContextManager {
             global_hotkeys_binder = getHotkeysBinder();
         }
 
-        this.#hotkeys_binder = global_hotkeys_binder;
+        this.#hotkeys_controller = global_hotkeys_binder;
     }
 
     /**
@@ -72,7 +75,7 @@ export class HotkeyContextManager {
      * @type {import('./hotkeys_binder').HotkeysController}
      */
     get Binder() {
-        return this.#hotkeys_binder;
+        return this.#hotkeys_controller;
     }
 
     /**
@@ -166,8 +169,6 @@ export class HotkeyContextManager {
             throw new Error(`Context ${name} doesn't exist`);
         }
 
-        // Mousetrap.reset();
-
         // If preserve_previous_context is true and the current context is not the one on the top of the stack, then add it to the stack. Prevents context duplication
         // also checks that there is a context loaded
         if (preserve_previous_context && this.hasLoadedContext() && this.#current_context_name !== this.#context_stack.Peek()) {
@@ -220,7 +221,7 @@ export class HotkeyContextManager {
             throw new Error("No context loaded");
         }
 
-        this.#hotkeys_binder.setContext(this.#current_context);
+        this.#hotkeys_controller.bindContext(this.#current_context);
     }
 
     /**
@@ -308,7 +309,7 @@ export class HotkeyContextManager {
     unregisterCurrentContext() {
         if (!hasWindowContext() || !this.hasLoadedContext()) return;
 
-        // Mousetrap.reset();
+        this.#hotkeys_controller.dropContext();
 
         this.#current_context = null;
         this.#current_context_name = undefined;

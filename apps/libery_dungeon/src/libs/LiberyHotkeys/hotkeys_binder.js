@@ -33,13 +33,13 @@ export class HotkeysController {
 
     /**
      * A map of Hotkey triggers -> HotkeyData for keydown events. 
-     * @type {Map<string, HotkeyData[]>}
+     * @type {Map<string, import('./hotkeys').HotkeyData[]>}
      */
     #keydown_hotkey_triggers;
 
     /**
      * A map of Hotkey triggers -> HotkeyData[] for keyup events. 
-     * @type {Map<string, HotkeyData[]>}
+     * @type {Map<string, import('./hotkeys').HotkeyData[]>}
      */
     #keyup_hotkey_triggers;
 
@@ -68,6 +68,21 @@ export class HotkeysController {
         this.#current_hotkey_context = null;
 
         this.#setup()
+    }
+
+
+    /**
+     * Activates a given hotkey.
+     * @param {import('./hotkeys').HotkeyData} hotkey
+     * @param {KeyboardEvent} event
+     */
+    #activateHotkey(hotkey, event) {
+        if (hotkey == null) {
+            throw new Error("Hotkey is null")
+        }
+        console.log(`Activating hotkey ${hotkey.key_combo}`);
+
+        hotkey.run(event);
     }
 
     /**
@@ -104,8 +119,38 @@ export class HotkeysController {
      * Cleans up the binder
      */
     destroy() {
-        globalThis.removeEventListener("keydown", this.#handleKeyDown);
-        globalThis.removeEventListener("keyup", this.#handleKeyUp);
+        globalThis.removeEventListener("keydown", this.#bound_handleKeyDown);
+        globalThis.removeEventListener("keyup", this.#bound_handleKeyUp);
+    }
+
+    /**
+     * Returns the last N events of the given type.
+     * @param {"keydown"|"keyup"} event_type
+     * @param {number} n
+     * @returns {KeyboardEvent[]}
+     */
+    #getLastEvents(event_type, n) {
+        if (n < 0) {
+            throw new Error("n must be greater than 0")
+        }
+
+        let all_past_events = event_type === "keydown" ? this.#keyboard_past_keydowns : this.#keyboard_past_keyups;
+
+        if (all_past_events.Size < n) {
+            throw new Error(`There are not enough past ${event_type} events to return ${n} of them`);
+        }
+
+        let last_n_events = [];
+
+        for (let h = 0; h < n; h++) {
+            let event =all_past_events.PeekN(h);
+
+            if (event == null) break;
+            
+            last_n_events.push(event);
+        }
+
+        return last_n_events;
     }
 
     /**
@@ -121,7 +166,14 @@ export class HotkeysController {
      * @param {KeyboardEvent} event
      */
     #handleKeyDown(event) {
+        if (this.#shouldIgnoreEvent(event)) return;
         console.log("keydown", event) 
+
+        let matching_hotkey = this.#matchHotkey(event);
+
+        if (matching_hotkey != null) {
+            this.#activateHotkey(matching_hotkey, event);
+        }
 
         this.#keyboard_past_keydowns.Add(event);
     }
@@ -131,16 +183,26 @@ export class HotkeysController {
      * @param {KeyboardEvent} event
      */
     #handleKeyUp(event) {
-        console.log("keyup", event)
+        if (this.#shouldIgnoreEvent(event)) return;
+        console.log("keyup", event);
+
+        let matching_hotkey = this.#matchHotkey(event);
+
+        if (matching_hotkey != null) {
+            this.#activateHotkey(matching_hotkey, event);
+        }
 
         this.#keyboard_past_keyups.Add(event);
     }
 
     /**
-     * Matches a Keyboard event with registered hotkeys
+     * Matches a Keyboard event with registered hotkeys. if it finds a match, returns the the hotkey.
      * @param {KeyboardEvent} event
+     * @returns {import('./hotkeys').HotkeyData | null}
      */
     #matchHotkey(event) {
+        if (this.#current_hotkey_context == null) return null;
+
         let is_keydown = event.type === "keydown";
         let is_keyup = event.type === "keyup";
 
@@ -149,9 +211,59 @@ export class HotkeysController {
         }
 
         let past_events = is_keydown ? this.#keyboard_past_keydowns : this.#keyboard_past_keyups;
-        let triggers = is_keydown ? this.#keydown_hotkey_triggers : this.#keyup_hotkey_triggers;
 
+        let candidate_hotkeys = this.#getCandidateHotkeys(event.key, event.type);
 
+        if (candidate_hotkeys.length === 0) return;
+
+        /** @type {import('./hotkeys').HotkeyData | null} */
+        let matching_hotkey = null;
+
+        for (let hotkey of candidate_hotkeys) {
+            let matching_events = [event];
+
+            if (hotkey.Length > 1) {
+                if (hotkey.Length > past_events.Size) {
+                    continue;
+                }
+
+                matching_events = [
+                    ...this.#getLastEvents(event.type, hotkey.Length - 1),
+                    event
+                ]
+            }
+
+            if (hotkey.match(matching_events)) {
+                matching_hotkey = hotkey;
+                break;
+            }
+        }
+
+        console.log("Matched hotkey", matching_hotkey);
+
+        return matching_hotkey;
+    }
+
+    /**
+     * Returns the candidate hotkeys for a given key. Meaning the hotkeys that could potentially be triggered by the key.
+     * @param {string} key
+     * @param {string} mode
+     * @returns {import('./hotkeys').HotkeyData[]}
+     */
+    #getCandidateHotkeys(key, mode) {
+        let candidate_hotkeys = [];
+
+        let triggers = mode === "keydown" ? this.#keydown_hotkey_triggers : this.#keyup_hotkey_triggers;
+
+        let lower_case_matching = triggers.get(key.toLowerCase()) ?? [];
+        let upper_case_matching = triggers.get(key.toUpperCase()) ?? [];
+
+        candidate_hotkeys = [
+            ...lower_case_matching,
+            ...upper_case_matching
+        ];
+
+        return candidate_hotkeys;
     }
 
     /**
@@ -206,6 +318,29 @@ export class HotkeysController {
     #setup() {
         globalThis.addEventListener("keydown", this.#bound_handleKeyDown);
         globalThis.addEventListener("keyup", this.#bound_handleKeyUp);
+    }
+
+    /**
+     * Whether a given KeyboardEvent was originated from a Input like element or not. In which case, the
+     * event should not trigger any hotkeys.
+     * @param {KeyboardEvent} event
+     */
+    #shouldIgnoreEvent(event) {
+        let origin_element = event.target;
+
+        if (origin_element == null) return false;
+
+        let should_ignore = false; 
+
+        if (origin_element instanceof HTMLInputElement) {
+            should_ignore = true;
+        }
+
+        if (!should_ignore && origin_element instanceof HTMLTextAreaElement) {
+            should_ignore = true;
+        }
+
+        return should_ignore;
     }
 }
 

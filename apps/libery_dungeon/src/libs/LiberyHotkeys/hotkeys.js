@@ -25,6 +25,13 @@ export const default_hotkey_register_options = {
     mode: "keydown"
 }
 
+/**
+ * The hotkey callback type
+ * @callback HotkeyCallback
+ * @param {KeyboardEvent} [event]
+ * @param {string} [key_combo]
+ */
+
 export class HotkeyData {
     /**
      * @type {string} the key's name e.g: 'a', 'esc', '-', etc
@@ -38,7 +45,7 @@ export class HotkeyData {
     #key_combo_fragments
 
     /**
-     * @type {function} the callback to be called when the key is pressed
+     * @type {HotkeyCallback} the callback to be called when the key is pressed
      */
     #callback
 
@@ -122,11 +129,40 @@ export class HotkeyData {
     }
 
     /**
+     * The length of the hotkey. that is, how many fragments it has.
+     * @returns {number}
+     */
+    get Length() {
+        return this.#key_combo_fragments.length;
+    }
+
+    /**
      * The hotkey's mode
      * @type {"keydown"|"keyup"}
      */
     get Mode() {
         return this.#mode;
+    }
+
+    /**
+     * Matches a sequence of Keyboard events with the hotkey. the sequence of keyboard events most be of the same length as the length of the hotkey.
+     * @param {KeyboardEvent[]} events
+     * @returns {boolean}
+     */
+    match(events) {
+        if (events.length !== this.Length) return false;
+        console.log(`Matching against: ${this.#key_combo}`, events);
+
+        let matches = true;
+
+        for (let h = 0; h < this.Length && matches; h++) {
+            let fragment = this.#key_combo_fragments[h];
+            let event = events[h];
+
+            matches = fragment.match(event);            
+        }
+
+        return matches;
     }
 
     /**
@@ -164,6 +200,14 @@ export class HotkeyData {
             return
         }
         // Mousetrap.bind(this.name, this.callback, this.mode)
+    }
+
+    /**
+     * Runs the hotkey's callback
+     * @param {KeyboardEvent} event
+     */
+    run(event) {
+        this.#callback(event, this.#key_combo);
     }
 
     /**
