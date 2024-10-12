@@ -1,4 +1,5 @@
-import { HotkeyFragment } from "./hotkeys_matchers"
+import { HotkeyFragment } from "./hotkeys_matchers";
+import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "./hotkeys_consts";
 /**
 * @typedef {Object} HotkeyRegisterOptions
  * @property {boolean} bind - If true the hotkey will be binded immediately. default is false
@@ -13,6 +14,16 @@ import { HotkeyFragment } from "./hotkeys_matchers"
  * @property {"keydown"|"keyup"} mode
  * @property {?string} description
 */
+
+/**
+* The default hotkey register options
+ * @type {HotkeyRegisterOptions}
+ */
+export const default_hotkey_register_options = {
+    bind: false,
+    description: null,
+    mode: "keydown"
+}
 
 export class HotkeyData {
     /**
@@ -91,7 +102,6 @@ export class HotkeyData {
      */
     get Group() {
         let hotkey_group = HOTKEYS_GENERAL_GROUP;
-        console.log(this)
         
         /** @type {RegExpMatchArray} */
         let group_matches = this.#description.match(/<(.*)>/);

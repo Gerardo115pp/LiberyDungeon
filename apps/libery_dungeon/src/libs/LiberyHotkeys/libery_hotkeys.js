@@ -1,5 +1,5 @@
-import Mousetrap from "mousetrap";
-import HotkeysContext, { default_hotkey_register_options } from "./hotkeys_context";
+import HotkeysContext from "./hotkeys_context";
+import  { default_hotkey_register_options } from "./hotkeys";
 import { hotkeys_context_events, dispatchHotkeysContextEvent } from "./hotkeys_events";
 import { Stack, canUseDOMEvents, hasWindowContext } from "@libs/utils";
 import { getHotkeysBinder, setupHotkeysBinder } from "./hotkeys_binder";
