@@ -114,13 +114,13 @@
         const F12_KEY = "f12";
 
         // Multi match keys
-        const NUMERIC_KEY = "\\d";
-        const LETTER_KEY = "\\w";
+        const NUMERIC_METAKEY = "\\d";
+        const LETTER_KEY = "\\l";
 
         const valid_fragment_identities = new Set([
             ESCAPE_KEY, ENTER_KEY, SPACE_KEY, TAB_KEY, BACKSPACE_KEY, DELETE_KEY, INSERT_KEY,
             HOME_KEY, END_KEY, PAGE_UP_KEY, PAGE_DOWN_KEY, ARROW_UP_KEY, ARROW_DOWN_KEY, ARROW_LEFT_KEY,
-            ARROW_RIGHT_KEY, CAPS_LOCK_KEY, NUM_LOCK_KEY, SCROLL_LOCK_KEY, NUMERIC_KEY, LETTER_KEY,
+            ARROW_RIGHT_KEY, CAPS_LOCK_KEY, NUM_LOCK_KEY, SCROLL_LOCK_KEY, NUMERIC_METAKEY, LETTER_KEY,
             F1_KEY, F2_KEY, F3_KEY, F4_KEY, F5_KEY, F6_KEY, F7_KEY, F8_KEY, F9_KEY, F10_KEY, F11_KEY, F12_KEY
         ]);
 
@@ -200,6 +200,57 @@ const isAliasIdentity = (identity) => {
 }
 
 /**
+ * Returns whether a passed key is a metakey. a metakey is a key that matches more then one key
+ * for example \s(which would have to be written as "\\l" in a string) would match any letter key. and \d would match any number key.
+ * @param {string} key
+ * @returns {boolean}
+ */
+const isMetaKey = (key) => {
+    let is_meta = false;
+
+    switch (key) {
+        case NUMERIC_METAKEY:
+        case LETTER_KEY:
+            is_meta = true;
+            break;
+    }
+
+    return is_meta;
+}
+
+/**
+ * Parses a meta key into the keys it represents.
+ * @param {string} key
+ * @returns {string[]}
+ */
+const parseMetaKey = (key) => {
+    let keys = [];
+
+    switch (key) {
+        case NUMERIC_METAKEY:
+            keys = Array.from(number_hotkeys);
+            break;
+        case LETTER_KEY:
+            keys = [
+                Array.from(...letter_keys), 
+                Array.from(...upper_letter_hotkeys)
+            ];
+            break;
+    }
+
+    return keys;
+}
+
+/**
+ * Whether the passed key is a numeric key.
+ * @param {string} key
+ * @returns {boolean}
+ */
+export const IsNumeric = key => {
+    return number_hotkeys.has(key);
+}
+
+/**
 * For reference different types of hotkeys would be:
  * "shift+x" is a key fragment.
  * "c c" is a key sequence. which has two key fragments.
@@ -260,6 +311,12 @@ export class HotkeyFragment {
      * @type {boolean}
      */
     #uppercase_explicit
+
+    /**
+     * Whether the fragment represents is a numberic metakey.
+     * @type {boolean}
+     */
+    #numeric_metakey
 
     /**
      * @param {string} fragment the hotkey fragment. e.g: "ctrl+shift+a", "a", "ctrl+a", 
@@ -351,21 +408,7 @@ export class HotkeyFragment {
         }
 
         if (!is_control && !is_shift && !is_alt && !valid_member) {
-            valid_member = isHotkeyIdentity(member);
-
-            if (valid_member) {
-                if (isAliasIdentity(member) && this.#fragment_identity === "") {
-                    let identity = member;
-                    this.#fragment_identity = transformAliasIdentity(identity);
-                    this.#alternate_identities.push(member);
-                    this.#uppercase_explicit = upper_letter_hotkeys.has(member);
-                } else if (this.#fragment_identity === "") {
-                    this.#fragment_identity = member;
-                    this.#uppercase_explicit = upper_letter_hotkeys.has(member);
-                } else {
-                    this.#alternate_identities.push(member);
-                }
-            }
+            valid_member = this.#parseIdentityMember(member);
         }
 
         if (!valid_member) {
@@ -463,6 +506,14 @@ export class HotkeyFragment {
     }
 
     /**
+     * Whether the fragment is a numeric metakey.
+     * @type {boolean}
+     */
+    get NumericMetakey() {
+        return this.#numeric_metakey;
+    }
+
+    /**
      * Splits the fragment into its members
      * @returns {string[]} the fragment members
      */
@@ -478,6 +529,41 @@ export class HotkeyFragment {
         return this.#shift_modifier;
     }
 
+    /**
+     * Parses a fragment identity member, if successful, returns true.
+     * @param {string} member
+     * @returns {boolean}
+     */
+    #parseIdentityMember(member) {
+        let is_identity = isHotkeyIdentity(member);
+
+        if (!is_identity) return false;
+
+        let identity = member;
+
+        if (isAliasIdentity(member)) {
+            identity = transformAliasIdentity(member);
+        }
+
+        if (isMetaKey(identity)) {
+            let meta_keys = parseMetaKey(identity);
+
+            this.#numeric_metakey = identity === NUMERIC_METAKEY;
+
+            identity = member;
+            this.#alternate_identities.concat(meta_keys);
+        }
+        
+        if (this.#fragment_identity === "") {
+            this.#fragment_identity = identity;
+            this.#uppercase_explicit = upper_letter_hotkeys.has(member);
+        } else {
+            this.#alternate_identities.push(member);
+        }
+
+        return is_identity;
+    }
+
     #parseModifiers() {
         for (const member of this.#fragment_members) {
             this.#detectMemberRole(member);
@@ -485,4 +571,5 @@ export class HotkeyFragment {
 
         this.#addShiftMutations()
     }
+
 }

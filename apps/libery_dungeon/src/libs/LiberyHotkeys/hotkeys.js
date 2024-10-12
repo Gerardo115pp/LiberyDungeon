@@ -28,8 +28,8 @@ export const default_hotkey_register_options = {
 /**
  * The hotkey callback type
  * @callback HotkeyCallback
- * @param {KeyboardEvent} [event]
- * @param {string} [key_combo]
+ * @param {KeyboardEvent} event
+ * @param {HotkeyData} hotkey
  */
 
 export class HotkeyData {
@@ -67,6 +67,19 @@ export class HotkeyData {
     #is_valid;
 
     /**
+     * Whether the hotkey can be prepended by a Vim motion. This is, it has a numeric metakey as the first fragment.
+     * A hotkey with vim motion can have some sort of numeric metadata associated with it, which can be useful for some commands like 'move nth times to the right' for example.
+     * @type {boolean}
+     */
+    #has_vim_motion;
+
+    /**
+     * Whether the hotkey callback is currently running.
+     * @type {boolean}
+     */
+    #hotkey_execution_mutex;
+
+    /**
      * @param {string} name the key's name e.g: 'a', 'esc', '-', etc
      * @param {function} callback the callback to be called when the key is pressed
      * @param {HotkeyRegisterOptions} options
@@ -82,6 +95,8 @@ export class HotkeyData {
         this.#unpackOptions(options)
         
         this.#is_valid = true;
+        this.#has_vim_motion = false;
+        this.#hotkey_execution_mutex = false;
 
         this.#splitFragments()
     }
@@ -246,7 +261,14 @@ export class HotkeyData {
      * @param {KeyboardEvent} event
      */
     run(event) {
-        this.#callback(event, this.#key_combo);
+        if (this.#hotkey_execution_mutex) {
+            console.error(`Hotkey ${this.#key_combo} is already running. Skipping execution.`);
+            return;
+        }
+
+        this.#hotkey_execution_mutex = true;
+        this.#callback(event, this);
+        this.#hotkey_execution_mutex = false;
     }
 
     /**
@@ -266,6 +288,11 @@ export class HotkeyData {
 
         if (this.#is_valid && this.#key_combo_fragments.length === 0) {
             this.#is_valid = false;
+            return;
+        }
+
+        if (this.#key_combo_fragments[0].NumericMetakey) {
+            this.#has_vim_motion = true;
         }
     }
     
@@ -303,5 +330,13 @@ export class HotkeyData {
      */
     get Valid() {
         return this.#is_valid;
+    }
+
+    /**
+     * Whether the hotkey has a vim motion or not.
+     * @returns {boolean}
+     */
+    get WithVimMotion() {
+        return this.#has_vim_motion;
     }
 }

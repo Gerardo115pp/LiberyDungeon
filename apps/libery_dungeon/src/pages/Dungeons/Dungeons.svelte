@@ -161,9 +161,11 @@
             /**
              * Handles the dungeon hotkey movement.
              * @param {KeyboardEvent} event
-             * @param {string} key_combo
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
-            const handleDungeonHotkeyMovement = (event, key_combo) => {
+            const handleDungeonHotkeyMovement = (event, hotkey) => {
+                let key_combo = hotkey.key_combo.toLowerCase();
+
                 const cluster_count = categories_clusters.length;
                 const row_count = Math.ceil(cluster_count / cluster_per_row);
 

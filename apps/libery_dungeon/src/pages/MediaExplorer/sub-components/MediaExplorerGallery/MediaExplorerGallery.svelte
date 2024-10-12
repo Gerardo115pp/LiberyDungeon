@@ -318,7 +318,7 @@
             /**
              * Handles the WASD Gallery grid movement.
              * @param {KeyboardEvent} hotkey_event
-             * @param {string} hotkey
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
             const handleGalleryGridMovement = async (hotkey_event, hotkey) => {
                 const media_count = active_medias.length;
@@ -328,7 +328,7 @@
 
                 let new_focus_index = media_focus_index;
 
-                switch (hotkey) {
+                switch (hotkey.key_combo) {
                     case "w": // up
                         new_focus_index -= media_per_row;
 

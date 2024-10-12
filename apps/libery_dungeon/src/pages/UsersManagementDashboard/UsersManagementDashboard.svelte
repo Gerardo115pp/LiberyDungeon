@@ -150,9 +150,10 @@
             /**
              * Handles the movement of the keyboard within the focused side list.
              * @param {KeyboardEvent} event
-             * @param {string} key_combo
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
-            const handleSideListsMovement = (event, key_combo) => {
+            const handleSideListsMovement = (event, hotkey) => {
+                let key_combo = hotkey.key_combo;
                 const movement_increase = key_combo === "s" ? 1 : -1;
 
                 let new_index = keyboard_movement_index + movement_increase;

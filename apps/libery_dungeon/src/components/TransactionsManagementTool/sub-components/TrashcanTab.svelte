@@ -135,7 +135,6 @@
                 }
             }
 
-
             /**
              * Ensure keyboard focus is visible in it's scrolling context.
              * @param {number} new_keyboard_focused_index
@@ -161,9 +160,10 @@
             /**
              * Hanldes the movement of the keyboard focus transaction entry.
              * @param {KeyboardEvent} event 
-             * @param {string} key_combo
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */ 
-            function handleKeyboardMovement(event, key_combo) {
+            function handleKeyboardMovement(event, hotkey) {
+                let key_combo = hotkey.key_combo;
                 let is_direction_up = key_combo === "w";
                 if (media_movement_enabled) {
                     return passKeyboardMovementToTransactionContent(is_direction_up);

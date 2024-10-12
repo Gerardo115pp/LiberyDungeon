@@ -298,9 +298,11 @@
             /**
              * opens the category content as a gallery blow the subcategories grid. if key_event.shiftKey is true, it will open with the focus on the last viewed media.
              * @param {KeyboardEvent} key_event
-             * @param {string} key_combo
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
-            const enableMediaGalleryMode = (key_event, key_combo) => {
+            const enableMediaGalleryMode = (key_event, hotkey) => {
+                let key_combo = hotkey.key_combo.toLowerCase();
+
                 media_display_as_gallery = !media_display_as_gallery;
 
                 if (!media_display_as_gallery) {
@@ -343,7 +345,14 @@
                 focused_element.dispatchEvent(new CustomEvent("rename-requested"));
             }
 
-            const handleCategoryMove = (key_event, key_combo) => {
+            /**
+             * Handles the movement of the category selection cursor.
+             * @param {KeyboardEvent} key_event
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             */
+            const handleCategoryMove = (key_event, hotkey) => {
+
+                let key_combo = hotkey.key_combo.toLowerCase();
 
                 const displayed_categories = getDisplayCategories();
                 

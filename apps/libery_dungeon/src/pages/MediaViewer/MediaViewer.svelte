@@ -289,10 +289,18 @@
                 replaceState(`/media-viewer/${$current_category.uuid}/${$active_media_index}`);
             }
 
-            const handleMediaNavigation = async (key_event, key_combo) => {
+            /**
+             * Handles the navigation between medias. If the random media navigation is enabled
+             * @param {KeyboardEvent} key_event
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             */
+            const handleMediaNavigation = async (key_event, hotkey) => {
+                let key_combo = hotkey.key_combo.toLowerCase();
+                
                 if ($random_media_navigation) {
                     return handleRandomMediaNavigation(key_event, key_combo);
                 }
+
 
                 let new_index = $active_media_index;
 
@@ -313,6 +321,12 @@
                 resetMediaConfigs(true);
             }
 
+            /**
+             * Handles the random media navigation. If the key_combo is "a", then the previous media index will be used as the new index.
+             * Called only from handleMediaNavigation
+             * @param {KeyboardEvent} key_event
+             * @param {string} key_combo
+             */
             const handleRandomMediaNavigation = async (key_event, key_combo) => {
                 let new_index = $active_media_index;
 
@@ -338,8 +352,15 @@
                 resetMediaConfigs(true);
             }
 
-            const handleMoveImageUpDown = (key_event, key_combo) => {
+            /**
+             * Handles the movement of the image up or down. The movement is based on the media height and the media_movement_factor.
+             * @param {KeyboardEvent} key_event
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             */
+            const handleMoveImageUpDown = (key_event, hotkey) => {
                 if (cinema_mode) return;
+
+                let key_combo = hotkey.key_combo.toLowerCase();
 
                 let media_wrapper = document.getElementById("media-wrapper");
 
@@ -358,8 +379,15 @@
                 }
             }
 
-            const handleMediaZoom = (key_event, key_combo) => {
+            /**
+             * Handles the zooming in or out of the media. The zooming is based on the media_zoom_factor.
+             * @param {KeyboardEvent} key_event
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             */
+            const handleMediaZoom = (key_event, hotkey) => {
                 if (cinema_mode) return;
+
+                let key_combo = hotkey.key_combo.toLowerCase();
 
                 let media_element = document.querySelector(".mw-media-element-display");
 

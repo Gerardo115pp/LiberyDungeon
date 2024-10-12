@@ -87,7 +87,6 @@
     /*=============================================
     =            Methods            =
     =============================================*/
-
             
             /*=============================================
             =            Hotkeys            =
@@ -131,9 +130,11 @@
                 /**
                  * Handles the movement of the focused choice.
                  * @param {KeyboardEvent} event
-                 * @param {string} key_combo
+                 * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
                  */
-                const handleChoiceMovement = (event, key_combo) => {
+                const handleChoiceMovement = (event, hotkey) => {
+                    let key_combo = hotkey.key_combo.toLowerCase();
+
                     if (key_combo === "a") {
                         focused_choice_index = 0;
                     } else if (key_combo === "d") {
@@ -163,9 +164,6 @@
                 const handleSelectFocusedChoice = () => {
                     setFinalChoice(focused_choice_index);
                 }
-
-
-            
             
             /*=====  End of Hotkeys  ======*/
 
