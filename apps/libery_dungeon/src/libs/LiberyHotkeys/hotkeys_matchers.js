@@ -166,7 +166,7 @@
 */
 
 /**
- * Represents a piece of a hotkey, by this i mean if there is a hotkey suck as 'ctrl+k ctrl+t' this entire hotkey will be composed from two fragments: 'ctrl+k' and 'ctrl+t'
+ * Represents a piece of a hotkey, by this i mean if there is a hotkey such as 'ctrl+k ctrl+t' this entire hotkey will be composed from two fragments: 'ctrl+k' and 'ctrl+t'
  * TODO: Right now fragments like 'a+x' are not supported. But this is planned to have support as soon as i can replace at least the features Mousetrap provides. and from there i will start adding more features.
  */
 export class HotkeyFragment {
