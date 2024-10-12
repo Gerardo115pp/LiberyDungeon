@@ -1,4 +1,4 @@
-import { HotkeyFragment } from "./hotkeys_matchers";
+import { HotkeyFragment, IsNumeric } from "./hotkeys_matchers";
 import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "./hotkeys_consts";
 /**
 * @typedef {Object} HotkeyRegisterOptions
@@ -74,6 +74,12 @@ export class HotkeyData {
     #has_vim_motion;
 
     /**
+     * the vim motion metadata. it is guaranteed to be a numeric string.
+     * @type {string}
+     */
+    #vim_motion_metadata;
+
+    /**
      * Whether the hotkey callback is currently running.
      * @type {boolean}
      */
@@ -96,9 +102,51 @@ export class HotkeyData {
         
         this.#is_valid = true;
         this.#has_vim_motion = false;
+        this.#vim_motion_metadata = "0";
         this.#hotkey_execution_mutex = false;
 
         this.#splitFragments()
+    }
+
+    /**
+     * Takes an array of Keyboard events, takes the ones that match a vim motion and populates with them the vim motion metadata.
+     * returns a new array with the remaining events.
+     * @param {KeyboardEvent[]} events
+     * @returns {KeyboardEvent[]} 
+     */
+    #collectVimMotionEvents(events) {
+        if (events.length === 0) return events;
+
+        this.#vim_motion_metadata = "";
+
+        let look_up_index = 0;
+        let matches_vim_motion = true;
+
+        do {
+            let event = events[look_up_index];
+            
+            matches_vim_motion = IsNumeric(event.key);
+
+            if (matches_vim_motion) {
+                this.#vim_motion_metadata += event.key;
+                look_up_index++;
+            }
+
+            if (look_up_index > 100000) {
+                throw new Error("Infinite loop detected. Aborting."); // This should only happen if our code is not well thought out. If it is, then this will never happen(unless the user is an idiot). TODO: if this is not triggered in a year, remove it.
+            }
+
+        } while (matches_vim_motion && look_up_index < events.length);
+
+        let remaining_events = events.slice(look_up_index);
+
+        this.#vim_motion_metadata = this.#vim_motion_metadata === "" ? "0" : this.#vim_motion_metadata;
+        if (this.#vim_motion_metadata !== "0") {
+            this.#vim_motion_metadata = this.#vim_motion_metadata.split("").reverse().join("");
+        }
+
+
+        return remaining_events;
     }
 
     /**
@@ -166,6 +214,7 @@ export class HotkeyData {
      * @returns {string[]}
      */
     get ManyFaces() {
+        console.log(`Many faces from ${this.#key_combo} with fragments:`, this.#key_combo_fragments);
         let first_fragment = this.#key_combo_fragments[0];
 
         return first_fragment.Identities;
@@ -188,17 +237,34 @@ export class HotkeyData {
      * @returns {boolean}
      */
     match(events) {
-        if (events.length !== this.Length) return false;
-        console.log(`Matching against: ${this.#key_combo}`, events);
+        if (events.length !== this.Length && !this.WithVimMotion) return false;
+        console.log(`Matching against!: ${this.#key_combo}`, events);
 
         let matches = true;
+        let matchable_events = [];
+        const hotkey_fragments = [...this.#key_combo_fragments];
 
-        for (let h = 0; h < this.Length && matches; h++) {
-            let fragment = this.#key_combo_fragments[h];
-            let event = events[h];
+        if (this.WithVimMotion) {
+            matchable_events = this.#collectVimMotionEvents(events);
+            hotkey_fragments.shift(); // Remove the vim motion fragment
+        } else {
+            matchable_events = events;
+        }
+
+        console.log('Matchable events:', matchable_events);
+        
+
+        for (let h = 0; h < hotkey_fragments.length && matches; h++) {
+            let fragment = hotkey_fragments[h];
+            let event = matchable_events[h];
+
+            // console.log("Remaining fragments:", hotkey_fragments);
+            // console.log("Remaining events:", matchable_events);
 
             matches = fragment.match(event);            
         }
+
+        console.log(`Matched: ${matches}`);
 
         return matches;
     }
@@ -260,14 +326,18 @@ export class HotkeyData {
      * Runs the hotkey's callback
      * @param {KeyboardEvent} event
      */
-    run(event) {
+    async run(event) {
         if (this.#hotkey_execution_mutex) {
             console.error(`Hotkey ${this.#key_combo} is already running. Skipping execution.`);
             return;
         }
 
         this.#hotkey_execution_mutex = true;
-        this.#callback(event, this);
+        if (this.#callback?.constructor.name === "Function") {
+            this.#callback(event, this);
+        } else if (this.#callback?.constructor.name === "AsyncFunction") {
+            await this.#callback(event, this);
+        }
         this.#hotkey_execution_mutex = false;
     }
 
@@ -331,6 +401,18 @@ export class HotkeyData {
      */
     get Valid() {
         return this.#is_valid;
+    }
+
+    /**
+     * the vim motion metadata.
+     * @returns {number}
+     */
+    get VimMotionMetadata() {
+        console.log(`Vim motion metadata: ${this.#vim_motion_metadata}`);
+        let motion = parseInt(this.#vim_motion_metadata);
+        motion = isNaN(motion) ? 0 : motion;
+
+        return motion;
     }
 
     /**

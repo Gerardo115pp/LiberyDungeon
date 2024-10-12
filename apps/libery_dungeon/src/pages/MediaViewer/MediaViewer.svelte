@@ -191,16 +191,16 @@
                         description: "<navigate>Navigate through the medias, A for previous, D for next", 
                     });
 
+                    hotkeys_context.register(["\\d g"], handleMediaPositionJump, {
+                        description: "<navigate>Jump to a specific media position. exapmle: '5 g' will jump to the 5th media."
+                    });
+
                     hotkeys_context.register(["w", "s"], handleMoveImageUpDown, {
                         description: "<media_modification>Move the image up or down, W for up, S for down."
                     });
 
                     hotkeys_context.register("r", e => {e.preventDefault(); random_media_navigation.set(!$random_media_navigation)}, {
                         description: "<navigation>Toggle random media navigation."
-                    });
-
-                    hotkeys_context.register("1", e => {e.preventDefault(); changeDisplayedMedia(0)}, {
-                        description: "<navigation>Go to the first media."
                     });
 
                     hotkeys_context.register(["shift+a", "shift+d"], handleMediaZoom, {
@@ -236,7 +236,7 @@
 
 
 
-                    hotkeys_context.register("g", e => show_media_gallery = !show_media_gallery, {
+                    hotkeys_context.register("shift+g", e => show_media_gallery = !show_media_gallery, {
                         description: "<navigation>Toggle the media gallery."
                     });
 
@@ -318,6 +318,28 @@
 
                 await tick();
                 
+                resetMediaConfigs(true);
+            }
+
+            /**
+             * Handles the media position jump. 
+             * @param {KeyboardEvent} key_event
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             */
+            const handleMediaPositionJump = async (key_event, hotkey) => {
+                if (!hotkey.WithVimMotion) {
+                    console.error("The hotkey did not contain vim motion data");
+                    return;
+                }
+
+                let move_position = hotkey.VimMotionMetadata - 1; // convert to zreo based index
+
+                move_position = Math.max(0, Math.min(move_position, $current_category.content.length - 1));
+
+                changeDisplayedMedia(move_position);
+
+                await tick();
+
                 resetMediaConfigs(true);
             }
 

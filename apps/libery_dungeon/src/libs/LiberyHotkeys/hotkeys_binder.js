@@ -3,6 +3,7 @@ import {
     MAX_PAST_EVENTS, 
     MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES
 } from "./hotkeys_consts";
+import { IsNumeric } from "./hotkeys_matchers";
 
 
 export class HotkeysController {
@@ -154,6 +155,57 @@ export class HotkeysController {
     }
 
     /**
+     * Returns all the previous events that match a vim motion.
+     * @returns {KeyboardEvent[]}
+     */
+    #getVimMotionMatchingEvents() {
+        let matching_events = [];
+
+        let event_index = 0;
+        let matches_vim_motion = true;
+
+        do {
+            let event = this.#keyboard_past_keydowns.PeekN(event_index);
+
+            if (event == null) break;
+
+            matches_vim_motion = IsNumeric(event.key);
+
+            if (matches_vim_motion) {
+                matching_events.push(event);
+            }
+           
+            event_index++;
+        } while (matches_vim_motion);
+
+        return matching_events;
+    }
+
+    /**
+     * Returns the candidate hotkeys for a given key. Meaning the hotkeys that could potentially be triggered by the key.
+     * @param {string} key
+     * @param {string} mode
+     * @returns {import('./hotkeys').HotkeyData[]}
+     */
+    #getCandidateHotkeys(key, mode) {
+        let candidate_hotkeys = [];
+
+        let triggers = mode === "keydown" ? this.#keydown_hotkey_triggers : this.#keyup_hotkey_triggers;
+
+        let lower_case_matching = triggers.get(key.toLowerCase()) ?? [];
+        let upper_case_matching = triggers.get(key.toUpperCase()) ?? [];
+
+        candidate_hotkeys = [
+            ...lower_case_matching,
+            ...upper_case_matching
+        ];
+
+        console.log("Candidate hotkeys", candidate_hotkeys);
+
+        return candidate_hotkeys;
+    }
+
+    /**
      * Whether the binder has an active hotkey context or not.
      * @type {boolean}
      */
@@ -222,7 +274,8 @@ export class HotkeysController {
         for (let hotkey of candidate_hotkeys) {
             let matching_events = [event];
 
-            if (hotkey.Length > 1) {
+            if (hotkey.Length > 1 && !hotkey.WithVimMotion) {
+                console.log(`Matching hotkey ${hotkey.key_combo} with ${hotkey.Length} events`);
                 if (hotkey.Length > past_events.Size) {
                     continue;
                 }
@@ -231,7 +284,14 @@ export class HotkeysController {
                     ...this.#getLastEvents(event.type, hotkey.Length - 1),
                     event
                 ]
+            } else if (hotkey.WithVimMotion) {
+                console.log(`Matching hotkey ${hotkey.key_combo} with vim motion`);
+                matching_events = [
+                    ...this.#getVimMotionMatchingEvents(),
+                    event
+                ];
             }
+            console.log("Matching events", matching_events);
 
             if (hotkey.match(matching_events)) {
                 matching_hotkey = hotkey;
@@ -242,28 +302,6 @@ export class HotkeysController {
         console.log("Matched hotkey", matching_hotkey);
 
         return matching_hotkey;
-    }
-
-    /**
-     * Returns the candidate hotkeys for a given key. Meaning the hotkeys that could potentially be triggered by the key.
-     * @param {string} key
-     * @param {string} mode
-     * @returns {import('./hotkeys').HotkeyData[]}
-     */
-    #getCandidateHotkeys(key, mode) {
-        let candidate_hotkeys = [];
-
-        let triggers = mode === "keydown" ? this.#keydown_hotkey_triggers : this.#keyup_hotkey_triggers;
-
-        let lower_case_matching = triggers.get(key.toLowerCase()) ?? [];
-        let upper_case_matching = triggers.get(key.toUpperCase()) ?? [];
-
-        candidate_hotkeys = [
-            ...lower_case_matching,
-            ...upper_case_matching
-        ];
-
-        return candidate_hotkeys;
     }
 
     /**
