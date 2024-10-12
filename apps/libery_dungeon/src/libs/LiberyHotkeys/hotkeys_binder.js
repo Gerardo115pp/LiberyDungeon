@@ -5,7 +5,7 @@ import {
 } from "./hotkeys_consts";
 
 
-export class HotkeysBinder {
+export class HotkeysController {
 
     /**
      * A stack with the last MAX_PAST_EVENTS keydown KeyboardEvents
@@ -182,7 +182,7 @@ export class HotkeysBinder {
 
 /**
  * The global hotkeys binder
- * @type {HotkeysBinder | null}
+ * @type {HotkeysController | null}
  */
 let GlobalHotkeysBinder = null;
 
@@ -191,7 +191,7 @@ export const setupHotkeysBinder = () => {
         throw new Error("Hotkeys binder already exists. Call destroyHotkeysBinder before setting up a new one")
     }
 
-    GlobalHotkeysBinder = new HotkeysBinder();
+    GlobalHotkeysBinder = new HotkeysController();
 }
 
 export const destroyHotkeysBinder = () => {
@@ -206,7 +206,7 @@ export const destroyHotkeysBinder = () => {
 
 /**
  * Returns the global hotkeys binder.
- * @returns {HotkeysBinder | null}
+ * @returns {HotkeysController | null}
  */
 export const getHotkeysBinder = () => {
     return GlobalHotkeysBinder;

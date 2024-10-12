@@ -26,7 +26,7 @@ export class HotkeyContextManager {
     #last_context_load_requested = ""
     /**
      * The hotkeys key binder
-     * @type {import('./hotkeys_binder').HotkeysBinder}
+     * @type {import('./hotkeys_binder').HotkeysController}
      */
     #hotkeys_binder
 
@@ -69,7 +69,7 @@ export class HotkeyContextManager {
 
     /**
      * the hotkeys binder.
-     * @type {import('./hotkeys_binder').HotkeysBinder}
+     * @type {import('./hotkeys_binder').HotkeysController}
      */
     get Binder() {
         return this.#hotkeys_binder;
