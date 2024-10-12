@@ -55,14 +55,14 @@ export class HotkeyContextManager {
      * The current applied context
      * @type {HotkeysContext}
      * @readonly
-    */
+     */
     get Context() {
         return this.#current_context;
     }
 
     /**
      * The current applied context's name
-    */
+     */
     get ContextName() {
         return this.#current_context_name;
     }
@@ -87,7 +87,7 @@ export class HotkeyContextManager {
      * Saves a context with a given name but doesn't activate it
      * @param {string} name
      * @param {HotkeysContext} context
-    */
+     */
     declareContext(name, context) {
         this.#contexts[name] = context;
     }
@@ -95,7 +95,7 @@ export class HotkeyContextManager {
     /**
      * Deletes a context
      * @param {string} name
-    */
+     */
     dropContext(name) {
         delete this.#contexts[name];
     }
@@ -117,7 +117,7 @@ export class HotkeyContextManager {
      * Returns true if the provided context name exists
      * @param {string} name
      * @returns {boolean}
-    */
+     */
     hasContext(name) {
         return this.#contexts[name] !== undefined;
     }
@@ -127,7 +127,7 @@ export class HotkeyContextManager {
      * @param {string} hotkey
      * @param {"keypress"|"keydown"|"keyup"} mode
      * @returns {boolean}
-    */
+     */
     hasHotkey(hotkey, mode="keydown") {
         if (!this.hasLoadedContext()) return false;
 
@@ -147,7 +147,7 @@ export class HotkeyContextManager {
      * @param {string} name
      * @param {boolean} preserve_previous_context if true the previous context will be preserved and can be loaded again with loadPreviousContext
      * @throws {Error} if the context doesn't exist
-    */
+     */
     loadContext(name, preserve_previous_context=true) {
         if (!hasWindowContext()) return;
 
@@ -186,7 +186,7 @@ export class HotkeyContextManager {
     /**
      * Loads the previous context as the current if it exists or does nothing, returns true if the previous context was loaded
      * @returns {boolean} true if the previous context was loaded
-    */
+     */
     loadPreviousContext() {
         if (!hasWindowContext()) return false;
 
@@ -210,15 +210,9 @@ export class HotkeyContextManager {
     }
 
     /**
-     * @typedef {Object} HotkeyRegisterOptions
-     * @property {string} description - The hotkey's description
-     * @property {"keypress"|"keydown"|"keyup"} mode - The mode of the keypress event. Default is "keydown"
-     */
-
-    /**
      * Registers the current context's hotkeys
      * @throws {Error} if no context is loaded
-    */
+     */
     #registerCurrentContext() {
         if (!hasWindowContext()) return;
 
@@ -235,7 +229,7 @@ export class HotkeyContextManager {
      * Registers a hotkey without persisting it on a context, which means that calling loadContext will overwrite it
      * @param {string|string[]} hotkey the hotkey's name or an array of hotkeys, if already registered it will be overwritten
      * @param {function} callback the callback to be called when the key is pressed
-     * @param {HotkeyRegisterOptions} options
+     * @param {import('./hotkeys').HotkeyRegisterOptions} options
      * @deprecated
      */
     registerHotkey(hotkey, callback, options) {
@@ -251,7 +245,7 @@ export class HotkeyContextManager {
      * Registers a hotkey on the current context
      * @param {string|string[]} hotkey the hotkey's name or an array of hotkeys, if already registered it will be overwritten
      * @param {function} callback the callback to be called when the key is pressed
-     * @param {HotkeyRegisterOptions} options
+     * @param {import('./hotkeys').HotkeyRegisterOptions} options
      */
     registerHotkeyOnContext(hotkey, callback, options) {
         if (!hasWindowContext() || !this.hasLoadedContext()) return;
