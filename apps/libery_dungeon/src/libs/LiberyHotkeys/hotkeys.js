@@ -237,7 +237,7 @@ export class HotkeyData {
      * @returns {boolean}
      */
     match(events) {
-        if (events.length !== this.Length && !this.WithVimMotion) return false;
+        if ((events.length !== this.Length && !this.WithVimMotion) || this.WithVimMotion && events.length <= 1) return false;
         console.log(`Matching against!: ${this.#key_combo}`, events);
 
         let matches = true;
@@ -247,6 +247,9 @@ export class HotkeyData {
         if (this.WithVimMotion) {
             matchable_events = this.#collectVimMotionEvents(events);
             hotkey_fragments.shift(); // Remove the vim motion fragment
+            if (this.#vim_motion_metadata === "0") {
+                return false;
+            }
         } else {
             matchable_events = events;
         }
