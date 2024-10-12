@@ -225,15 +225,15 @@ const isMetaKey = (key) => {
  */
 const parseMetaKey = (key) => {
     let keys = [];
-
+    console.log(`Parsing meta key: ${key}`);
     switch (key) {
         case NUMERIC_METAKEY:
             keys = Array.from(number_hotkeys);
             break;
         case LETTER_KEY:
             keys = [
-                Array.from(...letter_keys), 
-                Array.from(...upper_letter_hotkeys)
+                ...Array.from(letter_keys), 
+                ...Array.from(upper_letter_hotkeys)
             ];
             break;
     }
@@ -248,6 +248,15 @@ const parseMetaKey = (key) => {
  */
 export const IsNumeric = key => {
     return number_hotkeys.has(key);
+}
+
+/**
+ * Whether the passed key is a letter key.
+ * @param {string} key
+ * @returns {boolean}
+ */
+export const IsLetter = key => {
+    return letter_keys.has(key);
 }
 
 /**
@@ -490,8 +499,9 @@ export class HotkeyFragment {
      */
     #matchIdentity(event) {
         let key = event.key;
+        let is_letter = IsLetter(key);
 
-        if (this.#shift_modifier) {
+        if (this.#shift_modifier || !is_letter) {
             key = key.toLowerCase();
         }
 
@@ -546,12 +556,15 @@ export class HotkeyFragment {
         }
 
         if (isMetaKey(identity)) {
+            console.log(`Found meta key: ${identity}`);
             let meta_keys = parseMetaKey(identity);
 
             this.#numeric_metakey = identity === NUMERIC_METAKEY;
 
             identity = member;
-            this.#alternate_identities.concat(meta_keys);
+            console.log("Meta keys: ", meta_keys);
+            this.#alternate_identities = this.#alternate_identities.concat(meta_keys);
+            console.log("Alternate identities: ", this.#alternate_identities);
         }
         
         if (this.#fragment_identity === "") {

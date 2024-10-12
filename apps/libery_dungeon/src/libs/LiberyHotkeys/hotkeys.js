@@ -278,6 +278,7 @@ export class HotkeyData {
      */
     #splitFragments() {
         let fragments = this.#key_combo.split(" ")
+        console.log(`Fragments: ${fragments}`);
 
         try {
             this.#key_combo_fragments = fragments.map((fragment) => new HotkeyFragment(fragment)); // If the fragment parsing finds invalid members, this will panic.

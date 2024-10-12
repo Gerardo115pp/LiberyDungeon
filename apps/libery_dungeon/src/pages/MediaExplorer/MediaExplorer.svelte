@@ -46,7 +46,7 @@
         import global_platform_events_manager, { PlatformEventContext } from "@libs/LiberyEvents/libery_events";
         import { platform_well_known_events } from "@libs/LiberyEvents/well_known_events";
         import TransactionsManagementTool from "@components/TransactionsManagementTool/TransactionsManagementTool.svelte";
-    import { current_user_identity } from "@stores/user";
+        import { current_user_identity } from "@stores/user";
 
     /*=====  End of Imports  ======*/
   
@@ -463,23 +463,29 @@
                 if (!global_hotkeys_manager.hasContext(filter_hotkeys_context_name)) {
                     const filter_hotkeys_context = new HotkeysContext();
 
-                    const letter_keys = [
-                        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
-                        "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
-                        "u", "v", "w", "x", "y", "z"
-                    ];
+                    // const letter_keys = [
+                    //     "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
+                    //     "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+                    //     "u", "v", "w", "x", "y", "z"
+                    // ];
 
-                    const upper_case_letter_keys = letter_keys.map(key => key.toUpperCase());
+                    // const upper_case_letter_keys = letter_keys.map(key => key.toUpperCase());
 
-                    const all_letter_keys = letter_keys.concat(upper_case_letter_keys);
+                    // const all_letter_keys = letter_keys.concat(upper_case_letter_keys);
                     // TODO: When we implement metacharacter hotkeys, we should use \w instead of this.
 
-                    filter_hotkeys_context.register(all_letter_keys, (e, key) => {
-                            category_name_filter += key;
-                            
-                            last_typing_time = Date.now();
-                            category_filter_changed = true;
-                        }, {
+                    /**
+                     * @param {KeyboardEvent} e
+                     * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+                     */
+                    const handleAllLetters = (e, hotkey) => {
+                        category_name_filter += e.key.toLowerCase();
+                        
+                        last_typing_time = Date.now();
+                        category_filter_changed = true;
+                    }
+
+                    filter_hotkeys_context.register(["\\l"], handleAllLetters, {
                             description: `<${HOTKEYS_HIDDEN_GROUP}>used for typing category name filter`,
                     });
 
