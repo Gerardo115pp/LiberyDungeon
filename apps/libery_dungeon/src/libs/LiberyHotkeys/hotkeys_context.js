@@ -18,7 +18,7 @@ export default class HotkeysContext {
     /**
      * The Context's hotkeys
      * @type {HotkeyData[]}
-    */
+     */
     get hotkeys() {
         let all_hotkeys = [];
 
@@ -36,7 +36,9 @@ export default class HotkeysContext {
      * @returns {boolean}
      */
     hasHotkey(hotkey, mode="keydown") {
-        return this.#keydown_hotkeys[hotkey] !== undefined;
+        let mode_hotkeys = this.#modeHotkeys(mode)
+
+        return mode_hotkeys[hotkey] !== undefined
     }
 
     /**
