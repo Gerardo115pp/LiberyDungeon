@@ -5,48 +5,48 @@
     /*----------  Key values for keyboard events  ----------*/
     // See: https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values
 
-    export const letter_keys = new Set([
+    const letter_keys = new Set([
         "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
         "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
         "u", "v", "w", "x", "y", "z"
     ]);
 
-    export const upper_letter_hotkeys = new Set([
+    const upper_letter_hotkeys = new Set([
         "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
         "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
         "U", "V", "W", "X", "Y", "Z"
     ]);
 
-    export const number_hotkeys = new Set([
+    const number_hotkeys = new Set([
         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
     ]);
 
-    export const character_producing_hotkeys = new Set([
+    const character_producing_hotkeys = new Set([
         "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/", ":", ";", "<", "=", ">", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~"
     ]);
 
-    export const whitespace_hotkeys = new Set([
+    const whitespace_hotkeys = new Set([
         " ", "space", "Tab", "Enter"
     ]);
 
-    export const modifier_keys = new Set([
+    const modifier_keys = new Set([
         "Alt", "AltGraph", "CapsLock", "Control", "Fn", 
         "FnLock", "Hyper", "Meta", "NumLock", "ScrollLock",
         "Shift", "Super", "Symbol", "SymbolLock"
     ]);
 
-    export const navigation_keys = new Set([
+    const navigation_keys = new Set([
         "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp",
         "End", "Home", "PageDown", "PageUp"
     ]);
 
 
-    export const editing_keys = new Set([
+    const editing_keys = new Set([
         "Backspace", "Clear", "Copy", "CrSel", "Cut", "Delete",
         "EraseEof", "ExSel", "Insert", "Paste", "Redo", "Undo"
     ]);
 
-    export const function_keys = new Set([
+    const function_keys = new Set([
         "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10",
         "F11", "F12"
     ]);
@@ -58,17 +58,17 @@
         // this property returns a value that isn't altered by keyboard layout or the state of the modifier keys
         // See: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code
     
-        export const letter_codes = new Set([
+        const letter_codes = new Set([
             "KeyA", "KeyB", "KeyC", "KeyD", "KeyE", "KeyF", "KeyG", "KeyH", "KeyI", "KeyJ",
             "KeyK", "KeyL", "KeyM", "KeyN", "KeyO", "KeyP", "KeyQ", "KeyR", "KeyS", "KeyT",
             "KeyU", "KeyV", "KeyW", "KeyX", "KeyY", "KeyZ"
         ]);
 
-        export const number_codes = new Set([
+        const number_codes = new Set([
             "Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"
         ]);
 
-        export const whitespace_codes = new Set([
+        const whitespace_codes = new Set([
             "Space", "Tab", "Enter"
         ]);
 
@@ -76,52 +76,60 @@
     /*----------  Hotkey alias  ----------*/
         // These are the names we use to refer to specific keys and metakeys. these are the hotkey fragments that are expected on key combos. e.g: "ctrl+shift+a", "c c", "\d x", etc.
 
-        export const SHIFT_KEY = "shift";
-        export const CONTROL_KEY = "ctrl";
-        export const COMMAND_KEY = "cmd";
-        export const ALT_KEY = "alt";
-        export const OPTIONS_KEY = "opt";
-        export const ESCAPE_KEY = "esc";
-        export const ENTER_KEY = "enter";
-        export const SPACE_KEY = "space";
-        export const TAB_KEY = "tab";
-        export const BACKSPACE_KEY = "backspace";
-        export const DELETE_KEY = "del";
-        export const INSERT_KEY = "ins";
-        export const HOME_KEY = "home";
-        export const END_KEY = "end";
-        export const PAGE_UP_KEY = "pgup";
-        export const PAGE_DOWN_KEY = "pgdown";
-        export const ARROW_UP_KEY = "up";
-        export const ARROW_DOWN_KEY = "down";
-        export const ARROW_LEFT_KEY = "left";
-        export const ARROW_RIGHT_KEY = "right";
-        export const CAPS_LOCK_KEY = "caps";
-        export const NUM_LOCK_KEY = "num";
-        export const SCROLL_LOCK_KEY = "scroll";
+        const SHIFT_KEY = "shift";
+        const CONTROL_KEY = "ctrl";
+        const COMMAND_KEY = "cmd";
+        const ALT_KEY = "alt";
+        const OPTIONS_KEY = "opt";
+        const ESCAPE_KEY = "esc";
+        const ENTER_KEY = "enter";
+        const SPACE_KEY = "space";
+        const TAB_KEY = "tab";
+        const BACKSPACE_KEY = "backspace";
+        const DELETE_KEY = "del";
+        const INSERT_KEY = "ins";
+        const HOME_KEY = "home";
+        const END_KEY = "end";
+        const PAGE_UP_KEY = "pgup";
+        const PAGE_DOWN_KEY = "pgdown";
+        const ARROW_UP_KEY = "up";
+        const ARROW_DOWN_KEY = "down";
+        const ARROW_LEFT_KEY = "left";
+        const ARROW_RIGHT_KEY = "right";
+        const CAPS_LOCK_KEY = "caps";
+        const NUM_LOCK_KEY = "num";
+        const SCROLL_LOCK_KEY = "scroll";
 
-        export const F1_KEY = "f1";
-        export const F2_KEY = "f2";
-        export const F3_KEY = "f3";
-        export const F4_KEY = "f4";
-        export const F5_KEY = "f5";
-        export const F6_KEY = "f6";
-        export const F7_KEY = "f7";
-        export const F8_KEY = "f8";
-        export const F9_KEY = "f9";
-        export const F10_KEY = "f10";
-        export const F11_KEY = "f11";
-        export const F12_KEY = "f12";
+        const F1_KEY = "f1";
+        const F2_KEY = "f2";
+        const F3_KEY = "f3";
+        const F4_KEY = "f4";
+        const F5_KEY = "f5";
+        const F6_KEY = "f6";
+        const F7_KEY = "f7";
+        const F8_KEY = "f8";
+        const F9_KEY = "f9";
+        const F10_KEY = "f10";
+        const F11_KEY = "f11";
+        const F12_KEY = "f12";
 
         // Multi match keys
-        export const NUMERIC_KEY = "\\d";
-        export const LETTER_KEY = "\\w";
+        const NUMERIC_KEY = "\\d";
+        const LETTER_KEY = "\\w";
 
-        export const valid_fragment_identities = new Set([
+        const valid_fragment_identities = new Set([
             ESCAPE_KEY, ENTER_KEY, SPACE_KEY, TAB_KEY, BACKSPACE_KEY, DELETE_KEY, INSERT_KEY,
             HOME_KEY, END_KEY, PAGE_UP_KEY, PAGE_DOWN_KEY, ARROW_UP_KEY, ARROW_DOWN_KEY, ARROW_LEFT_KEY,
             ARROW_RIGHT_KEY, CAPS_LOCK_KEY, NUM_LOCK_KEY, SCROLL_LOCK_KEY, NUMERIC_KEY, LETTER_KEY,
             F1_KEY, F2_KEY, F3_KEY, F4_KEY, F5_KEY, F6_KEY, F7_KEY, F8_KEY, F9_KEY, F10_KEY, F11_KEY, F12_KEY
+        ]);
+
+        const shift_mutations_us_keyboard = new Map([
+            ["1", "!"], ["2", "@"], ["3", "#"], ["4", "$"], ["5", "%"], ["6", "^"], ["7", "&"], ["8", "*"], ["9", "("], ["0", ")"],
+            ["`", "~"], ["-", "_"], ["=", "+"], ["[", "{"], ["]", "}"], ["\\", "|"], [";", ":"], ["'", "\""], [",", "<"], [".", ">"], ["/", "?"],
+            ["a", "A"], ["b", "B"], ["c", "C"], ["d", "D"], ["e", "E"], ["f", "F"], ["g", "G"], ["h", "H"], ["i", "I"], ["j", "J"],
+            ["k", "K"], ["l", "L"], ["m", "M"], ["n", "N"], ["o", "O"], ["p", "P"], ["q", "Q"], ["r", "R"], ["s", "S"], ["t", "T"],
+            ["u", "U"], ["v", "V"], ["w", "W"], ["x", "X"], ["y", "Y"], ["z", "Z"]
         ]);
 
 /*=====  End of KEY MAPS  ======*/
@@ -158,6 +166,39 @@
 
 /*=====  End of Matchers  ======*/
 
+
+/**
+ * Transforms a identity from an alias to how it would be represented in a KeyboardEvent.key property.
+ * @param {string} identity
+ * @returns {string}
+ */
+const transformAliasIdentity = (identity) => {
+    let transformed_identity = identity;
+
+    if (identity === SPACE_KEY) {
+        transformed_identity = " ";
+    }
+
+    return transformed_identity;
+}
+
+/**
+ * Returns whether a passed identity is an alias.
+ * @param {string} identity
+ * @returns {boolean}
+ */
+const isAliasIdentity = (identity) => {
+    let is_alias = false;
+
+    switch (identity) {
+        case SPACE_KEY:
+            is_alias = true;
+            break;
+    }
+
+    return is_alias;
+}
+
 /**
 * For reference different types of hotkeys would be:
  * "shift+x" is a key fragment.
@@ -189,6 +230,13 @@ export class HotkeyFragment {
     #fragment_identity
 
     /**
+     * All the detectable identities this fragment(support for fragments like 'a+x') has. e.g: "ctrl+shift+a" has "a" but because of shift it also has "A". for a+x it would be "a" and "x". so for the first example you would have "a" on
+     * #fragment_identity and this would be ["A"], and for the second example, #fragment_identity = "a" and this would be ["x"]. for "a+x+d" you would have #fragment_identity = "a" and this would be ["x", "d"]
+     * @type {string[]}
+     */
+    #alternate_identities
+
+    /**
      * Whether the key requires control modifier.
      * @type {boolean} 
      */
@@ -207,19 +255,70 @@ export class HotkeyFragment {
     #alt_modifier
 
     /**
+     * Whether the fragment identity is set explicitly in uppercase. This is useful
+     * to prevent false positives. for example shift+a matching "A"
+     * @type {boolean}
+     */
+    #uppercase_explicit
+
+    /**
      * @param {string} fragment the hotkey fragment. e.g: "ctrl+shift+a", "a", "ctrl+a", 
      */
     constructor(fragment) {
+
         this.#fragment = fragment;
         this.#fragment_members = this.#splitFragment();
 
         this.#control_modifier = false;
         this.#shift_modifier = false;
         this.#alt_modifier = false;
+        this.#uppercase_explicit = false;
 
         this.#fragment_identity = "";
+        this.#alternate_identities = [];
 
         this.#parseModifiers();
+    }
+
+    /**
+     * If shift required adds to the alternate identities the shifted versions of the fragment identity and current alternate identities.
+     * This is only reliable for US keyboards. and will not work correctly for other keyboard layouts. getKeyboardLayout() can be used to get the current keyboard layout. but
+     * It requires a SecureContext which would force users to either get a domain or use something like mkcert to install the platform or be limited to localhost which mostly defeats the purpose of LiberyDungeon.
+     * See: https://developer.mozilla.org/en-US/docs/Web/API/Keyboard/getLayoutMap
+     * Called from #parseModifiers only.
+     */
+    #addShiftMutations() {
+        if (!this.ShiftRequired) return;
+
+        let current_identities = [...this.#alternate_identities];
+
+        if (shift_mutations_us_keyboard.has(this.#fragment_identity)) {
+            this.#alternate_identities.push(shift_mutations_us_keyboard.get(this.#fragment_identity));
+        }
+
+        for (let identity of current_identities) {
+            let shifted_identity = shift_mutations_us_keyboard.get(identity);
+
+            if (shifted_identity != null) {
+                this.#alternate_identities.push(shifted_identity);
+            }
+        }
+    }
+
+    /**
+     * Whether the fragment requires the alt modifier.
+     * @type {boolean}
+     */
+    get AltRequired() {
+        return this.#alt_modifier;
+    }
+
+    /**
+     * Whether the fragment requires the control modifier.
+     * @type {boolean}
+     */
+    get CtrlRequired() {
+        return this.#control_modifier;
     }
 
     /**
@@ -255,10 +354,16 @@ export class HotkeyFragment {
             valid_member = isHotkeyIdentity(member);
 
             if (valid_member) {
-                if (this.#fragment_identity === "") {
+                if (isAliasIdentity(member) && this.#fragment_identity === "") {
+                    let identity = member;
+                    this.#fragment_identity = transformAliasIdentity(identity);
+                    this.#alternate_identities.push(member);
+                    this.#uppercase_explicit = upper_letter_hotkeys.has(member);
+                } else if (this.#fragment_identity === "") {
                     this.#fragment_identity = member;
+                    this.#uppercase_explicit = upper_letter_hotkeys.has(member);
                 } else {
-                    console.warn(`Fragment of the type x+y, which seems to match '${this.#fragment}', are not yet stable. just be aware of this.`);
+                    this.#alternate_identities.push(member);
                 }
             }
         }
@@ -283,6 +388,15 @@ export class HotkeyFragment {
      */
     match(event) {
         let matched = true;
+
+        if (event.altKey && !this.#alt_modifier) {
+            matched = false;
+        }
+
+        if (event.ctrlKey && !this.#control_modifier) {
+            matched = false;
+        } // Shift cannot have the same treatment as it can also alter the key in more ways than just changing the case. e.g: shift+2 -> "@".
+        // But checking that ctrl and alt are not pressed if not required is needed to avoid overwriting browser shortcuts unintentionally.
         
         if (!this.#matchIdentity(event)) {
             matched = false;
@@ -301,6 +415,22 @@ export class HotkeyFragment {
         }
 
         return matched;
+    }
+
+    /**
+     * The fragment's members
+     * @type {string[]}
+     */
+    get Members() {
+        return this.#fragment_members;
+    }
+
+    /**
+     * Whether the fragment requires any modifier.
+     * @returns {boolean}
+     */
+    get Modifier() {
+        return this.#control_modifier || this.#shift_modifier || this.#alt_modifier;
     }
 
     /**
@@ -325,9 +455,19 @@ export class HotkeyFragment {
         return this.#fragment.split("+");
     }
 
+    /**
+     * Whether the fragment requires the shift modifier.
+     * @type {boolean}
+     */
+    get ShiftRequired() {
+        return this.#shift_modifier;
+    }
+
     #parseModifiers() {
         for (const member of this.#fragment_members) {
             this.#detectMemberRole(member);
         }
+
+        this.#addShiftMutations()
     }
 }

@@ -251,12 +251,26 @@ export class HotkeyContextManager {
 
         options = {...default_hotkey_register_options, ...options};
         this.#current_context.register(hotkey, callback, {
-            bind: true, 
             description: options.description, 
             mode: options.mode
         });
 
+        this.reloadCurrentContext();
+
         this.#emitContextEvent(hotkeys_context_events.CONTEXT_CHANGED, {context_name: this.#current_context_name});
+    }
+
+    /**
+     * Reloads the current context. Useful when the context's hotkeys are changed
+     * @throws {Error} if no context is loaded
+     */
+    reloadCurrentContext() {
+        if (!this.hasLoadedContext()) {
+            throw new Error("No context loaded");
+        }
+
+        this.#hotkeys_controller.dropContext();
+        this.#registerCurrentContext();
     }
 
     /**
@@ -280,7 +294,7 @@ export class HotkeyContextManager {
      * @param {"keypress"|"keydown"|"keyup"} mode the mode of the keypress event
      * @returns {boolean} true if the hotkey was unregistered
      * @deprecated
-    */
+     */
     unregisterHotkey(hotkey, mode="keydown") {
         if (!hasWindowContext()) return;
 
