@@ -382,6 +382,14 @@ export class HotkeyFragment {
     }
 
     /**
+     * All the fragment's identities, fragment_identity + alternate_identities
+     * @returns {string[]}
+     */
+    get Identities() {
+        return [this.#fragment_identity, ...this.#alternate_identities];
+    }
+
+    /**
      * Matches the hotkey fragment with a given KeyboardEvent
      * @param {KeyboardEvent} event
      * @returns {boolean}
@@ -444,7 +452,14 @@ export class HotkeyFragment {
             key = key.toLowerCase();
         }
 
-        return key === this.#fragment_identity;
+        let is_match = false;
+        let all_identities = this.Identities;
+
+        for (let h = 0; h < all_identities.length && !is_match; h++) {
+            is_match = key === all_identities[h];
+        }
+
+        return is_match;
     }
 
     /**

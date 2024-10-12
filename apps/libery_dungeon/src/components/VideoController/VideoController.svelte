@@ -65,7 +65,7 @@
                 description: "Backward video 5 seconds",
             },
             SKIP_FRAME_FORWARD: {
-                key_combo: "~",
+                key_combo: "shift+`",
                 handler: () => skipFrame(true),
                 description: "Skip frame forward",
             },

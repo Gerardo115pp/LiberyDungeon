@@ -145,6 +145,29 @@ export class HotkeyData {
     }
 
     /**
+     * The hotkey's 'Many Faces'. meaning all the hotkey identities on the first fragment of the hotkey. 
+     * E.g: 'a+x' => ['a', 'x'], 'shift+3' => ['3', '#']
+     * And yes, the name is a reference to Game of Thrones.
+     * @returns {string[]}
+     */
+    get ManyFaces() {
+        let first_fragment = this.#key_combo_fragments[0];
+
+        return first_fragment.Identities;
+    }
+
+    /**
+     * The many trails of the hotkey. Is the same as ManyFaces but for the last fragment of the hotkey.
+     * @returns {string[]}
+     * @see ManyFaces
+     */
+    get ManyTrails() {
+        let last_fragment = this.#key_combo_fragments[this.#key_combo_fragments.length - 1];
+
+        return last_fragment.Identities;
+    }
+
+    /**
      * Matches a sequence of Keyboard events with the hotkey. the sequence of keyboard events most be of the same length as the length of the hotkey.
      * @param {KeyboardEvent[]} events
      * @returns {boolean}
@@ -180,6 +203,22 @@ export class HotkeyData {
 
         return trigger;
     }
+
+    /**
+     * Returns all the triggers of the hotkey. same as Trigger but instead of returning the main identity of 
+     * either the first or last fragment, it returns all the identities of the corresponding fragment.
+     * @type {string[]}
+     */
+    get Triggers() {
+        let triggers = this.ManyFaces;
+
+        if (this.IsSequence) {
+            triggers = this.ManyTrails;
+        }
+
+        return triggers;
+    }
+
 
     /**
      * The hotkey's combo. 

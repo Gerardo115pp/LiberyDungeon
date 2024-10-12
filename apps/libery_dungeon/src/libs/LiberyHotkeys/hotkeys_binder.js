@@ -296,19 +296,21 @@ export class HotkeysController {
                 continue;
             }
 
-            let triggers = hotkey.Mode === "keydown" ? this.#keydown_hotkey_triggers : this.#keyup_hotkey_triggers;
+            let all_triggers = hotkey.Mode === "keydown" ? this.#keydown_hotkey_triggers : this.#keyup_hotkey_triggers;
 
-            const hotkey_trigger = hotkey.Trigger;
+            const hotkey_triggers = hotkey.Triggers;
 
-            let trigger_hotkeys = [];
+            for (let trigger of hotkey_triggers) {
+                let hotkeys_on_trigger = [];
 
-            if (triggers.has(hotkey_trigger)) {
-                trigger_hotkeys = triggers.get(hotkey_trigger);
+                if (all_triggers.has(trigger)) {
+                    hotkeys_on_trigger = all_triggers.get(trigger);
+                }
+
+                hotkeys_on_trigger.push(hotkey);
+
+                all_triggers.set(trigger, hotkeys_on_trigger);
             }
-
-            trigger_hotkeys.push(hotkey);
-
-            triggers.set(hotkey_trigger, trigger_hotkeys);
         }
     }
 
