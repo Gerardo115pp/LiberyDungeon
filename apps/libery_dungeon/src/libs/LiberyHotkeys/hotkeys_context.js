@@ -1,17 +1,6 @@
 import { hasWindowContext } from "@libs/utils"
-import { HOTKEYS_GENERAL_GROUP } from "./hotkeys_consts"
-import Mousetrap from "mousetrap"
-import { HotkeyData,  } from "./hotkeys"
+import { HotkeyData, default_hotkey_register_options  } from "./hotkeys"
 
-/**
-* The default hotkey register options
- * @type {import('./hotkeys').HotkeyRegisterOptions}
- */
-export const default_hotkey_register_options = {
-    bind: false,
-    description: null,
-    mode: "keydown"
-}
 
 export default class HotkeysContext {
     /** @type{Object<string,HotkeyData>} */
@@ -58,7 +47,8 @@ export default class HotkeysContext {
         switch (mode) {
             case "keydown":
                 return this.#keydown_hotkeys
-            case "keypress":
+            case "keypress": // TODO: Remove support for keypress as it is deprecated and will slowly be removed from browsers.
+                console.warn("keypress is deprecated and will be removed from browsers, use keydown instead")
                 return this.#keypress_hotkeys
             case "keyup":
                 return this.#keyup_hotkeys
@@ -77,20 +67,25 @@ export default class HotkeysContext {
 
         options = {...default_hotkey_register_options, ...options}; // Merge the options with the default options. the 'options' param takes precedence.
 
-        const mode_hotkeys = this.#modeHotkeys(options.mode)
+        const names = Array.isArray(name) ? name : [name]
 
-        if (Array.isArray(name)) {
-            for (const n of name) {
-                mode_hotkeys[n] = new HotkeyData(n, callback, options)
-                if (options.bind) {
-                    mode_hotkeys[n].key_bind()
-                }
-            }
-            return
+        for (const n of names) {
+            this.#saveHotkey(n, callback, options)
         }
+        return
+    }
 
+    /**
+     * Saves a given hotkey name as a HotkeyData in the appropriate mode.
+     * @param {string} name
+     * @param {function} callback
+     * @param {import('./hotkeys').HotkeyRegisterOptions} options
+     */
+    #saveHotkey(name, callback, options) {
+        const mode_hotkeys = this.#modeHotkeys(options.mode)
         mode_hotkeys[name] = new HotkeyData(name, callback, options)
         if (options.bind) {
+            console.warn("The bind option is deprecated and will be removed soon.");
             mode_hotkeys[name].key_bind();
         }
     }
