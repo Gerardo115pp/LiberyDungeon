@@ -161,4 +161,7 @@
 </label>
 
 <style>
+    span.dungeon-label {
+        color: var(--main-dark-color-5);
+    }
 </style>

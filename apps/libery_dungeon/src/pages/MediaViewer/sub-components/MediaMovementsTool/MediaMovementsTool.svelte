@@ -102,15 +102,21 @@
 
             quick_move_tool_context.register("d", () => {
                     quick_selected_category_index = Math.min(quick_selected_category_index + 1, $media_changes_manager.UsedCategories.length - 1);
-                }, {
-                    description: "<navigation>Move the selection to the next category"
-            });
+                },
+                {
+                    description: "<navigation>Move the selection to the next category",
+                    can_repeat: true
+                }
+            );
 
             quick_move_tool_context.register("a", () => {
                     quick_selected_category_index = Math.max(quick_selected_category_index - 1, 0);
-                }, {
-                    description: "<navigation>Move the selection to the previous category"
-            });
+                },
+                {
+                    description: "<navigation>Move the selection to the previous category",
+                    can_repeat: true
+                }
+            );
 
             
             quick_move_tool_context.register("c", () => setQuickMoveToolState(false), {
