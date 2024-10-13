@@ -88,7 +88,6 @@ export default class HotkeysContext {
         const new_hotkey = new HotkeyData(name, callback, options)
 
         if (!new_hotkey.Valid) {
-            console.error(`Hotkey: '${name}' is not valid`)
             return
         }
 

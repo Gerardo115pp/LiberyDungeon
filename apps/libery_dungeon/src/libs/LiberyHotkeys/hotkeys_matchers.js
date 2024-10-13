@@ -225,7 +225,6 @@ const isMetaKey = (key) => {
  */
 const parseMetaKey = (key) => {
     let keys = [];
-    console.log(`Parsing meta key: ${key}`);
     switch (key) {
         case NUMERIC_METAKEY:
             keys = Array.from(number_hotkeys);
@@ -556,15 +555,12 @@ export class HotkeyFragment {
         }
 
         if (isMetaKey(identity)) {
-            console.log(`Found meta key: ${identity}`);
             let meta_keys = parseMetaKey(identity);
 
             this.#numeric_metakey = identity === NUMERIC_METAKEY;
 
             identity = member;
-            console.log("Meta keys: ", meta_keys);
             this.#alternate_identities = this.#alternate_identities.concat(meta_keys);
-            console.log("Alternate identities: ", this.#alternate_identities);
         }
         
         if (this.#fragment_identity === "") {

@@ -144,21 +144,16 @@ export class HotkeysController {
             throw new Error("Hotkey is null")
         }
 
-        console.log(`Activating hotkey ${hotkey.KeyCombo}`);
-
         if (this.#locked_on_execution) {
             console.error("Hotkey execution is locked. Ignoring hotkey activation");
             return;
         }
 
         if (event.repeat) {
-            console.log("Hotkey is repeating");
             let block_repeat = this.#shouldBlockHotkeyRepeat(hotkey, event);
             if (block_repeat) {
-                console.error("Hotkey repeat blocked. Ignoring hotkey activation");
                 return;
             }
-            console.log("Hotkey repeat allowed");
         }
 
         this.#registerTriggeredHotkey(hotkey, event);
@@ -298,8 +293,6 @@ export class HotkeysController {
             ...upper_case_matching
         ];
 
-        console.log("Candidate hotkeys", candidate_hotkeys);
-
         return candidate_hotkeys;
     }
 
@@ -317,7 +310,6 @@ export class HotkeysController {
      */
     #handleKeyDown(event) {
         if (this.#shouldIgnoreEvent(event)) return;
-        console.log("keydown", event) 
 
         this.#keyboard_past_keydowns.Add(event);
         
@@ -336,7 +328,6 @@ export class HotkeysController {
      */
     #handleKeyUp(event) {
         if (this.#shouldIgnoreEvent(event)) return;
-        console.log("keyup", event);
 
         this.#keyboard_past_keyups.Add(event);
 
@@ -376,14 +367,10 @@ export class HotkeysController {
         let matching_hotkey = null;
 
         if (HOTKEY_SPECIFICITY_PRECEDENCE) {
-            console.log("Using longest hotkey precedence");
             matching_hotkey = this.#matchValidHotkey_BySpecificity(past_events, candidate_hotkeys);
         } else {
-            console.log("Using first valid hotkey precedence");
             matching_hotkey = this.#matchFirstValidHotkey(past_events, candidate_hotkeys);
         }
-
-        console.log("Matched hotkey", matching_hotkey);
 
         return matching_hotkey;
     }

@@ -274,10 +274,7 @@ export class HotkeyData {
             return false;
         }
 
-        console.log(`Event_time: ${event.timeStamp}, Compare_time: ${compare_time}`);
         const elapsed_time = compare_time - event.timeStamp;
-        console.log("Elapsed time: ", elapsed_time);
-        console.log("Max time between sequence keystrokes: ", MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES);
 
         return elapsed_time > MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES;
     }
@@ -444,8 +441,6 @@ export class HotkeyData {
      */
     match(event_history) {
         if (!this.Valid) return false; // Now we are allowed to assume the hotkey has at least one fragment.
-        console.log("Matching hotkey: ", this.#key_combo);
-        console.log("Event history: ", event_history);
 
         this.#createMatchMetadata();
 
@@ -486,16 +481,12 @@ export class HotkeyData {
             event_k++;
 
             if (this.#checkEventExpired(event, last_sequence_time)) {
-                console.log("Event expired. Breaking.");
                 hotkey_matched = false;
                 break;
             } 
 
-            console.log(`Fragment: ${fragment.Identity}, Event: ${event?.key}`);
 
-            // TODO: root this out and put it in a separate function.
             if (fragment.NumericMetakey) { // Parse vim motion. If matches, interrupts the flow in all cases.
-                console.log("Parsing vim motion from: ", event)
                 fragment_match = false;
 
                 if (event != undefined) {
@@ -503,12 +494,9 @@ export class HotkeyData {
                 }
 
                 if (fragment_match) {
-                    console.log("matches")
                     motion_match_number += event.key;
                     continue;
                 }
-
-                console.log(`'${event?.key}' did not match a vim motion. final numeric string: ${motion_match_number}`);
 
                 if (motion_match_number === "") {
                     this.#destroyMatchMetadata();
@@ -517,7 +505,6 @@ export class HotkeyData {
                     continue;
                 }
 
-                console.log("Reversing string");
                 this.#match_metadata.addReversedMotionMatch(motion_match_number);
                 fragment_h++;
                 fragment = history_fragments[fragment_h];
@@ -527,27 +514,20 @@ export class HotkeyData {
             fragment_match = fragment.match(event);
 
             if (!fragment_match) {
-                console.log(`Fragment<${fragment.Identity}> did not match event<${event?.key}>`);
                 hotkey_matched = false;
             }
 
             fragment_h++;
             fragment = history_fragments[fragment_h];
             last_sequence_time = event.timeStamp;
-            console.log("Next fragment: ", fragment);
-            console.log("Matched: ", hotkey_matched);
 
         } while (hotkey_matched && fragment != null); // If we run out of fragments and hotkey_matched is still true, that should mean a positive match.
 
         if (!hotkey_matched) {
-            console.log("Hotkey did not match.");
             this.#destroyMatchMetadata();
         } else {
-            console.log("Hotkey matched.");
             this.#match_metadata.setSuccessful();
         }
-
-        console.log("===================================MATCHING ENDED===================================");
 
         return hotkey_matched;
     }
