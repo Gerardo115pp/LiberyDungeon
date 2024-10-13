@@ -96,6 +96,13 @@
                     description: "Skip frame backward",
                 }
             },
+            SEEK_MINUTE: {
+                key_combo: "\\d m",
+                handler: handleSeekMinute,
+                options: {
+                    description: "Seek to a minute in the video",
+                }
+            },
             SPEED_UP_VIDEO: {
                 key_combo: ",",
                 handler: () => setVideoPlaybackRate(false),
@@ -266,6 +273,25 @@
             video_metadata_loaded = false;
 
             saveVideoWatchProgress();
+        }
+
+        /**
+         * Handles the SeekMinute keybind.
+         * @param {KeyboardEvent} event
+         * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+         * @returns {void}
+         */
+        function handleSeekMinute(event, hotkey) {
+            if (!hotkey.WithVimMotion) return;
+
+            let minutes_in_video = Math.trunc(video_element.duration / 60);
+            if (isNaN(minutes_in_video)) return;
+
+            let minute_to_seek = hotkey.MatchMetadata.MotionMatches[0];
+
+            minute_to_seek = Math.min(minutes_in_video, Math.max(0, minute_to_seek));
+
+            video_element.currentTime = minute_to_seek * 60;
         }
         
         /**
