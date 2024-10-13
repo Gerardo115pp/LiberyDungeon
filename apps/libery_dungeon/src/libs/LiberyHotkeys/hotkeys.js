@@ -584,18 +584,6 @@ export class HotkeyData {
     }
 
     /**
-     * Registers the hotkey
-     * TODO: Remove this method. HotkeyBinder will manage the hotkey binding directly taking HotkeyData as a parameter.
-     */
-    key_bind() {
-        if (this.mode === "") {
-            // Mousetrap.bind(this.name, this.callback)
-            return
-        }
-        // Mousetrap.bind(this.name, this.callback, this.mode)
-    }
-
-    /**
      * Runs the hotkey's callback
      * @param {KeyboardEvent} event
      * @returns {Promise<void>}

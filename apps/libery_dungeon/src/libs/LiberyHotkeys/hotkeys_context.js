@@ -94,8 +94,7 @@ export default class HotkeysContext {
 
         mode_hotkeys.set(name, new_hotkey)
         if (options.bind) {
-            console.warn("The bind option is deprecated and will be removed soon.");
-            new_hotkey.key_bind()
+            console.error("The bind option is deprecated and will be removed soon.");
         }
     }
 
