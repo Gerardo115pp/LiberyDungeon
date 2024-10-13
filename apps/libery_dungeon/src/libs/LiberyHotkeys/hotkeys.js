@@ -32,6 +32,56 @@ export const default_hotkey_register_options = {
  * @param {HotkeyData} hotkey
  */
 
+class HotkeyMatch {
+    /**
+     * Any vim motion numeric data found. they are stored in the order they were found.
+     * @type {number[]}
+     */
+    #motion_matches;
+
+    constructor() {
+        this.#motion_matches = [];
+    }
+
+    /**
+     * Adds a numeric string as a vim motion match. Returns true if the string was correctly parsed and added.
+     * @param {string} numeric_string
+     * @returns {boolean}
+     */
+    addMotionMatch(numeric_string) {
+        let number = parseInt(numeric_string);
+
+        if (isNaN(number)) {
+            return false;
+        }
+
+        this.#motion_matches.push(number);
+
+        return true;
+    }
+
+    /**
+     * Adds a numeric string just as addMotionMatch but reverses the string before parsing it.
+     * returns true if the string was correctly parsed and added.
+     * @param {string} numeric_string
+     * @returns {boolean}
+     */ 
+    addReversedMotionMatch(numeric_string) {
+        let reversed_string = numeric_string.split("").reverse().join("");
+
+        return this.addMotionMatch(reversed_string);
+    }
+
+    /**
+     * Any vim motion numeric data found. they are stored in the order they were found.
+     * @type {number[]}
+     */
+    get MotionMatches() {
+        return this.#motion_matches;
+    }
+
+}
+
 export class HotkeyData {
     /**
      * @type {string} the key's name e.g: 'a', 'esc', '-', etc
@@ -74,10 +124,10 @@ export class HotkeyData {
     #has_vim_motion;
 
     /**
-     * the vim motion metadata. it is guaranteed to be a numeric string.
-     * @type {string}
+     * Metadata produces after a successful match.
+     * @type {HotkeyMatch}
      */
-    #vim_motion_metadata;
+    #match_metadata;
 
     /**
      * Whether the hotkey callback is currently running.
@@ -102,7 +152,7 @@ export class HotkeyData {
         
         this.#is_valid = true;
         this.#has_vim_motion = false;
-        this.#vim_motion_metadata = "0";
+        this.#match_metadata = null;
         this.#hotkey_execution_mutex = false;
 
         this.#splitFragments()
@@ -113,11 +163,12 @@ export class HotkeyData {
      * returns a new array with the remaining events.
      * @param {KeyboardEvent[]} events
      * @returns {KeyboardEvent[]} 
+     * @deprecated
      */
     #collectVimMotionEvents(events) {
         if (events.length === 0) return events;
 
-        this.#vim_motion_metadata = "";
+        this.#match_metadata = "";
 
         let look_up_index = 0;
         let matches_vim_motion = true;
@@ -128,7 +179,7 @@ export class HotkeyData {
             matches_vim_motion = IsNumeric(event.key);
 
             if (matches_vim_motion) {
-                this.#vim_motion_metadata += event.key;
+                this.#match_metadata += event.key;
                 look_up_index++;
             }
 
@@ -140,13 +191,29 @@ export class HotkeyData {
 
         let remaining_events = events.slice(look_up_index);
 
-        this.#vim_motion_metadata = this.#vim_motion_metadata === "" ? "0" : this.#vim_motion_metadata;
-        if (this.#vim_motion_metadata !== "0") {
-            this.#vim_motion_metadata = this.#vim_motion_metadata.split("").reverse().join("");
+        this.#match_metadata = this.#match_metadata === "" ? "0" : this.#match_metadata;
+        if (this.#match_metadata !== "0") {
+            this.#match_metadata = this.#match_metadata.split("").reverse().join("");
         }
 
 
         return remaining_events;
+    }
+
+    /**
+     * Creates and sets a new match metadata.
+     * @returns {HotkeyMatch}
+     */
+    #createMatchMetadata() {
+        this.#match_metadata = new HotkeyMatch();
+    }
+
+    /**
+     * Destroys the match metadata.
+     * @returns {void}
+     */
+    #destroyMatchMetadata() {
+        this.#match_metadata = null;
     }
 
     /**
@@ -239,6 +306,7 @@ export class HotkeyData {
     match(events) {
         if ((events.length !== this.Length && !this.WithVimMotion) || this.WithVimMotion && events.length <= 1) return false;
         console.log(`Matching against!: ${this.#key_combo}`, events);
+        this.#createMatchMetadata();
 
         let matches = true;
         let matchable_events = [];
@@ -247,7 +315,8 @@ export class HotkeyData {
         if (this.WithVimMotion) {
             matchable_events = this.#collectVimMotionEvents(events);
             hotkey_fragments.shift(); // Remove the vim motion fragment
-            if (this.#vim_motion_metadata === "0") {
+            if (this.#match_metadata === "0") {
+                this.#destroyMatchMetadata();
                 return false;
             }
         } else {
@@ -268,6 +337,10 @@ export class HotkeyData {
         }
 
         console.log(`Matched: ${matches}`);
+
+        if (!matches) {
+            this.#destroyMatchMetadata();
+        }
 
         return matches;
     }
@@ -411,8 +484,8 @@ export class HotkeyData {
      * @returns {number}
      */
     get VimMotionMetadata() {
-        console.log(`Vim motion metadata: ${this.#vim_motion_metadata}`);
-        let motion = parseInt(this.#vim_motion_metadata);
+        console.log(`Vim motion metadata: ${this.#match_metadata}`);
+        let motion = parseInt(this.#match_metadata);
         motion = isNaN(motion) ? 0 : motion;
 
         return motion;
