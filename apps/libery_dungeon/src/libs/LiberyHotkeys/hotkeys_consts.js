@@ -12,13 +12,15 @@
 
 
 /*=============================================
-=            Binder Config            =
+=            Hotkey Matching Config            =
 =============================================*/
 
     export const MAX_PAST_EVENTS = 100;
     export const MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES = 1200; // Milliseconds
+    // Whether to check all hotkeys with the same trigger and pick the longest one(true) or just the first one that matches(false)
+    export const HOTKEY_SPECIFICITY_PRECEDENCE = true; 
 
-/*=====  End of Binder Config  ======*/
+/*=====  End of Hotkey Matching Config  ======*/
 
 
 

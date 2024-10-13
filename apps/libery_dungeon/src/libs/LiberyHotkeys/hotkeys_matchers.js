@@ -540,22 +540,6 @@ export class HotkeyFragment {
     }
 
     /**
-     * Splits the fragment into its members
-     * @returns {string[]} the fragment members
-     */
-    #splitFragment() {
-        return this.#fragment.split("+");
-    }
-
-    /**
-     * Whether the fragment requires the shift modifier.
-     * @type {boolean}
-     */
-    get ShiftRequired() {
-        return this.#shift_modifier;
-    }
-
-    /**
      * Parses a fragment identity member, if successful, returns true.
      * @param {string} member
      * @returns {boolean}
@@ -601,4 +585,27 @@ export class HotkeyFragment {
         this.#addShiftMutations()
     }
 
+    /**
+     * Splits the fragment into its members
+     * @returns {string[]} the fragment members
+     */
+    #splitFragment() {
+        return this.#fragment.split("+");
+    }
+
+    /**
+     * Whether the fragment requires the shift modifier.
+     * @type {boolean}
+     */
+    get ShiftRequired() {
+        return this.#shift_modifier;
+    }
+
+    /**
+     * Whether the fragment's identity is set explicitly in uppercase.
+     * @type {boolean}
+     */
+    get UppercaseExplicit() {
+        return this.#uppercase_explicit;
+    }
 }

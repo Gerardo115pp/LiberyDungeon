@@ -1,7 +1,7 @@
 import { StackBuffer } from "@libs/utils";
 import { 
     MAX_PAST_EVENTS, 
-    MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES
+    HOTKEY_SPECIFICITY_PRECEDENCE
 } from "./hotkeys_consts";
 import { IsNumeric } from "./hotkeys_matchers";
 
@@ -78,7 +78,6 @@ export class HotkeysController {
 
         this.#setup()
     }
-
 
     /**
      * Activates a given hotkey.
@@ -282,12 +281,14 @@ export class HotkeysController {
     }
 
     /**
-     * Matches a Keyboard event with registered hotkeys. if it finds a match, returns the the hotkey.
+     * Matches a Keyboard event with registered hotkeys. The matching behavior is based on HOTKEY_LENGTH_PRECEDENCE value. If true
+     * it checks all candidates, meaning all hotkeys that have the same trigger as the event's key, and picks the longest hotkey. if
+     * false, it checks all candidates until it finds one that matches and immediately returns it without checking the rest.
      * @param {KeyboardEvent} event
      * @returns {import('./hotkeys').HotkeyData | null}
      */
     #matchHotkey(event) {
-        if (this.#current_hotkey_context == null) return null;
+        if (this.#current_hotkey_context == null || this.ExecutionsForbidden) return null;
 
         let is_keydown = event.type === "keydown";
         let is_keyup = event.type === "keyup";
@@ -305,7 +306,30 @@ export class HotkeysController {
         /** @type {import('./hotkeys').HotkeyData | null} */
         let matching_hotkey = null;
 
-        for (let hotkey of candidate_hotkeys) {
+        if (HOTKEY_SPECIFICITY_PRECEDENCE) {
+            console.log("Using longest hotkey precedence");
+            matching_hotkey = this.#matchValidHotkey_BySpecificity(past_events, candidate_hotkeys);
+        } else {
+            console.log("Using first valid hotkey precedence");
+            matching_hotkey = this.#matchFirstValidHotkey(past_events, candidate_hotkeys);
+        }
+
+        console.log("Matched hotkey", matching_hotkey);
+
+        return matching_hotkey;
+    }
+
+
+    /**
+     * Returns the first hotkey from the candidates that matches the past events.
+     * @param {StackBuffer<KeyboardEvent>} past_events
+     * @param {import('./hotkeys').HotkeyData[]} candidates
+     * @returns {import('./hotkeys').HotkeyData | null}
+     */
+    #matchFirstValidHotkey(past_events, candidates) {
+        let matching_hotkey = null;
+
+        for (let hotkey of candidates) {
 
             let matches = hotkey.match(past_events);
 
@@ -315,7 +339,25 @@ export class HotkeysController {
             }
         }
 
-        console.log("Matched hotkey", matching_hotkey);
+        return matching_hotkey;
+    }
+
+    /**
+     * Returns the candidate hotkey with the largest specificity that matches the past events.
+     * @param {StackBuffer<KeyboardEvent>} past_events
+     * @param {import('./hotkeys').HotkeyData[]} candidates
+     * @returns {import('./hotkeys').HotkeyData | null}
+     */
+    #matchValidHotkey_BySpecificity(past_events, candidates) {
+        let matching_hotkey = null;
+
+        for (let hotkey of candidates) {
+            let matches = hotkey.match(past_events);
+
+            if (matches && (matching_hotkey == null || hotkey.Specificity > matching_hotkey.Specificity)) {
+                matching_hotkey = hotkey;
+            }
+        }
 
         return matching_hotkey;
     }

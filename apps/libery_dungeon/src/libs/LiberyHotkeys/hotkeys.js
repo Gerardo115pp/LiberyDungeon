@@ -1,7 +1,8 @@
 import { HotkeyFragment, IsNumeric } from "./hotkeys_matchers";
 import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "./hotkeys_consts";
 import { 
-    MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES
+    MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES,
+    HOTKEY_SPECIFICITY_PRECEDENCE
 } from "./hotkeys_consts";
 /**
 * @typedef {Object} HotkeyRegisterOptions
@@ -151,6 +152,12 @@ export class HotkeyData {
     #key_combo
 
     /**
+     * The key combo specificity. This is the precedence a matched hotkey has over another one if both match a sequence
+     * @type {number}
+     */
+    #key_combo_specificity
+
+    /**
      * The key combo fragments
      * @type {HotkeyFragment[]}
      */
@@ -227,10 +234,14 @@ export class HotkeyData {
         this.#has_vim_motion = false;
         this.#match_metadata = null;
         this.#hotkey_execution_mutex = false;
+        this.#key_combo_specificity = 0;
 
         this.#splitFragments()
-    }
 
+        if (HOTKEY_SPECIFICITY_PRECEDENCE) {
+            this.#calculateSpecificity()
+        }
+    }
 
     /**
      * Whether a caller to `run` should await the callback's execution
@@ -267,6 +278,30 @@ export class HotkeyData {
         console.log("Max time between sequence keystrokes: ", MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES);
 
         return elapsed_time > MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES;
+    }
+
+    /**
+     * Calculate the specificity base on the number of keys in the hotkey. Each hotkey count 1
+     * except for vim motions which count 5. This requires the fragments to be already known, so
+     * call it after #splitFragments.
+     * @returns {void}
+     */
+    #calculateSpecificity() {
+        this.#key_combo_specificity = 0;
+
+        for (let fragment of this.#key_combo_fragments) {
+            let fragment_specificity = fragment.NumericMetakey ? 5 : 1;
+
+            fragment_specificity += fragment.AltRequired ? 1 : 0;
+
+            fragment_specificity += fragment.CtrlRequired ? 1 : 0;
+
+            fragment_specificity += fragment.ShiftRequired ? 1 : 0;
+
+            fragment_specificity += fragment.UppercaseExplicit ? 1 : 0;
+
+            this.#key_combo_specificity += fragment_specificity;
+        }
     }
 
     /**
@@ -342,6 +377,15 @@ export class HotkeyData {
      */
     get Length() {
         return this.#key_combo_fragments.length;
+    }
+
+    /**
+     * Returns the length of the hotkey based on the number of keys it includes. this does take into account modifier keys. Vim motions are counted as 5 keys. which 
+     * makes their matching much more specific.
+     * @returns {number}
+     */
+    get Specificity() {
+        return this.#key_combo_specificity;
     }
 
     /**
