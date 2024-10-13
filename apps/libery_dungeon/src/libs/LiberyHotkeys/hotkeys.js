@@ -11,7 +11,7 @@ import {
  * @property {"keypress"|"keydown"|"keyup"} mode - The mode of the keypress event. Default is "keydown"
  * @property {boolean} await_execution - Whether the execution of a callback should end before another hotkey can be triggered. Default is true
  * @property {boolean} consider_time_in_sequence - Whether the hotkey sequence should expire if they are to far apart in time. Default is false
- * @property {boolean} can_repeat - Whether the hotkey
+ * @property {boolean} can_repeat - Whether the hotkey should be triggered if the trigger is repeating(holding down the key). Default is false
 */
 
 /**

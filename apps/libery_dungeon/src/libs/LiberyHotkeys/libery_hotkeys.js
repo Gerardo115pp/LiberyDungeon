@@ -250,10 +250,7 @@ export class HotkeyContextManager {
         if (!hasWindowContext() || !this.hasLoadedContext()) return;
 
         options = {...default_hotkey_register_options, ...options};
-        this.#current_context.register(hotkey, callback, {
-            description: options.description, 
-            mode: options.mode
-        });
+        this.#current_context.register(hotkey, callback, options);
 
         this.reloadCurrentContext();
 

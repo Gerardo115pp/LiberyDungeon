@@ -33,61 +33,89 @@
          */
         const SAVE_WATCH_PROGRESS_THRESHOLD = (5 * (60 * 1000)); // 5 minutes, written in an easy to edit format.
 
+        /**
+         * The keybinds for the video controller
+         * @type {Object<string, import('@libs/LiberyHotkeys/hotkeys').HotkeyDataParams>}
+         */
         const keybinds = {
             PAUSE_VIDEO: {
                 key_combo: "space",
                 handler: pauseVideo,
-                description: "Pause/Play video",
+                options: {
+                    description: "Pause/Play video",
+                }
             },
             TOGGLE_MUTE: {
                 key_combo: "m",
                 handler: toggleMute,
-                description: "Mute/Unmute video",
+                options: {
+                    description: "Mute/Unmute video",
+                }
             },
             FORWARD_VIDEO: {
                 key_combo: "shift+x",
                 handler: () => skipVideoPercentage(true),
-                description: "Forward video 5% of the total duration(min of 5 seconds). if overflows, jumps to the start",
+                options: {
+                    description: "Forward video 5% of the total duration(min of 5 seconds). if overflows, jumps to the start",
+                }
             },
             BACKWARD_VIDEO: {
                 key_combo: "x",
                 handler: () => skipVideoPercentage(false),
-                description: "Backward video 5% of the total duration(min of 5 seconds). No overflow",
+                options: {
+                    description: "Backward video 5% of the total duration(min of 5 seconds). No overflow",
+                }
             },
             FORWARD_SECS_VIDEO: {
                 key_combo: "shift+alt+x",
                 handler: () => skipVideoSeconds(5),
-                description: "Forward video 5 seconds",
+                options: {
+                    description: "Forward video 5 seconds",
+                }
             },
             BACKWARD_SECS_VIDEO: {
                 key_combo: "alt+x",
                 handler: () => skipVideoSeconds(-5),
-                description: "Backward video 5 seconds",
+                options: {
+                    description: "Backward video 5 seconds",
+                }
             },
             SKIP_FRAME_FORWARD: {
                 key_combo: "shift+`",
                 handler: () => skipFrame(true),
-                description: "Skip frame forward",
+                options: {
+                    can_repeat: true,
+                    description: "Skip frame forward",
+                }
             },
             SKIP_FRAME_BACKWARD: {
                 key_combo: "`",
                 handler: () => skipFrame(false),
-                description: "Skip frame backward",
+                options: {
+                    can_repeat: true,
+                    description: "Skip frame backward",
+                }
             },
             SPEED_UP_VIDEO: {
                 key_combo: ",",
                 handler: () => setVideoPlaybackRate(false),
-                description: "Speed up video",
+                options: {
+                    description: "Speed up video",
+                }
             },
             SLOW_DOWN_VIDEO: {
                 key_combo: ".",
                 handler: () => setVideoPlaybackRate(true),
-                description: "Slow down video",
+                options: {
+                    description: "Slow down video",
+                }
             },
             SCREENSHOT_VIDEO: {
                 key_combo: "shift+s",
                 handler: () => emitScreenshotVideo(),
-                description: "Take a screenshot of the video",
+                options: {
+                    description: "Take a screenshot of the video",
+                }
             }
         }
         
@@ -187,11 +215,11 @@
         const defineVideoControllerKeybinds = () => {
             if (layout_properties.IS_MOBILE || !browser || !global_hotkeys_manager.hasLoadedContext()) return;
 
+            const video_controls_description_group = "<video_controls>";
+
             Object.values(keybinds).forEach(keybind => {
-                global_hotkeys_manager.registerHotkeyOnContext(keybind.key_combo, keybind.handler, {
-                    mode: "keydown",
-                    description: `<video_controls>${keybind.description}`
-                });
+                keybind.options.description = `${video_controls_description_group} ${keybind.options.description ?? "Empty description"}`;
+                global_hotkeys_manager.registerHotkeyOnContext(keybind.key_combo, keybind.handler, keybind.options);
             })
         }
 
