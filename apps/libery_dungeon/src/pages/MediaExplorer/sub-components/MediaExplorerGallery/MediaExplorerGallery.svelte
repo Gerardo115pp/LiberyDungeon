@@ -328,7 +328,7 @@
 
                 let new_focus_index = media_focus_index;
 
-                switch (hotkey.key_combo) {
+                switch (hotkey.KeyCombo) {
                     case "w": // up
                         new_focus_index -= media_per_row;
 

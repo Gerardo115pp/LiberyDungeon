@@ -296,7 +296,7 @@
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
             const handleMediaNavigation = async (key_event, hotkey) => {
-                let key_combo = hotkey.key_combo.toLowerCase();
+                let key_combo = hotkey.KeyCombo.toLowerCase();
                 
                 if ($random_media_navigation) {
                     return handleRandomMediaNavigation(key_event, key_combo);
@@ -362,8 +362,6 @@
             const handleRandomMediaNavigation = async (key_event, key_combo) => {
                 let new_index = $active_media_index;
 
-                
-
                 new_index = Math.floor(Math.random() * $current_category.content.length);
 
                 while (new_index === $active_media_index) {
@@ -392,7 +390,7 @@
             const handleMoveImageUpDown = (key_event, hotkey) => {
                 if (cinema_mode) return;
 
-                let key_combo = hotkey.key_combo.toLowerCase();
+                let key_combo = hotkey.KeyCombo.toLowerCase();
 
                 let media_wrapper = document.getElementById("media-wrapper");
 
@@ -419,7 +417,7 @@
             const handleMediaZoom = (key_event, hotkey) => {
                 if (cinema_mode) return;
 
-                let key_combo = hotkey.key_combo.toLowerCase();
+                let key_combo = hotkey.KeyCombo.toLowerCase();
 
                 let media_element = document.querySelector(".mw-media-element-display");
 

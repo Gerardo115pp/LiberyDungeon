@@ -301,7 +301,7 @@
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
             const enableMediaGalleryMode = (key_event, hotkey) => {
-                let key_combo = hotkey.key_combo.toLowerCase();
+                let key_combo = hotkey.KeyCombo.toLowerCase();
 
                 media_display_as_gallery = !media_display_as_gallery;
 
@@ -352,7 +352,7 @@
              */
             const handleCategoryMove = (key_event, hotkey) => {
 
-                let key_combo = hotkey.key_combo.toLowerCase();
+                let key_combo = hotkey.KeyCombo.toLowerCase();
 
                 const displayed_categories = getDisplayCategories();
                 

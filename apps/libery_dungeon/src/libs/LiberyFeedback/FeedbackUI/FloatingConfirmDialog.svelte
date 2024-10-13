@@ -133,7 +133,7 @@
                  * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
                  */
                 const handleChoiceMovement = (event, hotkey) => {
-                    let key_combo = hotkey.key_combo.toLowerCase();
+                    let key_combo = hotkey.KeyCombo.toLowerCase();
 
                     if (key_combo === "a") {
                         focused_choice_index = 0;

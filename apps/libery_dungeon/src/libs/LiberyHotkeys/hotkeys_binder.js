@@ -1,7 +1,8 @@
 import { StackBuffer } from "@libs/utils";
 import { 
     MAX_PAST_EVENTS, 
-    HOTKEY_SPECIFICITY_PRECEDENCE
+    HOTKEY_SPECIFICITY_PRECEDENCE,
+    MAX_PAST_HOTKEYS_TRIGGERED
 } from "./hotkeys_consts";
 import { IsNumeric } from "./hotkeys_matchers";
 
@@ -15,10 +16,23 @@ export class HotkeysController {
     #keyboard_past_keydowns;
 
     /**
+     * The last N hotkeys combos triggered by a keydown event.
+     * @type {StackBuffer<string>}
+     */
+    #last_keydown_hotkeys_triggered;
+
+
+    /**
      * A stack with the last MAX_PAST_EVENTS keyup KeyboardEvents
      * @type {StackBuffer<KeyboardEvent>}
      */
     #keyboard_past_keyups;
+
+    /**
+     * The last N hotkeys combos triggered by a keyup event.
+     * @type {StackBuffer<string>}
+     */
+    #last_keyup_hotkeys_triggered;
 
     /**
      * keydown handler function bound to the HotkeyBinder instance so addEventListener wont override the this context with the EventTarget.
@@ -64,7 +78,9 @@ export class HotkeysController {
         }
 
         this.#keyboard_past_keydowns = new StackBuffer(MAX_PAST_EVENTS);
+        this.#last_keydown_hotkeys_triggered = new StackBuffer(MAX_PAST_HOTKEYS_TRIGGERED);
         this.#keyboard_past_keyups = new StackBuffer(MAX_PAST_EVENTS);
+        this.#last_keyup_hotkeys_triggered = new StackBuffer(MAX_PAST_HOTKEYS_TRIGGERED);
 
         this.#keydown_hotkey_triggers = new Map();
         this.#keyup_hotkey_triggers = new Map();
@@ -89,7 +105,7 @@ export class HotkeysController {
             throw new Error("Hotkey is null")
         }
 
-        console.log(`Activating hotkey ${hotkey.key_combo}`);
+        console.log(`Activating hotkey ${hotkey.KeyCombo}`);
 
         if (this.#locked_on_execution) {
             console.error("Hotkey execution is locked. Ignoring hotkey activation");
@@ -319,7 +335,6 @@ export class HotkeysController {
         return matching_hotkey;
     }
 
-
     /**
      * Returns the first hotkey from the candidates that matches the past events.
      * @param {StackBuffer<KeyboardEvent>} past_events
@@ -408,6 +423,16 @@ export class HotkeysController {
                 all_triggers.set(trigger, hotkeys_on_trigger);
             }
         }
+    }
+
+    /**
+     * Registers a triggered hotkey 'event'(not as in dom event but as something that happened) on the appropriate history stack.
+     * @param {import('./hotkeys').HotkeyData} hotkey
+     */
+    #registerTriggeredHotkey(hotkey) {
+        let history_stack = hotkey.Mode === "keyup" ? this.#last_keyup_hotkeys_triggered : this.#last_keydown_hotkeys_triggered;
+
+        history_stack.Add(hotkey.KeyCombo)
     }
 
     /**

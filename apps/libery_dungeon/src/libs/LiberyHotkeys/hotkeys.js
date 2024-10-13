@@ -576,10 +576,9 @@ export class HotkeyData {
 
     /**
      * The hotkey's combo. 
-     * NOTE: I wrote it on snake_case to avoid breaking the existing user space of this library. But this is not a correct nomenclature. don't repeat this.
      * @returns {string}
      */
-    get key_combo() {
+    get KeyCombo() {
         return this.#key_combo;
     }
 

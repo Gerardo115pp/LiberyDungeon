@@ -153,7 +153,7 @@
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
             const handleSideListsMovement = (event, hotkey) => {
-                let key_combo = hotkey.key_combo;
+                let key_combo = hotkey.KeyCombo;
                 const movement_increase = key_combo === "s" ? 1 : -1;
 
                 let new_index = keyboard_movement_index + movement_increase;

@@ -163,7 +163,7 @@
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */ 
             function handleKeyboardMovement(event, hotkey) {
-                let key_combo = hotkey.key_combo;
+                let key_combo = hotkey.KeyCombo;
                 let is_direction_up = key_combo === "w";
                 if (media_movement_enabled) {
                     return passKeyboardMovementToTransactionContent(is_direction_up);

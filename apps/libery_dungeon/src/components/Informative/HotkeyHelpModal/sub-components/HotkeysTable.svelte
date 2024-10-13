@@ -108,7 +108,7 @@
         const parseHotkeyDataToMetadata = hotkey_data => {
             /** @type {HotkeyMetadata} */
             let hotkey_metadata = {
-                hotkey: `'${hotkey_data.key_combo}'`,
+                hotkey: `'${hotkey_data.KeyCombo}'`,
                 description: hotkey_data.Description, // Getter that removes the group tag.
                 group: hotkey_data.Group // Getter that returns an extracted group name or 'General' as default.
             }
