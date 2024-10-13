@@ -2,10 +2,49 @@ import { StackBuffer } from "@libs/utils";
 import { 
     MAX_PAST_EVENTS, 
     HOTKEY_SPECIFICITY_PRECEDENCE,
-    MAX_PAST_HOTKEYS_TRIGGERED
+    MAX_PAST_HOTKEYS_TRIGGERED, 
+    MIN_TIME_BETWEEN_HOTKEY_REPEATS,
 } from "./hotkeys_consts";
 import { IsNumeric } from "./hotkeys_matchers";
 
+class HotkeyTriggeredEvent {
+    /**
+     * The hotkey that was triggered
+     * @type {import('./hotkeys').HotkeyData}
+     */
+    #the_hotkey;
+
+    /**
+     * The event that triggered the hotkey
+     * @type {KeyboardEvent}
+     */
+    #the_event;
+
+    /**
+     * @param {import('./hotkeys')} hotkey 
+     * @param {KeyboardEvent} event 
+     */
+    constructor(hotkey, event) {
+        this.#the_hotkey = hotkey;
+        this.#the_event = event;
+    }
+
+    /**
+     * The key combo that triggered the hotkey
+     * @type {string}
+     */
+    get KeyCombo() {
+        return this.#the_hotkey.KeyCombo;
+    }
+
+    /**
+     * Returns the time at which the hotkey was triggered.
+     * @type {number}
+     */
+    get TriggerTime() {
+        return this.#the_event.timeStamp;
+    }
+}
 
 export class HotkeysController {
 
@@ -17,7 +56,7 @@ export class HotkeysController {
 
     /**
      * The last N hotkeys combos triggered by a keydown event.
-     * @type {StackBuffer<string>}
+     * @type {StackBuffer<HotkeyTriggeredEvent>}
      */
     #last_keydown_hotkeys_triggered;
 
@@ -30,7 +69,7 @@ export class HotkeysController {
 
     /**
      * The last N hotkeys combos triggered by a keyup event.
-     * @type {StackBuffer<string>}
+     * @type {StackBuffer<HotkeyTriggeredEvent>}
      */
     #last_keyup_hotkeys_triggered;
 
@@ -112,10 +151,24 @@ export class HotkeysController {
             return;
         }
 
+        if (event.repeat) {
+            console.log("Hotkey is repeating");
+            let block_repeat = this.#shouldBlockHotkeyRepeat(hotkey, event);
+            if (block_repeat) {
+                console.error("Hotkey repeat blocked. Ignoring hotkey activation");
+                return;
+            }
+            console.log("Hotkey repeat allowed");
+        }
+
+        this.#registerTriggeredHotkey(hotkey, event);
+
         this.#locked_on_execution = hotkey.AwaitExecution;
-
-        await hotkey.run(event);
-
+        try {
+            await hotkey.run(event);
+        } catch (error) {
+            console.error(`Error executing hotkey ${hotkey.KeyCombo}`, error);
+        }
         this.#locked_on_execution = false;
     }
 
@@ -428,11 +481,37 @@ export class HotkeysController {
     /**
      * Registers a triggered hotkey 'event'(not as in dom event but as something that happened) on the appropriate history stack.
      * @param {import('./hotkeys').HotkeyData} hotkey
+     * @param {KeyboardEvent} event
      */
-    #registerTriggeredHotkey(hotkey) {
+    #registerTriggeredHotkey(hotkey, event) {
+        let hotkey_event = new HotkeyTriggeredEvent(hotkey, event);
+
         let history_stack = hotkey.Mode === "keyup" ? this.#last_keyup_hotkeys_triggered : this.#last_keydown_hotkeys_triggered;
 
-        history_stack.Add(hotkey.KeyCombo)
+        history_stack.Add(hotkey_event)
+    }
+
+    /**
+     * Checks if the given hotkey is repeating, if not, returns false. if it is, checks if it can repeat, if it can
+     * returns false only if the time between executions is at least MIN_TIME_BETWEEN_HOTKEY_REPEATS if not it returns true.
+     * @param {import('./hotkeys').HotkeyData} hotkey
+     * @param {KeyboardEvent} event
+     * @returns {boolean}
+     */
+    #shouldBlockHotkeyRepeat(hotkey, event) {
+        if (!event.repeat) return false;
+
+        if (!hotkey.CanRepeat) return true;
+
+        let history_stack = hotkey.Mode === "keyup" ? this.#last_keyup_hotkeys_triggered : this.#last_keydown_hotkeys_triggered;
+
+        let last_hotkey_trigger = history_stack.Peek();
+
+        if (last_hotkey_trigger == null || last_hotkey_trigger.KeyCombo !== hotkey.KeyCombo) return false;
+
+        let time_since_last_trigger = event.timeStamp - last_hotkey_trigger.TriggerTime;
+
+        return time_since_last_trigger <= MIN_TIME_BETWEEN_HOTKEY_REPEATS;
     }
 
     /**

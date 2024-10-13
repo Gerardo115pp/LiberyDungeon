@@ -189,6 +189,7 @@
 
                     hotkeys_context.register(["a", "d"], handleMediaNavigation, {
                         description: "<navigate>Navigate through the medias, A for previous, D for next", 
+                        can_repeat: true,
                     });
 
                     hotkeys_context.register(["\\d g"], handleMediaPositionJump, {
