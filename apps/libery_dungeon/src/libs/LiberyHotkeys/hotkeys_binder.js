@@ -51,6 +51,12 @@ export class HotkeysController {
      */
     #current_hotkey_context;
 
+    /**
+     * Whether a hotkey that requires awaiting is currently running or not.
+     * @type {boolean}
+     */
+    #locked_on_execution;
+
 
     constructor() {
         if (globalThis.addEventListener === undefined) {
@@ -68,6 +74,8 @@ export class HotkeysController {
 
         this.#current_hotkey_context = null;
 
+        this.#locked_on_execution = false;
+
         this.#setup()
     }
 
@@ -81,9 +89,19 @@ export class HotkeysController {
         if (hotkey == null) {
             throw new Error("Hotkey is null")
         }
+
         console.log(`Activating hotkey ${hotkey.key_combo}`);
 
+        if (this.#locked_on_execution) {
+            console.error("Hotkey execution is locked. Ignoring hotkey activation");
+            return;
+        }
+
+        this.#locked_on_execution = hotkey.AwaitExecution;
+
         await hotkey.run(event);
+
+        this.#locked_on_execution = false;
     }
 
     /**
@@ -122,6 +140,18 @@ export class HotkeysController {
     destroy() {
         globalThis.removeEventListener("keydown", this.#bound_handleKeyDown);
         globalThis.removeEventListener("keyup", this.#bound_handleKeyUp);
+    }
+
+    /**
+     * Whether the binder is locked for any reason and should not trigger hotkeys.
+     * @type {boolean}
+     */
+    get ExecutionsForbidden() {
+        let locked = false;
+
+        locked = this.#locked_on_execution; // TODO: Add the pause check here too.
+
+        return locked;
     }
 
     /**
@@ -222,6 +252,8 @@ export class HotkeysController {
         console.log("keydown", event) 
 
         this.#keyboard_past_keydowns.Add(event);
+        
+        if (this.ExecutionsForbidden) return;
 
         let matching_hotkey = this.#matchHotkey(event);
 
@@ -239,6 +271,8 @@ export class HotkeysController {
         console.log("keyup", event);
 
         this.#keyboard_past_keyups.Add(event);
+
+        if (this.ExecutionsForbidden) return;
 
         let matching_hotkey = this.#matchHotkey(event);
 

@@ -5,6 +5,7 @@ import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "./hotkeys_consts";
  * @property {boolean} bind - If true the hotkey will be binded immediately. default is false
  * @property {?string} description - The hotkey's description   
  * @property {"keypress"|"keydown"|"keyup"} mode - The mode of the keypress event. Default is "keydown"
+ * @property {boolean} [await_execution]
 */
 
 /**
@@ -22,7 +23,8 @@ import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "./hotkeys_consts";
 export const default_hotkey_register_options = {
     bind: false,
     description: null,
-    mode: "keydown"
+    mode: "keydown",
+    await_execution: true
 }
 
 /**
@@ -192,6 +194,12 @@ export class HotkeyData {
     #hotkey_execution_mutex;
 
     /**
+     * the hotkey's options
+     * @type {HotkeyRegisterOptions}
+     */
+    #the_options;
+
+    /**
      * @param {string} name the key's name e.g: 'a', 'esc', '-', etc
      * @param {function} callback the callback to be called when the key is pressed
      * @param {HotkeyRegisterOptions} options
@@ -203,6 +211,8 @@ export class HotkeyData {
         /** @type {function} the callback to be called when the key is pressed */   
         this.#callback = callback
 
+        this.#the_options = options;
+
         
         this.#unpackOptions(options)
         
@@ -212,6 +222,15 @@ export class HotkeyData {
         this.#hotkey_execution_mutex = false;
 
         this.#splitFragments()
+    }
+
+
+    /**
+     * Whether a caller to `run` should await the callback's execution
+     * @returns {boolean}
+     */
+    get AwaitExecution() {
+        return this.#the_options.await_execution;
     }
 
     /**
@@ -595,12 +614,16 @@ export class HotkeyData {
      * Unpacks the hotkey options into the hotkey data respective properties
      * @param {HotkeyRegisterOptions} options
      */
-    #unpackOptions(options) {
-        this.#mode = options.mode
-        this.#description = options.description
+    #unpackOptions() {
+        this.#mode = this.#the_options.mode;
+        this.#description = this.#the_options.description;
 
         if (this.#mode === "keypress") {
             this.#mode = "keydown" // Keypress is deprecated and will(someday) be removed according to MDN
+        }
+
+        if (this.#the_options.await_execution === undefined) {
+            this.#the_options.await_execution = default_hotkey_register_options.await_execution;
         }
     }
 
