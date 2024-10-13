@@ -222,7 +222,7 @@
 
                     
                     if ($current_user_identity.canPublicContentAlter()) {
-                        hotkeys_context.register("t", e => show_media_movement_manager = !show_media_movement_manager, {
+                        hotkeys_context.register("t", handleMediaMovementToggle, {
                             description: "<media_modification>Toggle the media movement manager."
                         });
 
@@ -234,8 +234,6 @@
                             description: "<navigation>Toggle skipping deleted medias."
                         });
                     }
-
-
 
                     hotkeys_context.register("shift+g", e => show_media_gallery = !show_media_gallery, {
                         description: "<navigation>Toggle the media gallery."
@@ -352,6 +350,19 @@
                 await tick();
 
                 resetMediaConfigs(true);
+            }
+
+            /**
+             * Handles the toggling of the media movement manager
+             */
+            const handleMediaMovementToggle = () => {
+                show_media_movement_manager = !show_media_movement_manager;
+
+                global_hotkeys_manager.Binder.pause();
+
+                setTimeout(() => {
+                    global_hotkeys_manager.Binder.resume();
+                }, 400);
             }
 
             /**

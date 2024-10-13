@@ -60,7 +60,6 @@ export class HotkeysController {
      */
     #last_keydown_hotkeys_triggered;
 
-
     /**
      * A stack with the last MAX_PAST_EVENTS keyup KeyboardEvents
      * @type {StackBuffer<KeyboardEvent>}
@@ -110,6 +109,12 @@ export class HotkeysController {
      */
     #locked_on_execution;
 
+    /**
+     * Whether the execution is paused or not.
+     * @type {boolean}
+     */
+    #paused;
+
 
     constructor() {
         if (globalThis.addEventListener === undefined) {
@@ -130,6 +135,7 @@ export class HotkeysController {
         this.#current_hotkey_context = null;
 
         this.#locked_on_execution = false;
+        this.#paused = false;
 
         this.#setup()
     }
@@ -213,6 +219,8 @@ export class HotkeysController {
         let locked = false;
 
         locked = this.#locked_on_execution; // TODO: Add the pause check here too.
+
+        locked = locked || this.#paused;
 
         return locked;
     }
@@ -464,6 +472,23 @@ export class HotkeysController {
             }
         }
     }
+
+    /**
+     * Pauses the hotkey execution and matching.
+     * @returns {void}
+     */
+    pause() {
+        this.#paused = true;
+    }
+
+    /**
+     * Resumes the hotkey execution and matching.
+     * @returns {void}
+     */
+    resume() {
+        this.#paused = false;
+    }
+
 
     /**
      * Registers a triggered hotkey 'event'(not as in dom event but as something that happened) on the appropriate history stack.
