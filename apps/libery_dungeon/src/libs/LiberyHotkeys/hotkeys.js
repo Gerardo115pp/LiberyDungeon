@@ -440,7 +440,7 @@ export class HotkeyData {
      * @returns {boolean}
      */
     match(event_history) {
-        if (!this.Valid) return false; // Now we are allowed to assume the hotkey has at least one fragment.
+        if (!this.Valid || event_history.Size < this.Length) return false; // Now we are allowed to assume the hotkey has at least one fragment.
 
         this.#createMatchMetadata();
 
@@ -489,7 +489,7 @@ export class HotkeyData {
             if (fragment.NumericMetakey) { // Parse vim motion. If matches, interrupts the flow in all cases.
                 fragment_match = false;
 
-                if (event != undefined) {
+                if (event != null) {
                     fragment_match = fragment.matchNumericMetakey(event);
                 }
 

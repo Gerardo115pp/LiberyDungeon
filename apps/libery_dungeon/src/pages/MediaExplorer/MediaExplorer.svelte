@@ -270,8 +270,13 @@
                         description: "<navigation>Open category search bar to search for categories in the current dungeon.",
                     });
 
-                    hotkeys_context.register(["f", "/"], handleCategoryNameFilter, {
+                    hotkeys_context.register(["/"], handleCategoryNameFilter, {
                         description: "<navigation>Filter subcategories in the current category by name",
+                    });
+
+                    hotkeys_context.register(["f \\l"], handleFindStartsWith, {
+                        description: "<navigation>Filter subcategories in the current category by name",
+                        consider_time_in_sequence: true,
                     });
 
                     if ($current_user_identity.canViewTrashcan()) {
@@ -520,6 +525,25 @@
 
                         category_filter_changed = false;
                     }, Math.max(category_name_filter_interval/3, 300));
+                }
+            }
+
+            /**
+             * Set keyboard_focused_category to the first category that starts with the entered character.
+             * @param {KeyboardEvent} e
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             * @returns {void}
+             */
+            const handleFindStartsWith = (e, hotkey) => {
+                const initial_character = e.key;
+
+                for (let h = 0; h < $current_category.InnerCategories.length; h++) {
+                    let lower_case_name = $current_category.InnerCategories[h].name.toLowerCase();
+
+                    if (lower_case_name.startsWith(initial_character)) {
+                        keyboard_focused_category = h;
+                        return;
+                    }
                 }
             }
 
