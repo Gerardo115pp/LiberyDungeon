@@ -229,7 +229,7 @@
          * @returns {void}
          */
         async function getWatchProgress() {
-            if (media_uuid == null) return;
+            if (media_uuid == null || this.duration * 1000 < SAVE_WATCH_PROGRESS_THRESHOLD) return;
 
             let watch_progress = await getMediaWatchPoint(media_uuid);
 
