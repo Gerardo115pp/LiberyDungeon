@@ -332,7 +332,16 @@
                     return;
                 }
 
-                let move_position = hotkey.VimMotionMetadata - 1; // convert to zreo based index
+                let match_metadata = hotkey.MatchMetadata;
+
+                if (match_metadata === null || match_metadata.MotionMatches.length < 1) {
+                    console.error("The hotkey did not contain any motion matches");
+                    return;
+                }
+
+                const motion_value = match_metadata.MotionMatches[0]
+
+                let move_position = motion_value - 1; // convert to zreo based index
 
                 move_position = Math.max(0, Math.min(move_position, $current_category.content.length - 1));
 

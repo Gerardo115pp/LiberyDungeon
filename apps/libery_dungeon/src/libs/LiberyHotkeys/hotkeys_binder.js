@@ -77,13 +77,13 @@ export class HotkeysController {
      * @param {import('./hotkeys').HotkeyData} hotkey
      * @param {KeyboardEvent} event
      */
-    #activateHotkey(hotkey, event) {
+    async #activateHotkey(hotkey, event) {
         if (hotkey == null) {
             throw new Error("Hotkey is null")
         }
         console.log(`Activating hotkey ${hotkey.key_combo}`);
 
-        hotkey.run(event);
+        await hotkey.run(event);
     }
 
     /**
@@ -221,13 +221,13 @@ export class HotkeysController {
         if (this.#shouldIgnoreEvent(event)) return;
         console.log("keydown", event) 
 
+        this.#keyboard_past_keydowns.Add(event);
+
         let matching_hotkey = this.#matchHotkey(event);
 
         if (matching_hotkey != null) {
             this.#activateHotkey(matching_hotkey, event);
         }
-
-        this.#keyboard_past_keydowns.Add(event);
     }
 
     /**
@@ -238,13 +238,13 @@ export class HotkeysController {
         if (this.#shouldIgnoreEvent(event)) return;
         console.log("keyup", event);
 
+        this.#keyboard_past_keyups.Add(event);
+
         let matching_hotkey = this.#matchHotkey(event);
 
         if (matching_hotkey != null) {
             this.#activateHotkey(matching_hotkey, event);
         }
-
-        this.#keyboard_past_keyups.Add(event);
     }
 
     /**
@@ -272,28 +272,10 @@ export class HotkeysController {
         let matching_hotkey = null;
 
         for (let hotkey of candidate_hotkeys) {
-            let matching_events = [event];
 
-            if (hotkey.Length > 1 && !hotkey.WithVimMotion) {
-                console.log(`Matching hotkey ${hotkey.key_combo} with ${hotkey.Length} events`);
-                if (hotkey.Length > past_events.Size) {
-                    continue;
-                }
+            let matches = hotkey.match(past_events);
 
-                matching_events = [
-                    ...this.#getLastEvents(event.type, hotkey.Length - 1),
-                    event
-                ]
-            } else if (hotkey.WithVimMotion) {
-                console.log(`Matching hotkey ${hotkey.key_combo} with vim motion`);
-                matching_events = [
-                    ...this.#getVimMotionMatchingEvents(),
-                    event
-                ];
-            }
-            console.log("Matching events", matching_events);
-
-            if (hotkey.match(matching_events)) {
+            if (matches) {
                 matching_hotkey = hotkey;
                 break;
             }

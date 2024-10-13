@@ -39,8 +39,15 @@ class HotkeyMatch {
      */
     #motion_matches;
 
+    /**
+     * Whether the match is has been determined as successful.
+     * @type {boolean}
+     */
+    #is_successful;
+
     constructor() {
         this.#motion_matches = [];
+        this.#is_successful = false;
     }
 
     /**
@@ -49,6 +56,8 @@ class HotkeyMatch {
      * @returns {boolean}
      */
     addMotionMatch(numeric_string) {
+        this.#panicIfSuccessful();
+
         let number = parseInt(numeric_string);
 
         if (isNaN(number)) {
@@ -67,6 +76,8 @@ class HotkeyMatch {
      * @returns {boolean}
      */ 
     addReversedMotionMatch(numeric_string) {
+        this.#panicIfSuccessful();
+
         let reversed_string = numeric_string.split("").reverse().join("");
 
         return this.addMotionMatch(reversed_string);
@@ -80,6 +91,51 @@ class HotkeyMatch {
         return this.#motion_matches;
     }
 
+    /**
+     * Panics if called and the match.#is_successful is true.
+     * @returns {void}
+     */
+    #panicIfSuccessful() {
+        if (this.#is_successful) {
+            throw new Error("Match is already successful. Refusing to add modifications.");
+        }
+    }
+
+    /**
+     * Reverses the motion matches array. When matched from history events, the last match of a hotkey will
+     * be the first in the event history. This means that the fragments forcefully have to be matched in reverse order than 
+     * they were written in the hotkey combo. This method reverses the matches so that the fit how the were written in the hotkey combo.
+     * ALWAYS CALL IT AFTER A SUCCESSFUL MATCH.
+     * @returns {void}
+     */
+    #reverseMotionMatches() {
+        if (this.#is_successful) {
+            throw new Error("Match is already successful. Refusing to reverse it.");
+        }
+
+        this.#motion_matches.reverse(); 
+    }
+
+    /**
+     * Set the match as successful. Modifications after this will panic.
+     * @returns {void}
+     */
+    setSuccessful() {
+        if (this.#is_successful) {
+            throw new Error("Match is already successful. Refusing to set it again.");
+        }
+
+        this.#reverseMotionMatches();        
+        this.#is_successful = true;
+    }
+
+    /**
+     * Whether the match was successful or not.
+     * @returns {boolean}
+     */
+    get Successful() {
+        return this.#is_successful;
+    }
 }
 
 export class HotkeyData {
@@ -124,8 +180,8 @@ export class HotkeyData {
     #has_vim_motion;
 
     /**
-     * Metadata produces after a successful match.
-     * @type {HotkeyMatch}
+     * Metadata produces after a successful match. Populated by `match` if the hotkey matches the event history. destroyed after one call to `run`.
+     * @type {HotkeyMatch | null}
      */
     #match_metadata;
 
@@ -251,6 +307,15 @@ export class HotkeyData {
     }
 
     /**
+     * Whether there is a HotkeyMatch. meaning the match method was called and the hotkey produced a match. and the `run` method has not yet been called or has not ended.
+     * hint: If the method `run` has been called but it is still running, the hotkey will be in a lock state.
+     * @returns {boolean}
+     */
+    get HasMatch() {
+        return this.#match_metadata != null;
+    }
+
+    /**
      * Whether the hotkey is a sequence or not.
      * @returns {boolean}
      */
@@ -264,6 +329,14 @@ export class HotkeyData {
      */
     get Length() {
         return this.#key_combo_fragments.length;
+    }
+
+    /**
+     * Whether the hotkey is locked. meaning the `run` method is currently running.
+     * @returns {boolean}
+     */
+    get Locked() {
+        return this.#hotkey_execution_mutex;
     }
 
     /**
@@ -281,7 +354,6 @@ export class HotkeyData {
      * @returns {string[]}
      */
     get ManyFaces() {
-        console.log(`Many faces from ${this.#key_combo} with fragments:`, this.#key_combo_fragments);
         let first_fragment = this.#key_combo_fragments[0];
 
         return first_fragment.Identities;
@@ -300,49 +372,108 @@ export class HotkeyData {
 
     /**
      * Matches a sequence of Keyboard events with the hotkey. the sequence of keyboard events most be of the same length as the length of the hotkey.
-     * @param {KeyboardEvent[]} events
+     * @param {import('@libs/utils').StackBuffer<KeyboardEvent>} event_history
      * @returns {boolean}
      */
-    match(events) {
-        if ((events.length !== this.Length && !this.WithVimMotion) || this.WithVimMotion && events.length <= 1) return false;
-        console.log(`Matching against!: ${this.#key_combo}`, events);
+    match(event_history) {
+        if (!this.Valid) return false; // Now we are allowed to assume the hotkey has at least one fragment.
+        console.log("Matching hotkey: ", this.#key_combo);
+        console.log("Event history: ", event_history);
+
         this.#createMatchMetadata();
 
-        let matches = true;
-        let matchable_events = [];
-        const hotkey_fragments = [...this.#key_combo_fragments];
+        /**
+         * We start assuming the hotkey is a match, if any fragment doesn't match it's corresponding event, we set this to false.
+         * @type {boolean}
+         */
+        let hotkey_matched = true;
 
-        if (this.WithVimMotion) {
-            matchable_events = this.#collectVimMotionEvents(events);
-            hotkey_fragments.shift(); // Remove the vim motion fragment
-            if (this.#match_metadata === "0") {
-                this.#destroyMatchMetadata();
-                return false;
+        // Iterator indexes
+        let fragment_h = 0;
+        let event_k = 0;
+
+        /**
+         * If this is a match, the last fragment will be the first in the event history.
+         * so we check the fragments from last to first so that they have a chance to match the history.
+         */
+        let history_fragments = [...this.#key_combo_fragments].reverse();
+
+        let fragment = history_fragments[fragment_h];
+
+        /** 
+         * Whether the fragment matches it's corresponding event.
+         * @type {boolean} 
+         */
+        let fragment_match;
+
+        /**
+         * Used to store numeric key when parsing a vim motion.
+         * @type {string}
+         */
+        let motion_match_number = "";
+
+        do {
+            let event = event_history.PeekN(event_k);
+            event_k++;
+
+            console.log(`Fragment: ${fragment.Identity}, Event: ${event?.key}`);
+
+            // TODO: root this out and put it in a separate function.
+            if (fragment.NumericMetakey) { // Parse vim motion. If matches, interrupts the flow in all cases.
+                console.log("Parsing vim motion from: ", event)
+                fragment_match = false;
+
+                if (event != undefined) {
+                    fragment_match = fragment.matchNumericMetakey(event);
+                }
+
+                if (fragment_match) {
+                    console.log("matches")
+                    motion_match_number += event.key;
+                    continue;
+                }
+
+                console.log(`'${event?.key}' did not match a vim motion. final numeric string: ${motion_match_number}`);
+
+                if (motion_match_number === "") {
+                    this.#destroyMatchMetadata();
+                    console.error("This doesn't make sense to me. There is probably some kind of bug if this line is ever triggered.");
+                    hotkey_matched = false;
+                    continue;
+                }
+
+                console.log("Reversing string");
+                this.#match_metadata.addReversedMotionMatch(motion_match_number);
+                fragment_h++;
+                fragment = history_fragments[fragment_h];
+                continue;
+            } // Anything after this line can safely assume that this if statement did not match.
+
+            fragment_match = fragment.match(event);
+
+            if (!fragment_match) {
+                console.log(`Fragment<${fragment.Identity}> did not match event<${event?.key}>`);
+                hotkey_matched = false;
             }
-        } else {
-            matchable_events = events;
-        }
 
-        console.log('Matchable events:', matchable_events);
-        
+            fragment_h++;
+            fragment = history_fragments[fragment_h];
+            console.log("Next fragment: ", fragment);
+            console.log("Matched: ", hotkey_matched);
 
-        for (let h = 0; h < hotkey_fragments.length && matches; h++) {
-            let fragment = hotkey_fragments[h];
-            let event = matchable_events[h];
+        } while (hotkey_matched && fragment != null); // If we run out of fragments and hotkey_matched is still true, that should mean a positive match.
 
-            // console.log("Remaining fragments:", hotkey_fragments);
-            // console.log("Remaining events:", matchable_events);
-
-            matches = fragment.match(event);            
-        }
-
-        console.log(`Matched: ${matches}`);
-
-        if (!matches) {
+        if (!hotkey_matched) {
+            console.log("Hotkey did not match.");
             this.#destroyMatchMetadata();
+        } else {
+            console.log("Hotkey matched.");
+            this.#match_metadata.setSuccessful();
         }
 
-        return matches;
+        console.log("===================================MATCHING ENDED===================================");
+
+        return hotkey_matched;
     }
 
     /**
@@ -401,6 +532,7 @@ export class HotkeyData {
     /**
      * Runs the hotkey's callback
      * @param {KeyboardEvent} event
+     * @returns {Promise<void>}
      */
     async run(event) {
         if (this.#hotkey_execution_mutex) {
@@ -415,6 +547,8 @@ export class HotkeyData {
             await this.#callback(event, this);
         }
         this.#hotkey_execution_mutex = false;
+
+        this.#destroyMatchMetadata();
     }
 
     /**
@@ -424,7 +558,6 @@ export class HotkeyData {
      */
     #splitFragments() {
         let fragments = this.#key_combo.split(" ")
-        console.log(`Fragments: ${fragments}`);
 
         try {
             this.#key_combo_fragments = fragments.map((fragment) => new HotkeyFragment(fragment)); // If the fragment parsing finds invalid members, this will panic.
@@ -480,15 +613,11 @@ export class HotkeyData {
     }
 
     /**
-     * the vim motion metadata.
-     * @returns {number}
+     * Returns the hotkey match metadata.
+     * @returns {HotkeyMatch | null}
      */
-    get VimMotionMetadata() {
-        console.log(`Vim motion metadata: ${this.#match_metadata}`);
-        let motion = parseInt(this.#match_metadata);
-        motion = isNaN(motion) ? 0 : motion;
-
-        return motion;
+    get MatchMetadata() {
+        return this.#match_metadata;
     }
 
     /**

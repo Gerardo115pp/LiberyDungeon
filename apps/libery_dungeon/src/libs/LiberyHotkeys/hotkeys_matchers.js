@@ -447,6 +447,8 @@ export class HotkeyFragment {
      * @returns {boolean}
      */
     match(event) {
+        if (event == null) return false;
+
         let matched = true;
 
         if (event.altKey && !this.#alt_modifier) {
@@ -513,6 +515,20 @@ export class HotkeyFragment {
         }
 
         return is_match;
+    }
+
+    /**
+     * Matches a numeric metakey against the passed KeyboardEvent.
+     * @param {KeyboardEvent} event
+     * @returns {boolean}
+     */
+    matchNumericMetakey(event) {
+        if (!this.NumericMetakey) return false;
+
+        let key = event.key;
+        let is_number = IsNumeric(key);
+
+        return is_number;
     }
 
     /**
