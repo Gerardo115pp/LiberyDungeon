@@ -1,19 +1,22 @@
 import { HotkeyFragment, IsNumeric } from "./hotkeys_matchers";
 import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "./hotkeys_consts";
+import { 
+    MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES
+} from "./hotkeys_consts";
 /**
 * @typedef {Object} HotkeyRegisterOptions
  * @property {boolean} bind - If true the hotkey will be binded immediately. default is false
  * @property {?string} description - The hotkey's description   
  * @property {"keypress"|"keydown"|"keyup"} mode - The mode of the keypress event. Default is "keydown"
- * @property {boolean} [await_execution]
+ * @property {boolean} await_execution - Whether the execution of a callback should end before another hotkey can be triggered. Default is true
+ * @property {boolean} consider_time_in_sequence - Whether the hotkey sequence should expire if they are to far apart in time. Default is false
 */
 
 /**
 * @typedef {Object} HotkeyDataParams
  * @property {string} key_combo
  * @property {function} handler 
- * @property {"keydown"|"keyup"} mode
- * @property {?string} description
+ * @property {HotkeyRegisterOptions} options
 */
 
 /**
@@ -24,7 +27,8 @@ export const default_hotkey_register_options = {
     bind: false,
     description: null,
     mode: "keydown",
-    await_execution: true
+    await_execution: true,
+    consider_time_in_sequence: false
 }
 
 /**
@@ -211,7 +215,10 @@ export class HotkeyData {
         /** @type {function} the callback to be called when the key is pressed */   
         this.#callback = callback
 
-        this.#the_options = options;
+        this.#the_options = {
+            ...default_hotkey_register_options,
+            ...options
+        };
 
         
         this.#unpackOptions(options)
@@ -234,53 +241,40 @@ export class HotkeyData {
     }
 
     /**
-     * Takes an array of Keyboard events, takes the ones that match a vim motion and populates with them the vim motion metadata.
-     * returns a new array with the remaining events.
-     * @param {KeyboardEvent[]} events
-     * @returns {KeyboardEvent[]} 
-     * @deprecated
-     */
-    #collectVimMotionEvents(events) {
-        if (events.length === 0) return events;
-
-        this.#match_metadata = "";
-
-        let look_up_index = 0;
-        let matches_vim_motion = true;
-
-        do {
-            let event = events[look_up_index];
-            
-            matches_vim_motion = IsNumeric(event.key);
-
-            if (matches_vim_motion) {
-                this.#match_metadata += event.key;
-                look_up_index++;
-            }
-
-            if (look_up_index > 100000) {
-                throw new Error("Infinite loop detected. Aborting."); // This should only happen if our code is not well thought out. If it is, then this will never happen(unless the user is an idiot). TODO: if this is not triggered in a year, remove it.
-            }
-
-        } while (matches_vim_motion && look_up_index < events.length);
-
-        let remaining_events = events.slice(look_up_index);
-
-        this.#match_metadata = this.#match_metadata === "" ? "0" : this.#match_metadata;
-        if (this.#match_metadata !== "0") {
-            this.#match_metadata = this.#match_metadata.split("").reverse().join("");
-        }
-
-
-        return remaining_events;
-    }
-
-    /**
      * Creates and sets a new match metadata.
      * @returns {HotkeyMatch}
      */
     #createMatchMetadata() {
         this.#match_metadata = new HotkeyMatch();
+    }
+
+    /**
+     * Checks if the given KeyboardEvent is expired against the given compare_time. 
+     * automatically returns false if the hotkey is not time sensitive or if it's not a sequence.
+     * also return false if the compare_time is a negative number.
+     * @param {KeyboardEvent} event - this is the past we want to know if it's expired.
+     * @param {number} compare_time - this is the more recent event time we want to compare the event against.
+     * @returns {boolean}
+     */
+    #checkEventExpired(event, compare_time) {
+        if (!this.ConsiderTimeInSequence || compare_time < 0 || !this.IsSequence) {
+            return false;
+        }
+
+        console.log(`Event_time: ${event.timeStamp}, Compare_time: ${compare_time}`);
+        const elapsed_time = compare_time - event.timeStamp;
+        console.log("Elapsed time: ", elapsed_time);
+        console.log("Max time between sequence keystrokes: ", MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES);
+
+        return elapsed_time > MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES;
+    }
+
+    /**
+     * Whether time between hotkey fragments should be considered in a sequence.
+     * @returns {boolean}
+     */
+    get ConsiderTimeInSequence() {
+        return this.#the_options.consider_time_in_sequence;
     }
 
     /**
@@ -425,6 +419,8 @@ export class HotkeyData {
          */
         let fragment_match;
 
+        let last_sequence_time = -1;
+
         /**
          * Used to store numeric key when parsing a vim motion.
          * @type {string}
@@ -434,6 +430,12 @@ export class HotkeyData {
         do {
             let event = event_history.PeekN(event_k);
             event_k++;
+
+            if (this.#checkEventExpired(event, last_sequence_time)) {
+                console.log("Event expired. Breaking.");
+                hotkey_matched = false;
+                break;
+            } 
 
             console.log(`Fragment: ${fragment.Identity}, Event: ${event?.key}`);
 
@@ -477,6 +479,7 @@ export class HotkeyData {
 
             fragment_h++;
             fragment = history_fragments[fragment_h];
+            last_sequence_time = event.timeStamp;
             console.log("Next fragment: ", fragment);
             console.log("Matched: ", hotkey_matched);
 

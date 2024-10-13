@@ -246,6 +246,7 @@
 
                     hotkeys_context.register(["l o"], handleDarkModeToggle, {
                         description: `<${HOTKEYS_GENERAL_GROUP}>Lights on/off.`,
+                        consider_time_in_sequence: true,
                     });
 
                     hotkeys_context.register(["f"], handleCinemaModeToggle, {
