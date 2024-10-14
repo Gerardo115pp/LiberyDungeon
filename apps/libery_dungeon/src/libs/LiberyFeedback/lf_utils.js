@@ -95,7 +95,6 @@ export const subscribeToPlatformMessages = callback => {
     return unsubscribe;
 }
 
-
 /*=============================================
 =            Confirm Messages            =
 =============================================*/
@@ -171,4 +170,29 @@ export const subscribeToPlatformMessages = callback => {
     }
 
 /*=====  End of Confirm Messages  ======*/
+
+
+/*=============================================
+=            Discrete feedback messages            =
+=============================================*/
+
+    /**
+     * The message been displayed in the discrete feedback component.
+     * @type {import('svelte/store').Writable<string | null>}
+     */
+    export const discrete_feedback_message = writable("");
+
+    /**
+     * Sets the discrete feedback message to be displayed.
+     * @param {string} message
+     */
+    export const setDiscreteFeedbackMessage = message => {
+        discrete_feedback_message.set(message);
+    }
+
+    globalThis.setDiscreteFeedbackMessage = setDiscreteFeedbackMessage;
+
+/*=====  End of Discrete feedback messages  ======*/
+
+
 
