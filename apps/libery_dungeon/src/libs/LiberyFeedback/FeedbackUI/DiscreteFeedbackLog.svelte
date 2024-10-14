@@ -53,6 +53,8 @@
          * @param {string} new_message
          */
         const handleDiscreteFeedbackMessages = new_message => {
+            if (new_message == null || new_message === "") return;
+                
             showLog(new_message, display_message_duration);
         } 
 
@@ -77,6 +79,7 @@
          */
         const hideLog = () => {
             log_hidden = true;
+            discrete_feedback_message.set(""); // This will be skipped by handleDiscreteFeedbackMessages.
         }
 
         /**
