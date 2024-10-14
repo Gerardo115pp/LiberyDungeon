@@ -209,7 +209,8 @@
                     });
 
                     hotkeys_context.register(["shift+a", "shift+d"], handleMediaZoom, {
-                        description: "<media_modification>Zoom in or out the media, Shift+A for zoom out, Shift+D for zoom in."
+                        description: "<media_modification>Zoom in or out the media, Shift+A for zoom out, Shift+D for zoom in.",
+                        can_repeat: true,
                     });
 
                     hotkeys_context.register("alt+shift+d", e => {e.preventDefault(); resetMediaConfigs()}, {
