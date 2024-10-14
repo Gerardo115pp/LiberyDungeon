@@ -336,6 +336,10 @@
                     controller_visible = true;
                     controller_opacity = 1;
                 }
+
+                let feedback_message = `auto-hide: ${auto_hide ? "on" : "off"}`;
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             function handleVideoForwardPercentageHotkey() {
@@ -388,22 +392,6 @@
             if (watch_progress == null) return;
 
             this.currentTime = watch_progress / 1000;
-        }
-
-        function pauseVideo() {
-            video_paused = !video_paused;
-            
-            if (video_paused) {
-                video_element.pause();
-            } else {
-                video_element.play();
-            }
-        }
-
-        function toggleMute() {
-            video_muted = !video_muted;
-
-            automute_enabled.set(video_muted); // Muted value of the video element is reactive to this store
         }
 
         const handleActiveMediaIndexChange = (new_active_media_index) => {
@@ -463,10 +451,61 @@
             getWatchProgress.call(this);
         }
 
+        /**
+         * Handles the video progress bar click event
+         * @param {MouseEvent} event
+         * @returns {void}
+         */
+        const handleProgressClick = (event) => {
+            event.stopPropagation();
+            const rect = event.currentTarget.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const new_progress = (clickX / rect.width);
+            let new_video_time =  new_progress * video_element.duration;
+            
+            video_element.currentTime = new_video_time;
+        };
+
+        const handleMouseMovement = () => {
+            setControllerHiddenTimeout();
+        }
+
+        // TODO: create a proper visibility controller for mobile, although this more or less works, it's due to pure black magic and also once the controller appears it doesn't disappear ever again on unless the media viewer 
+        // unmounts and mounts again the video controller (like when the media changes to an from video to image and back to video)
+        const handleControllerVisibility = () => {
+            if (mouse_over_controller || !auto_hide) return;
+
+
+            controller_opacity = Math.max(0, controller_opacity - 0.5);
+            controller_visible = controller_opacity > 0;
+
+            if (!controller_visible) {
+                window.clearInterval(controller_visibility_interval_id);
+                controller_visibility_interval_id = null;
+            }
+        }
+
+        // Hotfix to the controller not disappearing on mobile. we check if the mouse(the finger) touches the controller but not a button, if so we hide the controller
+        const handleControllerTouch = (event) => {
+            if (event.target === event.currentTarget)
+
+            mouse_over_controller = false;
+        }
+
 
         function emitScreenshotVideo() {
             console.log("emitting screenshot video");
             dispatch("screenshot-video");            
+        }
+
+        function pauseVideo() {
+            video_paused = !video_paused;
+            
+            if (video_paused) {
+                video_element.pause();
+            } else {
+                video_element.play();
+            }
         }
 
         /**
@@ -570,6 +609,12 @@
             setVideoDuration(new_time, forward);
         }
 
+        function toggleMute() {
+            video_muted = !video_muted;
+
+            automute_enabled.set(video_muted); // Muted value of the video element is reactive to this store
+        }
+
         /**
          * Updates the video progress percentage
          * @modifies {video_progress}
@@ -577,47 +622,6 @@
         */
         const updateVideoProgress = () => {
             video_progress = (video_element.currentTime / video_element.duration) * 100;
-        }
-            
-        /**
-         * Handles the video progress bar click event
-         * @param {MouseEvent} event
-         * @returns {void}
-        */
-        const handleProgressClick = (event) => {
-            event.stopPropagation();
-            const rect = event.currentTarget.getBoundingClientRect();
-            const clickX = event.clientX - rect.left;
-            const new_progress = (clickX / rect.width);
-            let new_video_time =  new_progress * video_element.duration;
-            
-            video_element.currentTime = new_video_time;
-        };
-
-        const handleMouseMovement = () => {
-            setControllerHiddenTimeout();
-        }
-
-        // TODO: create a proper visibility controller for mobile, although this more or less works, it's due to pure black magic and also once the controller appears it doesn't disappear ever again on unless the media viewer 
-        // unmounts and mounts again the video controller (like when the media changes to an from video to image and back to video)
-        const handleControllerVisibility = () => {
-            if (mouse_over_controller || !auto_hide) return;
-
-
-            controller_opacity = Math.max(0, controller_opacity - 0.5);
-            controller_visible = controller_opacity > 0;
-
-            if (!controller_visible) {
-                window.clearInterval(controller_visibility_interval_id);
-                controller_visibility_interval_id = null;
-            }
-        }
-
-        // Hotfix to the controller not disappearing on mobile. we check if the mouse(the finger) touches the controller but not a button, if so we hide the controller
-        const handleControllerTouch = (event) => {
-            if (event.target === event.currentTarget)
-
-            mouse_over_controller = false;
         }
 
         /**
