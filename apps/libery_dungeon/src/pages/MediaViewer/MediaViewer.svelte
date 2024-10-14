@@ -104,9 +104,9 @@
             let base_media_top_value = "50%";
             /** @type {number} the medias can only move an amount equal to media_movement_threshold * media_height*/
             let media_movement_threshold = 2;
-            let media_zoom_factor = 0.1;
 
             let media_zoom = 1;
+            let media_zoom_factor = 0.15;
             const MAX_MEDIA_ZOOM = 3.3;
             const MIN_MEDIA_ZOOM = 0.1;
 
