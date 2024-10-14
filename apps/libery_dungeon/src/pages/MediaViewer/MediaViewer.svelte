@@ -96,12 +96,9 @@
              * @default false
              */
             let active_media_index_determined = false;
-             
 
             /** @type {number} on each movement event, the medias will move by media_movement_factor * media_height */
-            let media_movement_factor = 0.05
-
-            let base_media_top_value = "50%";
+            let media_movement_factor = 0.2;
             /** @type {number} the medias can only move an amount equal to media_movement_threshold * media_height*/
             let media_movement_threshold = 2;
 
@@ -109,6 +106,18 @@
             let media_zoom_factor = 0.15;
             const MAX_MEDIA_ZOOM = 3.3;
             const MIN_MEDIA_ZOOM = 0.1;
+
+            /**
+             * Whether to keep the media zoom modifier on media change.
+             * @type {boolean}
+             */
+            let keep_media_zoom = false;
+            
+            /**
+             * Whether to keep the media position modifier on media change.
+             * @type {boolean}
+             */
+            let keep_media_position = false;
 
             /** @type {boolean} whether to show the media movement manager */
             let show_media_movement_manager = false;
@@ -217,7 +226,15 @@
                         can_repeat: true,
                     });
 
-                    hotkeys_context.register("alt+shift+d", e => {e.preventDefault(); resetMediaConfigs()}, {
+                    hotkeys_context.register(["; z"], toggleKeepMediaZoomHotkey, {
+                        description: "<viewer_configuration>Changes whether to keep the media zoom when navigating through medias."
+                    });
+
+                    hotkeys_context.register(["; p"], toggleKeepMediaPositionHotkey, {
+                        description: "<viewer_configuration>Changes whether to keep the media position when navigating through medias."
+                    });
+
+                    hotkeys_context.register("alt+shift+d", e => {e.preventDefault(); resetMediaModifiers(true)}, {
                         description: "<media_modification>Reset the media zoom and position."
                     });
 
@@ -228,7 +245,6 @@
                     hotkeys_context.register("i", handleShowMediaInformationPanel, {
                         description: "<media_modification>Toggle the media information panel."
                     });
-
                     
                     if ($current_user_identity.canPublicContentAlter()) {
                         hotkeys_context.register("t", handleMediaMovementToggle, {
@@ -249,7 +265,7 @@
                     });
 
                     hotkeys_context.register("n", e => clearActiveMediaChanges(), {
-                        description: "<media_modification>Clear all media modifiers(e.g Zoom, Vertical position).",
+                        description: "<media_modification>Clear the current media changes(delete, move).",
                     });
 
                     hotkeys_context.register(["l o"], handleDarkModeToggle, {
@@ -264,8 +280,6 @@
                     hotkeys_context.register("?", e => hotkeys_sheet_visible.set(!$hotkeys_sheet_visible), {
                         description: `<${HOTKEYS_GENERAL_GROUP}>Toggle the hotkeys cheatsheet.`,
                     });
-
-
 
                     global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
 
@@ -299,6 +313,90 @@
             }
 
             /**
+             * Returns the next media index that is not marked as deleted. optionally, it can skip the medias that are marked as moved if
+             * the skip_moved parameter is set to true.
+             * @param {number} from_index
+             * @param {boolean} forward
+             * @param {boolean} skip_moved
+             * @returns {number}
+             */
+            const getNextNotDeletedMediaIndex = (from_index, forward, skip_moved=false) => {
+                let next_index = from_index;
+                const media_count = $current_category.content.length;
+                let media_change;
+                let media_uuid;
+
+                // if the current media is the last media and forward was requested, or if the current media is the first media and backward was requested, 
+                // then STAY IN THE SAME INDEX
+                if ((from_index === (media_count - 1) && forward) || (from_index === 0 && !forward)) return from_index;
+
+                let stop_loop = false;
+                let is_out_of_bounds = false;
+
+                do {
+                    next_index += forward ? 1 : -1;
+                    
+                    is_out_of_bounds = next_index < 0 || next_index >= (media_count - 1);
+                    if (is_out_of_bounds) {
+                        stop_loop = true;
+                        break;
+                    }
+
+                    media_uuid = $current_category.content[next_index]?.uuid;
+                    media_change = $media_changes_manager.getMediaChangeType(media_uuid);
+                    
+                    stop_loop = media_change !== media_change_types.DELETED && (!skip_moved || media_change !== media_change_types.MOVED);
+                } while(!stop_loop);
+
+                next_index = Math.max(0, Math.min(next_index, media_count - 1));
+                media_uuid = $current_category.content[next_index]?.uuid;
+                media_change = $media_changes_manager.getMediaChangeType(media_uuid);
+
+                return media_change === media_change_types.DELETED || (media_change === media_change_types.MOVED && skip_moved) ? from_index : next_index;
+            }
+
+            /**
+             * Returns the translate transformation of the media display element considering 
+             * only the translate values of the element. If for any reason the media element
+             * is null then returns null.
+             * @returns {TranslateTransformation | null}
+             * @typedef TranslateTransformation
+             * @property {number} x
+             * @property {number} y
+             */
+            const getMediaDisplayTranslatePosition = () => {
+                let position = {
+                    x: 0,
+                    y: 0
+                }
+
+                let media_element = getHTMLMediaElement();
+
+                if (media_element === null) {
+                    return null;
+                }
+
+                let translate_string =  media_element.style.translate;
+
+                if (translate_string === "") {
+                    return position;
+                }
+
+                if (translate_string.includes(" ")) { // Two values
+                    let values = translate_string.split(" ");
+                    position.x = parseInt(values[0]);
+                    position.y = parseInt(values[1]);
+                } else { // One value
+                     // If for example, translate is "10%" that doesn't mean Y or X are not set
+                     // that means they both have the value of 10%.
+                    position.x = parseInt(translate_string);
+                    position.y = position.x;
+                }
+
+                return position;
+            }
+
+            /**
              * Handles the navigation between medias. If the random media navigation is enabled
              * @param {KeyboardEvent} key_event
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
@@ -309,7 +407,6 @@
                 if ($random_media_navigation) {
                     return handleRandomMediaNavigation(key_event, key_combo);
                 }
-
 
                 let new_index = $active_media_index;
 
@@ -327,7 +424,7 @@
 
                 await tick();
                 
-                resetMediaConfigs(true);
+                resetMediaModifiers();
             }
 
             /**
@@ -358,7 +455,7 @@
 
                 await tick();
 
-                resetMediaConfigs(true);
+                resetMediaModifiers();
             }
 
             /**
@@ -400,7 +497,7 @@
 
                 await tick();
                 
-                resetMediaConfigs(true);
+                resetMediaModifiers();
             }
 
             /**
@@ -412,22 +509,21 @@
                 if (cinema_mode) return;
 
                 let key_combo = hotkey.KeyCombo.toLowerCase();
-
-                let media_wrapper = document.getElementById("media-wrapper");
-
-                let media_wrapper_style = window.getComputedStyle(media_wrapper);
-
-                let new_media_top_position = parseInt(media_wrapper_style.top);
-                let movement_amount = media_wrapper.clientHeight * media_movement_factor;
-                movement_amount = media_zoom < 1 ? movement_amount : movement_amount * media_zoom; // make movement faster if zoomed in
                 let movement_direction = key_combo === "w" ? -1 : 1;
 
-                new_media_top_position += movement_amount * movement_direction;
+                let media_element = getHTMLMediaElement();
 
+                if (media_element === null) return;
 
-                if (Math.abs(new_media_top_position) <= media_wrapper.clientHeight * media_movement_threshold) {
-                    media_wrapper.style.top = `${new_media_top_position}px`;
-                }
+                let media_translate = getMediaDisplayTranslatePosition();
+
+                if (media_translate === null) return;
+
+                let new_Y_translate = media_translate.y + (movement_direction * media_movement_factor * media_element.clientHeight);
+
+                let translate_string = `${media_translate.x}px ${new_Y_translate}px`;
+
+                media_element.style.translate = translate_string;
             }
 
             /**
@@ -483,6 +579,20 @@
                 history.back();
             }
 
+            /**
+             * Hanldes the toggling of the dark mode
+             */
+            const handleDarkModeToggle = () => {
+                toggleDarkMode(false); // parameter `force_enable` instead of toggling it turns it on despite its current state. so we set force_enable to false
+            }
+
+            /**
+             * Handles the toggling of the cinema mode. 
+             */
+            const handleCinemaModeToggle = () => {
+                toggleMediaViewerCinemaMode();
+            }
+
             const rejectMedia = () => {
                 const current_media = $current_category.content[$active_media_index];
                 let not_deleted_media_index = $active_media_index;
@@ -503,60 +613,37 @@
             }
 
             /**
-             * Returns the next media index that is not marked as deleted. optionally, it can skip the medias that are marked as moved if
-             * the skip_moved parameter is set to true.
-             * @param {number} from_index
-             * @param {boolean} forward
-             * @param {boolean} skip_moved
-             * @returns {number}
+             * Toggles the keep_media_zoom configuration value.
              */
-            const getNextNotDeletedMediaIndex = (from_index, forward, skip_moved=false) => {
-                let next_index = from_index;
-                const media_count = $current_category.content.length;
-                let media_change;
-                let media_uuid;
+            const toggleKeepMediaZoomHotkey = () => {
+                keep_media_zoom = !keep_media_zoom;
 
-                // if the current media is the last media and forward was requested, or if the current media is the first media and backward was requested, 
-                // then STAY IN THE SAME INDEX
-                if ((from_index === (media_count - 1) && forward) || (from_index === 0 && !forward)) return from_index;
+                let feedback_message = "";
 
-                let stop_loop = false;
-                let is_out_of_bounds = false;
+                if (keep_media_zoom) {
+                    feedback_message = "Media zoom: MANTAIN";
+                } else {
+                    feedback_message = "Media zoom: RESET";
+                }
 
-                do {
-                    next_index += forward ? 1 : -1;
-                    
-                    is_out_of_bounds = next_index < 0 || next_index >= (media_count - 1);
-                    if (is_out_of_bounds) {
-                        stop_loop = true;
-                        break;
-                    }
-
-                    media_uuid = $current_category.content[next_index]?.uuid;
-                    media_change = $media_changes_manager.getMediaChangeType(media_uuid);
-                    
-                    stop_loop = media_change !== media_change_types.DELETED && (!skip_moved || media_change !== media_change_types.MOVED);
-                } while(!stop_loop);
-
-                next_index = Math.max(0, Math.min(next_index, media_count - 1));
-                media_uuid = $current_category.content[next_index]?.uuid;
-                media_change = $media_changes_manager.getMediaChangeType(media_uuid);
-
-                return media_change === media_change_types.DELETED || (media_change === media_change_types.MOVED && skip_moved) ? from_index : next_index;
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             /**
-             * Hanldes the toggling of the dark mode
+             * Toggles the keep_media_position configuration value.
              */
-            const handleDarkModeToggle = () => {
-                toggleDarkMode(false); // parameter `force_enable` instead of toggling it turns it on despite its current state. so we set force_enable to false
-            }
+            const toggleKeepMediaPositionHotkey = () => {
+                keep_media_position = !keep_media_position;
 
-            /**
-             * Handles the toggling of the cinema mode. 
-             */
-            const handleCinemaModeToggle = () => {
-                toggleMediaViewerCinemaMode();
+                let feedback_message = "";
+
+                if (keep_media_position) {
+                    feedback_message = "Media position: MANTAIN";
+                } else {
+                    feedback_message = "Media position: RESET";
+                }
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
         
         /*=====  End of Keybinding  ======*/
@@ -637,7 +724,7 @@
 
             active_media_index.set(media_index);
             saveActiveMediaToRoute();
-            resetMediaConfigs(true);
+            resetMediaModifiers();
             show_media_gallery = false;
         }
 
@@ -658,19 +745,32 @@
             auto_move_on.set(false);
             auto_move_category.set(null);
 
-            resetMediaConfigs();
+            resetMediaModifiers(true);
         }
 
-        const resetMediaConfigs = local_reset => {
-            let media_wrapper = document.getElementById("media-wrapper");
-            let media_element = document.querySelector(".mw-media-element-display");
+        /**
+         * Resets all media modifiers such as zoom and position.
+         * @param {boolean} force_reset - whether to force the reset despite config
+         * @returns {void} 
+         */
+        const resetMediaModifiers = force_reset => {
+            force_reset = force_reset ?? false;
 
-            if (media_wrapper === null || media_element === null) return;
+            let media_element = getHTMLMediaElement();
 
-            media_wrapper.style.top = base_media_top_value;
-            media_element.style.transform = `scale(1)`;
+            if (media_element === null) {
+                console.error("Odd, could not find the media element");
+                return;
+            }
 
-            if (local_reset) {
+            // position:
+            if (force_reset || !keep_media_position) {
+                media_element.style.translate = "0px 0px";
+            }
+
+            // zoom:
+            if (force_reset || !keep_media_zoom) {
+                media_element.style.scale = "1";
                 media_zoom = 1;
             }
         }
@@ -769,7 +869,7 @@
                 toggleDarkMode(true);
             }
 
-            resetMediaConfigs(true);
+            resetMediaModifiers();
         }
     
     /*=====  End of Methods  ======*/
@@ -854,7 +954,7 @@
         /* max-width: 90vw; */
         max-height: 98vh;
         transform-origin: center center;
-        transition: scale .33s ease-out;
+        transition: scale .33s ease-out, translate .5s ease-out;
     }
 
     #mw-video-controller-wrapper {
