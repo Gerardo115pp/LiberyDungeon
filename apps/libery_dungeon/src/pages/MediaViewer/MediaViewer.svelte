@@ -104,7 +104,10 @@
             /** @type {number} the medias can only move an amount equal to media_movement_threshold * media_height*/
             let media_movement_threshold = 2;
             let media_zoom_factor = 0.1;
+
             let media_zoom = 1;
+            const MAX_MEDIA_ZOOM = 3;
+            const MIN_MEDIA_ZOOM = 0.1;
 
             /** @type {boolean} whether to show the media movement manager */
             let show_media_movement_manager = false;
@@ -438,7 +441,6 @@
 
                 let media_element = document.querySelector(".mw-media-element-display");
 
-
                 if (media_element === null) {
                     return;
                 }
@@ -447,7 +449,7 @@
 
                 new_media_zoom += key_combo === "shift+a" ? -media_zoom_factor : media_zoom_factor;
 
-                if (new_media_zoom >= 0.1 && new_media_zoom <= 3) {
+                if (new_media_zoom >= MIN_MEDIA_ZOOM && new_media_zoom <= MAX_MEDIA_ZOOM) {
                     media_zoom = new_media_zoom;
                     media_element.style.transform = `scale(${media_zoom})`;
                 }
