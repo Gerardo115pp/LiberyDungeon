@@ -487,6 +487,7 @@ export class HotkeyData {
 
 
             if (fragment.NumericMetakey) { // Parse vim motion. If matches, interrupts the flow in all cases.
+                console.log("Parsing vim motion");
                 fragment_match = false;
 
                 if (event != null) {
@@ -514,6 +515,7 @@ export class HotkeyData {
             fragment_match = fragment.match(event);
 
             if (!fragment_match) {
+                console.log(`Fragment ${fragment.Identity} did not match event ${event.key}`);
                 hotkey_matched = false;
             }
 
@@ -522,6 +524,8 @@ export class HotkeyData {
             last_sequence_time = event.timeStamp;
 
         } while (hotkey_matched && fragment != null); // If we run out of fragments and hotkey_matched is still true, that should mean a positive match.
+
+        console.log(`Hotkey ${this.#key_combo} matched: ${hotkey_matched}`);
 
         if (!hotkey_matched) {
             this.#destroyMatchMetadata();

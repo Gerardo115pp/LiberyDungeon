@@ -175,8 +175,22 @@
 const transformAliasIdentity = (identity) => {
     let transformed_identity = identity;
 
-    if (identity === SPACE_KEY) {
+    switch (identity) {
+    case SPACE_KEY:
         transformed_identity = " ";
+        break;
+    case ARROW_UP_KEY:
+        transformed_identity = "ArrowUp";
+        break;
+    case ARROW_DOWN_KEY:
+        transformed_identity = "ArrowDown";
+        break;
+    case ARROW_LEFT_KEY:
+        transformed_identity = "ArrowLeft";
+        break;
+    case ARROW_RIGHT_KEY:
+        transformed_identity = "ArrowRight";
+        break;
     }
 
     return transformed_identity;
@@ -192,6 +206,12 @@ const isAliasIdentity = (identity) => {
 
     switch (identity) {
         case SPACE_KEY:
+            is_alias = true;
+            break;
+        case ARROW_UP_KEY:
+        case ARROW_DOWN_KEY:
+        case ARROW_LEFT_KEY:
+        case ARROW_RIGHT_KEY:
             is_alias = true;
             break;
     }
@@ -342,7 +362,7 @@ export class HotkeyFragment {
         this.#fragment_identity = "";
         this.#alternate_identities = [];
 
-        this.#parseModifiers();
+        this.#parseMembers();
     }
 
     /**
@@ -447,6 +467,8 @@ export class HotkeyFragment {
      */
     match(event) {
         if (event == null) return false;
+        // TODO: Add matched to the beginning of all but the first if statements so that if it has been already unmatched 
+        // it doens't go through the rest of the checking process unnecessarily.
 
         let matched = true;
 
@@ -460,18 +482,22 @@ export class HotkeyFragment {
         // But checking that ctrl and alt are not pressed if not required is needed to avoid overwriting browser shortcuts unintentionally.
         
         if (!this.#matchIdentity(event)) {
+            console.log(`Fragment: ${this.#fragment} did not match '${event.key}'`);
             matched = false;
         }
 
         if (matched && this.#control_modifier) {
+            // Ensures an event that explicitly requires a control modifier, example 'ctrl+a' will not match 'a'.
             matched = event.ctrlKey;
         }
 
         if (matched && this.#shift_modifier) {
+            // Ensures an event that explicitly requires a shift modifier, example 'shift+a' will not match 'a'.
             matched = event.shiftKey;
         }
 
         if (matched && this.#alt_modifier) {
+            // Ensures an event that explicitly requires an alt modifier, example 'alt+a' will not match 'a'.
             matched = event.altKey;
         }
 
@@ -510,7 +536,13 @@ export class HotkeyFragment {
         let all_identities = this.Identities;
 
         for (let h = 0; h < all_identities.length && !is_match; h++) {
-            is_match = key === all_identities[h];
+            let identity_candidate = all_identities[h];
+
+            if (!is_letter) {
+                identity_candidate = identity_candidate.toLowerCase();
+            }
+
+            is_match = key === identity_candidate;
         }
 
         return is_match;
@@ -573,7 +605,7 @@ export class HotkeyFragment {
         return is_identity;
     }
 
-    #parseModifiers() {
+    #parseMembers() {
         for (const member of this.#fragment_members) {
             this.#detectMemberRole(member);
         }
