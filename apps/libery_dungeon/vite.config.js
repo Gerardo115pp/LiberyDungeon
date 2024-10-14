@@ -3,23 +3,6 @@ import { defineConfig } from 'vite';
 import path from 'path';
 import fs from 'fs';
 
-const ENABLE_FULL_RELOAD = true;
-
-/**
- * @type {import('vite').PluginOption}
- */
-const fullReloadAlways = {
-	handleHotUpdate(hmr_context) {
-		console.log(`Full reload requested for '${hmr_context.file}'`);
-		if (hmr_context.file.includes('libs/LiberyHotkeys')) {
-			hmr_context.server.ws.send({
-				type: 'full-reload'
-			});
-		}
-		return [];
-	}
-}
-
 export default defineConfig(async ({ command, mode, isSsrBuild, isPreview }) => {
 	let is_production = command === 'build';
 
@@ -67,10 +50,6 @@ export default defineConfig(async ({ command, mode, isSsrBuild, isPreview }) => 
 			sveltekit()
 		],
 		clearScreen: true,
-	}
-
-	if (ENABLE_FULL_RELOAD) {
-		config.plugins.push(fullReloadAlways);
 	}
 
 	if (!is_production) {
