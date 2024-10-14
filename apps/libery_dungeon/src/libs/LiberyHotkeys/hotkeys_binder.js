@@ -293,12 +293,18 @@ export class HotkeysController {
 
         let triggers = mode === "keydown" ? this.#keydown_hotkey_triggers : this.#keyup_hotkey_triggers;
 
-        let lower_case_matching = triggers.get(key.toLowerCase()) ?? [];
-        let upper_case_matching = triggers.get(key.toUpperCase()) ?? [];
+        let lower_case_matching = triggers.get(key.toLowerCase()) ?? []; // This is done so, for example hotkeys like shift+a are able to
+        let upper_case_matching = triggers.get(key.toUpperCase()) ?? [];// be matched, cause the event.key will return 'A' and not 'a'
+        let exact_matching = [];
+
+        if (key.length > 1) { // Allow matching hotkeys like 'up' which will match 'ArrowUp'. Same case for 'enter' that matches 'Enter', 'backspace' that matches 'Backspace' etc.
+            exact_matching = triggers.get(key) ?? [];
+        }
 
         candidate_hotkeys = [
             ...lower_case_matching,
-            ...upper_case_matching
+            ...upper_case_matching,
+            ...exact_matching
         ];
 
         return candidate_hotkeys;
@@ -318,6 +324,7 @@ export class HotkeysController {
      */
     #handleKeyDown(event) {
         if (this.#shouldIgnoreEvent(event)) return;
+        console.log("keydown: ", event);
 
         this.#keyboard_past_keydowns.Add(event);
         
@@ -368,6 +375,7 @@ export class HotkeysController {
         let past_events = is_keydown ? this.#keyboard_past_keydowns : this.#keyboard_past_keyups;
 
         let candidate_hotkeys = this.#getCandidateHotkeys(event.key, event.type);
+        console.log("candidate hotkeys: ", candidate_hotkeys);
 
         if (candidate_hotkeys.length === 0) return;
 
