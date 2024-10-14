@@ -38,6 +38,7 @@
         import { page } from "$app/stores";
         import { current_user_identity } from "@stores/user";
         import DiscreteFeedbackLog from "@libs/LiberyFeedback/FeedbackUI/DiscreteFeedbackLog.svelte";
+        import { setDiscreteFeedbackMessage } from "@libs/LiberyFeedback/lf_utils";
     
     /*=====  End of Imports  ======*/
      
@@ -106,7 +107,7 @@
             let media_zoom_factor = 0.1;
 
             let media_zoom = 1;
-            const MAX_MEDIA_ZOOM = 3;
+            const MAX_MEDIA_ZOOM = 3.3;
             const MIN_MEDIA_ZOOM = 0.1;
 
             /** @type {boolean} whether to show the media movement manager */
@@ -453,6 +454,10 @@
                     media_zoom = new_media_zoom;
                     media_element.style.transform = `scale(${media_zoom})`;
                 }
+
+                let feedback_message = `Media zoom: ${Math.trunc(media_zoom * 100)}%`;
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             const handleShowMediaInformationPanel = () => {
