@@ -7,7 +7,7 @@
         import { MediaChangesManager, media_change_types } from "@models/WorkManagers";
         import MediaMovementsTool from "./sub-components/MediaMovementsTool/MediaMovementsTool.svelte";
         import { categories_tree, current_category } from "@stores/categories_tree";
-        import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+        import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import { app_context_manager } from "@libs/AppContext/AppContextManager";
         import { getCategoryTree, category_cache } from "@models/Categories";
         import MediasGallery from "./sub-components/MediaGallery/MediasGallery.svelte";
@@ -36,7 +36,8 @@
         import MediaInformationPanel from "./sub-components/MediaInformation/MediaInformationPanel.svelte";
         import { goto } from "$app/navigation";
         import { page } from "$app/stores";
-    import { current_user_identity } from "@stores/user";
+        import { current_user_identity } from "@stores/user";
+        import DiscreteFeedbackLog from "@libs/LiberyFeedback/FeedbackUI/DiscreteFeedbackLog.svelte";
     
     /*=====  End of Imports  ======*/
      
@@ -58,6 +59,8 @@
     /*=============================================
     =            properties            =
     =============================================*/
+
+        let global_hotkeys_manager = getHotkeysManager();
     
         /*----------  Exports  ----------*/
 
@@ -66,6 +69,7 @@
          * @type {string}
          */
         export let url_category_id;
+
 
         /**
          * The index of the media to display
@@ -807,6 +811,9 @@
             </div>
         {/if}
     {/if}
+    <div id="feedback-log-positioner">
+        <DiscreteFeedbackLog />
+    </div>
 </main>
 
 <style>
@@ -898,6 +905,21 @@
         }
     
     /*=====  End of Cinema mode  ======*/
+    
+    
+    /*=============================================
+    =            Feedback            =
+    =============================================*/
+    
+        #feedback-log-positioner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            z-index: var(--z-index-t-1);
+        }
+    
+    
+    /*=====  End of Feedback  ======*/
     
     
 </style>

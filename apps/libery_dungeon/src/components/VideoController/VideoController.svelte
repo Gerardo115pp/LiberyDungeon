@@ -49,7 +49,7 @@
             },
             TOGGLE_MUTE: {
                 key_combo: "m",
-                handler: toggleMute,
+                handler: handleMutedToggleHotkey,
                 options: {
                     description: "Mute/Unmute video",
                 }
@@ -142,7 +142,7 @@
             },
             TOGGLE_AUTOHIDE: {
                 key_combo: "p",
-                handler: togglePlayerAutoHide,
+                handler: handleTogglePlayerAutoHide,
                 options: {
                     description: "Whether to keep the video controls always visible or auto hide",
                 }
@@ -274,7 +274,7 @@
                 changeVolumenBy(0.1);
             }
 
-            function togglePlayerAutoHide() {
+            function handleTogglePlayerAutoHide() {
                 auto_hide = !auto_hide;
 
                 if (auto_hide) {
@@ -284,6 +284,16 @@
                     controller_opacity = 1;
                 }
             }
+
+            function handleMutedToggleHotkey() {
+                toggleMute();
+
+                let feedback_message = "muted: ";
+
+                feedback_message += video_muted ? "on" : "off";
+
+                setDiscreteFeedbackMessage(feedback_message);
+            }
         
         /*=====  End of Hotkeys  ======*/
 
@@ -292,7 +302,17 @@
          * @param {number} amount the amount to change the volume by
          */
         const changeVolumenBy = (amount) => {
-            video_element.volume = Math.min(1, Math.max(0, video_element.volume + amount));
+            let new_volume = Math.min(1, Math.max(0, video_element.volume + amount));
+            
+            video_element.volume = new_volume;
+
+            let feedback_message = `volume: ${Math.round(new_volume * 100)}%`;
+
+            if (video_element.muted) {
+                feedback_message += " (muted)";
+            }
+
+            setDiscreteFeedbackMessage(feedback_message);
         }
 
         /**
