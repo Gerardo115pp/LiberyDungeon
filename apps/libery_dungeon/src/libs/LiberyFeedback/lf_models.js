@@ -194,121 +194,120 @@ import { emitLabeledError } from "./lf_utils";
 
 /*=====  End of Errors  ======*/
 
-
 /*=============================================
 =            Messages            =
 =============================================*/
 
-/**
- * @typedef {Object} ConfirmMessageParams
- * @property {string} question_message - the message that explains the decision to the user.
- * @property {string} message_title
- * @property {string} [confirm_label]
- * @property {string} [cancel_label]
- * @property {boolean} [auto_focus_cancel]
- * @property {number} [danger_level] - 0 is informational, 1 is warning, 2 is danger. and -1 is success.
- * @property {number} [timeout]
-*/
-
-export class ConfirmMessage {
     /**
-     * The message to be confirmed.
-     * @type {string}
-     */
-    #question_message;
+     * @typedef {Object} ConfirmMessageParams
+     * @property {string} question_message - the message that explains the decision to the user.
+     * @property {string} message_title
+     * @property {string} [confirm_label]
+     * @property {string} [cancel_label]
+     * @property {boolean} [auto_focus_cancel]
+     * @property {number} [danger_level] - 0 is informational, 1 is warning, 2 is danger. and -1 is success.
+     * @property {number} [timeout]
+    */
 
-    /**
-     * The message title.
-     * @type {string}
-     */
-    #message_title;
+    export class ConfirmMessage {
+        /**
+         * The message to be confirmed.
+         * @type {string}
+         */
+        #question_message;
 
-    /**
-     * The label of the confirm message.
-     * @type {string}
-     * @default "Accept"
-     */
-    #confirm_label;
+        /**
+         * The message title.
+         * @type {string}
+         */
+        #message_title;
 
-    /**
-     * The label of the cancel message. 
-     * @type {string}
-     * @default "Cancel"
-     */
-    #cancel_label;
+        /**
+         * The label of the confirm message.
+         * @type {string}
+         * @default "Accept"
+         */
+        #confirm_label;
 
-    /**
-     * Whether the cancel button should be auto focused.
-     * @type {boolean}
-     * @default true
-     */
-    #auto_focus_cancel;
+        /**
+         * The label of the cancel message. 
+         * @type {string}
+         * @default "Cancel"
+         */
+        #cancel_label;
 
-    /**
-     * The danger level of the message. 0 is informational, 1 is warning, 2 is danger. and -1 is success.
-     * @type {number}
-     */
-    #danger_level;
+        /**
+         * Whether the cancel button should be auto focused.
+         * @type {boolean}
+         * @default true
+         */
+        #auto_focus_cancel;
 
-    /**
-     * The timeout of the message. -1 is infinite and no timeout should be set.
-     * @type {number}
-     * @default -1
-     */
-    #timeout;
+        /**
+         * The danger level of the message. 0 is informational, 1 is warning, 2 is danger. and -1 is success.
+         * @type {number}
+         */
+        #danger_level;
+
+        /**
+         * The timeout of the message. -1 is infinite and no timeout should be set.
+         * @type {number}
+         * @default -1
+         */
+        #timeout;
 
 
-    /**
-     * @param {ConfirmMessageParams} param0
-     */
-    constructor({ question_message, message_title, confirm_label = "Accept", cancel_label = "Cancel", auto_focus_cancel = true, danger_level = 0, timeout = -1 }) {
-        this.#question_message = question_message;
-        this.#message_title = message_title;
-        this.#confirm_label = confirm_label;
-        this.#cancel_label = cancel_label;
-        this.#auto_focus_cancel = auto_focus_cancel;
-        this.#danger_level = danger_level;
-        this.#timeout = timeout;
+        /**
+         * @param {ConfirmMessageParams} param0
+         */
+        constructor({ question_message, message_title, confirm_label = "Accept", cancel_label = "Cancel", auto_focus_cancel = true, danger_level = 0, timeout = -1 }) {
+            this.#question_message = question_message;
+            this.#message_title = message_title;
+            this.#confirm_label = confirm_label;
+            this.#cancel_label = cancel_label;
+            this.#auto_focus_cancel = auto_focus_cancel;
+            this.#danger_level = danger_level;
+            this.#timeout = timeout;
+        }
+
+        get QuestionMessage() {
+            return this.#question_message;
+        }
+
+        get MessageTitle() {
+            return this.#message_title;
+        }
+
+        get ConfirmLabel() {
+            return this.#confirm_label;
+        }
+        
+        get CancelLabel() {
+            return this.#cancel_label;
+        }
+
+        get AutoFocusCancel() {
+            return this.#auto_focus_cancel;
+        }
+
+        get DangerLevel() {
+            return this.#danger_level;
+        }
+
+        get Timeout() {
+            return this.#timeout;
+        }
     }
 
-    get QuestionMessage() {
-        return this.#question_message;
+    /**
+     * The different types of user responses to a confirm message.
+     * @enum {number}
+     */
+    export const confirm_question_responses = {
+        CANCEL: 0,
+        CONFIRM: 1,
+        NO_CHOICE: -1
     }
-
-    get MessageTitle() {
-        return this.#message_title;
-    }
-
-    get ConfirmLabel() {
-        return this.#confirm_label;
-    }
-    
-    get CancelLabel() {
-        return this.#cancel_label;
-    }
-
-    get AutoFocusCancel() {
-        return this.#auto_focus_cancel;
-    }
-
-    get DangerLevel() {
-        return this.#danger_level;
-    }
-
-    get Timeout() {
-        return this.#timeout;
-    }
-}
-
-/**
- * The different types of user responses to a confirm message.
- * @enum {number}
- */
-export const confirm_question_responses = {
-    CANCEL: 0,
-    CONFIRM: 1,
-    NO_CHOICE: -1
-}
 
 /*=====  End of Messages  ======*/
 
