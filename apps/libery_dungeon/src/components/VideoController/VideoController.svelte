@@ -42,7 +42,7 @@
         const keybinds = {
             PAUSE_VIDEO: {
                 key_combo: "space",
-                handler: pauseVideo,
+                handler: handlePauseHotkey,
                 options: {
                     description: "Pause/Play video",
                 }
@@ -70,35 +70,35 @@
             },
             FORWARD_VIDEO: {
                 key_combo: "shift+x",
-                handler: () => skipVideoPercentage(true),
+                handler: handleVideoForwardPercentageHotkey,
                 options: {
                     description: "Forward video 5% of the total duration(min of 5 seconds). if overflows, jumps to the start",
                 }
             },
             BACKWARD_VIDEO: {
                 key_combo: "x",
-                handler: () => skipVideoPercentage(false),
+                handler: handleVideoBackwardPercentageHotkey,
                 options: {
                     description: "Backward video 5% of the total duration(min of 5 seconds). No overflow",
                 }
             },
             FORWARD_SECS_VIDEO: {
                 key_combo: "shift+alt+x",
-                handler: () => skipVideoSeconds(5),
+                handler: handleVideoForwardSecondsHotkey,
                 options: {
                     description: "Forward video 5 seconds",
                 }
             },
             BACKWARD_SECS_VIDEO: {
                 key_combo: "alt+x",
-                handler: () => skipVideoSeconds(-5),
+                handler: handleVideoBackwardSecondsHotkey,
                 options: {
                     description: "Backward video 5 seconds",
                 }
             },
             SKIP_FRAME_FORWARD: {
                 key_combo: "shift+`",
-                handler: () => skipFrame(true),
+                handler: handleSkipFrameForwardHotkey,
                 options: {
                     can_repeat: true,
                     description: "Skip frame forward",
@@ -106,7 +106,7 @@
             },
             SKIP_FRAME_BACKWARD: {
                 key_combo: "`",
-                handler: () => skipFrame(false),
+                handler: handleSkipFrameBackwardHotkey,
                 options: {
                     can_repeat: true,
                     description: "Skip frame backward",
@@ -121,26 +121,26 @@
             },
             SPEED_UP_VIDEO: {
                 key_combo: ",",
-                handler: () => setVideoPlaybackRate(false),
+                handler: handleSpeedUpVideoHotkey,
                 options: {
                     description: "Speed up video",
                 }
             },
             SLOW_DOWN_VIDEO: {
                 key_combo: ".",
-                handler: () => setVideoPlaybackRate(true),
+                handler: handleSlowDownVideoHotkey,
                 options: {
                     description: "Slow down video",
                 }
             },
             SCREENSHOT_VIDEO: {
                 key_combo: "shift+s",
-                handler: () => emitScreenshotVideo(),
+                handler: handleScreenshotVideoHotkey,
                 options: {
                     description: "Take a screenshot of the video",
                 }
             },
-            TOGGLE_AUTOHIDE: {
+            TOGGLE_AUTO_HIDE: {
                 key_combo: "p",
                 handler: handleTogglePlayerAutoHide,
                 options: {
@@ -265,13 +265,50 @@
                 });
             }
 
-            function handleVolumeDownHotkey() {
-                console.log("Changing volume down");
-                changeVolumenBy(-0.1);
+            function handleVideoBackwardPercentageHotkey() {
+                skipVideoPercentage(false);
             }
 
-            function handleVolumeUpHotkey() {
-                changeVolumenBy(0.1);
+            function handleVideoBackwardSecondsHotkey() {
+                skipVideoSeconds(-5);
+            }
+
+            function handleMutedToggleHotkey() {
+                toggleMute();
+
+                let feedback_message = "muted: ";
+
+                feedback_message += video_muted ? "on" : "off";
+
+                setDiscreteFeedbackMessage(feedback_message);
+            }            
+
+            function handlePauseHotkey() {
+                pauseVideo();
+
+                let feedback_message = video_paused ? "paused" : "playing";
+                
+                setDiscreteFeedbackMessage(feedback_message);
+            }
+
+            function handleSkipFrameBackwardHotkey() {
+                skipFrame(false);
+            }
+
+            function handleSkipFrameForwardHotkey() {
+                skipFrame(true);
+            }
+
+            function handleSpeedUpVideoHotkey() {
+                setVideoPlaybackRate(true);
+            }
+
+            function handleSlowDownVideoHotkey() {
+                setVideoPlaybackRate(false);
+            }
+
+            function handleScreenshotVideoHotkey() {
+                emitScreenshotVideo();
             }
 
             function handleTogglePlayerAutoHide() {
@@ -285,14 +322,21 @@
                 }
             }
 
-            function handleMutedToggleHotkey() {
-                toggleMute();
+            function handleVideoForwardPercentageHotkey() {
+                skipVideoPercentage(true);
+            }
 
-                let feedback_message = "muted: ";
+            function handleVideoForwardSecondsHotkey() {
+                skipVideoSeconds(5);
+            }
 
-                feedback_message += video_muted ? "on" : "off";
+            function handleVolumeDownHotkey() {
+                console.log("Changing volume down");
+                changeVolumenBy(-0.1);
+            }
 
-                setDiscreteFeedbackMessage(feedback_message);
+            function handleVolumeUpHotkey() {
+                changeVolumenBy(0.1);
             }
         
         /*=====  End of Hotkeys  ======*/
