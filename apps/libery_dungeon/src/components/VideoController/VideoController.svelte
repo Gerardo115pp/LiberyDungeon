@@ -275,6 +275,10 @@
 
             function handleVideoBackwardSecondsHotkey() {
                 skipVideoSeconds(-5);
+
+                let feedback_message = "-5 seconds";
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             function handleMutedToggleHotkey() {
@@ -358,6 +362,10 @@
 
             function handleVideoForwardSecondsHotkey() {
                 skipVideoSeconds(5);
+
+                let feedback_message = "+5 seconds";
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             function handleVolumeDownHotkey() {
