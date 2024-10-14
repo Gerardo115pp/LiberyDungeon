@@ -120,14 +120,14 @@
                 }
             },
             SPEED_UP_VIDEO: {
-                key_combo: ",",
+                key_combo: ".",
                 handler: handleSpeedUpVideoHotkey,
                 options: {
                     description: "Speed up video",
                 }
             },
             SLOW_DOWN_VIDEO: {
-                key_combo: ".",
+                key_combo: ",",
                 handler: handleSlowDownVideoHotkey,
                 options: {
                     description: "Slow down video",
