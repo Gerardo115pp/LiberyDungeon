@@ -52,6 +52,20 @@
                     description: "Mute/Unmute video",
                 }
             },
+            VOLUMEN_UP: {
+                key_combo: "up",
+                handler: handleVolumeUpHotkey,
+                options: {
+                    description: "Increase volume by 10%",
+                }
+            },
+            VOLUMEN_DOWN: {
+                key_combo: "down",
+                handler: handleVolumeDownHotkey,
+                options: {
+                    description: "Decrease volume by 10%",
+                }
+            },
             FORWARD_VIDEO: {
                 key_combo: "shift+x",
                 handler: () => skipVideoPercentage(true),
@@ -218,16 +232,48 @@
     /*=============================================
     =            Methods            =
     =============================================*/
-    
-        const defineVideoControllerKeybinds = () => {
-            if (layout_properties.IS_MOBILE || !browser || !global_hotkeys_manager.hasLoadedContext()) return;
 
-            const video_controls_description_group = "<video_controls>";
+        
+        /*=============================================
+        =            Hotkeys            =
+        =============================================*/
+        
+            const defineVideoControllerKeybinds = () => {
+                if (layout_properties.IS_MOBILE || !browser || !global_hotkeys_manager.hasLoadedContext()) return;
 
-            Object.values(keybinds).forEach(keybind => {
-                keybind.options.description = `${video_controls_description_group} ${keybind.options.description ?? "Empty description"}`;
-                global_hotkeys_manager.registerHotkeyOnContext(keybind.key_combo, keybind.handler, keybind.options);
-            })
+                const video_controls_description_group = "<video_controls>";
+
+                Object.values(keybinds).forEach(keybind => {
+                    keybind.options.description = `${video_controls_description_group} ${keybind.options.description ?? "Empty description"}`;
+                    global_hotkeys_manager.registerHotkeyOnContext(keybind.key_combo, keybind.handler, keybind.options);
+                })
+            }
+
+            const removeVideoControllerKeybinds = () => {
+                if (layout_properties.IS_MOBILE || !global_hotkeys_manager.hasLoadedContext()) return;
+
+                Object.values(keybinds).forEach(keybind => {
+                    global_hotkeys_manager.unregisterHotkeyFromContext(keybind.key_combo, "keydown");
+                });
+            }
+
+            function handleVolumeDownHotkey() {
+                console.log("Changing volume down");
+                changeVolumenBy(-0.1);
+            }
+
+            function handleVolumeUpHotkey() {
+                changeVolumenBy(0.1);
+            }
+        
+        /*=====  End of Hotkeys  ======*/
+
+        /**
+         * Changes the volume of the video by the given amount
+         * @param {number} amount the amount to change the volume by
+         */
+        const changeVolumenBy = (amount) => {
+            video_element.volume = Math.min(1, Math.max(0, video_element.volume + amount));
         }
 
         /**
@@ -243,14 +289,6 @@
             if (watch_progress == null) return;
 
             this.currentTime = watch_progress / 1000;
-        }
-
-        const removeVideoControllerKeybinds = () => {
-            if (layout_properties.IS_MOBILE || !global_hotkeys_manager.hasLoadedContext()) return;
-
-            Object.values(keybinds).forEach(keybind => {
-                global_hotkeys_manager.unregisterHotkeyFromContext(keybind.key_combo, "keydown");
-            });
         }
 
         function pauseVideo() {
