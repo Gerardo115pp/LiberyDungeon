@@ -6,8 +6,6 @@
     import { layout_properties } from "@stores/layout";
     import { browser } from "$app/environment";
     import { videoDurationToString } from "@libs/utils";
-
-
     
     /*=============================================
     =            Properties            =
@@ -266,7 +264,13 @@
             }
 
             function handleVideoBackwardPercentageHotkey() {
-                skipVideoPercentage(false);
+                let duration_skipped = skipVideoPercentage(false);
+
+                let duration_string = videoDurationToString(duration_skipped);
+
+                let feedback_message = `-${duration_string}`;
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             function handleVideoBackwardSecondsHotkey() {
@@ -343,7 +347,13 @@
             }
 
             function handleVideoForwardPercentageHotkey() {
-                skipVideoPercentage(true);
+                let duration_skipped = skipVideoPercentage(true);
+
+                let duration_string = videoDurationToString(duration_skipped);
+
+                let feedback_message = `+${duration_string}`;
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             function handleVideoForwardSecondsHotkey() {
@@ -392,6 +402,13 @@
             if (watch_progress == null) return;
 
             this.currentTime = watch_progress / 1000;
+        }
+
+        /**
+         * Returns the video_element currentTime in a string format "hh:mm:ss"
+         */
+        function getVideoCurrentProgressString() {
+            return videoDurationToString(video_element.currentTime);
         }
 
         const handleActiveMediaIndexChange = (new_active_media_index) => {
@@ -569,14 +586,21 @@
         }
 
         /**
-         * Skips video by 5%, if forward is true, skips forward, if false, skips backward
+         * Skips video by 5%, if forward is true, skips forward, if false, skips backward.
+         * Returns the percentage skipped as a positive number regardless of the direction.
          * @param {boolean} forward whether to skip forward or backward
+         * @returns {number}
          */
         function skipVideoPercentage(forward) {
             let step = forward ? 1 : -1;
-            let new_time = video_element.currentTime + (step * Math.max(video_element.duration * 0.05));
+
+            let video_percentage = video_element.duration * 0.05;
+
+            let new_time = video_element.currentTime + (step * video_percentage);
 
             setVideoDuration(new_time, forward);
+
+            return video_percentage;
         }
 
         /**
