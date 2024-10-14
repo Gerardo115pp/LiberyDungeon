@@ -3,6 +3,15 @@ import { defineConfig } from 'vite';
 import path from 'path';
 import fs from 'fs';
 
+const ENABLE_FULL_RELOAD = true;
+
+const fullReloadAlways = {
+	handleHotUpdate({server}) {
+		server.ws.send({type: 'full-reload'});
+		return [];
+	}
+}
+
 export default defineConfig(async ({ command, mode, isSsrBuild, isPreview }) => {
 	let is_production = command === 'build';
 
@@ -50,6 +59,10 @@ export default defineConfig(async ({ command, mode, isSsrBuild, isPreview }) => 
 			sveltekit()
 		],
 		clearScreen: true,
+	}
+
+	if (ENABLE_FULL_RELOAD) {
+		config.plugins.push(fullReloadAlways);
 	}
 
 	if (!is_production) {
