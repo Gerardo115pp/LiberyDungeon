@@ -119,6 +119,14 @@
              */
             let keep_media_position = false;
 
+            /**
+             * Whether to invert the media position modifier on media change.
+             * Sounds weird but it's aimed for PDF/Comic pages where when you are at the bottom
+             * of the page and you go to the next page, you want to be at the top of the page.
+             * @type {boolean}
+             */
+            let page_reader_mode = false;
+
             /** @type {boolean} whether to show the media movement manager */
             let show_media_movement_manager = false;
 
@@ -213,30 +221,45 @@
                         description: "<navigate>Jump to a specific media position. exapmle: '5 g' will jump to the 5th media."
                     });
 
-                    hotkeys_context.register(["w", "s"], handleMoveImageUpDown, {
-                        description: "<media_modification>Move the image up or down, W for up, S for down."
-                    });
-
                     hotkeys_context.register("r", e => {e.preventDefault(); random_media_navigation.set(!$random_media_navigation)}, {
                         description: "<navigation>Toggle random media navigation."
                     });
 
-                    hotkeys_context.register(["shift+a", "shift+d"], handleMediaZoom, {
-                        description: "<media_modification>Zoom in or out the media, Shift+A for zoom out, Shift+D for zoom in.",
-                        can_repeat: true,
-                    });
+                    // Media modifiers and configurations
+                        hotkeys_context.register(["w", "s"], handleMoveImageUpDown, {
+                            description: "<media_modification>Move the image up or down, W for up, S for down."
+                        });
 
-                    hotkeys_context.register(["; z"], toggleKeepMediaZoomHotkey, {
-                        description: "<viewer_configuration>Changes whether to keep the media zoom when navigating through medias."
-                    });
+                        hotkeys_context.register(["shift+a", "shift+d"], handleMediaZoom, {
+                            description: "<media_modification>Zoom in or out the media, Shift+A for zoom out, Shift+D for zoom in.",
+                            can_repeat: true,
+                        });
 
-                    hotkeys_context.register(["; p"], toggleKeepMediaPositionHotkey, {
-                        description: "<viewer_configuration>Changes whether to keep the media position when navigating through medias."
-                    });
+                        hotkeys_context.register("alt+shift+d", e => {e.preventDefault(); applyMediaModifiersConfig(true)}, {
+                            description: "<media_modification>Reset the media zoom and position."
+                        });
 
-                    hotkeys_context.register("alt+shift+d", e => {e.preventDefault(); resetMediaModifiers(true)}, {
-                        description: "<media_modification>Reset the media zoom and position."
-                    });
+                        hotkeys_context.register(["; z"], toggleKeepMediaZoomHotkey, {
+                            description: "<viewer_configuration>Changes whether to keep the media zoom when navigating through medias."
+                        });
+
+                        hotkeys_context.register(["; p"], toggleKeepMediaPositionHotkey, {
+                            description: "<viewer_configuration>Changes whether to keep the media position when navigating through medias."
+                        });
+
+                        hotkeys_context.register(["; r"], toggleReaderModeHotkey, {
+                            description: "<viewer_configuration>Maintains the zoom and sets the media on the top after each media change."
+                        });
+
+                        hotkeys_context.register(["f"], handleCinemaModeToggle, {
+                            description: "<viewer_configuration>Cinema mode.",
+                        });
+
+                        hotkeys_context.register(["; d"], handleDarkModeToggle, {
+                            description: "<viewer_configuration>Toggle dark mode.",
+                            consider_time_in_sequence: true,
+                        });
+                    // End 
 
                     hotkeys_context.register(["q", "esc"], handleGoBack, {
                         description: `<${HOTKEYS_GENERAL_GROUP}>Go back to the media explorer.`
@@ -266,15 +289,6 @@
 
                     hotkeys_context.register("n", e => clearActiveMediaChanges(), {
                         description: "<media_modification>Clear the current media changes(delete, move).",
-                    });
-
-                    hotkeys_context.register(["l o"], handleDarkModeToggle, {
-                        description: `<${HOTKEYS_GENERAL_GROUP}>Lights on/off.`,
-                        consider_time_in_sequence: true,
-                    });
-
-                    hotkeys_context.register(["f"], handleCinemaModeToggle, {
-                        description: `<${HOTKEYS_GENERAL_GROUP}>Cinema mode on/off. when on, the browser will enter fullscreen mode and the media will be scaled to fit the available space, all media transformations will be disabled.`,
                     });
 
                     hotkeys_context.register("?", e => hotkeys_sheet_visible.set(!$hotkeys_sheet_visible), {
@@ -424,7 +438,7 @@
 
                 await tick();
                 
-                resetMediaModifiers();
+                applyMediaModifiersConfig();
             }
 
             /**
@@ -455,7 +469,7 @@
 
                 await tick();
 
-                resetMediaModifiers();
+                applyMediaModifiersConfig();
             }
 
             /**
@@ -497,7 +511,7 @@
 
                 await tick();
                 
-                resetMediaModifiers();
+                applyMediaModifiersConfig();
             }
 
             /**
@@ -508,22 +522,20 @@
             const handleMoveImageUpDown = (key_event, hotkey) => {
                 if (cinema_mode) return;
 
-                let key_combo = hotkey.KeyCombo.toLowerCase();
+                let key_combo = key_event.key;
                 let movement_direction = key_combo === "w" ? -1 : 1;
-
-                let media_element = getHTMLMediaElement();
-
-                if (media_element === null) return;
 
                 let media_translate = getMediaDisplayTranslatePosition();
 
                 if (media_translate === null) return;
 
-                let new_Y_translate = media_translate.y + (movement_direction * media_movement_factor * media_element.clientHeight);
+                let new_Y_translate = media_translate.y + (movement_direction * (media_movement_factor * 100));
 
-                let translate_string = `${media_translate.x}px ${new_Y_translate}px`;
+                setMediaPosition({x: 0, y: new_Y_translate});
 
-                media_element.style.translate = translate_string;
+                let feedback_message = `pos: ${new_Y_translate}%`;
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             /**
@@ -584,6 +596,8 @@
              */
             const handleDarkModeToggle = () => {
                 toggleDarkMode(false); // parameter `force_enable` instead of toggling it turns it on despite its current state. so we set force_enable to false
+
+                setDiscreteFeedbackMessage("changing lights...");
             }
 
             /**
@@ -610,13 +624,19 @@
                 } else {
                     active_media_change.set($media_changes_manager.getMediaChangeType(current_media.uuid));
                 }
+
+                let feedback_message = $active_media_change === media_change_types.DELETED ? "media rejected" : "restored";
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             /**
              * Toggles the keep_media_zoom configuration value.
              */
             const toggleKeepMediaZoomHotkey = () => {
-                keep_media_zoom = !keep_media_zoom;
+                let current_media_zoom_config = keep_media_zoom;
+                resetMediaZoomConfig();
+                keep_media_zoom = !current_media_zoom_config;
 
                 let feedback_message = "";
 
@@ -633,7 +653,9 @@
              * Toggles the keep_media_position configuration value.
              */
             const toggleKeepMediaPositionHotkey = () => {
-                keep_media_position = !keep_media_position;
+                let current_media_position_config = keep_media_position;
+                resetMediaPositionConfig();
+                keep_media_position = !current_media_position_config;
 
                 let feedback_message = "";
 
@@ -645,8 +667,117 @@
 
                 setDiscreteFeedbackMessage(feedback_message);
             }
+
+            /**
+             * Toggles the reader mode which sets the media position to the top of the media after each media change.
+             * And also keeps the zoom of the media.
+             * @returns {void}
+             */
+            const toggleReaderModeHotkey = () => {
+                let current_page_reader_mode = page_reader_mode;
+                resetMediaPositionConfig();
+                page_reader_mode = !current_page_reader_mode;
+
+                let feedback_message = "";
+
+                if (page_reader_mode) {
+                    feedback_message = "page reader: on";
+                } else {
+                    feedback_message = "page reader: off";
+                }
+
+                setDiscreteFeedbackMessage(feedback_message);
+            }
         
         /*=====  End of Keybinding  ======*/
+
+        /*=============================================
+        =            Media modifiers            =
+        =============================================*/
+
+            /**
+             * Applies the media modifiers configuration to the media element. 
+             * If the force_reset parameter is set to true, then the media will be reset to its default position
+             * and zoom despite the configuration.
+             * @param {boolean} force_reset - whether to force the reset despite config
+             * @returns {void} 
+             */
+            const applyMediaModifiersConfig = force_reset => {
+                force_reset = force_reset ?? false;
+
+                if (force_reset) {
+                    resetMediaPositionConfig();
+                    resetMediaZoomConfig();
+                }
+
+                let media_element = getHTMLMediaElement();
+
+                if (media_element === null) {
+                    console.error("Odd, could not find the media element");
+                    return;
+                }
+
+                // position:
+                if (!keep_media_position) {
+                    media_element.style.translate = "0px 0px";
+                }
+
+                // zoom:
+                if (!keep_media_zoom && !page_reader_mode) {
+                    media_element.style.scale = "1";
+                    media_zoom = 1;
+                }
+
+                if (page_reader_mode) {
+                    toPageTop();
+                }
+            }
+
+            /**
+             * Sets a given media position.
+             * @param {TranslateTransformation} position
+            */
+            const setMediaPosition = position => {
+                let media_element = getHTMLMediaElement();
+
+                if (media_element === null) {
+                    console.error("Odd, could not find the media element");
+                    return;
+                }
+
+                let translate_string = `${position.x}% ${position.y}%`;
+
+                media_element.style.translate = translate_string;
+            }
+
+            /**
+             * Resets only the position configurations of the media.
+             */
+            const resetMediaPositionConfig = () => {
+                keep_media_position = false;
+                page_reader_mode = false;
+            }
+
+            /**
+             * Resets only the zoom configurations of the media.
+             */
+            const resetMediaZoomConfig = () => {
+                keep_media_zoom = false;
+            }
+
+            /**
+             * Sets the position of the media top of media viewer. 
+             * @returns {void}
+             */
+            const toPageTop = () => {
+                const TOP_TO_ZOOM_RATIO = 0.265640; // to get this i divided the top value by the zoom when they where at the desired position... And it worked! :D
+
+                const approximate_top = (media_zoom * TOP_TO_ZOOM_RATIO) * 100;
+
+                setMediaPosition({x: 0, y: approximate_top});
+            }
+        
+        /*=====  End of Media modifiers  ======*/
 
         const automoveMedia = () => {
             if ($auto_move_on === false) return;
@@ -724,7 +855,7 @@
 
             active_media_index.set(media_index);
             saveActiveMediaToRoute();
-            resetMediaModifiers();
+            applyMediaModifiersConfig();
             show_media_gallery = false;
         }
 
@@ -745,34 +876,7 @@
             auto_move_on.set(false);
             auto_move_category.set(null);
 
-            resetMediaModifiers(true);
-        }
-
-        /**
-         * Resets all media modifiers such as zoom and position.
-         * @param {boolean} force_reset - whether to force the reset despite config
-         * @returns {void} 
-         */
-        const resetMediaModifiers = force_reset => {
-            force_reset = force_reset ?? false;
-
-            let media_element = getHTMLMediaElement();
-
-            if (media_element === null) {
-                console.error("Odd, could not find the media element");
-                return;
-            }
-
-            // position:
-            if (force_reset || !keep_media_position) {
-                media_element.style.translate = "0px 0px";
-            }
-
-            // zoom:
-            if (force_reset || !keep_media_zoom) {
-                media_element.style.scale = "1";
-                media_zoom = 1;
-            }
+            applyMediaModifiersConfig(true);
         }
 
         /**
@@ -869,7 +973,7 @@
                 toggleDarkMode(true);
             }
 
-            resetMediaModifiers();
+            applyMediaModifiersConfig(true);
         }
     
     /*=====  End of Methods  ======*/
