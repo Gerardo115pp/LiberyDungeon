@@ -7,7 +7,7 @@
         import UserCreation from "@components/Users/UsersCreation/UserCreation.svelte";
         import { confirmPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
-        import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+        import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import { hotkeys_sheet_visible } from "@stores/layout";
         import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { 
@@ -44,12 +44,13 @@
     =            Properties            =
     =============================================*/
 
-        
         /*=============================================
         =            Hotkeys            =
         =============================================*/
+
+            let global_hotkeys_manager = getHotkeysManager();
         
-           const hotkeys_context_name = "user_management_dashboard";
+            const hotkeys_context_name = "user_management_dashboard";
         
         /*=====  End of Hotkeys  ======*/
     
@@ -59,6 +60,7 @@
          * @type {boolean}
          */ 
         let super_admin_confirmed = false;
+
 
         /**
          * The keyboard movement index.

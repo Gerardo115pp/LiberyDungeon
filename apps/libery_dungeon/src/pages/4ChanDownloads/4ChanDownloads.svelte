@@ -8,7 +8,7 @@
     import ThreadContent from "./sub-components/BoardCatalog/ThreadContent.svelte";
     import { onMount } from "svelte";
     import { layout_properties } from "@stores/layout";
-    import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { selected_thread, selected_thread_id } from "./app_page_store";
     import { browser } from "$app/environment";
@@ -35,6 +35,8 @@
     
         /** @type {ChanTrackedBoard[]} */
         let tracked_boards = [];
+
+        let global_hotkeys_manager = getHotkeysManager();
 
         /** 
          * @type {string} the selected board's name

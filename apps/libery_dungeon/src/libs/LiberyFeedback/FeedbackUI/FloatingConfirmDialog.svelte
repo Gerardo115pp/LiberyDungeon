@@ -3,7 +3,7 @@
     import { setConfirmResponse, confirm_message } from "../lf_utils";
     import { readable, writable, readonly } from "svelte/store";
     import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
-    import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { hotkeys_sheet_visible, layout_properties } from "@stores/layout";
     import Page from "@app/routes/+page.svelte";
@@ -34,6 +34,8 @@
          * @default null
          */
         export let the_message = null;
+
+        let global_hotkeys_manager = getHotkeysManager();
 
         /**
          * The response of the confirm dialog.

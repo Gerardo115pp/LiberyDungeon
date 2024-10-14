@@ -3,7 +3,7 @@
     import { deleteTransaction, emptyTrashcan, getTrashcanEntries, restoreTransaction } from "@models/Trashcan";
     import { createEventDispatcher, onMount } from "svelte";
     import TrashcanTab from "./sub-components/TrashcanTab.svelte";
-    import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import { hotkeys_sheet_visible } from "@stores/layout";
@@ -45,6 +45,8 @@
          * @type {import('@models/Trashcan').TrashcanTransactionEntry[]}
          */
         let trashcan_transaction_entries = [];
+
+        let global_hotkeys_manager = getHotkeysManager();
 
         /**
          * Whether the tool dialog is open or not.

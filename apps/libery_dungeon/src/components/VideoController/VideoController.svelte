@@ -2,7 +2,7 @@
     import { onMount, onDestroy, createEventDispatcher } from "svelte";
     import { active_media_index, automute_enabled, previous_media_index } from "@stores/media_viewer";
     import { saveMediaWatchPoint, getMediaWatchPoint } from "@models/Metadata";
-    import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import { layout_properties } from "@stores/layout";
     import { browser } from "$app/environment";
     import { videoDurationToString } from "@libs/utils";
@@ -15,6 +15,8 @@
     
         /** @type {HTMLVideoElement} the video element that will be controlled */
         export let video_element;
+
+        let global_hotkeys_manager = getHotkeysManager();
 
         /**
          * The media uuid of the video element

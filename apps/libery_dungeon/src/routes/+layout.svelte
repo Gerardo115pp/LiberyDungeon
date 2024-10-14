@@ -15,9 +15,26 @@
     import { goto } from '$app/navigation';
     import { getCurrentUserIdentity, isUsersInInitialSetupMode, validateUserAccessToken } from '@models/Users';
     import { INITIAL_SETUP_PAGE_PATH, isPublicPage, LOGIN_PAGE_PATH } from '@config/pages_routes';
+    import { setupHotkeysManager, getHotkeysManager } from '@libs/LiberyHotkeys/libery_hotkeys';
+    
+    /*=============================================
+    =            Properties            =
+    =============================================*/
+    
+        let global_hotkeys_manager = null;
+    
+    /*=====  End of Properties  ======*/
+    
+    
 
     onMount(() => {
         defineLayout();
+
+        if (global_hotkeys_manager == null) {
+            setupHotkeysManager();
+            global_hotkeys_manager = getHotkeysManager();
+        }
+        console.log("Global hotkeys manager: ", global_hotkeys_manager);
         
         console.log("Starting global platform events manager");
         global_platform_events_manager.start();
@@ -28,6 +45,10 @@
     onDestroy(() => {
         console.log("Stopping global platform events manager");
         global_platform_events_manager.stop();
+
+        if (global_hotkeys_manager != null) {
+            global_hotkeys_manager.destroy();
+        }
     });
     
     /*=============================================
@@ -86,24 +107,26 @@
     
 </script>
 
-<div id="libery-website-wrapper" class:navbarless={$navbar_hidden}>
-    <Navbar />
-    {#if $hotkeys_modal_visible}
-        <HotkeysHelpModal />
-    {/if}
-    <div id="libery-dungeon-content">
-        {#if $access_state_confirmed || isPublicPage($page.url.pathname)}
-            <slot></slot>  
+{#if global_hotkeys_manager != null} 
+    <div id="libery-website-wrapper" class:navbarless={$navbar_hidden}>
+        <Navbar />
+        {#if $hotkeys_modal_visible}
+            <HotkeysHelpModal />
         {/if}
+        <div id="libery-dungeon-content">
+            {#if $access_state_confirmed || isPublicPage($page.url.pathname)}
+                <slot></slot>  
+            {/if}
+        </div>
+        <FloatingErrorDialog 
+            display_error_duration={7000}
+        />
+        <FloatingMessageDialog 
+            display_message_duration={5000}
+        />
+        <FloatingConfirmDialog />
     </div>
-    <FloatingErrorDialog 
-        display_error_duration={7000}
-    />
-    <FloatingMessageDialog 
-        display_message_duration={5000}
-    />
-    <FloatingConfirmDialog />
-</div>
+{/if}
 
 <style>
     #libery-website-wrapper {

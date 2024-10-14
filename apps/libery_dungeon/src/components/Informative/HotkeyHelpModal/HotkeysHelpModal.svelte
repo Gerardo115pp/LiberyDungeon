@@ -1,6 +1,6 @@
 <script>
     import { hotkeys_context_events, suscribeHotkeysContextEvents } from "@libs/LiberyHotkeys/hotkeys_events";
-    import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysTable from "./sub-components/HotkeysTable.svelte";
     import { hotkeys_sheet_visible } from "@stores/layout";
     import { onDestroy, onMount } from "svelte";
@@ -15,6 +15,8 @@
          * not govern whether other components can change the visibility of the modal.
          */
         let modal_static = false;
+
+        const global_hotkeys_manager = getHotkeysManager();
 
         /**
          * The list of hotkeys to display.

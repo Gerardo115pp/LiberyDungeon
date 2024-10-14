@@ -19,7 +19,7 @@
             auto_move_category,
             media_viewer_hotkeys_context_name
         } from "@stores/media_viewer";
-        import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+        import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
         import QuickMovementsTools from "./QuickMovementsTools.svelte";
         import { create_subcategory } from "@pages/MediaViewer/app_page_store";
@@ -31,6 +31,8 @@
     /*=============================================
     =            Properties            =
     =============================================*/
+
+        let global_hotkeys_manager = getHotkeysManager();
     
         /** @type {boolean} whether the component is visible */
         export let is_component_visible = false;

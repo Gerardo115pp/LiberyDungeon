@@ -14,7 +14,7 @@
         import MediaUploadTool from "./sub-components/MediaUploadTool/MediaUploadTool.svelte";
         import CreateNewCategoryTool from "./sub-components/CreateNewCategoryTool.svelte";
         import CategoryFolder from "@components/Categories/CategoryFolder.svelte";
-        import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+        import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { CategoryLeaf, getCategory, getCategoryTree, moveCategory } from "@models/Categories";
         import LiberyHeadline from "@components/UI/LiberyHeadline.svelte";
@@ -69,12 +69,16 @@
     =            Properties            =
     =============================================*/
 
+        let global_hotkeys_manager = getHotkeysManager();
+
         export let category_id;
     
         let empty_categories_subscriber;
 
         const hotkey_context_name = "categories_explorer";
         let keyboard_focused_category = 0;
+
+
         /**
          * Used to hold the category position when the user changes hotkeys context.
          * @type {number}

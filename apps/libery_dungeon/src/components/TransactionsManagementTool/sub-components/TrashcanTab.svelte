@@ -2,7 +2,7 @@
     import { getTrashcanTransaction, restoreMedia } from '@models/Trashcan';
     import TrashcanTransactionComponent from './TrashcanTransaction.svelte';
     import { TrashcanTransaction } from '@models/Trashcan';
-    import global_hotkeys_manager from '@libs/LiberyHotkeys/libery_hotkeys';
+    import { getHotkeysManager } from '@libs/LiberyHotkeys/libery_hotkeys';
     import { tmt_hotkeys_context_name } from '../tmt_state';
     import { onDestroy, onMount } from 'svelte';
     import { confirmPlatformMessage } from '@libs/LiberyFeedback/lf_utils';
@@ -47,6 +47,8 @@
          * @type {import('@models/Trashcan').TrashcanTransactionEntry[]}
          */
         export let trashcan_transaction_entries = [];
+
+        let global_hotkeys_manager = getHotkeysManager();
 
         /**
          * A map of entries timestamp to their respective transaction details.  

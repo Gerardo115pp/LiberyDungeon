@@ -29,12 +29,18 @@ export class HotkeyContextManager {
      * @type {import('./hotkeys_binder').HotkeysController}
      */
     #hotkeys_controller
+    /**
+     * Whether the manager is destroyed and should no longer be used
+     * @type {boolean}
+     */
+    #destroyed = false
 
     /**
      * 
      * @param {boolean} emit_events - if true the manager will emit the events defined on hotkeys_consts
      */
     constructor(emit_events) {
+        console.log("Creating hotkeys manager!");
         let global_hotkeys_binder = null;
         if (getHotkeysBinder() !== null) {
             destroyHotkeysBinder();
@@ -55,6 +61,14 @@ export class HotkeyContextManager {
     }
 
     /**
+     * the hotkeys binder.
+     * @type {import('./hotkeys_binder').HotkeysController}
+     */
+    get Binder() {
+        return this.#hotkeys_controller;
+    }
+
+    /**
      * The current applied context
      * @type {HotkeysContext}
      * @readonly
@@ -71,19 +85,20 @@ export class HotkeyContextManager {
     }
 
     /**
-     * the hotkeys binder.
-     * @type {import('./hotkeys_binder').HotkeysController}
+     * Destroys the hotkeys manager. Subsequent attempts to use the manager will panic
+     * @returns {void}
      */
-    get Binder() {
-        return this.#hotkeys_controller;
-    }
+    destroy() {
+        console.log("Destroying hotkeys manager");
+        if (this.#emit_events) {
+            destroyHotkeysBinder();
+        }
 
-    /**
-     * Whether the manager is emitting events
-     * @type {boolean}
-     */
-    get EmitEvents() {
-        return this.#emit_events;
+        this.#contexts = {};
+        this.#current_context = null;
+        this.#current_context_name = undefined;
+        this.#context_stack = null;
+        this.#hotkeys_controller = null;
     }
 
     /**
@@ -92,6 +107,7 @@ export class HotkeyContextManager {
      * @param {HotkeysContext} context
      */
     declareContext(name, context) {
+        this.#panicIfDestroyed();
         this.#contexts[name] = context;
     }
 
@@ -104,6 +120,14 @@ export class HotkeyContextManager {
     }
 
     /**
+     * Whether the manager is emitting events
+     * @type {boolean}
+     */
+    get EmitEvents() {
+        return this.#emit_events;
+    }
+
+    /**
      * Emits a context event
      * @private
      * @param {hotkeys_context_events} event
@@ -111,6 +135,7 @@ export class HotkeyContextManager {
      * @returns {void}
      */
     #emitContextEvent(event, detail) {
+        this.#panicIfDestroyed();
         if (this.#emit_events) {
             dispatchHotkeysContextEvent(event, detail);
         }
@@ -152,6 +177,7 @@ export class HotkeyContextManager {
      * @throws {Error} if the context doesn't exist
      */
     loadContext(name, preserve_previous_context=true) {
+        this.#panicIfDestroyed();
         if (!hasWindowContext()) return;
 
         if (this.#context_locked) {
@@ -189,6 +215,7 @@ export class HotkeyContextManager {
      * @returns {boolean} true if the previous context was loaded
      */
     loadPreviousContext() {
+        this.#panicIfDestroyed();
         if (!hasWindowContext()) return false;
 
         let previous_context_name = this.#context_stack.Pop();
@@ -207,7 +234,18 @@ export class HotkeyContextManager {
      * @returns {void}
      */
     lockContextControl() {
+        this.#panicIfDestroyed();
         this.#context_locked = true;
+    }
+
+    /**
+     * Panics if called and the manager is destroyed
+     * @throws {Error} if the manager is destroyed
+     */
+    #panicIfDestroyed() {
+        if (this.#destroyed) {
+            throw new Error("The hotkeys manager is destroyed and should no longer be used");
+        }
     }
 
     /**
@@ -215,6 +253,7 @@ export class HotkeyContextManager {
      * @throws {Error} if no context is loaded
      */
     #registerCurrentContext() {
+        this.#panicIfDestroyed();
         if (!hasWindowContext()) return;
 
         if (this.#current_context === null) {
@@ -232,6 +271,7 @@ export class HotkeyContextManager {
      * @deprecated
      */
     registerHotkey(hotkey, callback, options) {
+        this.#panicIfDestroyed();
         if (!hasWindowContext()) return;
 
         console.warn("In HotkeyContextManager.registerHotkey: This method is deprecated, use registerHotkeyOnContext instead.");
@@ -247,6 +287,7 @@ export class HotkeyContextManager {
      * @param {import('./hotkeys').HotkeyRegisterOptions} options
      */
     registerHotkeyOnContext(hotkey, callback, options) {
+        this.#panicIfDestroyed();
         if (!hasWindowContext() || !this.hasLoadedContext()) return;
 
         options = {...default_hotkey_register_options, ...options};
@@ -262,6 +303,7 @@ export class HotkeyContextManager {
      * @throws {Error} if no context is loaded
      */
     reloadCurrentContext() {
+        this.#panicIfDestroyed();
         if (!this.hasLoadedContext()) {
             throw new Error("No context loaded");
         }
@@ -276,6 +318,7 @@ export class HotkeyContextManager {
      * @returns {void}
      */
     unlockContextControl() {
+        this.#panicIfDestroyed();
         this.#context_locked = false;
         let last_context = this.#last_context_load_requested;
         this.#last_context_load_requested = "";
@@ -293,6 +336,7 @@ export class HotkeyContextManager {
      * @deprecated
      */
     unregisterHotkey(hotkey, mode="keydown") {
+        this.#panicIfDestroyed();
         if (!hasWindowContext()) return;
 
         console.warn("In HotkeyContextManager.unregisterHotkey: This method is deprecated, use unregisterHotkeyFromContext instead.");
@@ -307,6 +351,7 @@ export class HotkeyContextManager {
      * @param {"keypress"|"keydown"|"keyup"} mode the mode of the keypress event
      */
     unregisterHotkeyFromContext(hotkey, mode="keydown") {
+        this.#panicIfDestroyed();
         if (!hasWindowContext()) return;
 
         this.#current_context.unregister(hotkey, mode);
@@ -318,6 +363,7 @@ export class HotkeyContextManager {
      * Unregisters the current context's hotkeys
      */
     unregisterCurrentContext() {
+        this.#panicIfDestroyed();
         if (!hasWindowContext() || !this.hasLoadedContext()) return;
 
         this.#hotkeys_controller.dropContext();
@@ -333,10 +379,19 @@ export class HotkeyContextManager {
  * The global hotkeys manager. null if the environment doesn't support event listeners
  * @type {HotkeyContextManager | null}
  */
-const global_hotkeys_manager = hasWindowContext() ? new HotkeyContextManager(true) : new HotkeyContextManager(false);
+let global_hotkeys_manager = null;
 
-if (globalThis.innerWidth != null) {
-    window.global_hotkeys_manager = global_hotkeys_manager;
+export const setupHotkeysManager = () => {
+    let emit_events = canUseDOMEvents();
+    if (global_hotkeys_manager != null) {
+        global_hotkeys_manager.destroy();
+    }
+
+    global_hotkeys_manager = new HotkeyContextManager(emit_events);
+
+    globalThis.global_hotkeys_manager = global_hotkeys_manager;
 }
 
-export default global_hotkeys_manager;
+export const getHotkeysManager = () => {
+    return global_hotkeys_manager;
+}

@@ -5,7 +5,7 @@
     
         import CategoriesClustersItem from "@components/CategoriesClusters/CategoriesClustersItem.svelte";
         import ClusterCreationTool from "./sub-components/ClusterCreationTool/ClusterCreationTool.svelte";
-        import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+        import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import { getAllCategoriesClusters } from "@models/CategoriesClusters";
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
         import { toggleHotkeysSheet } from "@stores/layout";
@@ -35,6 +35,8 @@
          * @type {import("@models/CategoriesClusters").CategoriesCluster[]}
          */ 
         let categories_clusters = [];
+
+        let global_hotkeys_manager = getHotkeysManager();
 
         /**
          * Whether the cluster creation tool is visible or not.
