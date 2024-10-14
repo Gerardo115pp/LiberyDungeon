@@ -137,6 +137,13 @@
                 options: {
                     description: "Take a screenshot of the video",
                 }
+            },
+            TOGGLE_AUTOHIDE: {
+                key_combo: "p",
+                handler: togglePlayerAutoHide,
+                options: {
+                    description: "Whether to keep the video controls always visible or auto hide",
+                }
             }
         }
         
@@ -233,7 +240,6 @@
     =            Methods            =
     =============================================*/
 
-        
         /*=============================================
         =            Hotkeys            =
         =============================================*/
@@ -264,6 +270,17 @@
 
             function handleVolumeUpHotkey() {
                 changeVolumenBy(0.1);
+            }
+
+            function togglePlayerAutoHide() {
+                auto_hide = !auto_hide;
+
+                if (auto_hide) {
+                    setControllerHiddenTimeout();
+                } else {
+                    controller_visible = true;
+                    controller_opacity = 1;
+                }
             }
         
         /*=====  End of Hotkeys  ======*/
@@ -490,12 +507,7 @@
         };
 
         const handleMouseMovement = () => {
-            if (controller_visibility_interval_id === null) {
-                controller_visibility_interval_id = window.setInterval(handleControllerVisibility, 300);
-            }
-
-            controller_opacity = 1;
-            controller_visible = true;
+            setControllerHiddenTimeout();
         }
 
         // TODO: create a proper visibility controller for mobile, although this more or less works, it's due to pure black magic and also once the controller appears it doesn't disappear ever again on unless the media viewer 
@@ -518,6 +530,19 @@
             if (event.target === event.currentTarget)
 
             mouse_over_controller = false;
+        }
+
+        /**
+         * Hides the controller after a given amount of time
+         * @param {number} [hide_delay]
+         */
+        const setControllerHiddenTimeout = (hide_delay = 300) => {
+            if (controller_visibility_interval_id === null) {
+                controller_visibility_interval_id = window.setInterval(handleControllerVisibility, hide_delay);
+            }
+
+            controller_opacity = 1;
+            controller_visible = true;
         }
 
     /*=====  End of Methods  ======*/
