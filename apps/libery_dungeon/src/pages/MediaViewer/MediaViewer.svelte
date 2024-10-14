@@ -440,7 +440,7 @@
 
                 let key_combo = hotkey.KeyCombo.toLowerCase();
 
-                let media_element = document.querySelector(".mw-media-element-display");
+                let media_element = getHTMLMediaElement();
 
                 if (media_element === null) {
                     return;
@@ -452,7 +452,7 @@
 
                 if (new_media_zoom >= MIN_MEDIA_ZOOM && new_media_zoom <= MAX_MEDIA_ZOOM) {
                     media_zoom = new_media_zoom;
-                    media_element.style.transform = `scale(${media_zoom})`;
+                    media_element.style.scale = `${media_zoom}`;
                 }
 
                 let feedback_message = `Media zoom: ${Math.trunc(media_zoom * 100)}%`;
@@ -616,6 +616,14 @@
             }
 
             return able_to_load_cluster;
+        }
+
+        /**
+         * Returns the display item for medias regardless of the type of media.
+         * @returns {HTMLMediaElement}
+         */
+        const getHTMLMediaElement = () => {
+            return document.querySelector(".mw-media-element-display");
         }
 
         const handleThumbnailClick = e => {
@@ -846,7 +854,7 @@
         /* max-width: 90vw; */
         max-height: 98vh;
         transform-origin: center center;
-        transition: all .28s ease-in-out;
+        transition: scale .33s ease-out;
     }
 
     #mw-video-controller-wrapper {
