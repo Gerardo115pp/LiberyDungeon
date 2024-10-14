@@ -5,9 +5,17 @@ import fs from 'fs';
 
 const ENABLE_FULL_RELOAD = true;
 
+/**
+ * @type {import('vite').PluginOption}
+ */
 const fullReloadAlways = {
-	handleHotUpdate({server}) {
-		server.ws.send({type: 'full-reload'});
+	handleHotUpdate(hmr_context) {
+		console.log(`Full reload requested for '${hmr_context.file}'`);
+		if (hmr_context.file.includes('libs/LiberyHotkeys')) {
+			hmr_context.server.ws.send({
+				type: 'full-reload'
+			});
+		}
 		return [];
 	}
 }
