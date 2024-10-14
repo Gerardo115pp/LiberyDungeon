@@ -293,18 +293,34 @@
 
             function handleSkipFrameBackwardHotkey() {
                 skipFrame(false);
+
+                let feedback_message = "<<< frame";
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             function handleSkipFrameForwardHotkey() {
                 skipFrame(true);
+
+                let feedback_message = " frame >>>";
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             function handleSpeedUpVideoHotkey() {
-                setVideoPlaybackRate(true);
+                let new_playback_rate = setVideoPlaybackRate(true);
+
+                let feedback_message = `speed: ${new_playback_rate}x`;
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             function handleSlowDownVideoHotkey() {
-                setVideoPlaybackRate(false);
+                let new_playback_rate = setVideoPlaybackRate(false);
+
+                let feedback_message = `speed: ${new_playback_rate}x`;
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             function handleScreenshotVideoHotkey() {
@@ -454,15 +470,21 @@
         }
 
         /**
-         * Sets the video playback rate
+         * Changes the video playback rate increasing(true) or decreasing(false) it by 0.25
+         * depending on the value of `increase`. returns the new playback rate.
          * @param {boolean} increase whether to increase or decrease the playback rate
-        */
+         * @returns {number}
+         */
         function setVideoPlaybackRate(increase) {
             const step_diff = 0.25;
 
             let step = increase ? step_diff : -step_diff;
 
-            video_element.playbackRate = Math.min(2, Math.max(0.25, video_element.playbackRate + step));
+            let new_playback_rate = Math.min(2, Math.max(0.25, video_element.playbackRate + step));
+
+            video_element.playbackRate = new_playback_rate;
+
+            return new_playback_rate;
         }
 
         /**
