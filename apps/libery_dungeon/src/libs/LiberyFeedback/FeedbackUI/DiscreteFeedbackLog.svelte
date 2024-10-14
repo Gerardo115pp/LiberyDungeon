@@ -108,7 +108,23 @@
 <style>
     .discrete-feedback-log-wrapper {
         padding: var(--spacing-1);
-        color: var(--main);
+        color: var(--main-dark);
+
+        & p.feedback-log {
+            font-family: var(--font-read);
+            background: var(--grey-9);
+            font-size: var(--font-size-1);
+            line-height: 1;
+            padding: var(--spacing-1);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-1);
+        }
+    }
+
+    @supports (color: rgb(from white r g b)) {
+        .discrete-feedback-log-wrapper p.feedback-log {
+            background: hsl(from var(--grey-9) h s l / 0.9);
+        }
     }
 
     .feedback-log.log-hidden {
