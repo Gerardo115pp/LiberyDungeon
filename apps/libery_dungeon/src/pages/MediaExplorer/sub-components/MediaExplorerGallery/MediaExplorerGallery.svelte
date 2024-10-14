@@ -4,7 +4,7 @@
     =============================================*/
     
         import viewport from '@components/viewport_actions/useViewportActions';
-        import global_hotkeys_manager from "@libs/LiberyHotkeys/libery_hotkeys";
+        import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
         import { categories_tree, current_category } from '@stores/categories_tree';
         import { current_cluster } from '@stores/clusters';
@@ -35,6 +35,8 @@
         /*=============================================
         =            Hotkeys            =
         =============================================*/
+
+            const global_hotkeys_manager = getHotkeysManager();
         
             const hotkeys_context_name = "media_explorer_gallery"; 
         
