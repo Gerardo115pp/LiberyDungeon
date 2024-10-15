@@ -373,6 +373,7 @@
                         break;
                 }
 
+                let old_focus_index = media_focus_index;
                 media_focus_index = new_focus_index;
 
                 await manageInfiniteScroll();
@@ -380,7 +381,16 @@
                 if (auto_select_focused_media) {
                     selectFocusedMedia();
                 } else if (auto_stage_delete_focused_media) {
-                    stageFocusedMediaDeletion();
+                    let delete_range = (hotkey.KeyCombo === "w" || hotkey.KeyCombo === "s") && Math.abs(old_focus_index - new_focus_index) <= media_per_row + 1;
+
+                    if (delete_range) {
+                        let start_index = Math.min(old_focus_index, new_focus_index);
+                        let end_index = Math.max(old_focus_index, new_focus_index);
+
+                        stageMediaRangeDeletion(start_index, end_index);
+                    } else {
+                        stageFocusedMediaDeletion();
+                    }
                 }
             }
 
@@ -972,6 +982,24 @@
         }
 
         /**
+         * Stages the deletion of the given media inclusive range. so if 4 - 10 are passed, medias on positions 4 to 10 will be staged for deletion.
+         * @param {number} start_index
+         * @param {number} end_index
+         */
+        const stageMediaRangeDeletion = (start_index, end_index) => {
+            if ($me_gallery_changes_manager === null) {
+                console.warn("No changes manager available to stage the deletion of the media range.");
+                return;
+            }
+
+            let media_range = ordered_medias.slice(start_index, end_index + 1);
+
+            for (let media_item of media_range) {
+                toggleMediaDeletion(media_item, true);
+            }
+        }
+
+        /**
          * Toggles the select stat of a given media.
          * @param {import('@models/Medias').OrderedMedia} media_item 
          */
@@ -993,11 +1021,12 @@
         /**
          * Toggles the deletion state of a given media.
          * @param {import('@models/Medias').OrderedMedia} ordered_media 
+         * @param {boolean} [keep_deleted=true] - if true and the media is already staged for deletion, it will not be unstaged.
          */
-        const toggleMediaDeletion = (ordered_media) => {
+        const toggleMediaDeletion = (ordered_media, keep_deleted=false) => {
             let current_media_change = $me_gallery_changes_manager.getMediaChangeType(ordered_media.uuid);
 
-            if (current_media_change === media_change_types.DELETED) {
+            if (current_media_change === media_change_types.DELETED && !keep_deleted) {
                 $me_gallery_changes_manager.unstageMediaDeletion(ordered_media.uuid);
                 return;
             }

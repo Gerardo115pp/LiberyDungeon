@@ -209,6 +209,7 @@
             --page-content-static-width: 1440px;
             --page-lateral-spacing: calc(calc(100vw - var(--page-content-width)) / 2);
             --backdrop-filer-blur: blur(3px);
+            --shadow-1: 0 0 10px 0 rgba(0, 0, 0, 0.1);
 
             scrollbar-width: none;
     }
