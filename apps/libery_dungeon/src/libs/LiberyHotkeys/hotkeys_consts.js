@@ -21,6 +21,7 @@
     export const MIN_TIME_BETWEEN_HOTKEY_REPEATS = 130; // Milliseconds
     // Whether to check all hotkeys with the same trigger and pick the longest one(true) or just the first one that matches(false)
     export const HOTKEY_SPECIFICITY_PRECEDENCE = true; 
+    export const DISABLE_KEYPRESS_EVENTS = true;
 
 /*=====  End of Hotkey Matching Config  ======*/
 

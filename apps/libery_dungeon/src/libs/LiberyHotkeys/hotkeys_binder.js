@@ -4,6 +4,7 @@ import {
     HOTKEY_SPECIFICITY_PRECEDENCE,
     MAX_PAST_HOTKEYS_TRIGGERED, 
     MIN_TIME_BETWEEN_HOTKEY_REPEATS,
+    DISABLE_KEYPRESS_EVENTS,
 } from "./hotkeys_consts";
 import { IsNumeric } from "./hotkeys_matchers";
 
@@ -85,6 +86,11 @@ export class HotkeysController {
     #bound_handleKeyUp;
 
     /**
+     * Handler for the deprecated keypress event. It's only purpose is to block the event.
+     */
+    #bound_handleKeyPress;
+
+    /**
      * A map of Hotkey triggers -> HotkeyData for keydown events. 
      * @type {Map<string, import('./hotkeys').HotkeyData[]>}
      */
@@ -121,6 +127,7 @@ export class HotkeysController {
             throw new Error("This environment does not support event listeners")
         }
 
+
         this.#keyboard_past_keydowns = new StackBuffer(MAX_PAST_EVENTS);
         this.#last_keydown_hotkeys_triggered = new StackBuffer(MAX_PAST_HOTKEYS_TRIGGERED);
         this.#keyboard_past_keyups = new StackBuffer(MAX_PAST_EVENTS);
@@ -131,6 +138,7 @@ export class HotkeysController {
         
         this.#bound_handleKeyDown = this.#handleKeyDown.bind(this);
         this.#bound_handleKeyUp = this.#handleKeyUp.bind(this);
+        this.#bound_handleKeyPress = this.#handleKeyPress.bind(this);
 
         this.#current_hotkey_context = null;
 
@@ -356,6 +364,17 @@ export class HotkeysController {
     }
 
     /**
+     * Handles the keypress event. It's only purpose is to block the event unless the event is produced on a Input like element.
+     * @param {KeyboardEvent} event
+     */
+    #handleKeyPress(event) {
+        if (this.#shouldIgnoreEvent(event)) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    /**
      * Matches a Keyboard event with registered hotkeys. The matching behavior is based on HOTKEY_LENGTH_PRECEDENCE value. If true
      * it checks all candidates, meaning all hotkeys that have the same trigger as the event's key, and picks the longest hotkey. if
      * false, it checks all candidates until it finds one that matches and immediately returns it without checking the rest.
@@ -375,7 +394,7 @@ export class HotkeysController {
         let past_events = is_keydown ? this.#keyboard_past_keydowns : this.#keyboard_past_keyups;
 
         let candidate_hotkeys = this.#getCandidateHotkeys(event.key, event.type);
-        console.log("candidate hotkeys: ", candidate_hotkeys);
+        // console.log("candidate hotkeys: ", candidate_hotkeys);
 
         if (candidate_hotkeys.length === 0) return;
 
@@ -540,6 +559,10 @@ export class HotkeysController {
     #setup() {
         globalThis.addEventListener("keydown", this.#bound_handleKeyDown);
         globalThis.addEventListener("keyup", this.#bound_handleKeyUp);
+
+        if (DISABLE_KEYPRESS_EVENTS) {
+            globalThis.addEventListener("keypress", this.#bound_handleKeyPress);
+        }
     }
 
     /**
