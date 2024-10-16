@@ -24,8 +24,6 @@
         let global_hotkeys_manager = null;
     
     /*=====  End of Properties  ======*/
-    
-    
 
     onMount(() => {
         defineLayout();

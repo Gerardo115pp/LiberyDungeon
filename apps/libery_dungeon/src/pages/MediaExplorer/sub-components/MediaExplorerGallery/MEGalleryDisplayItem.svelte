@@ -15,6 +15,9 @@
          * @type {import('@models/Medias').OrderedMedia}
          */
         export let ordered_media;
+        $: if (ordered_media && $me_gallery_changes_manager != null) {
+            refreshMediaChangesSubscription();
+        }
 
         /**
          * This component's DOM node
@@ -228,6 +231,16 @@
             }
 
             is_media_yanked = new_is_media_yanked;
+        }
+
+        /**
+         * Cancels current media changes suscription and creates a new one.
+         * @requires me_gallery_changes_manager
+         * @requires handleMediaChanges
+         */
+        const refreshMediaChangesSubscription = () => {
+            unsuscribeFromMediaChanges();
+            suscribeToMediaChanges();
         }
 
         /**
