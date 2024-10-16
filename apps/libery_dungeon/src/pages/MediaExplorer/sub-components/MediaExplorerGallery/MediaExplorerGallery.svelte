@@ -132,6 +132,12 @@
              * @type {boolean}
              */
             export let enable_gallery_heavy_rendering = false;
+
+            /**
+             * Whether to enable the sequence creation tool.
+             * @type {boolean}
+             */
+            let enable_sequence_creation_tool = false;
         
         /*----------  Masonry  ----------*/
 
