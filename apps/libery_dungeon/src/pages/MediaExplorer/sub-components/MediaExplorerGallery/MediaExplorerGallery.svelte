@@ -209,10 +209,6 @@
                         mode: "keyup"
                     });
 
-                    hotkeys_context.register(["e", "del"], handleMediaStageDeletionMode, {
-                        description: "<content>Selects the focused media to be deleted on gallery close(hitting the g key).",
-                    });
-
                     hotkeys_context.register(["space"], handleMediaSelectMode, {
                         description: "<content>Selects the focused media.",
                         mode: "keydown"
