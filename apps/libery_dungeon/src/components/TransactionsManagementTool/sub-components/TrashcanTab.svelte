@@ -25,18 +25,24 @@
             const keybinds = {
                 ENTRY_FOCUS_MOVEMENT: {
                     key_combo: ["w", "s"],
-                    description: "<trashcan_navigation> Move the keyboard focus up and down the transaction entries",
-                    handler: handleKeyboardMovement
+                    handler: handleKeyboardMovement,
+                    options: {
+                        description: "<trashcan_navigation> Move the keyboard focus up and down the transaction entries",
+                    }
                 },
                 GO_TO_OPENED_TRANSACTION: {
                     key_combo: "a",
-                    description: "<trashcan_navigation> If focus is in a transaction's content, moves the focus back to the transaction entry",
-                    handler: handleFocusOpenedTransaction
+                    handler: handleFocusOpenedTransaction,
+                    options: {
+                        description: "<trashcan_navigation> If focus is in a transaction's content, moves the focus back to the transaction entry",
+                    }
                 },
                 ENTRY_SELECTION: {
                     key_combo: ["e", "d"],
-                    description: "<trashcan_navigation> Select the transaction entry",
-                    handler: handleKeyboardSelection
+                    handler: handleKeyboardSelection,
+                    options: {
+                        description: "<trashcan_navigation> Select the transaction entry",
+                    }
                 }
             }
         
@@ -123,16 +129,21 @@
                 if ($current_user_identity.canModifyTrashcan()) {
                     keybinds.RESTORE_FOCUSED_TRANSACTION = {
                         key_combo: "r r",
-                        description: "<trashcan_content> Restores all medias in the focused transaction to the current category",
-                        handler: handleRestoreFocusedTransaction
+                        handler: handleRestoreFocusedTransaction,
+                        options: {
+                            description: "<trashcan_content> Restores all medias in the focused transaction to the current category",
+                            await_execution: false
+                        }
                     }
                 }
 
                 if ($current_user_identity.canEmptyTrashcan()) {
                     keybinds.DELETE_FOCUSED_TRANSACTION = {
                         key_combo: "x x",
-                        description: "<trashcan_content> Permanently deletes all medias in the focused transaction",
-                        handler: handleDeleteFocusedTransaction
+                        handler: handleDeleteFocusedTransaction,
+                        options: {
+                            description: "<trashcan_content> Permanently deletes all medias in the focused transaction",
+                        }
                     }
                 }
             }

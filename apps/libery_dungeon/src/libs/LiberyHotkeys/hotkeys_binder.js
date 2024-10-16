@@ -218,7 +218,7 @@ export class HotkeysController {
     get ExecutionsForbidden() {
         let locked = false;
 
-        locked = this.#locked_on_execution; // TODO: Add the pause check here too.
+        locked = this.#locked_on_execution; 
 
         locked = locked || this.#paused;
 
@@ -324,7 +324,7 @@ export class HotkeysController {
      */
     #handleKeyDown(event) {
         if (this.#shouldIgnoreEvent(event)) return;
-        console.log("keydown: ", event);
+        // console.log("keydown: ", event);
 
         this.#keyboard_past_keydowns.Add(event);
         

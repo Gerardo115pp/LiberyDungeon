@@ -46,7 +46,6 @@
         */
         export let the_response = writable(-2);
         
-        
         /*----------  State  ----------*/
         
             /**

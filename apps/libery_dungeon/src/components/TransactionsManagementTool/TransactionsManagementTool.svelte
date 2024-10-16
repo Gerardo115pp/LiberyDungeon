@@ -26,14 +26,18 @@
             const keybinds ={
                 CLOSE_TMT_TOOL: {
                     key_combo: ["q", "="],
-                    description: `<${HOTKEYS_GENERAL_GROUP}> Close the Transactions Management Tool`,
-                    handler: handleCloseTMTTool
+                    handler: handleCloseTMTTool,
+                    options: {
+                        description: `<${HOTKEYS_GENERAL_GROUP}> Close the Transactions Management Tool`,
+                    }
                 },
                 OPEN_HOTKEYS_SHEET: {
                     key_combo: "?",
-                    description: `<${HOTKEYS_GENERAL_GROUP}> Toggle the hotkeys sheet`,
                     handler: () => {
                         hotkeys_sheet_visible.set(!$hotkeys_sheet_visible)
+                    },
+                    options: {
+                        description: `<${HOTKEYS_GENERAL_GROUP}> Toggle the hotkeys sheet`,
                     }
                 }
             }
@@ -87,8 +91,11 @@
                 if ($current_user_identity.canEmptyTrashcan()) {
                     keybinds.EMPTY_TRASHCAN = {
                         key_combo: ["x a"],
-                        description: "<trashcan_content> Deletes all files in the trashcan and closes the tool",
-                        handler: handleTrashcanEmpty
+                        handler: handleTrashcanEmpty,
+                        options: {
+                            description: "<trashcan_content> Deletes all files in the trashcan and closes the tool",
+                            await_execution: false,
+                        }
                     }
                 }
             }
@@ -112,9 +119,8 @@
                     const hotkeys_context = new HotkeysContext();
 
                     for (let keybind of Object.values(keybinds)) {
-                        hotkeys_context.register(keybind.key_combo, keybind.handler, {
-                            description: keybind.description
-                        });
+                        hotkeys_context.register(keybind.key_combo, keybind.handler, keybind.options);
+
                     }
 
                     global_hotkeys_manager.declareContext(tmt_hotkeys_context_name, hotkeys_context);
