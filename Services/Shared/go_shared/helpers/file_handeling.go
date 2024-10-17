@@ -190,6 +190,14 @@ func RenameFsPath(path_str, new_name string) string {
 	return fmt.Sprintf("%s/", filepath.Join(parent_dir, new_name))
 }
 
+// Renames a filename to a new given name keeping the same extension. Does not perform any filesystem operations.
+// It expect a extensionless new_name. and a filename with extension.
+func RenameFilename(filename, new_name string) string {
+	filename_ext := filepath.Ext(filename)
+
+	return fmt.Sprintf("%s%s", new_name, filename_ext)
+}
+
 // Returns true if child_path is a child of parent_path
 func IsChildPath(parent_path, child_path string) bool {
 	return strings.HasPrefix(child_path, parent_path)
