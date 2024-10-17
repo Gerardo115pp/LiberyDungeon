@@ -261,6 +261,16 @@ const parseMetaKey = (key) => {
 }
 
 /**
+ * Whether the passed key is a modifier key. The matching is case sensitive. Pass
+ * the key as it appears in a KeyboardEvent.key property.
+ * @param {string} key
+ * @returns {boolean}
+ */
+export const IsModifier = key => {
+    return modifier_keys.has(key);
+}
+
+/**
  * Whether the passed key is a numeric key.
  * @param {string} key
  * @returns {boolean}

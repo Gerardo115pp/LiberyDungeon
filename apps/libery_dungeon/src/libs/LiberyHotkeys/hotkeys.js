@@ -1,9 +1,14 @@
-import { HotkeyFragment, IsNumeric } from "./hotkeys_matchers";
+import { 
+    HotkeyFragment, 
+    IsNumeric,
+    IsModifier
+} from "./hotkeys_matchers";
 import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "./hotkeys_consts";
 import { 
     MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES,
     HOTKEY_SPECIFICITY_PRECEDENCE
 } from "./hotkeys_consts";
+
 /**
 * @typedef {Object} HotkeyRegisterOptions
  * @property {boolean} bind - If true the hotkey will be binded immediately. default is false
@@ -479,6 +484,11 @@ export class HotkeyData {
         do {
             let event = event_history.PeekN(event_k);
             event_k++;
+            
+            if (IsModifier(event.key)) {
+                console.log(`Modifier ${event.key} found. Skipping.`);
+                continue;
+            }
 
             if (this.#checkEventExpired(event, last_sequence_time)) {
                 hotkey_matched = false;
@@ -515,7 +525,7 @@ export class HotkeyData {
             fragment_match = fragment.match(event);
 
             if (!fragment_match) {
-                // console.log(`Fragment ${fragment.Identity} did not match event ${event.key}`);
+                console.log(`Fragment ${fragment.Identity} did not match event ${event.key}`);
                 hotkey_matched = false;
             }
 
@@ -525,7 +535,7 @@ export class HotkeyData {
 
         } while (hotkey_matched && fragment != null); // If we run out of fragments and hotkey_matched is still true, that should mean a positive match.
 
-        // console.log(`Hotkey ${this.#key_combo} matched: ${hotkey_matched}`);
+        console.log(`Hotkey ${this.#key_combo} matched: ${hotkey_matched}`);
 
         if (!hotkey_matched) {
             this.#destroyMatchMetadata();
