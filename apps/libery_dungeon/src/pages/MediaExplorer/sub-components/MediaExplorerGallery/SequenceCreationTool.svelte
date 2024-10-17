@@ -132,10 +132,24 @@
                     description: `<navigation> Go to the media with the given index.`,
                 });
 
+                hotkeys_context.register(["n"], handleClearSCT, {
+                    description: `<reordering> Clear the current selection.`,
+                });
+
                 global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
 
                 global_hotkeys_manager.loadContext(hotkeys_context_name);
             }
+
+            /**
+             * Clears the sequence creation tool. Called with a hotkey.
+             * @param {KeyboardEvent} key_event
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             */
+            const handleClearSCT = (key_event, hotkey) => {
+                me_gallery_yanked_medias.set([]);
+            }
+            
 
             /**
              * Moves the focus to the typed media index.
