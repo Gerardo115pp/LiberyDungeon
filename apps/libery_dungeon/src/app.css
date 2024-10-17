@@ -430,6 +430,29 @@
         color: var(--grey);
     }
 
+    .dungeon-properties {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-3);
+    }
+
+    .dungeon-property {
+        display: flex;
+        align-items: center;
+        gap: calc(var(--spacing-1) * .9);
+        line-height: 1;
+        color: var(--grey-1);
+    }
+
+    .dungeons-field-label {
+        font-weight: 500;
+        color: var(--main-dark);
+
+        &::after {
+            content: ':';
+        }
+    }
+
     .highlight-text--CTA {
         font-family: var(--font-titles);
         font-size: var(--font-size-CTA-1);

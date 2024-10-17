@@ -116,6 +116,24 @@ export const getMediaFilename = media_url => {
 }
 
 /**
+ * Clears a string from problematic characters for filenames. changes spaces to underscores and optionaly
+ * lowercases the string.
+ * @param {string} new_filename 
+ * @param {boolean} [lower_case]
+ */
+export const cleanFilenameString = (new_filename, lower_case=true) => {
+    const invalidChars = /[\]\[<>:"/\\|?*\x00-\x1F]/g
+    let cleaned_filename = new_filename.replace(/\s/g, '_');
+    cleaned_filename = cleaned_filename.replace(invalidChars, '');
+
+    if (lower_case) {
+        cleaned_filename = cleaned_filename.toLowerCase();
+    }
+
+    return cleaned_filename;
+}
+
+/**
  * Converts a duration in seconds to a string. if the video is longer than an hour, it will be formatted as HH:MM:SS, otherwise it will be MM:SS
  * It expects the duration to be in seconds but is_seconds can be set to false to treat the duration as milliseconds.
  * @param {number} duration - the duration of the video in seconds
@@ -141,8 +159,6 @@ export const videoDurationToString = (duration, is_seconds = true) => {
 
     return duration_string;
 }
-
-
 
 /*=============================================
 =            Data structures            =

@@ -6,6 +6,8 @@
     import { getHotkeysManager } from '@libs/LiberyHotkeys/libery_hotkeys';
     import { onMount } from 'svelte';
     import { LabeledError } from '@libs/LiberyFeedback/lf_models';
+    import { current_category } from '@stores/categories_tree';
+    import { cleanFilenameString } from '@libs/utils';
     
     
     /*=============================================
@@ -41,6 +43,19 @@
              * @type {boolean}
              */ 
             let skeleton_sequence = true;
+
+            /**
+             * The the name prefix the sequence will be saved with. for a sequence e.g episode_01, episode_02, etc.
+             * the prefix would be 'episode_'.
+             * @type {string}
+             */
+            let sequence_prefix = "";
+
+            /**
+             * Sequence editor.
+             * @type {HTMLInputElement}
+             */
+            let the_sequence_prefix_editor;
 
             /**
              * Media focused index.
@@ -84,9 +99,10 @@
     /*=====  End of Properties  ======*/
 
     onMount(() => {
+        generateInitialSequencePrefix();
 
         defineSCTHotkeys();
-    })
+    });
     
     /*=============================================
     =            Methods            =
@@ -342,6 +358,21 @@
         }
 
         /**
+         * Generates an initial sequence prefix based on the current category name
+         */
+        const generateInitialSequencePrefix = () => {
+            let new_prefix = $current_category.name + "_";
+
+            new_prefix = cleanFilenameString(new_prefix);
+
+            if (new_prefix === "") {
+                new_prefix = "sequence_";
+            }
+
+            sequence_prefix = new_prefix;
+        }
+
+        /**
          * Returns whether the media on the passed index is yanked.
          * @param {number} index
          * @returns {boolean}
@@ -413,9 +444,31 @@
         <div id="sequence-parameters"
             class="cristal-surface"
         >
-            <ul id="categorie-medias-properties">
-                <p class="sct-property">
-                    <strong>Medias</strong> {unsequenced_medias.length}
+            <label class="dungeon-input">
+                <span class="dungeon-label">
+                    Sequence prefix
+                </span>
+                <input 
+                    id="sequence-prefix-editor"
+                    bind:value={sequence_prefix}
+                    bind:this={the_sequence_prefix_editor}
+                    type="text"
+                    minlength="1"
+                    maxlength="50"
+                    spellcheck="true"
+                    autocomplete="on"
+                    pattern="{'^[a-zA-Z0-9_\\- ]+$'}"
+                    required
+                >
+            </label>
+            <ul id="categorie-medias-properties"
+                class="dungeon-properties"
+            >
+                <p class="sct-property dungeon-property">
+                    <strong class="dungeons-field-label">Medias</strong> {unsequenced_medias.length}
+                </p>
+                <p class="sct-property dungeon-property">
+                    <strong class="dungeons-field-label">Selected</strong> {$me_gallery_yanked_medias.length}
                 </p>
             </ul>
         </div>
@@ -443,6 +496,7 @@
 {/if}
 
 <style>
+
     #sequence-creation-tool {
         position: relative;
         width: 100%;
@@ -456,16 +510,27 @@
     
         #sequence-parameters {
             position: sticky;
+            display: flex;
             width: 100%;
-            top: 0;
-            border-bottom: .5px solid var(--grey-9);
             height: var(--primary-toolbar-height);
+            top: 0;
+            align-items: center;
+            column-gap: var(--spacing-4);
+            border-bottom: .5px solid var(--grey-9);
             z-index: var(--z-index-t-1);
+        }
+
+        label.dungeon-input input {
+            color: var(--main);
+        }
+
+        ul#categorie-medias-properties {
+            & p.sct-property {
+                font-size: var(--font-size-1);
+            }
         }
     
     /*=====  End of Parameters  ======*/
-    
-    
 
     ul#sequence-members {
         --sct-grid-item-size: 400px;
