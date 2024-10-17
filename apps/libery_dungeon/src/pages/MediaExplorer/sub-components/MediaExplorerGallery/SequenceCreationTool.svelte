@@ -128,52 +128,32 @@
                     description: `<reordering> Restore the order you had before the last change.`,
                 });
 
+                hotkeys_context.register(["\\d g"], handleGotoMedia, {
+                    description: `<navigation> Go to the media with the given index.`,
+                });
+
                 global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
 
                 global_hotkeys_manager.loadContext(hotkeys_context_name);
             }
 
             /**
-             * Handles the sequence grid movement.
-             * @param {KeyboardEvent} key_event 
+             * Moves the focus to the typed media index.
+             * @param {KeyboardEvent} key_event
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
-            const handleSequenceGridMovement = (key_event, hotkey) => {
-                const media_count = unsequenced_medias.length;
-                const row_count = Math.ceil(media_count / medias_per_row);
+            const handleGotoMedia = (key_event, hotkey) => {
+                if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
 
-                let new_sct_focus_index = sct_focus_index;
+                let media_index = hotkey.MatchMetadata.MotionMatches[0]
 
-                switch (hotkey.KeyCombo) {
-                    case "w":
-                        new_sct_focus_index -= medias_per_row;
+                media_index = Math.max(0, Math.min(media_index, unsequenced_medias.length - 1));
 
-                        new_sct_focus_index = new_sct_focus_index < 0 ? ((row_count - 1) * medias_per_row) + sct_focus_index : new_sct_focus_index;
-                        new_sct_focus_index = new_sct_focus_index >= media_count ? new_sct_focus_index - medias_per_row : new_sct_focus_index;
-                        break;
-                    case "a":
-                        new_sct_focus_index--;
+                let old_focus_index = sct_focus_index;
+                sct_focus_index = media_index;
 
-                        new_sct_focus_index = new_sct_focus_index < 0 ? media_count - 1 : new_sct_focus_index;
-                        break;
-                    case "s":
-                        new_sct_focus_index += medias_per_row;
-
-                        new_sct_focus_index = new_sct_focus_index >= media_count ? sct_focus_index - ((row_count - 1) * medias_per_row) : new_sct_focus_index;
-                        new_sct_focus_index = new_sct_focus_index < 0 ? new_sct_focus_index + medias_per_row : new_sct_focus_index;
-                        break;
-                    case "d":
-                        new_sct_focus_index++;
-
-                        new_sct_focus_index = new_sct_focus_index >= media_count ? 0 : new_sct_focus_index;
-                        break;
-                }
-
-                let old_sct_focus_index = sct_focus_index;
-                sct_focus_index = new_sct_focus_index;
-                
                 if (auto_select_mode) {
-                    autoSelectHandler(old_sct_focus_index, sct_focus_index);
+                    autoSelectHandler(old_focus_index, sct_focus_index);
                 }
             }
 
@@ -247,6 +227,50 @@
             const handleRestoreLastSequence = () => {
                 unsequenced_medias = last_saved_sequence;
                 last_saved_sequence = [];
+            }
+
+            /**
+             * Handles the sequence grid movement.
+             * @param {KeyboardEvent} key_event 
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             */
+            const handleSequenceGridMovement = (key_event, hotkey) => {
+                const media_count = unsequenced_medias.length;
+                const row_count = Math.ceil(media_count / medias_per_row);
+
+                let new_sct_focus_index = sct_focus_index;
+
+                switch (hotkey.KeyCombo) {
+                    case "w":
+                        new_sct_focus_index -= medias_per_row;
+
+                        new_sct_focus_index = new_sct_focus_index < 0 ? ((row_count - 1) * medias_per_row) + sct_focus_index : new_sct_focus_index;
+                        new_sct_focus_index = new_sct_focus_index >= media_count ? new_sct_focus_index - medias_per_row : new_sct_focus_index;
+                        break;
+                    case "a":
+                        new_sct_focus_index--;
+
+                        new_sct_focus_index = new_sct_focus_index < 0 ? media_count - 1 : new_sct_focus_index;
+                        break;
+                    case "s":
+                        new_sct_focus_index += medias_per_row;
+
+                        new_sct_focus_index = new_sct_focus_index >= media_count ? sct_focus_index - ((row_count - 1) * medias_per_row) : new_sct_focus_index;
+                        new_sct_focus_index = new_sct_focus_index < 0 ? new_sct_focus_index + medias_per_row : new_sct_focus_index;
+                        break;
+                    case "d":
+                        new_sct_focus_index++;
+
+                        new_sct_focus_index = new_sct_focus_index >= media_count ? 0 : new_sct_focus_index;
+                        break;
+                }
+
+                let old_sct_focus_index = sct_focus_index;
+                sct_focus_index = new_sct_focus_index;
+                
+                if (auto_select_mode) {
+                    autoSelectHandler(old_sct_focus_index, sct_focus_index);
+                }
             }
         
         /*=====  End of Hotkeys  ======*/
