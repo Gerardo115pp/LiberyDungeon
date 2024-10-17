@@ -8,7 +8,7 @@
     import { LabeledError } from '@libs/LiberyFeedback/lf_models';
     import { current_category } from '@stores/categories_tree';
     import { cleanFilenameString } from '@libs/utils';
-    
+    import { sequenceRenameMedias } from '@models/Medias';
     
     /*=============================================
     =            Properties            =
@@ -155,6 +155,10 @@
 
                 hotkeys_context.register(["n"], handleClearSCT, {
                     description: `<reordering> Clear the current selection.`,
+                });
+
+                hotkeys_context.register(["; shift+s"], handleSaveSequence, {
+                    description: `<saving> Save the sequence.`,
                 });
 
                 global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
@@ -313,6 +317,19 @@
                     autoSelectHandler(old_sct_focus_index, sct_focus_index);
                 }
             }
+
+            /**
+             * Saves the sequence.
+             */
+            const handleSaveSequence = async () => {
+                // Show the would be parameters to test the api
+
+                let sequence_map = createSequenceMap(unsequenced_medias, sequence_prefix);
+
+                let renamed = await sequenceRenameMedias(sequence_map, $current_category.uuid);
+
+                console.log("Renamed: ", renamed);
+            }
         
         /*=====  End of Hotkeys  ======*/
 
@@ -348,7 +365,31 @@
             let selected_media = unsequenced_medias[sct_focus_index];
 
             auto_select_yanks = isMediaYanked(sct_focus_index);
-            console.log("Auto select mode activated, yanks: ", auto_select_yanks);
+        }
+
+        /**
+         * Creates a sequence map from the given medias array and name prefix.
+         * @param {import('@models/Medias').OrderedMedia[]} medias
+         * @param {string} prefix
+         * @returns {SequenceMap}
+         * @typedef {Object<string, string>} SequenceMap - A map of the media uuids to the new sequence names without the extension.
+         */
+        const createSequenceMap = (medias, prefix) => {
+                let sequence_map = {};
+
+                const zero_padding = Math.max(2, Math.ceil(Math.log10(medias.length + 1)));
+
+                for (let h = 0; h < medias.length; h++) {
+                    let media = medias[h];
+
+                    let index_string = (h + 1).toString().padStart(zero_padding, "0");
+
+                    let new_name = `${prefix}${index_string}`;
+
+                    sequence_map[media.uuid] = new_name;
+                }
+
+                return sequence_map;
         }
 
         /**

@@ -1,4 +1,4 @@
-import { getMediaUrl } from "@libs/HttpRequests";
+import { getMediaUrl, PatchRenameMediasRequest } from "@libs/HttpRequests";
 
 const DEFAULT_IMAGE_WIDTH = 307;
 
@@ -283,4 +283,23 @@ export class OrderedMedia {
 export const media_types = {
     IMAGE: "IMAGE",
     VIDEO: "VIDEO"
+}
+
+/**
+ * Renames a sequence of medias. gets a Sequence map, which is just an object of the form {media_uuid: new_name} where new_name does not include 
+ * a file extension. and a category_uuid were the medias are located.
+ * @param {Object<string, string>} sequence_map 
+ * @param {string} category_uuid 
+ */
+export const sequenceRenameMedias = async (sequence_map, category_uuid) => {
+    const request = new PatchRenameMediasRequest(category_uuid, sequence_map);
+    let renamed = false;
+
+    const response = await request.do();
+
+    if (response.status === 204) {
+        renamed = true;
+    }
+
+    return renamed;
 }
