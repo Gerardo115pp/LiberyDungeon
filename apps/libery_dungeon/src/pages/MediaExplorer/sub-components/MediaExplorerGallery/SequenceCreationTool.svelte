@@ -124,6 +124,10 @@
                     description: `<reordering> Insert the yanked medias before the focused media.`,
                 });
 
+                hotkeys_context.register(["u"], handleRestoreLastSequence, {
+                    description: `<reordering> Restore the order you had before the last change.`,
+                });
+
                 global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
 
                 global_hotkeys_manager.loadContext(hotkeys_context_name);
@@ -236,6 +240,14 @@
 
                 sct_focus_index = Math.min(sct_focus_index, unsequenced_medias.length - 1);
             } 
+
+            /**
+             * Restores the last saved sequence.
+             */
+            const handleRestoreLastSequence = () => {
+                unsequenced_medias = last_saved_sequence;
+                last_saved_sequence = [];
+            }
         
         /*=====  End of Hotkeys  ======*/
 
