@@ -484,6 +484,11 @@ export class HotkeyData {
         do {
             let event = event_history.PeekN(event_k);
             event_k++;
+
+            if (event == null) {
+                hotkey_matched = false;
+                break;
+            }
             
             if (IsModifier(event.key)) {
                 console.log(`Modifier ${event.key} found. Skipping.`);
