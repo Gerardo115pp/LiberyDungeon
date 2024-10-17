@@ -5,6 +5,7 @@
     import { HOTKEYS_HIDDEN_GROUP } from '@libs/LiberyHotkeys/hotkeys_consts';
     import { getHotkeysManager } from '@libs/LiberyHotkeys/libery_hotkeys';
     import { onMount } from 'svelte';
+    import { LabeledError } from '@libs/LiberyFeedback/lf_models';
     
     
     /*=============================================
@@ -73,6 +74,12 @@
              * @type {number}
              */
             const AUTO_SELECT_MODE_TIME = 100;
+
+            /**
+             * The last saved sequence state, by default is the way the unsequenced_medias were passed.
+             * @type {import('@models/Medias').OrderedMedia[]}
+             */
+            let last_saved_sequence = [];
     
     /*=====  End of Properties  ======*/
 
@@ -84,7 +91,7 @@
     /*=============================================
     =            Methods            =
     =============================================*/
-    
+
         /*=============================================
         =            Hotkeys            =
         =============================================*/
@@ -104,13 +111,17 @@
                 });
 
                 hotkeys_context.register(["space"], handleMediaSelection, {
-                    description: `<selection> Select the focused media item. If kept pressed long enough, enables auto select mode. The selector turns green when auto select mode is enabled.`,
+                    description: `<reordering> Select the focused media item. If kept pressed long enough, enables auto select mode. The selector turns green when auto select mode is enabled.`,
                     can_repeat: true,
                 });
 
                 hotkeys_context.register(["space"], e => e.preventDefault(), {
                     description: `<${HOTKEYS_HIDDEN_GROUP}> hidden`,
                     mode: "keyup",
+                });
+
+                hotkeys_context.register(["i"], handleInsertYankedMediasHotkey, {
+                    description: `<reordering> Insert the yanked medias before the focused media.`,
                 });
 
                 global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
@@ -201,6 +212,30 @@
                     yankSTCMedia(selected_media);
                 }
             }
+
+            /**
+             * Inserts the yanked medias before the focused media. Called by a hotkey.
+             * @param key_event
+             * @param hotkey
+             */
+            const handleInsertYankedMediasHotkey = (key_event, hotkey) => {
+                if ($me_gallery_yanked_medias.length === 0) return;
+
+                if (isCurrentMediaYanked()) {
+                    let user_error = new LabeledError("Unstable operation forbidden", "You attempted to insert before a media that would be moved by the insertion of the medias, this operation could have unpredictable results.")
+
+                    user_error.alert();
+                    return;
+                }
+
+                last_saved_sequence = unsequenced_medias;
+
+                insertMediasAt($me_gallery_yanked_medias, sct_focus_index);
+
+                me_gallery_yanked_medias.set([]);
+
+                sct_focus_index = Math.min(sct_focus_index, unsequenced_medias.length - 1);
+            } 
         
         /*=====  End of Hotkeys  ======*/
 
@@ -239,6 +274,22 @@
             console.log("Auto select mode activated, yanks: ", auto_select_yanks);
         }
 
+        /**
+         * Returns the currently focused media.
+         * @returns {import('@models/Medias').OrderedMedia}
+         */
+        const getFocusedMedia = () => {
+            return unsequenced_medias[sct_focus_index];
+        }
+
+        /**
+         * Returns a media on a given index.
+         * @param {number} index
+         * @returns {import('@models/Medias').OrderedMedia}
+         */
+        const getMediaAtIndex = index => {
+            return unsequenced_medias[index];
+        }
 
         /**
          * Returns whether the media on the passed index is yanked.
@@ -255,6 +306,34 @@
             return is_yanked;
         }            
 
+        /**
+         * Returns whether the current media is yanked.
+         * @returns {boolean}
+         */
+        const isCurrentMediaYanked = () => {
+            return isMediaYanked(sct_focus_index);
+        }
+
+        /**
+         * Inserts given medias array at before the given index.
+         * @param {import('@models/Medias').OrderedMedia[]} medias
+         * @param {number} insert_point
+         */
+        const insertMediasAt = (medias, insert_point) => {
+
+            let duplicate_medias_lookup = new Set(medias.map(media => media.uuid));
+
+            const current_focused_media = getMediaAtIndex(insert_point);
+
+            let filtered_sequence = unsequenced_medias.filter(media => !duplicate_medias_lookup.has(media.uuid));
+
+            insert_point = filtered_sequence.indexOf(current_focused_media);
+
+            let new_sequence_left = filtered_sequence.slice(0, insert_point);
+            let new_sequence_right = filtered_sequence.slice(insert_point);
+
+            unsequenced_medias = [...new_sequence_left, ...medias, ...new_sequence_right];
+        }
 
         /**
          * Unyanks the passed media.
@@ -264,8 +343,6 @@
             me_gallery_yanked_medias.set($me_gallery_yanked_medias.filter(ymedia => ymedia.uuid !== media.uuid));
         }
             
-        
-
         /**
          * yanks the passed media. If the media is already yanked, it will be unyanked.
          * @param {import('@models/Medias').OrderedMedia} media
@@ -273,7 +350,6 @@
         const yankSTCMedia = (media) => {
             me_gallery_yanked_medias.set([...$me_gallery_yanked_medias, media]);
         }
-        
 
     /*=====  End of Methods  ======*/
     
