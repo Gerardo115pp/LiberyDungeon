@@ -102,6 +102,28 @@ func (db *MediasMysql) GetMediaByID(ctx context.Context, media_id string) (*dung
 	return media, nil
 }
 
+func (db *MediasMysql) GetMediaByName(ctx context.Context, media_name string, main_category_id string) (*dungeon_models.Media, error) {
+	var media *dungeon_models.Media = new(dungeon_models.Media)
+
+	stmt, err := db.db.Prepare("SELECT `uuid`, `name`, `last_seen`, `main_category`, `type`, `downloaded_from` FROM `medias` WHERE `name` = ? AND `main_category` = ?")
+	if err != nil {
+		return nil, err
+	}
+
+	var downloaded_from sql.NullInt64
+
+	err = stmt.QueryRowContext(ctx, media_name, main_category_id).Scan(&media.Uuid, &media.Name, &media.LastSeen, &media.MainCategory, &media.Type, &downloaded_from)
+	if err != nil {
+		return nil, err
+	}
+
+	if downloaded_from.Valid {
+		media.DownloadedFrom = downloaded_from.Int64
+	}
+
+	return media, nil
+}
+
 func (db *MediasMysql) InsertMedia(ctx context.Context, media *dungeon_models.Media) error {
 	stmt, err := db.db.Prepare("INSERT INTO medias (uuid, name, last_seen, main_category, type, downloaded_from) VALUES (?, ?, ?, ?, ?, ?)")
 	if err != nil {
