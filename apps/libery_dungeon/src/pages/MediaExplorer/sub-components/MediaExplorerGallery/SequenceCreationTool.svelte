@@ -34,7 +34,7 @@
          * Medias per grid row.
          * @type {number}
          */
-        let medias_per_row = 6;
+        let medias_per_row = (globalThis.innerWidth ?? 1400) > 1920 ? 6 : 5;
         
         /*----------  State  ----------*/
         
@@ -440,6 +440,7 @@
     <div id="sequence-creation-tool"
         class:auto-select-enabled={auto_select_mode}
         class="dungeon-scroll"
+        style:--sct-grid-item-size="{(100 / medias_per_row) * 0.94}cqw"
     >
         <div id="sequence-parameters"
             class="cristal-surface"
@@ -533,12 +534,11 @@
     /*=====  End of Parameters  ======*/
 
     ul#sequence-members {
-        --sct-grid-item-size: 400px;
         display: grid;
         width: 100%;
-        grid-auto-rows: calc(var(--sct-grid-item-size) * 1.1);
+        container-type: inline-size;
         background: var(--grey);
-        gap: var(--spacing-2);
+        row-gap: var(--spacing-2);
         padding: 4px;
         list-style: none;
         margin: 0;
