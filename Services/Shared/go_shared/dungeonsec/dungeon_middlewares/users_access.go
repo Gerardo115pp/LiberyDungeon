@@ -72,3 +72,9 @@ var checkUserCan_UploadFiles MiddlewareFunc = factory_grantOnClaimCheckMiddlewar
 func CheckUserCan_UploadFiles(next func(response http.ResponseWriter, request *http.Request)) http.HandlerFunc {
 	return checkUserCan_UploadFiles(next)
 }
+
+var checkUserCan_ContentAlter MiddlewareFunc = factory_grantOnClaimCheckMiddleware(dungeonsec.CanContentAlter)
+
+func CheckUserCan_ContentAlter(next func(response http.ResponseWriter, request *http.Request)) http.HandlerFunc {
+	return checkUserCan_ContentAlter(next)
+}
