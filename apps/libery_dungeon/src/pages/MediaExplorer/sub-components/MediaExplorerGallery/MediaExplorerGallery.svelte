@@ -879,6 +879,8 @@
 
             console.log(`kept media index: ${cached_media_index}`);
 
+            cached_media_index = Math.max(0, Math.min(cached_media_index, media_items.length - 1));
+
             if (cached_media_index >= media_items.length) {
                 throw new Error(`Cached media index ${cached_media_index} is out of bounds for media_items with length ${media_items.length}`);
             }
