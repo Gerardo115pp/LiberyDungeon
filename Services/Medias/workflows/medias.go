@@ -330,7 +330,7 @@ func SaveMediaFile(media_identity *dungeon_models.MediaIdentity, file *multipart
 // Takes a media file and assumes the file is not yet on it's corresponding cluster path. It will check if there is a file with the same name as the would be media file and if so,
 // it will find a unique version of the media name. doesnt make any file operations.
 func SetUniqueMediaName(media_identity *dungeon_models.MediaIdentity) error {
-	unique_media_name, err := GetUniquieMediaName(media_identity)
+	unique_media_name, err := GetUniquieMediaName(media_identity.Media.Name, media_identity.CategoryPath, media_identity.ClusterPath)
 	if err != nil {
 		return fmt.Errorf("Error getting unique media name: %s", err.Error())
 	}
@@ -340,11 +340,11 @@ func SetUniqueMediaName(media_identity *dungeon_models.MediaIdentity) error {
 	return nil
 }
 
-func GetUniquieMediaName(media_identity *dungeon_models.MediaIdentity) (string, error) {
-	category_path := path.Join(media_identity.ClusterPath, media_identity.CategoryPath)
+func GetUniquieMediaName(original_media_name, category_fullpath, cluster_fs_path string) (string, error) {
+	category_path := path.Join(cluster_fs_path, category_fullpath)
 	sibling_names := make(map[string]bool)
 
-	unique_media_name := media_identity.Media.Name
+	unique_media_name := original_media_name
 
 	files, err := os.ReadDir(category_path)
 	if err != nil {
@@ -355,9 +355,9 @@ func GetUniquieMediaName(media_identity *dungeon_models.MediaIdentity) (string, 
 		sibling_names[file.Name()] = true
 	}
 
-	_, name_used := sibling_names[media_identity.Media.Name]
-	media_extension := filepath.Ext(media_identity.Media.Name)
-	media_name := media_identity.Media.Name[:len(media_identity.Media.Name)-len(media_extension)]
+	_, name_used := sibling_names[original_media_name]
+	media_extension := filepath.Ext(original_media_name)
+	media_name := original_media_name[:len(original_media_name)-len(media_extension)]
 	repetition := 1
 
 	for name_used {

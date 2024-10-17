@@ -1,23 +1,33 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"libery-dungeon-libs/communication"
+	"libery-dungeon-libs/dungeonsec/dungeon_middlewares"
+	"libery-dungeon-libs/dungeonsec/dungeon_secrets"
+	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/libery_networking"
 	dungeon_models "libery-dungeon-libs/models"
 	app_config "libery_medias_service/Config"
-	"libery_medias_service/helpers"
+	"libery_medias_service/handlers/request_parameters"
 	service_helpers "libery_medias_service/helpers"
+	"libery_medias_service/repository"
 	"libery_medias_service/workflows"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
 
+	"github.com/Gerardo115pp/patriot_router"
 	"github.com/Gerardo115pp/patriots_lib/echo"
 	"github.com/gotd/contrib/http_range"
 )
+
+var medias_fs_route_path string = "/medias-fs.*"
+var MEDIAS_FS_ROUTE *patriot_router.Route = patriot_router.NewRoute(medias_fs_route_path, false)
 
 func MediasFSHandler(service_instance libery_networking.Server) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
@@ -59,7 +69,7 @@ func getMediasFSHandler(response http.ResponseWriter, request *http.Request) {
 	media_path := request.URL.Path
 	var use_mobile_version bool = false
 
-	media_path = helpers.RemoveRoutePrefix(media_path, "medias-fs")
+	media_path = service_helpers.RemoveRoutePrefix(media_path, "medias-fs")
 	if media_path == "" {
 		echo.Echo(echo.YellowFG, fmt.Sprintf("Unprocessable media path: %s", request.URL.Path))
 		response.WriteHeader(http.StatusBadRequest)
@@ -110,7 +120,7 @@ func getMediasFSHandler(response http.ResponseWriter, request *http.Request) {
 
 	filename = segments[len(segments)-1]
 
-	safe_filename := helpers.RemoveSpecialChars(filename)
+	safe_filename := service_helpers.RemoveSpecialChars(filename)
 
 	response.Header().Set("Content-Type", content_type)
 	response.Header().Set("Content-Disposition", "attachment; filename="+safe_filename)
@@ -177,9 +187,74 @@ func postMediasFSHandler(response http.ResponseWriter, request *http.Request) {
 	return
 }
 func patchMediasFSHandler(response http.ResponseWriter, request *http.Request) {
-	response.WriteHeader(http.StatusMethodNotAllowed)
-	return
+	var resource string = request.URL.Path
+	var handler_func http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
+
+	switch resource {
+	case "/medias-fs/sequence-rename":
+		handler_func = dungeon_middlewares.CheckUserCan_ContentAlter(patchSequenceRenameHandler)
+	}
+
+	handler_func(response, request)
 }
+
+func patchSequenceRenameHandler(response http.ResponseWriter, request *http.Request) {
+	var sequence_params *request_parameters.SequenceRenameParams
+
+	sequence_params, err := request_parameters.NewSequenceRenameParamsFromRequest(request)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("Error parsing sequence rename params: %s", err.Error()))
+		response.WriteHeader(400)
+		return
+	}
+
+	var medias []dungeon_models.Media = make([]dungeon_models.Media, 0)
+
+	for media_uuid, _ := range sequence_params.SequenceMembers {
+		member_media, err := repository.MediasRepo.GetMediaByID(request.Context(), media_uuid)
+		if err != nil {
+			echo.Echo(echo.RedFG, fmt.Sprintf("Error getting media by id: %s", err.Error()))
+			response.WriteHeader(500)
+			return
+		}
+
+		if member_media.MainCategory != sequence_params.CategoryUUID {
+			echo.Echo(echo.RedFG, fmt.Sprintf("Media with uuid '%s' does not belong to category '%s'", media_uuid, sequence_params.CategoryUUID))
+			response.WriteHeader(400)
+			return
+		}
+
+		medias = append(medias, *member_media)
+	}
+
+	err = workflows.RenameSequence(request.Context(), medias, sequence_params.SequenceMembers)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("Error renaming sequence: %s", err.Error()))
+		response.WriteHeader(500)
+		return
+	}
+
+	go func() {
+		files_modified := len(medias)
+
+		cluster, err := repository.CategoriesClustersRepo.GetCategoryCluster(context.Background(), sequence_params.CategoryUUID)
+		if err != nil {
+			echo.Echo(echo.RedFG, fmt.Sprintf("Error getting category cluster: %s", err.Error()))
+			return
+		}
+
+		fs_change_event := communication.NewClusterFSChangeEvent(dungeon_secrets.GetDungeonJwtSecret(), cluster.Uuid, files_modified, files_modified, 0)
+
+		err = fs_change_event.Emit()
+		if err != nil {
+			echo.Echo(echo.RedFG, fmt.Sprintf("Error emitting fs_change_event: %s", err.Error()))
+		}
+	}()
+
+	response.WriteHeader(204)
+	echo.Echo(echo.GreenFG, "Sequence renamed")
+}
+
 func deleteMediasFSHandler(response http.ResponseWriter, request *http.Request) {
 	response.WriteHeader(http.StatusMethodNotAllowed)
 	return

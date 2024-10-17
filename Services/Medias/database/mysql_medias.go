@@ -53,6 +53,7 @@ func (db *MediasMysql) GetRandomMedia(ctx context.Context, cluster_id string, ca
 	if err != nil {
 		return nil, nil, err
 	}
+	defer stmt.Close()
 
 	var random_row *sql.Row
 
@@ -87,6 +88,7 @@ func (db *MediasMysql) GetMediaByID(ctx context.Context, media_id string) (*dung
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	var downloaded_from sql.NullInt64
 
@@ -109,6 +111,7 @@ func (db *MediasMysql) GetMediaByName(ctx context.Context, media_name string, ma
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	var downloaded_from sql.NullInt64
 
@@ -129,6 +132,7 @@ func (db *MediasMysql) InsertMedia(ctx context.Context, media *dungeon_models.Me
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	var downloaded_from sql.NullInt64
 	if media.DownloadedFrom != 0 {
@@ -137,6 +141,21 @@ func (db *MediasMysql) InsertMedia(ctx context.Context, media *dungeon_models.Me
 	}
 
 	_, err = stmt.ExecContext(ctx, media.Uuid, media.Name, media.LastSeen, media.MainCategory, media.Type, downloaded_from)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *MediasMysql) UpdateMediaName(ctx context.Context, media_id string, new_name string) error {
+	stmt, err := db.db.Prepare("UPDATE medias SET name = ? WHERE uuid = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, new_name, media_id)
 	if err != nil {
 		return err
 	}
