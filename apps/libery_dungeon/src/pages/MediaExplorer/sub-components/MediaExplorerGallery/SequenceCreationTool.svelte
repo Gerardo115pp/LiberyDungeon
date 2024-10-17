@@ -148,6 +148,11 @@
                     description: `<navigation> Go to the media with the given index.`,
                 });
 
+                hotkeys_context.register(["t"], handleFocusOnSequencePrefix, {
+                    description: `<editing> Focus on the sequence prefix editor. Esc exits, as with any other input.`,
+                    mode: "keyup",
+                });
+
                 hotkeys_context.register(["n"], handleClearSCT, {
                     description: `<reordering> Clear the current selection.`,
                 });
@@ -166,6 +171,12 @@
                 me_gallery_yanked_medias.set([]);
             }
             
+            /**
+             * Focuses on the sequence prefix editor.
+             */
+            const handleFocusOnSequencePrefix = () => {
+                the_sequence_prefix_editor.focus();
+            }
 
             /**
              * Moves the focus to the typed media index.
