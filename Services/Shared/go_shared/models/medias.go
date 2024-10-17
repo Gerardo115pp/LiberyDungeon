@@ -3,6 +3,7 @@ package dungeon_models
 import (
 	"fmt"
 	"libery-dungeon-libs/helpers"
+	"path/filepath"
 	"time"
 )
 
@@ -74,6 +75,10 @@ func CreateNewMedia(name string, main_category string, is_video bool, downloaded
 	new_media.Uuid = helpers.GenerateSha1ID(fmt.Sprintf("%s-%s-%d", new_media.Name, new_media.MainCategory, new_media.LastSeen.Unix()))
 
 	return new_media
+}
+
+func (media_identity MediaIdentity) AbsFilename() string {
+	return filepath.Join(media_identity.ClusterPath, media_identity.CategoryPath, media_identity.Media.Name)
 }
 
 func CreateNewMediaIdentity(media *Media, category *Category, cluster *CategoryCluster) *MediaIdentity {
