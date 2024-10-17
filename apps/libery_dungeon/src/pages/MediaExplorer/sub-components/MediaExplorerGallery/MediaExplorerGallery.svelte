@@ -25,6 +25,7 @@
         import { page } from '$app/stores';
         import { OrderedMedia } from '@models/Medias';
         import { active_media_index } from '@stores/media_viewer';
+    import SequenceCreationTool from './SequenceCreationTool.svelte';
     
     /*=====  End of Imports  ======*/
     
@@ -158,6 +159,9 @@
 
         defineComponentHotkeys();
         defineGalleryState();
+
+        // DELETE AFTER:
+        handleEnableSequenceCreationTool();
     });
 
     onDestroy(() => {
@@ -241,6 +245,10 @@
                         description: "<content>Deselects all selected medias and restores deleted medias that have not been committed(they are committed when you close the gallery).",
                     });
 
+                    hotkeys_context.register(["c s"], handleEnableSequenceCreationTool, {
+                        description: "<tools>Enable the sequence creation tool.",
+                    });
+
                     hotkeys_context.register(["m"], handleMagnifyFocusedMedia, {
                         description: "<behavior>Toggle the magnify focused media mode. when enabled, the focused media item will be scale up and be contained so the entier media can be seen.",
                     });
@@ -289,6 +297,14 @@
 
                 emitPlatformMessage(`Appended ${selected_medias.length} medias to existing ${original_yanked_medias_count} yanked medias. There are now ${total_yanked_medias_count} yanked medias.`);
             }
+            
+            /**
+             * Enables the media sequence creation tool.
+             */
+            const handleEnableSequenceCreationTool = () => {
+                enable_sequence_creation_tool = true;
+            }
+            
 
             /**
              * Toggles the display of the media titles in the gallery items.
@@ -1040,46 +1056,52 @@
 </script>
 
 <div id="meg-gallery-wrapper">
-    <ul id="meg-gallery" class:masonry-layout={use_masonry}>
-        {#if $me_gallery_changes_manager instanceof MediaChangesEmitter}
-            {#each active_medias as ordered_media_item, h}
-                {@const is_media_keyboard_selected = enable_gallery_hotkeys && media_focus_index === ordered_media_item.Order}
-                {@const masonary_random_number = Math.random()}
-                <li class="meg-gallery-item {media_item_html_class}" 
-                    class:keyboard-selected={is_media_keyboard_selected} 
-                    class:masonry-item--small={use_masonry && (masonary_random_number < 0.3) }
-                    class:masonry-item--medium={use_masonry && (masonary_random_number >= 0.3 && masonary_random_number < 0.6) }
-                    class:masonry-item--large={use_masonry && (masonary_random_number >= 0.6) }
-                    class:is-skeleton={recovering_gallery_state}
-                    data-media-order={ordered_media_item.Order}
-                    data-media-index={h}
-                    on:click={handleMediaItemClicked}
-                >
-                    <MeGalleryDisplayItem
-                        ordered_media={ordered_media_item}
-                        media_viewport_percentage={0.3}
-                        is_keyboard_focused={is_media_keyboard_selected}
-                        is_skeleton={recovering_gallery_state}
-                        enable_magnify_on_keyboard_focus={magnify_focused_media}
-                        enable_heavy_rendering={enable_gallery_heavy_rendering}
-                        enable_video_titles={show_media_titles_mode}
-                        {use_masonry}
-                    />
-                    <CoverSlide 
-                        component_id="meg-gallery-cover-slide-{h}"
-                        ignore_parent_events={is_media_keyboard_selected}
-                    />
-                </li>        
-            {/each}
+    {#if enable_sequence_creation_tool && enable_gallery_hotkeys}
+        <SequenceCreationTool 
+            unsequenced_medias={ordered_medias}
+        />
+    {:else}
+        <ul id="meg-gallery" class:masonry-layout={use_masonry}>
+            {#if $me_gallery_changes_manager instanceof MediaChangesEmitter}
+                {#each active_medias as ordered_media_item, h}
+                    {@const is_media_keyboard_selected = enable_gallery_hotkeys && media_focus_index === ordered_media_item.Order}
+                    {@const masonary_random_number = Math.random()}
+                    <li class="meg-gallery-item {media_item_html_class}" 
+                        class:keyboard-selected={is_media_keyboard_selected} 
+                        class:masonry-item--small={use_masonry && (masonary_random_number < 0.3) }
+                        class:masonry-item--medium={use_masonry && (masonary_random_number >= 0.3 && masonary_random_number < 0.6) }
+                        class:masonry-item--large={use_masonry && (masonary_random_number >= 0.6) }
+                        class:is-skeleton={recovering_gallery_state}
+                        data-media-order={ordered_media_item.Order}
+                        data-media-index={h}
+                        on:click={handleMediaItemClicked}
+                    >
+                        <MeGalleryDisplayItem
+                            ordered_media={ordered_media_item}
+                            media_viewport_percentage={0.3}
+                            is_keyboard_focused={is_media_keyboard_selected}
+                            is_skeleton={recovering_gallery_state}
+                            enable_magnify_on_keyboard_focus={magnify_focused_media}
+                            enable_heavy_rendering={enable_gallery_heavy_rendering}
+                            enable_video_titles={show_media_titles_mode}
+                            {use_masonry}
+                        />
+                        <CoverSlide 
+                            component_id="meg-gallery-cover-slide-{h}"
+                            ignore_parent_events={is_media_keyboard_selected}
+                        />
+                    </li>        
+                {/each}
+            {/if}
+        </ul>
+        {#if active_medias.length !== media_items.length}
+            <div class="meg-gallery-end-of-content-watchdog"
+                on:viewportEnter={handleContentEndWatchdogEnter}
+                use:viewport
+            >
+                <GridLoader />
+            </div>
         {/if}
-    </ul>
-    {#if active_medias.length !== media_items.length}
-        <div class="meg-gallery-end-of-content-watchdog"
-            on:viewportEnter={handleContentEndWatchdogEnter}
-            use:viewport
-        >
-            <GridLoader />
-        </div>
     {/if}
 </div>
 

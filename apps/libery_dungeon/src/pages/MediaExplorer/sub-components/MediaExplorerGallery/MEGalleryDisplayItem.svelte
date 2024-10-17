@@ -31,9 +31,14 @@
          * @default 0.2
          */
         export let media_viewport_percentage = 0.2;
+        
+        /**
+         * Whether the item should be draggable or not.
+         * @type {boolean}
+         * @default false
+         */
+        export let enable_dragging = false;
 
-        
-        
         /*----------  State  ----------*/
         
             /**
@@ -76,6 +81,21 @@
              * @default false
              */
             export let is_skeleton = false;
+
+            /*----------  Drag operations  ----------*/
+                
+                /**
+                 * Whether another media item is being dragged over this media item.
+                 * @type {boolean}
+                 */
+                let media_dragged_over = false;
+
+
+                /**
+                 * Whether this media item is being dragged.
+                 * @type {boolean}
+                 */
+                let is_dragged = false;
         
         /*----------  Style  ----------*/
 
@@ -123,6 +143,82 @@
     /*=============================================
     =            Methods            =
     =============================================*/
+        
+        /*=============================================
+        =            Drag handlers            =
+        =============================================*/
+        
+            /**
+             * Handles the drag start event.
+             * @param {DragEvent} event
+             */
+            const handleMediaItemDragStart = event => {
+                is_dragged = true;
+
+                event.dataTransfer.effectAllowed = 'move';
+
+                console.log("Dragged media: ", ordered_media.Order);
+            } 
+
+            /**
+             * Handles the drag end event.
+             * @param {DragEvent} event
+             */
+            const handleMediaItemDragEnd = event => {
+                is_dragged = false;
+                console.log(`Media item ${ordered_media.Order} drag end`);
+
+                let effect = event.dataTransfer.dropEffect;
+
+                console.log(`Drop effect: ${effect}`);
+            }
+
+            /**
+             * Handles the drag enter event.
+             * @param {DragEvent} event
+             */
+            const handleMediaItemDragEnter = event => {
+                if (is_dragged) return;
+                event.preventDefault();
+                media_dragged_over = true;
+            }
+
+            /**
+             * Handles the drag over event.
+             * @param {DragEvent} event
+             */
+            const handleMediaItemDragOver = event => {
+                if (is_dragged) return;
+                event.preventDefault();
+
+                event.dataTransfer.dropEffect = 'move';
+
+                media_dragged_over
+
+                return true;
+            }
+
+            /**
+             * Handles the drag leave event.
+             * @param {DragEvent} event
+             */
+            const handleMediaItemDragLeave = event => {
+                media_dragged_over = false;
+            }
+
+            /**
+             * Handles the drop event.
+             * @param {DragEvent} event
+             */
+            const handleMediaItemDrop = event => {
+                event.preventDefault();
+
+                media_dragged_over = false;
+
+                console.log("Inserting medias before media: ", ordered_media.Order);
+            }
+        
+        /*=====  End of Drag handlers  ======*/
     
         /**
          * Scrolls given element into view.
@@ -136,7 +232,7 @@
          * Generates a media changes uuid based on the media item passed.
          * @param {import('@models/Medias').OrderedMedia} media_item
          * @returns {string}
-        */
+         */
         const generateMediaChangesUuid = media_item => media_item.uuid + '_changes_callback';
 
         /**
@@ -218,7 +314,6 @@
         const handleViewportLeave = () => {
             media_inside_viewport = false;
         }
-        
 
         /**
          * Checks if the media item is in the yanked media uuids list and sets the status accordingly.
@@ -246,7 +341,7 @@
         /**
          * Suscribe to media changes events emitted by the me_gallery_changes_manager.
          */
-         const suscribeToMediaChanges = () => {
+        const suscribeToMediaChanges = () => {
             if ($me_gallery_changes_manager == null) return;
 
             let element_media_uuid = generateMediaChangesUuid(ordered_media);
@@ -275,6 +370,16 @@
     class:status-selected={is_media_selected}   
     class:status-yanked={is_media_yanked}
     class:status-titles-enabled={enable_video_titles}
+    draggable="{enable_dragging}"
+    class:status-media-hovering={media_dragged_over}
+    class:status-media-dragging={is_dragged}
+    on:dragstart={handleMediaItemDragStart}
+    on:dragend={handleMediaItemDragEnd}
+    on:dragenter={handleMediaItemDragEnter}
+    on:dragover={handleMediaItemDragOver}
+    on:dragleave={handleMediaItemDragLeave}
+    on:drop={handleMediaItemDrop}
+    data-media-order={ordered_media.Order}
     on:viewportEnter={handleViewportEnter}
     on:viewportLeave={handleViewportLeave}
     use:viewport
@@ -324,7 +429,7 @@
         position: relative;
         width: 100cqw;
         height: 110cqw;
-        background: var(--main-dark-color-7);
+        background: var(--grey-8);
         border-radius: var(--display-item-border-radius);
         transition: scale 0.2s ease-out, translate 0.4s ease-out, box-shadow 0.1s linear allow-discrete;
     }
@@ -481,6 +586,26 @@
             }
         
     /*=====  End of File name and type  ======*/
+    
+    
+    /*=============================================
+    =            Dragging oprations feedback            =
+    =============================================*/
+    
+        :global(:has(> .meg-display-item-wrapper:not(.status-media-dragging)) ~ :has(> .meg-display-item-wrapper.status-media-hovering)) {
+            & img, & video {
+                translate: 15% 0;
+                transition: translate 0.3s ease-out;
+            }
+        }
+
+        .meg-display-item-wrapper.status-media-dragging {
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        }
+            
+    
+    /*=====  End of Dragging oprations feedback  ======*/
     
     
 
