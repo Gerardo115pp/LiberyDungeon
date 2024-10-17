@@ -2,9 +2,9 @@
     import HotkeysContext from '@libs/LiberyHotkeys/hotkeys_context';
     import { me_gallery_changes_manager, me_gallery_yanked_medias } from './me_gallery_state';
     import MeGalleryDisplayItem from './MEGalleryDisplayItem.svelte';
-    import { HOTKEYS_HIDDEN_GROUP } from '@libs/LiberyHotkeys/hotkeys_consts';
+    import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from '@libs/LiberyHotkeys/hotkeys_consts';
     import { getHotkeysManager } from '@libs/LiberyHotkeys/libery_hotkeys';
-    import { onMount } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte';
     import { LabeledError } from '@libs/LiberyFeedback/lf_models';
     import { current_category } from '@stores/categories_tree';
     import { cleanFilenameString } from '@libs/utils';
@@ -96,6 +96,7 @@
              */
             let last_saved_sequence = [];
     
+        const dispatch = createEventDispatcher();
     /*=====  End of Properties  ======*/
 
     onMount(() => {
@@ -121,6 +122,12 @@
                 }
 
                 const hotkeys_context = new HotkeysContext();
+
+                hotkeys_context.register(["q"], handleGalleryClose, {
+                    description: `<${HOTKEYS_GENERAL_GROUP}> Close the sequence creation tool.`,
+                    await_execution: false,
+                    mode: "keyup",
+                })
 
                 hotkeys_context.register(["w", "a", "s", "d"], handleSequenceGridMovement, {
                     description: `<navigation> Move the focus on the sequence grid.`,
@@ -174,6 +181,20 @@
             const handleClearSCT = (key_event, hotkey) => {
                 me_gallery_yanked_medias.set([]);
             }
+
+            /**
+             * Handles the close gallery hotkey.
+             * @param {KeyboardEvent} key_event
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             */
+            const handleGalleryClose = (key_event, hotkey) => {
+                global_hotkeys_manager.loadPreviousContext();
+
+                global_hotkeys_manager.dropContext(hotkeys_context_name);
+
+                emitCloseGallery();
+            }
+            
             
             /**
              * Focuses on the sequence prefix editor.
@@ -390,6 +411,14 @@
                 }
 
                 return sequence_map;
+        }
+
+        /**
+         * Emits an event so the MediaExplorerGallery can close the
+         * sequence creation tool.
+         */
+        const emitCloseGallery = () => {
+            dispatch("close-sct");
         }
 
         /**

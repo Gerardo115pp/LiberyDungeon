@@ -159,9 +159,6 @@
 
         defineComponentHotkeys();
         defineGalleryState();
-
-        // DELETE AFTER:
-        handleEnableSequenceCreationTool();
     });
 
     onDestroy(() => {
@@ -688,6 +685,12 @@
             await loadProceedingMedias();
         }
 
+        /**
+         * Handles the close event emitted from the Sequence Creation Tool.
+         */
+        const handleSequenceCreationToolClose = () => {
+            enable_sequence_creation_tool = false;
+        }
 
         /**
          * Loads medias preceding active_medias[0].Order. Returns a promise that resolves to true if more medias were loaded, false otherwise.
@@ -1059,6 +1062,7 @@
     {#if enable_sequence_creation_tool && enable_gallery_hotkeys}
         <SequenceCreationTool 
             unsequenced_medias={ordered_medias}
+            on:close-sct={handleSequenceCreationToolClose}
         />
     {:else}
         <ul id="meg-gallery" class:masonry-layout={use_masonry}>
