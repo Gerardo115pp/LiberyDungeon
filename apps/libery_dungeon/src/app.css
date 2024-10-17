@@ -199,6 +199,7 @@
         /* Misc */
 
             --navbar-height: calc(var(--vspacing-5) * 0.546875);
+            --primary-toolbar-height: calc(var(--navbar-height) * .9);
             /* 
             * -3px to avoid the micro layout shifting that occures when the user scrolls a page with a height of calc(100dvh - var(--navbar-height))
              */
@@ -277,6 +278,11 @@
     /* :root.cinema-mode {
         --navbar-height: 0px;
     } */
+
+    .cristal-surface {
+        backdrop-filter: blur(10px);
+        background: var(--glass-gradient);
+    }
 
     .section-content-layout {
         display: grid;

@@ -408,8 +408,17 @@
 {#if $me_gallery_changes_manager != null}
     <div id="sequence-creation-tool"
         class:auto-select-enabled={auto_select_mode}
+        class="dungeon-scroll"
     >
-        <div id="sequence-parameters"></div>
+        <div id="sequence-parameters"
+            class="cristal-surface"
+        >
+            <ul id="categorie-medias-properties">
+                <p class="sct-property">
+                    <strong>Medias</strong> {unsequenced_medias.length}
+                </p>
+            </ul>
+        </div>
         <ul id="sequence-members"
             style:grid-template-columns="repeat({medias_per_row}, minmax(var(--sct-grid-item-size), 1fr))"
         >
@@ -434,9 +443,34 @@
 {/if}
 
 <style>
+    #sequence-creation-tool {
+        position: relative;
+        width: 100%;
+        height: calc(90dvh - var(--navbar-height));
+        overflow: auto;
+    }
+    
+    /*=============================================
+    =            Parameters            =
+    =============================================*/
+    
+        #sequence-parameters {
+            position: sticky;
+            width: 100%;
+            top: 0;
+            border-bottom: .5px solid var(--grey-9);
+            height: var(--primary-toolbar-height);
+            z-index: var(--z-index-t-1);
+        }
+    
+    /*=====  End of Parameters  ======*/
+    
+    
+
     ul#sequence-members {
         --sct-grid-item-size: 400px;
         display: grid;
+        width: 100%;
         grid-auto-rows: calc(var(--sct-grid-item-size) * 1.1);
         background: var(--grey);
         gap: var(--spacing-2);
@@ -444,24 +478,30 @@
         list-style: none;
         margin: 0;
     }
-
-    li.sct-sm-member-item {
-        position: relative;
-        cursor: pointer;
-        container-type: inline-size;
-        background: var(--grey-9);
-        width: var(--sct-grid-item-size);
-        height: calc(var(--sct-grid-item-size) * 1.1);
-        z-index: var(--z-index-1);
-    }
-
-    li.sct-sm-member-item.keyboard-selected {
-        /* display: none; */
-        outline: var(--main) solid 2px;
-        z-index: var(--z-index-2);
-    }
     
-    .auto-select-enabled li.sct-sm-member-item.keyboard-selected {
-        outline: var(--success) solid 2px;
-    }
+    /*=============================================
+    =            Sequence members            =
+    =============================================*/
+    
+        li.sct-sm-member-item {
+            position: relative;
+            cursor: pointer;
+            container-type: inline-size;
+            background: var(--grey-9);
+            width: var(--sct-grid-item-size);
+            height: calc(var(--sct-grid-item-size) * 1.1);
+            z-index: var(--z-index-1);
+        }
+
+        li.sct-sm-member-item.keyboard-selected {
+            /* display: none; */
+            outline: var(--main) solid 2px;
+            z-index: var(--z-index-2);
+        }
+        
+        .auto-select-enabled li.sct-sm-member-item.keyboard-selected {
+            outline: var(--success) solid 2px;
+        }   
+    
+    /*=====  End of Sequence members  ======*/
 </style>
