@@ -34,7 +34,7 @@
          * Medias per grid row.
          * @type {number}
          */
-        let medias_per_row = (globalThis.innerWidth ?? 1400) > 1920 ? 6 : 5;
+        let medias_per_row = (globalThis.innerWidth ?? 1400) > 1920 ? 9 : 6;
         
         /*----------  State  ----------*/
         
