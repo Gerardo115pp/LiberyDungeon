@@ -103,7 +103,7 @@
              * @default false
              */
             let magnify_mode = false;
-    
+
         const dispatch = createEventDispatcher();
 
     /*=====  End of Properties  ======*/
@@ -164,6 +164,14 @@
                     description: `<navigation> Go to the media with the given index.`,
                 });
 
+                hotkeys_context.register(["shift+w"], handleGoToTop, {
+                    description: `<navigation> Go to the first media in the sequence.`,
+                });
+
+                hotkeys_context.register(["shift+s"], handleGoToBottom, {
+                    description: `<navigation> Go to the last media in the sequence.`, 
+                });
+
                 hotkeys_context.register(["t"], handleFocusOnSequencePrefix, {
                     description: `<editing> Focus on the sequence prefix editor. Esc exits, as with any other input.`,
                     mode: "keyup",
@@ -177,7 +185,7 @@
                     description: `<media> Toggle the magnify mode.`,
                 });
 
-                hotkeys_context.register(["; shift+s"], handleSaveSequence, {
+                hotkeys_context.register(["; s"], handleSaveSequence, {
                     description: `<saving> Save the sequence.`,
                 });
 
@@ -238,6 +246,22 @@
                 if (auto_select_mode) {
                     autoSelectHandler(old_focus_index, sct_focus_index);
                 }
+            }
+
+            /**
+             * handles the go to bottom hotkey.
+             * @param {KeyboardEvent} key_event
+            */
+            const handleGoToBottom = (key_event) => {
+                sct_focus_index = unsequenced_medias.length - 1;
+            }
+
+            /**
+             * Handles the go to top hotkey.
+             * @param {KeyboardEvent} key_event
+             */
+            const handleGoToTop = (key_event) => {
+                sct_focus_index = 0;
             }
 
             /**
