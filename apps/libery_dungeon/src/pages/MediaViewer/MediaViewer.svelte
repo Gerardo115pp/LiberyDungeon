@@ -221,7 +221,7 @@
                         description: "<navigate>Jump to a specific media position. exapmle: '5 g' will jump to the 5th media."
                     });
 
-                    hotkeys_context.register("r", e => {e.preventDefault(); random_media_navigation.set(!$random_media_navigation)}, {
+                    hotkeys_context.register("r", toggleRandomMediaNavigationHotkey, {
                         description: "<navigation>Toggle random media navigation."
                     });
 
@@ -686,6 +686,19 @@
                 } else {
                     feedback_message = "page reader: off";
                 }
+
+                setDiscreteFeedbackMessage(feedback_message);
+            }
+
+            /**
+             * Toggles random media navigation.
+             * @param {KeyboardEvent} key_event
+             */
+            const toggleRandomMediaNavigationHotkey = key_event => {
+                key_event.preventDefault();
+                random_media_navigation.set(!$random_media_navigation);
+
+                let feedback_message = $random_media_navigation ? "random navigation: on" : "random navigation: off";
 
                 setDiscreteFeedbackMessage(feedback_message);
             }
