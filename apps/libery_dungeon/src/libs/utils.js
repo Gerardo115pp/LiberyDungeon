@@ -111,6 +111,11 @@ export const isUrlMediaFile = media_url => {
     return isUrlVideo(media_url) || isUrlImage(media_url);
 }
 
+/**
+ * Returns the filename from a media url 
+ * @param {string} media_url 
+ * @returns 
+ */
 export const getMediaFilename = media_url => {
     return media_url.split('/').pop();
 }
