@@ -659,6 +659,10 @@
             column-gap: var(--spacing-4);
             border-bottom: .5px solid var(--grey-9);
             z-index: var(--z-index-t-1);
+            will-change: transform; 
+            /* Will change - transform is said to improve performance on stick elements inside scrolling containers
+              See: https://developer.mozilla.org/en-US/docs/Web/CSS/position#performance_accessibility
+            */ 
         }
 
         #sequence-creation-tool.magnify-mode-enabled #sequence-parameters {
