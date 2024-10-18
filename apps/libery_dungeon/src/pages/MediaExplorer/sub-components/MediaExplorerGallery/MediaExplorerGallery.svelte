@@ -85,6 +85,13 @@
              */
             let media_focus_index = 0;
 
+            /**
+             * Whether there are more proceeding medias to load.
+             * Used to disable the ContentEndWatchdog.
+             * @type {boolean}
+             */
+            let has_proceeding_medias = true;
+
             /** 
              * If true, enables the media explorer gallery hotkeys_context
              * @type {boolean}
@@ -683,6 +690,8 @@
             }
 
             await loadProceedingMedias();
+
+            manageContentEndWatchdogState();
         }
 
         /**
@@ -776,6 +785,33 @@
                 console.log(`Appending medias as Media focus index ${media_focus_index} is in the last row.`);
                 await loadProceedingMedias();
             }
+
+            manageContentEndWatchdogState();            
+        }
+
+
+        /**
+         * Determines whether the content end watchdog should disabled.
+         * @returns {boolean}
+         */
+        const manageContentEndWatchdogState = () => {
+            let keep_watching = true;
+
+            if (active_medias.length === media_items.length && active_medias.length === 0) {
+                keep_watching = false;
+            } 
+            
+            if (keep_watching) {
+                let highest_order_media = active_medias[active_medias.length - 1];
+
+                if (highest_order_media.Order === media_items.length - 1) {
+                    keep_watching = false;
+                }
+            }
+
+            has_proceeding_medias = keep_watching;
+
+            return keep_watching;
         }
 
         /**
@@ -1102,7 +1138,7 @@
                 {/each}
             {/if}
         </ul>
-        {#if active_medias.length !== media_items.length}
+        {#if has_proceeding_medias}
             <div class="meg-gallery-end-of-content-watchdog"
                 on:viewportEnter={handleContentEndWatchdogEnter}
                 use:viewport
