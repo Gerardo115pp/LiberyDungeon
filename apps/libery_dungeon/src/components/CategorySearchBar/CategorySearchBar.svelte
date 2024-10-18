@@ -6,7 +6,6 @@
     import { current_cluster } from "@stores/clusters";
     import { browser } from "$app/environment";
 
-    
     /*=============================================
     =            Properties            =
     =============================================*/
@@ -26,12 +25,6 @@
         /** @type {boolean} whether the search bar is focused or not */
         export let autofocus = false;
 
-        /**
-         * First input guard. protects the search bar from adding it's triggering hotkey key to the search query.
-         * @type {boolean}
-         */
-        let first_input = false;
-
         const search_event_dispatcher = createEventDispatcher();
     
     /*=====  End of Properties  ======*/
@@ -43,7 +36,6 @@
             // }, 400);
         }
     });
-
     
     /*=============================================
     =            Methods            =
@@ -65,7 +57,6 @@
             }
 
             search_bar.blur();
-            first_input = false;
 
             if (search_query === "") {
                 return;
@@ -91,8 +82,6 @@
             if (handleSearchBarCommands(e)) {
                 return;
             }
-
-
         }
 
         /**
@@ -100,11 +89,6 @@
          * @param {KeyboardEvent} e
          */
         const handleSearchBarKeyup = e => {
-            if (!first_input) {
-                e.preventDefault();
-                first_input = true;
-                return;
-            }
         }
 
         /**

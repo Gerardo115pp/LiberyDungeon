@@ -272,6 +272,7 @@
 
                     hotkeys_context.register(["b"], () => { category_search_focused.set(!$category_search_focused);}, {
                         description: "<navigation>Open category search bar to search for categories in the current dungeon.",
+                        mode: "keyup",
                     });
 
                     hotkeys_context.register(["/"], handleCategoryNameFilter, {

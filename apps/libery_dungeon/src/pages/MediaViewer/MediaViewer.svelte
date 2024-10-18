@@ -271,7 +271,8 @@
                     
                     if ($current_user_identity.canPublicContentAlter()) {
                         hotkeys_context.register("t", handleMediaMovementToggle, {
-                            description: "<media_modification>Toggle the media movement manager."
+                            description: "<media_modification>Toggle the media movement manager.",
+                            mode: "keyup"
                         });
 
                         hotkeys_context.register("e", rejectMedia, {
