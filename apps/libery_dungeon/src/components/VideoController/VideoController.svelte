@@ -131,11 +131,11 @@
                     description: "Slow down video",
                 }
             },
-            SCREENSHOT_VIDEO: {
-                key_combo: "shift+s",
-                handler: handleScreenshotVideoHotkey,
+            CAPTURE_FRAME: {
+                key_combo: "v f",
+                handler: handleCaptureVideoFrame,
                 options: {
-                    description: "Take a screenshot of the video",
+                    description: "Capture the current frame of the video and downloads it",
                 }
             },
             TOGGLE_AUTO_HIDE: {
@@ -331,8 +331,8 @@
                 setDiscreteFeedbackMessage(feedback_message);
             }
 
-            function handleScreenshotVideoHotkey() {
-                emitScreenshotVideo();
+            function handleCaptureVideoFrame() {
+                emitCaptureVideoFrame();
             }
 
             function handleTogglePlayerAutoHide() {
@@ -518,9 +518,8 @@
         }
 
 
-        function emitScreenshotVideo() {
-            console.log("emitting screenshot video");
-            dispatch("screenshot-video");            
+        function emitCaptureVideoFrame() {
+            dispatch("capture-frame");            
         }
 
         function pauseVideo() {

@@ -858,6 +858,15 @@
             return document.querySelector(".mw-media-element-display");
         }
 
+        /**
+         * Returns the current active media.
+         * @returns {import('@models/Medias').Media}
+         */
+        const getActiveMedia = () => {
+            return $current_category.content[$active_media_index];
+        }
+
+
         const handleThumbnailClick = e => {
             const media_selected = e.detail;
             
@@ -932,7 +941,10 @@
             replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`);
         }
 
-        const screenshotVideo = () => {
+        /**
+         * Captures a frame from the video element as a webp and downloads it.
+         */
+        const captureVideoFrame = () => {
             if (video_element == null) {
                 return;
             };
@@ -946,13 +958,20 @@
 
             ctx.drawImage(video_element, 0, 0, canvas.width, canvas.height);
 
-            let dataURL = canvas.toDataURL("image/png");
+            let dataURL = canvas.toDataURL("image/webp");
+
+            const active_media = getActiveMedia();
+
+            const media_name = active_media.MediaName;
+            const frame_image_name = `${media_name}_frame_${video_element.currentTime}.webp`;
 
             // download the image as a file just for testing purposes
             let a = document.createElement("a");
             a.href = dataURL;
-            a.download = "screenshot.png";
+            a.download = frame_image_name;
             a.click();
+
+            setDiscreteFeedbackMessage(`Screenshot taken at ${video_element.currentTime} seconds.`);
         }
 
         /**
@@ -1021,7 +1040,7 @@
                     video_element={video_element} 
                     media_uuid={$current_category.content[$active_media_index].uuid}
                     auto_hide
-                    on:screenshot-video={screenshotVideo}
+                    on:capture-frame={captureVideoFrame}
                 />
             </div>
         {/if}
