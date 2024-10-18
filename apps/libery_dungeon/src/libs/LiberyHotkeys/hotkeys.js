@@ -485,17 +485,17 @@ export class HotkeyData {
             let event = event_history.PeekN(event_k);
             event_k++;
 
-            if (event == null) {
+            if (event == null && motion_match_number === "") {
                 hotkey_matched = false;
                 break;
             }
             
-            if (IsModifier(event.key)) {
+            if (IsModifier(event?.key)) {
                 console.log(`Modifier ${event.key} found. Skipping.`);
                 continue;
             }
 
-            if (this.#checkEventExpired(event, last_sequence_time)) {
+            if (event != null && this.#checkEventExpired(event, last_sequence_time)) {
                 hotkey_matched = false;
                 break;
             } 
