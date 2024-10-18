@@ -151,12 +151,13 @@
                 let is_on_right = false;
 
                 /**
-                 * Whether to check for container limits.
+                 * Whether to check if the media item is on bordering limits of it's container. if enabled and on
+                 * the media will auto adjust it's position to be fully visible when magnified.
                  * @type {boolean}
                  * @default false
                  */
                 export let check_container_limits = false;
-                $: if (check_container_limits && enable_magnify_on_keyboard_focus && is_keyboard_focused) {
+                $: if (this_dom_element && check_container_limits && enable_magnify_on_keyboard_focus && is_keyboard_focused) {
                     defineElementPositionModifiers();
                 }
 

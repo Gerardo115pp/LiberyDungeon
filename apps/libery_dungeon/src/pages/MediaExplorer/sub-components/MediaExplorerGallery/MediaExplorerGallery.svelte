@@ -1088,13 +1088,15 @@
                             is_keyboard_focused={is_media_keyboard_selected}
                             is_skeleton={recovering_gallery_state}
                             enable_magnify_on_keyboard_focus={magnify_focused_media}
+                            check_container_limits
+                            container_selector="#meg-gallery"
                             enable_heavy_rendering={enable_gallery_heavy_rendering}
                             enable_video_titles={show_media_titles_mode}
                             {use_masonry}
                         />
                         <CoverSlide 
                             component_id="meg-gallery-cover-slide-{h}"
-                            ignore_parent_events={is_media_keyboard_selected}
+                            ignore_parent_events={is_media_keyboard_selected || enable_gallery_hotkeys}
                         />
                     </li>        
                 {/each}
