@@ -669,7 +669,7 @@
                         exact_match.push(inner_category);
                     } else if (inner_category_name.startsWith(lower_case_filter)) {
                         start_match.push(inner_category);
-                    } else if (lower_case_filter.length > 3 && inner_category_name.includes(lower_case_filter)) {
+                    } else if (lower_case_filter.length >= 3 && inner_category_name.includes(lower_case_filter)) {
                         contains_match.push(inner_category);
                     }
                 });
