@@ -9,6 +9,7 @@
     import { current_category } from '@stores/categories_tree';
     import { cleanFilenameString } from '@libs/utils';
     import { sequenceRenameMedias } from '@models/Medias';
+    import { hotkeys_sheet_visible } from '@stores/layout';
     
     /*=============================================
     =            Properties            =
@@ -95,8 +96,16 @@
              * @type {import('@models/Medias').OrderedMedia[]}
              */
             let last_saved_sequence = [];
+
+            /**
+             * Whether the magnify mode is enabled.
+             * @type {boolean}
+             * @default false
+             */
+            let magnify_mode = false;
     
         const dispatch = createEventDispatcher();
+
     /*=====  End of Properties  ======*/
 
     onMount(() => {
@@ -164,8 +173,16 @@
                     description: `<reordering> Clear the current selection.`,
                 });
 
+                hotkeys_context.register(["m"], handleToggleMagnifyMode, {
+                    description: `<media> Toggle the magnify mode.`,
+                });
+
                 hotkeys_context.register(["; shift+s"], handleSaveSequence, {
                     description: `<saving> Save the sequence.`,
+                });
+
+                hotkeys_context.register(["?"], e => hotkeys_sheet_visible.set(!$hotkeys_sheet_visible), {
+                    description: `<${HOTKEYS_GENERAL_GROUP}>Toggle the hotkeys cheatsheet`,
                 });
 
                 global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
@@ -351,6 +368,13 @@
 
                 console.log("Renamed: ", renamed);
             }
+
+            /**
+             * Toggles the magnify mode.
+             */
+            const handleToggleMagnifyMode = () => {
+                toggleMagnifyMode();
+            }
         
         /*=====  End of Hotkeys  ======*/
 
@@ -498,6 +522,13 @@
         }
 
         /**
+         * Toggles the magnify mode.
+         */
+        const toggleMagnifyMode = () => {
+            magnify_mode = !magnify_mode;
+        }
+
+        /**
          * Unyanks the passed media.
          * @param {import('@models/Medias').OrderedMedia} media
          */
@@ -521,6 +552,7 @@
     <div id="sequence-creation-tool"
         class:auto-select-enabled={auto_select_mode}
         class="dungeon-scroll"
+        class:magnify-mode-enabled={magnify_mode}
         style:--sct-grid-item-size="{(100 / medias_per_row) * 0.94}cqw"
     >
         <div id="sequence-parameters"
@@ -568,6 +600,9 @@
                         ordered_media={umedia}
                         is_keyboard_focused={sct_keyboard_focused}
                         use_masonry={false}
+                        enable_magnify_on_keyboard_focus={magnify_mode}
+                        container_selector="#sequence-members"
+                        check_container_limits
                         enable_video_titles
                         enable_dragging
                     />
@@ -600,6 +635,11 @@
             column-gap: var(--spacing-4);
             border-bottom: .5px solid var(--grey-9);
             z-index: var(--z-index-t-1);
+        }
+
+        #sequence-creation-tool.magnify-mode-enabled #sequence-parameters {
+            opacity: 0;
+            transition: opacity 0.2s ease-out;
         }
 
         label.dungeon-input input {

@@ -1149,7 +1149,6 @@
         padding: var(--vspacing-3) 0;
         place-items: center;
     }
-
     
     /*=============================================
     =            Masonry            =

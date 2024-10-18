@@ -122,6 +122,50 @@
              * @type {boolean}
              */
             export let is_media_yanked = false;
+
+        
+            /*----------  container border modifiers.  ----------*/
+
+                /**
+                 * Is on the top of it's container.
+                 * @type {boolean}
+                 */
+                let is_on_top = false;
+
+                /**
+                 * Is on the bottom of it's container.
+                 * @type {boolean}
+                 */
+                let is_on_bottom = false;
+
+                /**
+                 * Is on the left of it's container.
+                 * @type {boolean}
+                 */
+                let is_on_left = false;
+
+                /**
+                 * Is on the right of it's container.
+                 * @type {boolean}
+                 */
+                let is_on_right = false;
+
+                /**
+                 * Whether to check for container limits.
+                 * @type {boolean}
+                 * @default false
+                 */
+                export let check_container_limits = false;
+                $: if (check_container_limits && enable_magnify_on_keyboard_focus && is_keyboard_focused) {
+                    defineElementPositionModifiers();
+                }
+
+                /**
+                 * The selector to get the container element. 
+                 * @type {string}
+                 * @default ":has(> .meg-display-item-wrapper)"
+                 */
+                export let container_selector = ":has(> .meg-display-item-wrapper)";
         
         /*----------  Unsubscribers  ----------*/
         
@@ -219,6 +263,34 @@
             }
         
         /*=====  End of Drag handlers  ======*/
+
+        /**
+         * Defines the element position modifiers based on the container limits.
+         * only runs if check_container_limits is set to true.
+         */
+        function defineElementPositionModifiers() {
+            if (!check_container_limits) return;
+
+            let container_element = this_dom_element.closest(container_selector);
+
+            if (container_element == null) {
+                console.warn("Could not find the container element");
+                return;
+            }
+
+            let container_rect = container_element.getBoundingClientRect();
+            let element_rect = this_dom_element.getBoundingClientRect();
+
+            const width_distance_threshold = element_rect.width * 0.9;
+            console.log("Width distance threshold: ", width_distance_threshold);
+            const height_distance_threshold = element_rect.height * 0.9;
+            console.log("Height distance threshold: ", height_distance_threshold);
+
+            is_on_top = (element_rect.top - container_rect.top) <= height_distance_threshold;
+            is_on_bottom = (container_rect.bottom + height_distance_threshold) <= element_rect.bottom;
+            is_on_left = (container_rect.left + width_distance_threshold) >= element_rect.left;
+            is_on_right = (container_rect.right - width_distance_threshold) <= element_rect.right;
+        }
     
         /**
          * Scrolls given element into view.
@@ -366,13 +438,17 @@
     class:use-masonry={use_masonry}
     class:meg-di-keyboard-focused={is_keyboard_focused}
     class:status-magnified={enable_magnify_on_keyboard_focus && is_keyboard_focused}
+    class:is-on-top-limit={is_on_top}
+    class:is-on-bottom-limit={is_on_bottom}
+    class:is-on-left-limit={is_on_left}
+    class:is-on-right-limit={is_on_right}
     class:status-deleted={is_media_deleted}
     class:status-selected={is_media_selected}   
     class:status-yanked={is_media_yanked}
     class:status-titles-enabled={enable_video_titles}
-    draggable="{enable_dragging}"
     class:status-media-hovering={media_dragged_over}
     class:status-media-dragging={is_dragged}
+    draggable="{enable_dragging}"
     on:dragstart={handleMediaItemDragStart}
     on:dragend={handleMediaItemDragEnd}
     on:dragenter={handleMediaItemDragEnter}
@@ -441,6 +517,7 @@
         background-color: black;
         box-shadow: 0px 2cqh 24px 20px hsl(from black h s l / .5);
         border: none;
+        z-index: var(--z-index-t-3);
         
 
         & img {
@@ -449,6 +526,46 @@
 
         & video {
             object-fit: contain;
+        }
+
+        /* top limit */
+        &.is-on-top-limit {
+            translate: 0 30%;
+        }
+
+        /* bottom limit */
+        &.is-on-bottom-limit {
+            translate: 0 -30%;
+        }
+
+        /* left limit */
+        &.is-on-left-limit {
+            translate: 30% 0;
+        }
+
+        /* right limit */
+        &.is-on-right-limit {
+            translate: -30% 0;
+        }
+
+        /* top-left limit */
+        &.is-on-top-limit.is-on-left-limit {
+            translate: 30% 30%;
+        }
+
+        /* top-right limit */
+        &.is-on-top-limit.is-on-right-limit {
+            translate: -30% 30%;
+        }
+
+        /* bottom-left limit */
+        &.is-on-bottom-limit.is-on-left-limit {
+            translate: 30% -30%;
+        }
+
+        /* bottom-right limit */
+        &.is-on-bottom-limit.is-on-right-limit {
+            translate: -30% -30%;
         }
     }    
     
