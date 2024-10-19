@@ -3,6 +3,8 @@ package dungeon_tags
 import (
 	"context"
 	"database/sql"
+	"libery-dungeon-libs/libs/dungeon_sqlite_opener"
+	app_config "libery-metadata-service/Config"
 	service_models "libery-metadata-service/models"
 )
 
@@ -13,14 +15,15 @@ type DungeonTagsDB struct {
 func NewDungeonTagsDB() *DungeonTagsDB {
 	var dungeon_tags_dbd *DungeonTagsDB = new(DungeonTagsDB)
 
-	db, err := openDB()
+	var sqlite_opener *dungeon_sqlite_opener.DungeonSqliteOpener
+	sqlite_opener = dungeon_sqlite_opener.NewDungeonSqliteOpener("dungeon_tags.db", "dungeon_tags.sql", app_config.OPERATION_DATA_PATH)
+
+	db, err := sqlite_opener.OpenDB(true)
 	if err != nil {
 		panic(err)
 	}
 
 	dungeon_tags_dbd.db_conn = db
-
-	db.Exec("PRAGMA foreign_keys = ON")
 
 	return dungeon_tags_dbd
 }
