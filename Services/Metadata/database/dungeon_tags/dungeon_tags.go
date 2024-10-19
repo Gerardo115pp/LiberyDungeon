@@ -10,19 +10,19 @@ type DungeonTagsDB struct {
 	db_conn *sql.DB
 }
 
-func NewDungeonTagsDB() (*DungeonTagsDB, error) {
-	var users_db *DungeonTagsDB = new(DungeonTagsDB)
+func NewDungeonTagsDB() *DungeonTagsDB {
+	var dungeon_tags_dbd *DungeonTagsDB = new(DungeonTagsDB)
 
 	db, err := openDB()
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	users_db.db_conn = db
+	dungeon_tags_dbd.db_conn = db
 
 	db.Exec("PRAGMA foreign_keys = ON")
 
-	return users_db, nil
+	return dungeon_tags_dbd
 }
 
 func (dt_db *DungeonTagsDB) CreateTaxonomyCTX(ctx context.Context, taxonomy *service_models.TagTaxonomy) error {

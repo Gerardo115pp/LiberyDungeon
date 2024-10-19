@@ -6,6 +6,7 @@ import (
 	"libery-dungeon-libs/libs/libery_networking"
 	app_config "libery-metadata-service/Config"
 	cluster_metadata_database "libery-metadata-service/database/clusters_metadata"
+	dungeon_tags_database "libery-metadata-service/database/dungeon_tags"
 	watch_point_database "libery-metadata-service/database/watch_points"
 	"libery-metadata-service/handlers"
 	"libery-metadata-service/repository"
@@ -39,6 +40,11 @@ func main() {
 	cluster_metadata_impl = cluster_metadata_database.NewClusterMetadataDB()
 
 	repository.SetClusterMetadataRepository(cluster_metadata_impl)
+
+	var dungeon_tags_impl repository.DungeonTagsRepository
+	dungeon_tags_impl = dungeon_tags_database.NewDungeonTagsDB()
+
+	repository.SetDungeonTagsRepository(dungeon_tags_impl)
 
 	// ----------------- Services -----------------
 
