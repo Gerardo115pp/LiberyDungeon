@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `dungeon_tags` (
     `id` INTEGER PRIMARY KEY AUTOINCREMENT,
     `name` TEXT NOT NULL,
     `taxonomy` TEXT NOT NULL,
-    `name-taxonomy` TEXT NOT NULL UNIQUE,
+    `name_taxonomy` TEXT NOT NULL UNIQUE,
     FOREGIN KEY(`taxonomy`) REFERENCES `tag_taxonomies`(`uuid`) ON DELETE CASCADE
 );
 
