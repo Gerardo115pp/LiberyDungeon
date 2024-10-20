@@ -296,7 +296,7 @@ func (dt_db *DungeonTagsDB) RemoveTagFromEntity(tag_id int, entity_uuid string) 
 }
 
 func (dt_db *DungeonTagsDB) TagEntityCTX(ctx context.Context, tag_id int, entity_uuid string) (int64, error) {
-	stmt, err := dt_db.db_conn.PrepareContext(ctx, "INSERT INTO `taggings`(`tag_id`, `tagged_entity_uuid`) VALUES (?, ?)")
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, "INSERT INTO `taggings`(`tag`, `taggable_id`) VALUES (?, ?)")
 	if err != nil {
 		return 0, err
 	}
