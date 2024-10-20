@@ -58,6 +58,8 @@ func getDungeonTagsHandler(response http.ResponseWriter, request *http.Request) 
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonTagsTagHandler)
 	case "/dungeon-tags/entity-tags":
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getEntityTagsHandler)
+	case "/dungeon-tags/cluster-tags":
+		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonClusterTagsHandler)
 	}
 
 	handler_func(response, request)
@@ -112,6 +114,28 @@ func getEntityTagsHandler(response http.ResponseWriter, request *http.Request) {
 	tags, err := repository.DungeonTagsRepo.GetEntityTaggingsCTX(request.Context(), entity_uuid)
 	if err != nil {
 		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntityTagsHandler, while getting entity tags: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	response.Header().Add("Content-Type", "application/json")
+	response.WriteHeader(200)
+
+	json.NewEncoder(response).Encode(tags)
+}
+
+func getDungeonClusterTagsHandler(response http.ResponseWriter, request *http.Request) {
+	var cluster_uuid string = request.URL.Query().Get("cluster_uuid")
+
+	if cluster_uuid == "" {
+		echo.Echo(echo.RedFG, "In getDungeonClusterTagsHandler, cluster_uuid is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	tags, err := repository.DungeonTagsRepo.GetClusterTagsCTX(request.Context(), cluster_uuid)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getDungeonClusterTagsHandler, while getting cluster tags: %s\n", err))
 		response.WriteHeader(500)
 		return
 	}

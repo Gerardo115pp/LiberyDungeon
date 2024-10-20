@@ -3,6 +3,8 @@ package dungeon_tags
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/dungeon_sqlite_opener"
 	app_config "libery-metadata-service/Config"
 	service_models "libery-metadata-service/models"
@@ -278,6 +280,52 @@ func (dt_db *DungeonTagsDB) GetEntityTaggingsCTX(ctx context.Context, entity_uui
 
 func (dt_db *DungeonTagsDB) GetEntityTaggings(entity_uuid string) ([]service_models.DungeonTagging, error) {
 	return dt_db.GetEntityTaggingsCTX(context.Background(), entity_uuid)
+}
+
+func (dt_db *DungeonTagsDB) GetEntitiesWithTaggingsCTX(ctx context.Context, tags []int) ([]string, error) {
+	var stmt_placeholder string = dungeon_helpers.GetPreparedListPlaceholders(len(tags))
+
+	sql_query := fmt.Sprintf(`
+		SELECT t.taggable_id
+		FROM taggings t
+		WHERE t.tag IN (%s)
+		GROUP BY t.taggable_id
+		HAVING COUNT(DISTINCT t.tag) = %d
+	`, stmt_placeholder, len(tags))
+
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, sql_query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	args := make([]interface{}, len(tags))
+	for h, v := range tags {
+		args[h] = v
+	}
+
+	rows, err := stmt.QueryContext(ctx, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entity_uuids []string = make([]string, 0)
+	for rows.Next() {
+		var entity_uuid string
+		err = rows.Scan(&entity_uuid)
+		if err != nil {
+			return nil, err
+		}
+
+		entity_uuids = append(entity_uuids, entity_uuid)
+	}
+
+	return entity_uuids, nil
+}
+
+func (dt_db *DungeonTagsDB) GetEntitiesWithTaggings(tags []int) ([]string, error) {
+	return dt_db.GetEntitiesWithTaggingsCTX(context.Background(), tags)
 }
 
 func (dt_db *DungeonTagsDB) RemoveTagFromEntityCTX(ctx context.Context, tag_id int, entity_uuid string) error {
