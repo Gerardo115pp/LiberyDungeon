@@ -29,13 +29,13 @@ func NewDungeonTagsDB() *DungeonTagsDB {
 }
 
 func (dt_db *DungeonTagsDB) CreateTaxonomyCTX(ctx context.Context, taxonomy *service_models.TagTaxonomy) error {
-	stmt, err := dt_db.db_conn.PrepareContext(ctx, "INSERT INTO `tag_taxonomies`(`uuid`, `name`, `cluster_domain`) VALUES (?, ?, ?)")
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, "INSERT INTO `tag_taxonomies`(`uuid`, `name`, `internal`, `cluster_domain`) VALUES (?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, taxonomy.UUID, taxonomy.Name, taxonomy.ClusterDomain)
+	_, err = stmt.ExecContext(ctx, taxonomy.UUID, taxonomy.Name, taxonomy.IsInternal, taxonomy.ClusterDomain)
 
 	return err
 }
@@ -92,14 +92,14 @@ func (dt_db *DungeonTagsDB) DeleteTag(tag_id int) error {
 func (dt_db *DungeonTagsDB) GetGlobalTaxonomiesCTX(ctx context.Context) ([]service_models.TagTaxonomy, error) {
 	var taxonomies []service_models.TagTaxonomy
 
-	rows, err := dt_db.db_conn.QueryContext(ctx, "SELECT uuid, name WHERE cluster_domain=''")
+	rows, err := dt_db.db_conn.QueryContext(ctx, "SELECT `uuid`, `name`, `internal` WHERE `cluster_domain`=''")
 	if err != nil {
 		return taxonomies, err
 	}
 
 	for rows.Next() {
 		var taxonomy service_models.TagTaxonomy
-		err = rows.Scan(&taxonomy.UUID, &taxonomy.Name)
+		err = rows.Scan(&taxonomy.UUID, &taxonomy.Name, &taxonomy.IsInternal)
 		if err != nil {
 			return taxonomies, err
 		}
@@ -117,14 +117,14 @@ func (dt_db *DungeonTagsDB) GetGlobalTaxonomies() ([]service_models.TagTaxonomy,
 func (dt_db *DungeonTagsDB) GetClusterTaxonomiesCTX(ctx context.Context, cluster_uuid string) ([]service_models.TagTaxonomy, error) {
 	var taxonomies []service_models.TagTaxonomy
 
-	rows, err := dt_db.db_conn.QueryContext(ctx, "SELECT `uuid`, `name`, `cluster_domain` WHERE `cluster_domain`=?", cluster_uuid)
+	rows, err := dt_db.db_conn.QueryContext(ctx, "SELECT `uuid`, `name`, `internal`, `cluster_domain` WHERE `cluster_domain`=?", cluster_uuid)
 	if err != nil {
 		return taxonomies, err
 	}
 
 	for rows.Next() {
 		var taxonomy service_models.TagTaxonomy
-		err = rows.Scan(&taxonomy.UUID, &taxonomy.Name, &taxonomy.ClusterDomain)
+		err = rows.Scan(&taxonomy.UUID, &taxonomy.Name, &taxonomy.IsInternal, &taxonomy.ClusterDomain)
 		if err != nil {
 			return taxonomies, err
 		}
