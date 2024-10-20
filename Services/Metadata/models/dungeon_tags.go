@@ -1,5 +1,7 @@
 package models
 
+import dungeon_helpers "libery-dungeon-libs/helpers"
+
 type TagTaxonomy struct {
 	UUID          string `json:"uuid"`
 	Name          string `json:"name"`
@@ -17,6 +19,12 @@ type DungeonTag struct {
 	Name         string `json:"name"`
 	Taxonomy     string `json:"taxonomy"`      // The UUID of the taxonomy the tag belongs to
 	NameTaxonomy string `json:"name_taxonomy"` // A hash of the Name and Taxonomy fields. Meant to keep name uniqueness within a taxonomy
+}
+
+func (dt *DungeonTag) RecalculateNameTaxonomy() {
+	new_source := dt.Name + dt.Taxonomy
+
+	dt.NameTaxonomy = dungeon_helpers.GenerateSha1ID(new_source)
 }
 
 type DungeonTagging struct {
