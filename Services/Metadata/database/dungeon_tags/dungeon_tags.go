@@ -241,16 +241,18 @@ func (dt_db *DungeonTagsDB) GetTaxonomyTags(taxonomy_uuid string) ([]service_mod
 	return dt_db.GetTaxonomyTagsCTX(context.Background(), taxonomy_uuid)
 }
 
-func (dt_db *DungeonTagsDB) GetEntityTaggingsCTX(ctx context.Context, entity_uuid string) ([]service_models.DungeonTagging, error) {
+func (dt_db *DungeonTagsDB) GetEntityTaggingsCTX(ctx context.Context, entity_uuid, cluster_domain string) ([]service_models.DungeonTagging, error) {
 	var taggings []service_models.DungeonTagging = make([]service_models.DungeonTagging, 0)
 
-	stmt, err := dt_db.db_conn.PrepareContext(ctx, "SELECT `tagging_id`, `tag`, `taggable_id` FROM `taggings` WHERE `taggable_id`=?")
+	var sql_query string = "SELECT `tagging_id`, `tag`, `taggable_id` FROM `taggings` WHERE `taggable_id`=? AND `tag` IN (SELECT `id` FROM `dungeon_tags` WHERE `taxonomy` IN (SELECT `uuid` FROM `tag_taxonomies` WHERE `cluster_domain`=?)"
+
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, sql_query)
 	if err != nil {
 		return taggings, err
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.QueryContext(ctx, entity_uuid)
+	rows, err := stmt.QueryContext(ctx, entity_uuid, cluster_domain)
 	if err != nil {
 		return taggings, err
 	}
@@ -278,11 +280,17 @@ func (dt_db *DungeonTagsDB) GetEntityTaggingsCTX(ctx context.Context, entity_uui
 	return taggings, nil
 }
 
-func (dt_db *DungeonTagsDB) GetEntityTaggings(entity_uuid string) ([]service_models.DungeonTagging, error) {
-	return dt_db.GetEntityTaggingsCTX(context.Background(), entity_uuid)
+func (dt_db *DungeonTagsDB) GetEntityTaggings(entity_uuid, cluster_domain string) ([]service_models.DungeonTagging, error) {
+	return dt_db.GetEntityTaggingsCTX(context.Background(), entity_uuid, cluster_domain)
 }
 
 func (dt_db *DungeonTagsDB) GetEntitiesWithTaggingsCTX(ctx context.Context, tags []int) ([]string, error) {
+	var entity_uuids []string = make([]string, 0)
+
+	if len(tags) == 0 {
+		return entity_uuids, nil
+	}
+
 	var stmt_placeholder string = dungeon_helpers.GetPreparedListPlaceholders(len(tags))
 
 	sql_query := fmt.Sprintf(`
@@ -310,7 +318,6 @@ func (dt_db *DungeonTagsDB) GetEntitiesWithTaggingsCTX(ctx context.Context, tags
 	}
 	defer rows.Close()
 
-	var entity_uuids []string = make([]string, 0)
 	for rows.Next() {
 		var entity_uuid string
 		err = rows.Scan(&entity_uuid)

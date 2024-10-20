@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS `tag_taxonomies`;
 CREATE TABLE IF NOT EXISTS `tag_taxonomies` (
     `uuid` TEXT PRIMARY KEY,
     `name` TEXT NOT NULL,
+    `internal` INTEGER NOT NULL,
     `cluster_domain` TEXT NOT NULL
 );
 
@@ -13,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `dungeon_tags` (
     `name` TEXT NOT NULL,
     `taxonomy` TEXT NOT NULL,
     `name_taxonomy` TEXT NOT NULL UNIQUE,
-    FOREGIN KEY(`taxonomy`) REFERENCES `tag_taxonomies`(`uuid`) ON DELETE CASCADE
+    FOREIGN KEY(`taxonomy`) REFERENCES `tag_taxonomies`(`uuid`) ON DELETE CASCADE
 );
 
 DROP TABLE IF EXISTS `taggings`;
