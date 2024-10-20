@@ -175,7 +175,7 @@ func (db_db *DungeonTagsDB) GetClusterTags(cluster_uuid string) ([]service_model
 func (dt_db *DungeonTagsDB) GetTagByIdCTX(ctx context.Context, tag_id int) (service_models.DungeonTag, error) {
 	var tag service_models.DungeonTag
 
-	stmt, err := dt_db.db_conn.PrepareContext(ctx, "SELECT `id`, `name`, `taxonomy`, `name_taxonomy FROM `dungeon_tags` WHERE `id`=?")
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, "SELECT `id`, `name`, `taxonomy`, `name_taxonomy` FROM `dungeon_tags` WHERE `id`=?")
 	if err != nil {
 		return tag, err
 	}
