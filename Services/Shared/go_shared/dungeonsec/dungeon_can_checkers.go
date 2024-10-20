@@ -9,6 +9,10 @@ var canViewPrivateClusters UserCanChecker = factory_UserCanChecker(PlatformGrant
 var canAlterPrivateClusters UserCanChecker = factory_UserCanChecker(PlatformGrant_ClustersContent_AlterPrivate, true)
 var canUploadFiles UserCanChecker = factory_UserCanChecker(PlatformGrant_UploadFiles, true)
 var canContentAlter UserCanChecker = factory_UserCanChecker(PlatformGrant_ClustersContent_Alter, true)
+var canDungeonTagsCreate UserCanChecker = factory_UserCanChecker(PlatformGrant_DungeonTags_Create, true)
+var canDungeonTagsTag UserCanChecker = factory_UserCanChecker(PlatformGrant_DungeonTags_Tag, true)
+var canDungeonTagsUntag UserCanChecker = factory_UserCanChecker(PlatformGrant_DungeonTags_Untag, true)
+var canDungeonTagsTaxonomyCreate UserCanChecker = factory_UserCanChecker(PlatformGrant_DungeonTags_TaxonomyCreate, true)
 
 func CanGrant(grants []string) bool {
 	return canGrant(grants)
@@ -44,4 +48,20 @@ func CanUploadFiles(grants []string) bool {
 
 func CanContentAlter(grants []string) bool {
 	return canContentAlter(grants)
+}
+
+func CanDungeonTagsCreate(grants []string) bool {
+	return canDungeonTagsCreate(grants)
+}
+
+func CanDungeonTagsTag(grants []string) bool {
+	return canDungeonTagsTag(grants)
+}
+
+func CanDungeonTagsUntag(grants []string) bool {
+	return canDungeonTagsUntag(grants)
+}
+
+func CanDungeonTagsTaxonomyCreate(grants []string) bool {
+	return canDungeonTagsTaxonomyCreate(grants)
 }
