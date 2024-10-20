@@ -78,3 +78,27 @@ var checkUserCan_ContentAlter MiddlewareFunc = factory_grantOnClaimCheckMiddlewa
 func CheckUserCan_ContentAlter(next func(response http.ResponseWriter, request *http.Request)) http.HandlerFunc {
 	return checkUserCan_ContentAlter(next)
 }
+
+var checkUserCan_DungeonTagsCreate MiddlewareFunc = factory_grantOnClaimCheckMiddleware(dungeonsec.CanDungeonTagsCreate)
+
+func CheckUserCan_DungeonTagsCreate(next func(response http.ResponseWriter, request *http.Request)) http.HandlerFunc {
+	return checkUserCan_DungeonTagsCreate(next)
+}
+
+var checkUserCan_DungeonTagsTag MiddlewareFunc = factory_grantOnClaimCheckMiddleware(dungeonsec.CanDungeonTagsTag)
+
+func CheckUserCan_DungeonTagsTag(next func(response http.ResponseWriter, request *http.Request)) http.HandlerFunc {
+	return checkUserCan_DungeonTagsTag(next)
+}
+
+var checkUserCan_DungeonTagsUntag MiddlewareFunc = factory_grantOnClaimCheckMiddleware(dungeonsec.CanDungeonTagsUntag)
+
+func CheckUserCan_DungeonTagsUntag(next func(response http.ResponseWriter, request *http.Request)) http.HandlerFunc {
+	return checkUserCan_DungeonTagsUntag(next)
+}
+
+var checkUserCan_DungeonTagsTaxonomyCreate MiddlewareFunc = factory_grantOnClaimCheckMiddleware(dungeonsec.CanDungeonTagsTaxonomyCreate)
+
+func CheckUserCan_DungeonTagsTaxonomyCreate(next func(response http.ResponseWriter, request *http.Request)) http.HandlerFunc {
+	return checkUserCan_DungeonTagsTaxonomyCreate(next)
+}
