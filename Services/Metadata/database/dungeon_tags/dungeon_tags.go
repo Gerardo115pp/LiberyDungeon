@@ -196,7 +196,7 @@ func (dt_db *DungeonTagsDB) GetTagById(tag_id int) (service_models.DungeonTag, e
 func (dt_db *DungeonTagsDB) GetTagByNameCTX(ctx context.Context, tag_name, taxonomy string) (service_models.DungeonTag, error) {
 	var tag service_models.DungeonTag
 
-	stmt, err := dt_db.db_conn.PrepareContext(ctx, "SELECT `id`, `name`, `taxonomy`, `name_taxonomy FROM `dungeon_tags` WHERE `name`=? AND `taxonomy`=?")
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, "SELECT `id`, `name`, `taxonomy`, `name_taxonomy` FROM `dungeon_tags` WHERE `name`=? AND `taxonomy`=?")
 	if err != nil {
 		return tag, err
 	}
