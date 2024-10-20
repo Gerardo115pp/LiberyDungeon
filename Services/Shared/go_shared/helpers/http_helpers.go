@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 type httpRejection struct {
@@ -154,4 +156,34 @@ func CountFilesInMultipart(request *http.Request) (int, error) {
 	}
 
 	return count, nil
+}
+
+// =========================  Query Parameters Parsing =========================
+
+// It parses a query parameter matched by the given key, is expected to be a string of the form "a1,a2,a3" and contain
+// only numbers. It returns a slice of integers.
+func ParseQueryParameterAsIntSlice(request *http.Request, key string) ([]int, error) {
+	var query_param string = request.URL.Query().Get(key)
+
+	if query_param == "" {
+		return nil, fmt.Errorf("Query parameter %s is empty", key)
+	}
+
+	var values []int
+
+	var numeric_members []string = strings.FieldsFunc(query_param, func(r rune) bool {
+		return r == ','
+	})
+
+	for _, member := range numeric_members {
+		var value int
+		value, err := strconv.Atoi(member)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing query parameter %s: %s", key, err.Error())
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"libery-dungeon-libs/communication"
 	"libery-dungeon-libs/dungeonsec/dungeon_middlewares"
 	"libery-dungeon-libs/dungeonsec/dungeon_secrets"
@@ -133,7 +132,7 @@ func getMediasFSHandler(response http.ResponseWriter, request *http.Request) {
 		file_descriptor.Seek(0, 0)
 		var file_data []byte
 
-		file_data, err := ioutil.ReadAll(file_descriptor)
+		file_data, err := io.ReadAll(file_descriptor)
 		if err != nil {
 			echo.Echo(echo.YellowFG, fmt.Sprintf("Error reading media file: %s", err.Error()))
 			response.WriteHeader(http.StatusInternalServerError)
