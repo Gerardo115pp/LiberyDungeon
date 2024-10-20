@@ -21,6 +21,10 @@ const (
 	PlatformGrant_ClustersContent_Read         string = "clusters_content_read"
 	PlatformGrant_ClustersContent_ReadPrivate  string = "clusters_content_read_private"
 	PlatformGrant_ClustersContent_AlterPrivate string = "clusters_content_alter_private"
+	PlatformGrant_DungeonTags_Create           string = "dungeon_tags_create"
+	PlatformGrant_DungeonTags_Tag              string = "dungeon_tags_tag"
+	PlatformGrant_DungeonTags_Untag            string = "dungeon_tags_untag"
+	PlatformGrant_DungeonTags_TaxonomyCreate   string = "dungeon_tags_taxonomy_create"
 )
 
 type UserCanChecker func([]string) bool
