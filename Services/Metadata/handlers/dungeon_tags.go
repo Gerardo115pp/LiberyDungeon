@@ -104,6 +104,7 @@ func getDungeonClusterTaxonomiesHandler(response http.ResponseWriter, request *h
 
 func getEntityTagsHandler(response http.ResponseWriter, request *http.Request) {
 	var entity_uuid string = request.URL.Query().Get("entity")
+	var cluster_domain string = request.URL.Query().Get("cluster_domain")
 
 	if entity_uuid == "" {
 		echo.Echo(echo.RedFG, "In getEntityTagsHandler, entity_uuid is empty\n")
@@ -111,7 +112,7 @@ func getEntityTagsHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	tags, err := repository.DungeonTagsRepo.GetEntityTaggingsCTX(request.Context(), entity_uuid)
+	tags, err := repository.DungeonTagsRepo.GetEntityTaggingsCTX(request.Context(), entity_uuid, cluster_domain)
 	if err != nil {
 		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntityTagsHandler, while getting entity tags: %s\n", err))
 		response.WriteHeader(500)
@@ -313,6 +314,38 @@ func deleteDungeonTagsHandler(response http.ResponseWriter, request *http.Reques
 }
 
 func putDungeonTagsHandler(response http.ResponseWriter, request *http.Request) {
-	response.WriteHeader(http.StatusMethodNotAllowed)
-	return
+	var resource string = request.URL.Path
+	var handler_func http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
+
+	switch resource {
+	case "/dungeon-tags/entities-with-tags":
+		// This method should be in GET but browsers will block GET requests with a body. When the http method QUERY is available and well supported, this should be changed to QUERY.
+		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getEntitiesWithTagsHandler)
+	}
+
+	handler_func(response, request)
+}
+
+func getEntitiesWithTagsHandler(response http.ResponseWriter, request *http.Request) {
+	var tag_ids []int = make([]int, 0)
+
+	err := json.NewDecoder(request.Body).Decode(&tag_ids)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsHandler, while decoding request body: %s\n", err))
+		response.WriteHeader(400)
+		return
+	}
+
+	entities, err := repository.DungeonTagsRepo.GetEntitiesWithTaggingsCTX(request.Context(), tag_ids)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsHandler, while getting entities with taggings: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	response.Header().Add("Content-Type", "application/json")
+
+	response.WriteHeader(200)
+
+	json.NewEncoder(response).Encode(entities)
 }

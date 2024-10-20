@@ -3,6 +3,7 @@ package dungeon_tags
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/dungeon_sqlite_opener"
@@ -244,17 +245,17 @@ func (dt_db *DungeonTagsDB) GetTaxonomyTags(taxonomy_uuid string) ([]service_mod
 func (dt_db *DungeonTagsDB) GetEntityTaggingsCTX(ctx context.Context, entity_uuid, cluster_domain string) ([]service_models.DungeonTagging, error) {
 	var taggings []service_models.DungeonTagging = make([]service_models.DungeonTagging, 0)
 
-	var sql_query string = "SELECT `tagging_id`, `tag`, `taggable_id` FROM `taggings` WHERE `taggable_id`=? AND `tag` IN (SELECT `id` FROM `dungeon_tags` WHERE `taxonomy` IN (SELECT `uuid` FROM `tag_taxonomies` WHERE `cluster_domain`=?)"
+	var sql_query string = "SELECT `tagging_id`, `tag`, `taggable_id` FROM `taggings` WHERE `taggable_id`=? AND `tag` IN (SELECT `id` FROM `dungeon_tags` WHERE `taxonomy` IN (SELECT `uuid` FROM `tag_taxonomies` WHERE `cluster_domain`=?))"
 
 	stmt, err := dt_db.db_conn.PrepareContext(ctx, sql_query)
 	if err != nil {
-		return taggings, err
+		return taggings, errors.Join(errors.New("Failed to prepare statement"), err)
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx, entity_uuid, cluster_domain)
 	if err != nil {
-		return taggings, err
+		return taggings, errors.Join(errors.New("Failed to execute query"), err)
 	}
 
 	for rows.Next() {
@@ -262,14 +263,14 @@ func (dt_db *DungeonTagsDB) GetEntityTaggingsCTX(ctx context.Context, entity_uui
 		var tag_id int
 		err = rows.Scan(&tagging.TaggingID, &tag_id, &tagging.TaggedEntityUUID)
 		if err != nil {
-			return taggings, err
+			return taggings, errors.Join(errors.New("Failed to scan row"), err)
 		}
 
 		var tag service_models.DungeonTag
 
 		tag, err = dt_db.GetTagByIdCTX(ctx, tag_id)
 		if err != nil {
-			return taggings, err
+			return taggings, errors.Join(errors.New("While calling GetTagByIdCTX"), err)
 		}
 
 		tagging.Tag = &tag
