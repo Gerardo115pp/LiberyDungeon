@@ -24,6 +24,10 @@ type singleStringResponse struct {
 	Response string `json:"response"`
 }
 
+type singleIntResponse struct {
+	Response int `json:"response"`
+}
+
 func createRejection(code int, message string) *httpRejection {
 	var rejection *httpRejection = new(httpRejection)
 	rejection.Code = code
@@ -80,6 +84,26 @@ func WriteSingleStringResponseWithStatus(response http.ResponseWriter, value str
 	response.WriteHeader(status)
 
 	json.NewEncoder(response).Encode(single_string_response)
+}
+
+func WriteSingleIntResponse(response http.ResponseWriter, value int) {
+	var single_int_response *singleIntResponse = new(singleIntResponse)
+	single_int_response.Response = value
+
+	response.Header().Set("Content-Type", "application/json")
+	response.WriteHeader(200)
+
+	json.NewEncoder(response).Encode(single_int_response)
+}
+
+func WriteSingleIntResponseWithStatus(response http.ResponseWriter, value int, status int) {
+	var single_int_response *singleIntResponse = new(singleIntResponse)
+	single_int_response.Response = value
+
+	response.Header().Set("Content-Type", "application/json")
+	response.WriteHeader(status)
+
+	json.NewEncoder(response).Encode(single_int_response)
 }
 
 // ========================= Generic Handlers =========================

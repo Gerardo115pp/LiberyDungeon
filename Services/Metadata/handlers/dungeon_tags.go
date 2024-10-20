@@ -56,6 +56,8 @@ func getDungeonTagsHandler(response http.ResponseWriter, request *http.Request) 
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonClusterTaxonomiesHandler)
 	case "/dungeon-tags/tag":
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonTagsTagHandler)
+	case "/dungeon-tags/entity-tags":
+		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getEntityTagsHandler)
 	}
 
 	handler_func(response, request)
@@ -96,6 +98,28 @@ func getDungeonClusterTaxonomiesHandler(response http.ResponseWriter, request *h
 	response.WriteHeader(200)
 
 	json.NewEncoder(response).Encode(taxonomies)
+}
+
+func getEntityTagsHandler(response http.ResponseWriter, request *http.Request) {
+	var entity_uuid string = request.URL.Query().Get("entity")
+
+	if entity_uuid == "" {
+		echo.Echo(echo.RedFG, "In getEntityTagsHandler, entity_uuid is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	tags, err := repository.DungeonTagsRepo.GetEntityTaggingsCTX(request.Context(), entity_uuid)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntityTagsHandler, while getting entity tags: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	response.Header().Add("Content-Type", "application/json")
+	response.WriteHeader(200)
+
+	json.NewEncoder(response).Encode(tags)
 }
 
 func getDungeonTagsTagHandler(response http.ResponseWriter, request *http.Request) {
@@ -164,11 +188,41 @@ func postDungeonTagsHandler(response http.ResponseWriter, request *http.Request)
 		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsTaxonomyCreate(postDungeonTagTaxonomyHandler)
 	case "/dungeon-tags/tag":
 		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsCreate(postDungeonTagHandler)
+	case "/dungeon-tags/tag-entity":
+		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsTag(postDungeonTagEntityHandler)
 	default:
 		echo.Echo(echo.RedFG, fmt.Sprintf("In postDungeonTagsHandler, invalid resource: %s\n", resource))
 	}
 
 	handler_func(response, request)
+}
+
+func postDungeonTagEntityHandler(response http.ResponseWriter, request *http.Request) {
+	var tag_id_str string = request.URL.Query().Get("tag_id")
+	var entity_identifier string = request.URL.Query().Get("entity")
+
+	if tag_id_str == "" || entity_identifier == "" {
+		echo.Echo(echo.RedFG, "In postDungeonTagEntityHandler, tag_id or entity_uuid is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	var tag_id int
+	tag_id, err := strconv.Atoi(tag_id_str)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In postDungeonTagEntityHandler, while converting tag_id to int: %s\n", err))
+		response.WriteHeader(400)
+		return
+	}
+
+	tagging_id, err := repository.DungeonTagsRepo.TagEntityCTX(request.Context(), tag_id, entity_identifier)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In postDungeonTagEntityHandler, while tagging entity: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	dungeon_helpers.WriteSingleIntResponseWithStatus(response, int(tagging_id), 201)
 }
 
 func postDungeonTagTaxonomyHandler(response http.ResponseWriter, request *http.Request) {
