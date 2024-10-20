@@ -6,6 +6,7 @@ var canModifyUsers UserCanChecker = factory_UserCanChecker(PlatformGrant_ModifyU
 var canDeleteUsers UserCanChecker = factory_UserCanChecker(PlatformGrant_DeleteUsers, true)
 var canCreateUsers UserCanChecker = factory_UserCanChecker(PlatformGrant_ModifyUsers, true)
 var canViewPrivateClusters UserCanChecker = factory_UserCanChecker(PlatformGrant_ClustersContent_ReadPrivate, true)
+var canViewContent UserCanChecker = factory_UserCanChecker(PlatformGrant_ClustersContent_Read, true)
 var canAlterPrivateClusters UserCanChecker = factory_UserCanChecker(PlatformGrant_ClustersContent_AlterPrivate, true)
 var canUploadFiles UserCanChecker = factory_UserCanChecker(PlatformGrant_UploadFiles, true)
 var canContentAlter UserCanChecker = factory_UserCanChecker(PlatformGrant_ClustersContent_Alter, true)
@@ -36,6 +37,10 @@ func CanCreateUsers(grants []string) bool {
 
 func CanViewPrivateClusters(grants []string) bool {
 	return canViewPrivateClusters(grants)
+}
+
+func CanViewContent(grants []string) bool {
+	return canViewContent(grants)
 }
 
 func CanAlterPrivateClusters(grants []string) bool {

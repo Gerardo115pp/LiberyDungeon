@@ -55,3 +55,9 @@ func CheckUserCan_AlterPrivateClusters(next func(response http.ResponseWriter, r
 		response.WriteHeader(403)
 	}
 }
+
+var checkUserCan_ViewContent MiddlewareFunc = factory_grantOnClaimCheckMiddleware(dungeonsec.CanViewContent)
+
+func CheckUserCan_ViewContent(next func(response http.ResponseWriter, request *http.Request)) http.HandlerFunc {
+	return checkUserCan_ViewContent(next)
+}
