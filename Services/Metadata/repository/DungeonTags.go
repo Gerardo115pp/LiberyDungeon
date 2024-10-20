@@ -26,8 +26,8 @@ type DungeonTagsRepository interface {
 	GetEntityTaggings(entity_uuid string) ([]service_models.DungeonTagging, error)
 	RemoveTagFromEntityCTX(ctx context.Context, tag_id int, entity_uuid string) error
 	RemoveTagFromEntity(tag_id int, entity_uuid string) error
-	TagEntityCTX(ctx context.Context, tag_id int, entity_uuid string) error
-	TagEntity(tag_id int, entity_uuid string) error
+	TagEntityCTX(ctx context.Context, tag_id int, entity_uuid string) (int64, error)
+	TagEntity(tag_id int, entity_uuid string) (int64, error)
 	UpdateTaxonomyNameCTX(ctx context.Context, taxonomy_uuid, new_name string) error
 	UpdateTaxonomyName(taxonomy_uuid, new_name string) error
 	UpdateTagNameCTX(ctx context.Context, tag_id int, new_name string) error

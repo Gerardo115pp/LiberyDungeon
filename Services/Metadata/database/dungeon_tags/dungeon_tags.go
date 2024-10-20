@@ -50,7 +50,12 @@ func (dt_db *DungeonTagsDB) CreateTagCTX(ctx context.Context, tag *service_model
 		return err
 	}
 
-	_, err = stmt.ExecContext(ctx, tag.Name, tag.Taxonomy, tag.NameTaxonomy)
+	results, err := stmt.ExecContext(ctx, tag.Name, tag.Taxonomy, tag.NameTaxonomy)
+	if err != nil {
+		return err
+	}
+
+	tag.ID, err = results.LastInsertId()
 
 	return err
 }
@@ -290,18 +295,25 @@ func (dt_db *DungeonTagsDB) RemoveTagFromEntity(tag_id int, entity_uuid string) 
 	return dt_db.RemoveTagFromEntityCTX(context.Background(), tag_id, entity_uuid)
 }
 
-func (dt_db *DungeonTagsDB) TagEntityCTX(ctx context.Context, tag_id int, entity_uuid string) error {
+func (dt_db *DungeonTagsDB) TagEntityCTX(ctx context.Context, tag_id int, entity_uuid string) (int64, error) {
 	stmt, err := dt_db.db_conn.PrepareContext(ctx, "INSERT INTO `taggings`(`tag_id`, `tagged_entity_uuid`) VALUES (?, ?)")
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	_, err = stmt.ExecContext(ctx, tag_id, entity_uuid)
+	result, err := stmt.ExecContext(ctx, tag_id, entity_uuid)
+	if err != nil {
+		return 0, err
+	}
 
-	return err
+	var last_insert_id int64
+
+	last_insert_id, err = result.LastInsertId()
+
+	return last_insert_id, err
 }
 
-func (dt_db *DungeonTagsDB) TagEntity(tag_id int, entity_uuid string) error {
+func (dt_db *DungeonTagsDB) TagEntity(tag_id int, entity_uuid string) (int64, error) {
 	return dt_db.TagEntityCTX(context.Background(), tag_id, entity_uuid)
 }
 

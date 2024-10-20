@@ -13,14 +13,14 @@ type TaxonomyTags struct {
 }
 
 type DungeonTag struct {
-	ID           int    `json:"id"`
+	ID           int64  `json:"id"`
 	Name         string `json:"name"`
 	Taxonomy     string `json:"taxonomy"`      // The UUID of the taxonomy the tag belongs to
 	NameTaxonomy string `json:"name_taxonomy"` // A hash of the Name and Taxonomy fields. Meant to keep name uniqueness within a taxonomy
 }
 
 type DungeonTagging struct {
-	TaggingID        int         `json:"tagging_id"`
+	TaggingID        int64       `json:"tagging_id"`
 	Tag              *DungeonTag `json:"tag"`
 	TaggedEntityUUID string      `json:"tagged_entity_uuid"`
 }
