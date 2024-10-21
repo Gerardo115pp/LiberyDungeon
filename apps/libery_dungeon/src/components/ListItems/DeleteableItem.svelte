@@ -36,10 +36,25 @@
         }
 
         /**
+         * Emits the item-selected event.
+         */
+        const emitSelectItem = () => {
+            dispatch("item-selected");
+        }
+
+        /**
          * Handles the click event on the delete button.
          */
         const handleDeleteButtonClick = () => {
             emitDeleteItem();
+            return false;
+        }
+
+        /**
+         * Handles the click event on the item.
+         */
+        const handleSelectClick = () => {
+            emitSelectItem();
         }
    
    /*=====  End of Methods  ======*/
@@ -48,6 +63,7 @@
 
 <li class="deletable-item"
     style:background="{item_color}"
+    on:click={handleSelectClick}
 >
     <div class="deletable-item-content">
         <slot/>
@@ -55,7 +71,7 @@
     {#if !is_protected}
         <button class="delete-item"
             type="button"
-            on:click|preventDefault={handleDeleteButtonClick}
+            on:click|preventDefault|stopPropagation={handleDeleteButtonClick}
         >
             <svg viewBox="0 0 50 50">
                 <path d="M1 1L49 49M1 49L49 1"/>
