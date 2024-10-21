@@ -25,6 +25,16 @@ export const refreshClusterTags = async (cluster_uuid, force = false) => {
         return true;
     }
 
+    return refreshClusterTagsNoCheck(cluster_uuid);
+}
+
+/**
+ * Refreshes the `cluster_tags` store with the given cluster_uuid without using the get function to check cache. Checking the cache externally and then calling this function is recommended as
+ * the get function involves subscribing and unsubscribing immediately to read the value. This can be slow for multiple calls.
+ * @param {string} cluster_uuid
+ * @returns {Promise<boolean>}
+ */
+export const refreshClusterTagsNoCheck = async (cluster_uuid) => {
     const new_taxonomy_tags = await getClusterTags(cluster_uuid);
 
     if (new_taxonomy_tags.length === 0) {
