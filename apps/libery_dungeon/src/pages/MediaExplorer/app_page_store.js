@@ -23,6 +23,12 @@ import { writable, get } from "svelte/store";
     export const media_transactions_tool_mounted = writable(false);
 
     /**
+     * Whether the Category Tagger tool is mounted or not.
+     * @type {import('svelte/store').Writable<boolean>}
+     */
+    export const category_tagger_tool_mounted = writable(true);
+
+    /**
      * Whether the category search bar is been focused or not.
      * @type {typeof media_upload_tool_mounted}
      */
