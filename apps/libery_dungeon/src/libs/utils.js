@@ -44,6 +44,8 @@ export const parseUnsecureJWT = jwt => {
     }
 }
 
+
+// TODO: Remove attributesToJson and attributesToJsonExclusive from this file.
 export function attributesToJson() {
     const json_data = {};
     console.log("AttributestoJson:" + this);

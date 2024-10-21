@@ -48,15 +48,37 @@ export class HttpResponse {
 }
 
 /**
- * @typedef {Object} ReasonedBooleanResponse
+* @typedef {Object} ReasonedBooleanResponse
  * @property {boolean} response
  * @property {string} reason
  */
 /**
- * @typedef {Object} BooleanResponse
+* @typedef {Object} BooleanResponse
  * @property {boolean} response
  */
 /**
- * @typedef {Object} SingleStringResponse
+* @typedef {Object} SingleStringResponse
  * @property {string} response
 */
+
+export function attributesToJson() {
+    const json_data = {};
+    console.log("AttributestoJson:" + this);
+    Object.entries(this).forEach(([key, value]) => {
+        if (!(this[key] instanceof Function) && key[0] !== '_') {
+            json_data[key] = value;
+        }
+    });
+    return JSON.stringify(json_data);
+}
+
+export function attributesToJsonExclusive() {
+    const json_data = {};
+    Object.entries(this).forEach(([key, value]) => {
+        if (!(this[key] instanceof Function) && key[0] !== '_' && value !== null) {
+            json_data[key] = value;   
+        }
+    });
+
+    return JSON.stringify(json_data);
+}
