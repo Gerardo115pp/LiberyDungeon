@@ -125,10 +125,17 @@ func (dt_db *DungeonTagsDB) GetGlobalTaxonomies() ([]service_models.TagTaxonomy,
 func (dt_db *DungeonTagsDB) GetClusterTaxonomiesCTX(ctx context.Context, cluster_uuid string) ([]service_models.TagTaxonomy, error) {
 	var taxonomies []service_models.TagTaxonomy = make([]service_models.TagTaxonomy, 0)
 
-	rows, err := dt_db.db_conn.QueryContext(ctx, "SELECT `uuid`, `name`, `internal`, `cluster_domain` FROM `tag_taxonomies` WHERE `cluster_domain`=?", cluster_uuid)
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, "SELECT `uuid`, `name`, `internal`, `cluster_domain` FROM `tag_taxonomies` WHERE `cluster_domain`=?")
 	if err != nil {
 		return taxonomies, err
 	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx, cluster_uuid)
+	if err != nil {
+		return taxonomies, err
+	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var taxonomy service_models.TagTaxonomy
