@@ -94,6 +94,29 @@
 
             /* Elements */
             --html-tag-color: var(--grey-8);
+        /* Borders */
+            /* Thin */
+            --border-thin-grey: 1px solid var(--grey);
+            --border-thin-grey-9: 1px solid var(--grey-9);
+            --border-thin-grey-8: 1px solid var(--grey-8);
+            --border-thin-grey-7: 1px solid var(--grey-7);
+            --border-thin-grey-6: 1px solid var(--grey-6);
+            --border-thin-grey-5: 1px solid var(--grey-5);
+            --border-thin-grey-4: 1px solid var(--grey-4);
+            --border-thin-grey-3: 1px solid var(--grey-3);
+            --border-thin-grey-2: 1px solid var(--grey-2);
+            --border-thin-grey-1: 1px solid var(--grey-1);
+            /* Med */
+            --border-med-grey: 2px solid var(--grey);
+            --border-med-grey-9: 2px solid var(--grey-9);
+            --border-med-grey-8: 2px solid var(--grey-8);
+            --border-med-grey-7: 2px solid var(--grey-7);
+            --border-med-grey-6: 2px solid var(--grey-6);
+            --border-med-grey-5: 2px solid var(--grey-5);
+            --border-med-grey-4: 2px solid var(--grey-4);
+            --border-med-grey-3: 2px solid var(--grey-3);
+            --border-med-grey-2: 2px solid var(--grey-2);
+            --border-med-grey-1: 2px solid var(--grey-1);
         /* Spacing */
             /* 
             Variables starting with v are been deprecated, and should
@@ -211,8 +234,6 @@
             --page-lateral-spacing: calc(calc(100vw - var(--page-content-width)) / 2);
             --backdrop-filer-blur: blur(3px);
             --shadow-1: 0 0 10px 0 rgba(0, 0, 0, 0.1);
-
-            --border-thin-grey: 1px solid var(--grey-7);
 
             scrollbar-width: none;
     }
@@ -386,6 +407,7 @@
         flex-wrap: wrap;
         align-items: start;
         gap: var(--spacing-1);
+        color: var(--grey-1);
         background: var(--grey-8);
         border-radius: var(--border-radius);
         padding: var(--spacing-1);
