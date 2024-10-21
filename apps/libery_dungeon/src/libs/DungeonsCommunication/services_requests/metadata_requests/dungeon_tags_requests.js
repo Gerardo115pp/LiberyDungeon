@@ -359,20 +359,18 @@ export class PostDungeonTagRequest {
     toJson = attributesToJson.bind(this);
 
     /**
-     * @returns {Promise<HttpResponse<boolean>>}
+     * @returns {Promise<HttpResponse<import("@models/DungeonTags").DungeonTagParams | null>>}
      */
     do = async () => {
+        /** @type {import("@models/DungeonTags").DungeonTagParams | null} */
+        let new_dungeon_tag_params = null;
+
         const url = PostDungeonTagRequest.endpoint;
 
         /**
          * @type {Response}
          */
         let response;
-
-        /**
-         * @type {boolean}
-         */
-        let created = false;
 
         try {
             response = await fetch(url, {
@@ -387,9 +385,11 @@ export class PostDungeonTagRequest {
             console.error("Error posting dungeon tag: ", error);
         }
 
-        created = response?.status === 201;
+        if (response?.status === 201) {
+            new_dungeon_tag_params = await response.json();
+        }
 
-        return new HttpResponse(response, created);
+        return new HttpResponse(response, new_dungeon_tag_params);
     }
 }
 
