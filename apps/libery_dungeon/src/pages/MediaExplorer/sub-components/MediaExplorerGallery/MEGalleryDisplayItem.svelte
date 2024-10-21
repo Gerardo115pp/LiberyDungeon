@@ -480,18 +480,27 @@
             <!-- If not a video or heavy rendering is not enabled, neither globaly or just for this item(like when keyboard focused and magnify enabled) -->
             {#if ordered_media.Media.isAnimated() && (enable_magnify_on_keyboard_focus && is_keyboard_focused || enable_heavy_rendering)}
                 <!-- Is animated -->
-                <img src="{ordered_media.Media.Url}" alt="{ordered_media.Media.MediaName}" loading="lazy">
+                <!-- @see: https://svelte.dev/docs/basic-markup#attributes-and-props
+                    '''
+                        Sometimes, the attribute order matters as Svelte sets attributes sequentially in JavaScript.....Another example 
+                        is <img src="..." loading="lazy" />. Svelte will set the img src before making the img element loading="lazy", which is probably too late.
+                        Change this to <img loading="lazy" src="..."> to make the image lazily loaded.
+                    '''
+                    So, the loading attribute should be set before the src attribute.
+                    This gave an amazing performance boost to the gallery.
+                -->
+                <img loading="lazy" src="{ordered_media.Media.Url}" alt="{ordered_media.Media.MediaName}">
             {:else}
                 <!-- Is not animated -->
-                <img src="{ordered_media.Media.getResizedUrl(media_viewport_percentage)}" alt="{ordered_media.Media.MediaName}" loading="lazy">
+                <img loading="lazy" src="{ordered_media.Media.getResizedUrl(media_viewport_percentage)}" alt="{ordered_media.Media.MediaName}">
             {/if}
         {:else if ordered_media.Media.isVideo() && (enable_magnify_on_keyboard_focus && is_keyboard_focused || enable_heavy_rendering)}
             {#if media_inside_viewport || !enable_heavy_rendering}
-                <video 
+            <video 
+                    preload="metadata"
                     src="{ordered_media.Media.Url}" 
                     muted 
                     autoplay
-                    preload="metadata"
                     loop
                 >
                 </video>
