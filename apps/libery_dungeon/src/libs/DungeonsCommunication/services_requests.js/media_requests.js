@@ -1,4 +1,5 @@
 import { medias_server, collect_server } from "../services";
+import { HttpResponse, attributesToJson } from "../base";
 
 const media_fs_endpoint = `${medias_server}/medias-fs`;
 const thumbnails_fs_endpoint = `${medias_server}/thumbnails-fs`;
@@ -51,3 +52,46 @@ export const getTrashcanMediaUrl = (media_name, width=120) => {
  * @returns {string}
 */
 export const getProxyMediaUrl = (media_url) => `${collect_server}/4chan-boards/boards/proxy-media?media_url=${media_url}`;
+
+/**
+ * Renames a sequence of medias. gets a Sequence map, which is just an object of the form {media_uuid: new_name} where new_name does not include
+ * a file extension. and a category_uuid were the medias are located.
+ */
+export class PatchRenameMediasRequest {
+    static endpoint = `${medias_server}/medias-fs/sequence-rename`;
+
+    /**
+     * @param {string} category_uuid
+     * @param {Object.<string, string>} sequence_members
+     */
+    constructor(category_uuid, sequence_members) {
+        this.category_uuid = category_uuid;
+        this.sequence_members = sequence_members;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<boolean>>}
+     */
+    do = async () => {
+        let response;
+        let renamed = false;
+
+        try {
+            response = await fetch(PatchRenameMediasRequest.endpoint, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: this.toJson()
+            });
+
+            renamed = response.ok;
+        } catch (error) {
+            console.error("Error while renaming medias: ", error);
+        }
+
+        return new HttpResponse(response, renamed);
+    }
+}
