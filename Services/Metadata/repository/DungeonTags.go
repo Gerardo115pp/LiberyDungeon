@@ -12,6 +12,8 @@ type DungeonTagsRepository interface {
 	CreateTag(tag *service_models.DungeonTag) error
 	DeleteTaxonomyCTX(ctx context.Context, taxonomy_uuid string) error
 	DeleteTaxonomy(taxonomy_uuid string) error
+	DeleteTagCTX(ctx context.Context, tag_id int) error
+	DeleteTag(tag_id int) error
 	GetGlobalTaxonomiesCTX(ctx context.Context) ([]service_models.TagTaxonomy, error)
 	GetGlobalTaxonomies() ([]service_models.TagTaxonomy, error)
 	GetClusterTaxonomiesCTX(ctx context.Context, cluster_uuid string) ([]service_models.TagTaxonomy, error)

@@ -311,8 +311,98 @@ func patchDungeonTagsHandler(response http.ResponseWriter, request *http.Request
 }
 
 func deleteDungeonTagsHandler(response http.ResponseWriter, request *http.Request) {
-	response.WriteHeader(http.StatusMethodNotAllowed)
-	return
+	var resource string = request.URL.Path
+	var handler_func http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
+
+	switch resource {
+	case "/dungeon-tags/taxonomy":
+		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsTaxonomyCreate(deleteDungeonTagTaxonomyHandler)
+	case "/dungeon-tags/tag":
+		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsCreate(deleteDungeonTagHandler)
+	case "/dungeon-tags/tag-entity":
+		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsTag(deleteDungeonTagEntityHandler)
+	default:
+		echo.Echo(echo.RedFG, fmt.Sprintf("In deleteDungeonTagsHandler, invalid resource: %s\n", resource))
+	}
+
+	handler_func(response, request)
+}
+
+func deleteDungeonTagTaxonomyHandler(response http.ResponseWriter, request *http.Request) {
+	var taxonomy_uuid string = request.URL.Query().Get("uuid")
+
+	if taxonomy_uuid == "" {
+		echo.Echo(echo.RedFG, "In deleteDungeonTagTaxonomyHandler, taxonomy_uuid is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	err := repository.DungeonTagsRepo.DeleteTaxonomyCTX(request.Context(), taxonomy_uuid)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In deleteDungeonTagTaxonomyHandler, while deleting taxonomy: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	response.WriteHeader(204)
+}
+
+func deleteDungeonTagHandler(response http.ResponseWriter, request *http.Request) {
+	var tag_id_str string = request.URL.Query().Get("id")
+
+	if tag_id_str == "" {
+		echo.Echo(echo.RedFG, "In deleteDungeonTagHandler, tag_id is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	var tag_id int
+
+	tag_id, err := strconv.Atoi(tag_id_str)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In deleteDungeonTagHandler, while converting tag_id to int: %s\n", err))
+		response.WriteHeader(400)
+		return
+	}
+
+	err = repository.DungeonTagsRepo.DeleteTagCTX(request.Context(), tag_id)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In deleteDungeonTagHandler, while deleting tag: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	response.WriteHeader(204)
+}
+
+func deleteDungeonTagEntityHandler(response http.ResponseWriter, request *http.Request) {
+	var entity string = request.URL.Query().Get("entity")
+	var tag_id_str string = request.URL.Query().Get("tag_id")
+
+	if entity == "" || tag_id_str == "" {
+		echo.Echo(echo.RedFG, "In deleteDungeonTagEntityHandler, entity or tag_id are empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	var tag_id int
+	tag_id, err := strconv.Atoi(tag_id_str)
+
+	err = repository.DungeonTagsRepo.RemoveTagFromEntity(tag_id, entity)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In deleteDungeonTagEntityHandler, while deleting tag: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	err = repository.DungeonTagsRepo.RemoveTagFromEntityCTX(request.Context(), tag_id, entity)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In deleteDungeonTagHandler, while deleting tag: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	response.WriteHeader(204)
 }
 
 func putDungeonTagsHandler(response http.ResponseWriter, request *http.Request) {
