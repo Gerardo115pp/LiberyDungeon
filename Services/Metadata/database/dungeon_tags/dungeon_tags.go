@@ -98,7 +98,7 @@ func (dt_db *DungeonTagsDB) DeleteTag(tag_id int) error {
 }
 
 func (dt_db *DungeonTagsDB) GetGlobalTaxonomiesCTX(ctx context.Context) ([]service_models.TagTaxonomy, error) {
-	var taxonomies []service_models.TagTaxonomy
+	var taxonomies []service_models.TagTaxonomy = make([]service_models.TagTaxonomy, 0)
 
 	rows, err := dt_db.db_conn.QueryContext(ctx, "SELECT `uuid`, `name`, `internal` FROM `tag_taxonomies` WHERE `cluster_domain`=''")
 	if err != nil {
@@ -123,7 +123,7 @@ func (dt_db *DungeonTagsDB) GetGlobalTaxonomies() ([]service_models.TagTaxonomy,
 }
 
 func (dt_db *DungeonTagsDB) GetClusterTaxonomiesCTX(ctx context.Context, cluster_uuid string) ([]service_models.TagTaxonomy, error) {
-	var taxonomies []service_models.TagTaxonomy
+	var taxonomies []service_models.TagTaxonomy = make([]service_models.TagTaxonomy, 0)
 
 	rows, err := dt_db.db_conn.QueryContext(ctx, "SELECT `uuid`, `name`, `internal`, `cluster_domain` FROM `tag_taxonomies` WHERE `cluster_domain`=?", cluster_uuid)
 	if err != nil {
