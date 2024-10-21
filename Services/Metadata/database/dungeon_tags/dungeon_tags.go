@@ -163,7 +163,14 @@ func (db_db *DungeonTagsDB) GetClusterTagsCTX(ctx context.Context, cluster_uuid 
 	}
 
 	for _, taxonomy := range taxonomies {
-		var taxonomy_tags service_models.TaxonomyTags = service_models.TaxonomyTags{Taxonomy: &taxonomy}
+		var taxonomy_copy *service_models.TagTaxonomy = new(service_models.TagTaxonomy)
+
+		taxonomy_copy.UUID = taxonomy.UUID
+		taxonomy_copy.Name = taxonomy.Name
+		taxonomy_copy.IsInternal = taxonomy.IsInternal
+		taxonomy_copy.ClusterDomain = taxonomy.ClusterDomain
+
+		var taxonomy_tags service_models.TaxonomyTags = service_models.TaxonomyTags{Taxonomy: taxonomy_copy}
 
 		tags, err := db_db.GetTaxonomyTagsCTX(ctx, taxonomy.UUID)
 		if err != nil {
