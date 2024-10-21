@@ -59,6 +59,10 @@ export class HttpResponse {
 /**
 * @typedef {Object} SingleStringResponse
  * @property {string} response
+ */
+/**
+* @typedef {Object} SingleNumberResponse
+ * @property {number} response
 */
 
 export function attributesToJson() {
