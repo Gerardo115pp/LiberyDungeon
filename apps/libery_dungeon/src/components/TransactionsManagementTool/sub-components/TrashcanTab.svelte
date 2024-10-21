@@ -117,6 +117,20 @@
         =============================================*/
 
             /**
+             * Registers the TrashcanTab hotkeys to the Transactions Management Tool hotkeys context.
+             * @requires global_hotkeys_manager
+             * @requires tmt_hotkeys_context_name
+             */
+            const registerTrashCanHotkeys = () => {
+                if (global_hotkeys_manager.ContextName !== tmt_hotkeys_context_name) return;
+
+                for (let keybind of Object.values(keybinds)) {
+                    global_hotkeys_manager.registerHotkeyOnContext(keybind.key_combo, keybind.handler, keybind.options);
+                }
+            }
+
+
+            /**
              * Registers privileged keybinds to the keybinds object, must be called before registering hotkeys on the global hotkeys manager as it
              * only modifies the keybinds object. The access decisions are made based on the current_user_identity grants.
              * @requires keybinds
@@ -143,7 +157,7 @@
                         handler: handleDeleteFocusedTransaction,
                         options: {
                             description: "<trashcan_content> Permanently deletes all medias in the focused transaction",
-                            await_execution: false
+                            await_execution: false,
                         }
                     }
                 }
@@ -338,21 +352,6 @@
                 }
 
                 media_keyboard_focused_index = new_media_index;
-            }
-
-            /**
-             * Registers the TrashcanTab hotkeys to the Transactions Management Tool hotkeys context.
-             * @requires global_hotkeys_manager
-             * @requires tmt_hotkeys_context_name
-             */
-            const registerTrashCanHotkeys = () => {
-                if (global_hotkeys_manager.ContextName !== tmt_hotkeys_context_name) return;
-
-                for (let keybind of Object.values(keybinds)) {
-                    global_hotkeys_manager.registerHotkeyOnContext(keybind.key_combo, keybind.handler, {
-                        description: keybind.description
-                    })
-                }
             }
 
             /**
