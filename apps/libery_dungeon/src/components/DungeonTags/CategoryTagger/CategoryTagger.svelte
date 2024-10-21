@@ -114,5 +114,6 @@
         flex-direction: column;
         row-gap: var(--spacing-2);
         overflow-y: auto;
+        padding: 0 var(--spacing-2);
     }
 </style>

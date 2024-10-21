@@ -22,7 +22,7 @@
 </script>
 
 <section class="dungeon-taxonomy-content">
-    <header id="taxonomy-header">
+    <header class="taxonomy-header">
         <h4>
             {taxonomy_tags.Taxonomy.Name}
         </h4>
@@ -32,3 +32,11 @@
         enable_tag_creator={enable_tag_creation}
     />
 </section>
+
+<style>
+    .dungeon-taxonomy-content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-1);
+    }
+</style>
