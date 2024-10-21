@@ -143,6 +143,7 @@
                         handler: handleDeleteFocusedTransaction,
                         options: {
                             description: "<trashcan_content> Permanently deletes all medias in the focused transaction",
+                            await_execution: false
                         }
                     }
                 }
