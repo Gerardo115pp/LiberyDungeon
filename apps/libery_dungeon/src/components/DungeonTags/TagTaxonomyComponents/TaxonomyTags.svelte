@@ -11,6 +11,12 @@
          */
         export let taxonomy_tags;
 
+        /**
+         * Whether to allow the user to create new tags.
+         * @type {boolean}
+        */
+        export let enable_tag_creation = false;
+
     /*=====  End of Properties  ======*/
     
 </script>
@@ -23,5 +29,6 @@
     </header>
     <TagGroup 
         dungeon_tags={taxonomy_tags.Tags}
+        enable_tag_creator={enable_tag_creation}
     />
 </section>

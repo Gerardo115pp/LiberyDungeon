@@ -11,6 +11,12 @@
          */ 
         export let dungeon_tags = [];
 
+        /**
+         * Whether to enable the tag creator element.
+         * @type {boolean}
+        */
+        export let enable_tag_creator = false;
+
         
         /*----------  Style  ----------*/
             /**
@@ -55,18 +61,20 @@
             </p>
         </DeleteableItem>
     {/each}
-    <DeleteableItem
-        item_color={tag_creator_color}
-        is_protected
-    >
-        <input class="tag-creator taxonomy-member" 
-            type="text"
-            placeholder="New tag"
-            minlength="3"
-            maxlength="64"
-            pattern="{'[a-z_]{4,64}'}"
-        />
-    </DeleteableItem>
+    {#if enable_tag_creator}
+        <DeleteableItem
+            item_color={tag_creator_color}
+            is_protected
+        >
+            <input class="tag-creator taxonomy-member" 
+                type="text"
+                placeholder="New tag"
+                minlength="3"
+                maxlength="64"
+                pattern="{'[a-z_]{4,64}'}"
+            />
+        </DeleteableItem>
+    {/if}
 </ol>
 
 <style>

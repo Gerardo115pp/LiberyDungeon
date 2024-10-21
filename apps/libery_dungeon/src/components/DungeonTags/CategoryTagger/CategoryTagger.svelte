@@ -83,6 +83,7 @@
                 {#if !taxonomy_tags.Taxonomy.IsInternal}
                     <TaxonomyTags 
                         taxonomy_tags={taxonomy_tags}
+                        enable_tag_creation
                     />
                 {/if} 
             {/each}
