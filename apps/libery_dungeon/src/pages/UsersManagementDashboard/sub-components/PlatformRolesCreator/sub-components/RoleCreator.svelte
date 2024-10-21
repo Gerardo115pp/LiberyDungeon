@@ -9,7 +9,6 @@
     =            Properties            =
     =============================================*/
     
-    
         /**
          * The new role label.
          * @type {string}
@@ -34,7 +33,6 @@
          * @type {boolean}
          */
         let new_role_data_ready = false;
-
         
         /*----------  References  ----------*/
         
@@ -65,11 +63,9 @@
         const dispatch = createEventDispatcher();
     /*=====  End of Properties  ======*/
     
-    
     /*=============================================
     =            Methods            =
     =============================================*/
-
 
         /**
          * Adds a grant to the new role's grant list.
