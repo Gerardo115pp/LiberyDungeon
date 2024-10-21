@@ -412,7 +412,8 @@ export class PostTagEntityRequest {
     toJson = attributesToJson.bind(this);
 
     /**
-     * @returns {Promise<HttpResponse<boolean>>}
+     * Returns a single number response, with the response being the tagging id.
+     * @returns {Promise<HttpResponse<import("../../base").SingleNumberResponse>>}
      */
     do = async () => {
         const url = PostTagEntityRequest.endpoint;
@@ -423,9 +424,9 @@ export class PostTagEntityRequest {
         let response;
 
         /**
-         * @type {boolean}
+         * @type {import("../../base").SingleNumberResponse}
          */
-        let tagged = false;
+        let single_number_response = { response: null };
 
         try {
             response = await fetch(url, {
@@ -440,9 +441,11 @@ export class PostTagEntityRequest {
             console.error("Error tagging entity: ", error);
         }
 
-        tagged = response?.status === 201;
+        if (response?.status === 201) {
+            single_number_response = await response.json();
+        }
 
-        return new HttpResponse(response, tagged);
+        return new HttpResponse(response, single_number_response);
     }
 }
 
