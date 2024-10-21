@@ -174,7 +174,6 @@ func getMediasFSHandler(response http.ResponseWriter, request *http.Request) {
 		_, err = io.CopyN(response, file_descriptor, r.Length)
 		if err != nil {
 			echo.Echo(echo.YellowFG, fmt.Sprintf("Error copying media file to response: %s", err.Error()))
-			response.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
