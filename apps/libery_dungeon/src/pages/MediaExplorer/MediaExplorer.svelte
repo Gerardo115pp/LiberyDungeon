@@ -5,12 +5,14 @@
         import { 
             media_upload_tool_mounted,
             category_creation_tool_mounted,
+            media_transactions_tool_mounted,
+            category_tagger_tool_mounted,
             category_search_focused,
             category_search_results,
             category_search_term,
             resetCategorySearchState,
-            media_transactions_tool_mounted,
         } from "@pages/MediaExplorer/app_page_store";
+        import CategoryTagger from "@components/DungeonTags/CategoryTagger/CategoryTagger.svelte";
         import MediaUploadTool from "./sub-components/MediaUploadTool/MediaUploadTool.svelte";
         import CreateNewCategoryTool from "./sub-components/CreateNewCategoryTool.svelte";
         import CategoryFolder from "@components/Categories/CategoryFolder.svelte";
@@ -1162,6 +1164,9 @@
                 on:tool-closed={handleTransactionManagementToolClose}
             />
         </div>
+    {/if}
+    {#if $category_tagger_tool_mounted}
+        <CategoryTagger/>
     {/if}
     <div id="lce-floating-controls-overlay">
         {#if category_name_filter_interval_id != null}
