@@ -1,9 +1,9 @@
-import { PlatformEventsTransmisor } from "@libs/HttpRequests";
+import { PlatformEventsTransmisor } from "@libs/DungeonsCommunication/transmissors/platform_events_transmisor";
 import { Stack, hasWindowContext } from "@libs/utils";
 
 /**
- * @callback PlatformEventHandler
- * @param {import("@libs/HttpRequests").PlatformEventMessage} event
+* @callback PlatformEventHandler
+ * @param {import("@libs/DungeonsCommunication/transmissors/platform_events_transmisor").PlatformEventMessage} event
  * @returns {void}
 */
 
@@ -174,7 +174,7 @@ export class PlatformEventsContextManager {
 
     /**
      * Process all new events and determines the handler to call
-     * @param {import("@libs/HttpRequests").PlatformEventMessage} new_event
+     * @param {import("@libs/DungeonsCommunication/transmissors/platform_events_transmisor").PlatformEventMessage} new_event
      */
     #processNewEvent(new_event) {
         if (this.#current_context === null || !this.#current_context.hasEventHandler(new_event.EventType)) {
@@ -188,7 +188,7 @@ export class PlatformEventsContextManager {
     /**
      * the default handler for new event, does nothing aside from logging the event.
      * its safe to override this method.
-     * @param {import("@libs/HttpRequests").PlatformEventMessage} new_event
+     * @param {import("@libs/DungeonsCommunication/transmissors/platform_events_transmisor").PlatformEventMessage} new_event
      * @returns {void}
      */
     defaultEventHandler(new_event) {

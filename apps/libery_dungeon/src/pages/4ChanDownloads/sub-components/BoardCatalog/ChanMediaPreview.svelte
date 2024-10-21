@@ -1,5 +1,5 @@
 <script>
-    import { getProxyMediaUrl } from "@libs/HttpRequests";
+    import { getProxyMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
     import { isUrlMediaFile, isUrlVideo, getMediaFilename } from "@libs/utils";
 
     

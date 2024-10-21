@@ -7,7 +7,7 @@
 .##.....##.##.....##.##..##..##.##...###.##.......##.....##.##.....##.##.....##.##....##
 .########...#######...###..###..##....##.########..#######..##.....##.########...######.
 */
-import { GetCurrentDownloadRequest } from "@libs/HttpRequests";
+import { GetCurrentDownloadRequest } from "@libs/DungeonsCommunication/services_requests/download_requests";
 
 
 export class DownloadProgress {

@@ -1,6 +1,6 @@
 <script>
     import LazyLoader from "@components/LazyLoader/LazyLoader.svelte";
-    import { getMediaUrl } from "@libs/HttpRequests";
+    import { getMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
     import { createEventDispatcher } from "svelte";
     import { media_changes_manager, active_media_change, active_media_index } from "@stores/media_viewer";
     import { media_change_types } from "@models/WorkManagers";

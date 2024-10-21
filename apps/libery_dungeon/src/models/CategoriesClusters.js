@@ -6,7 +6,7 @@ import {
     PostCreateClusterRequest,
     DeleteClusterRecordRequest,
     GetClusterRootPathRequest
- } from "@libs/HttpRequests";
+ } from "@libs/DungeonsCommunication/services_requests/categories_cluster_requests";
 
 export class CategoriesCluster {
     
@@ -169,7 +169,7 @@ export const updateCluster = async (cluster) => {
  * Gets the new cluster directory options. It takes a subdirectory, which if empty will default to the service's SERVICE_CLUSTERS_ROOT. If not empty
  * the subdirectory most be a path relative to the service's SERVICE_CLUSTERS_ROOT.
  * @param {string} subdirectory 
- * @returns {Promise<import("@libs/HttpRequests").NewClusterDirectoryOption>} 
+ * @returns {Promise<import("@libs/DungeonsCommunication/services_requests/categories_cluster_requests").NewClusterDirectoryOption>} 
  */
 export const getNewClusterDirectoryOptions = async (subdirectory) => {
     let directory_creation_options = [];

@@ -1,4 +1,4 @@
-import { GetCategoriesClusterSignAccessRequest } from "@libs/HttpRequests";
+import { GetCategoriesClusterSignAccessRequest } from "@libs/DungeonsCommunication/services_requests/categories_cluster_requests";
 
 class ClaimsGrantResponse {
     constructor({redirect_url, granted}) {

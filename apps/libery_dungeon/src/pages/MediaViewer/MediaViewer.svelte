@@ -16,7 +16,7 @@
         import { app_contexts } from "@libs/AppContext/app_contexts";
         import { hotkeys_sheet_visible, inCinemaMode, inDarkMode, layout_properties, navbar_hidden, toggleCinemaMode, toggleDarkMode } from "@stores/layout";
         import { onMount, onDestroy, tick } from "svelte";
-        import { getMediaUrl } from "@libs/HttpRequests";
+        import { getMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
         import { replaceState } from "$app/navigation";
         import { media_types } from "@models/Medias";
         import { resetMediaViewerPageStore } from "./app_page_store";

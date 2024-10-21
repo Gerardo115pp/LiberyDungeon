@@ -572,7 +572,7 @@
 
             /**
              * Reloads the current category when the platform event FS_CHANGED is received.
-             * @param {import("@libs/HttpRequests").PlatformEventMessage} event
+             * @param {import("@libs/DungeonsCommunication/transmissors/platform_events_transmisor").PlatformEventMessage} event
              */
             const handleFsChangedPlatformEvent = async (event) => {
                 console.log("FS_CHANGED event received", event);

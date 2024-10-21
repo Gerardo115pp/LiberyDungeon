@@ -1,4 +1,4 @@
-import { getMediaUrl, PatchRenameMediasRequest } from "@libs/HttpRequests";
+import { getMediaUrl, PatchRenameMediasRequest } from "@libs/DungeonsCommunication/services_requests/media_requests";
 
 const DEFAULT_IMAGE_WIDTH = 307;
 

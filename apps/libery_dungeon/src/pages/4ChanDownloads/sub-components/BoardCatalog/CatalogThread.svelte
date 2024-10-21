@@ -1,7 +1,8 @@
 <script>
     import { ChanCatalogThread } from "@models/4Chan";
     import LazyLoader from "@components/LazyLoader/LazyLoader.svelte";
-    import { DownloadProgressTransmisor, getProxyMediaUrl } from "@libs/HttpRequests";
+    import { getProxyMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
+    import { DownloadProgressTransmisor } from "@libs/DungeonsCommunication/transmissors/download_progress_transmissor";
     import { DownloadProgress } from "@models/Downloads";
     import { createEventDispatcher, onDestroy } from "svelte";
     import { onMount } from "svelte";

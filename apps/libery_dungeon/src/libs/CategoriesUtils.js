@@ -1,4 +1,4 @@
-import { GetCategoryNameAvailabilityRequest } from "./HttpRequests";
+import { GetCategoryNameAvailabilityRequest } from "@libs/DungeonsCommunication/services_requests/categories_requests";
 
 /**
  * Returns true if there is no other category with the same name on the same parent category. The verification is case insensitive. So

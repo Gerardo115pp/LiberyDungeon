@@ -1,8 +1,8 @@
 import { 
     CommitCategoryTreeChangesRequest,
     GetCategorySearchResultsRequest, 
-    PutResyncClusterBranchRequest
-} from "@libs/HttpRequests";
+} from "@libs/DungeonsCommunication/services_requests/categories_requests";
+import { PutResyncClusterBranchRequest } from "@libs/DungeonsCommunication/services_requests/categories_cluster_requests";
 import { Media } from "./Medias";
 import { InnerCategory } from "./Categories";
 

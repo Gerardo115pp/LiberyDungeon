@@ -1,4 +1,4 @@
-import { GetWatchPointRequest, PostWatchPointRequest } from "@libs/HttpRequests";
+import { GetWatchPointRequest, PostWatchPointRequest } from "@libs/DungeonsCommunication/services_requests/metadata_requests/watch_points_requests";
 
 
 /*=============================================

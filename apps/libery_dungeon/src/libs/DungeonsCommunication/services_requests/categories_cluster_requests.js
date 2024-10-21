@@ -152,7 +152,7 @@ export class GetClusterRootPathRequest {
         }
 
         if (!response?.ok) {
-            let variable_enviroment = new VariableEnvironmentContextError("In HttpRequests/GetClusterRootPathRequest after fetch");
+            let variable_enviroment = new VariableEnvironmentContextError("In @libs/DungeonsCommunication/services_requests/categories_cluster_requests/GetClusterRootPathRequest after fetch");
             variable_enviroment.addVariable("endpoint", endpoint);
             variable_enviroment.addVariable("response.status", response?.status);
 

@@ -5,7 +5,7 @@
     import MediasGallery from "./sub-components/MediaGallery/MediasGallery.svelte";
     import VideoController from "@components/VideoController/VideoController.svelte";
     import { media_change_types, MediaChangesManager } from "@models/WorkManagers";
-    import { getMediaUrl } from "@libs/HttpRequests";
+    import { getMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
     import { media_types } from "@models/Medias";
     import { onDestroy, onMount, tick } from "svelte";
     import { pinch, swipe } from 'svelte-gestures';

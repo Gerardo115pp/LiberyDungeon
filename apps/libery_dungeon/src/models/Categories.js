@@ -7,7 +7,7 @@ import {
     GetCategoryByFullpathRequest,
     PatchRenameCategoryRequest,
     PatchMoveCategoryRequest
-} from "@libs/HttpRequests";
+} from "@libs/DungeonsCommunication/services_requests/categories_requests";
 import { Media } from "./Medias";
 import { 
     getAllCategoryIndexes, 

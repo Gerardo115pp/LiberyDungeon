@@ -1,5 +1,5 @@
 <script>
-    import { getProxyMediaUrl } from "@libs/HttpRequests";
+    import { getProxyMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
     import { ChanThread, ChanThreadReply, getThreadContent } from "@models/4Chan";
     import { onMount } from "svelte";
     import ThreadReply from "./ThreadReply.svelte";

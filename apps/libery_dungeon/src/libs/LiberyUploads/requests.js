@@ -3,7 +3,7 @@ import {
     GetUploadStreamTicketRequest,
     GetChunkedUploadTicketRequest,
     PostChunkedUploadRequest 
-} from '@libs/HttpRequests';
+} from '@libs/DungeonsCommunication/services_requests/uploads_requests';
 
 /**
  * Inserts a media file into a category, returns true if the operation was successful, false otherwise
@@ -27,7 +27,7 @@ export const insertMediaFile = async (media_file) => {
 
 /**
  * Returns a ticket to upload a file in chunks. If successful, returns the ticket which is a jwt token, otherwise null.
- * @param {import('@libs/HttpRequests').GetChunkedUploadTicketParams} ticket_params
+ * @param {import("@libs/DungeonsCommunication/services_requests/uploads_requests").GetChunkedUploadTicketParams} ticket_params
  * @returns {Promise<string|null>}
  */
 export const getChunkedUploadTicket = async (ticket_params) => {

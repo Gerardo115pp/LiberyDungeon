@@ -23,7 +23,7 @@ import {
     DeleteRoleRequest, 
     PutChangeUserPasswordRequest,
     PutChangeUsernameRequest
-} from '@libs/HttpRequests';
+} from "@libs/DungeonsCommunication/services_requests/users_requests";
 
 
 const ALL_PRIVILEGES_GRANT = "ALL_PRIVILEGES";

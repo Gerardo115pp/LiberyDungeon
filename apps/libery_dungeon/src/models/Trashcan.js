@@ -7,8 +7,8 @@ import {
     PatchRestoreTransactionRequest,
     DeleteTrashcanTransactionRequest,
     DeleteEmptyTrashcanRequest,
-    getTrashcanMediaUrl
-} from "@libs/HttpRequests";
+} from "@libs/DungeonsCommunication/services_requests/transactions_requests";
+import { getTrashcanMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
 
 
 /**
