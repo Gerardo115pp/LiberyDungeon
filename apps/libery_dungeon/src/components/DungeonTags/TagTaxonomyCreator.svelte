@@ -26,7 +26,7 @@
 <form action="none" class="tag-taxonomy-creator">
     <header id="ttc-header">
         <p class="dungeon-instructions">
-            Here you can create new category attributes. These will be available in all the categories withing <strong>{$current_cluster?.Name ?? ""}</strong>
+            Here you can create new category attributes. These will be available in all the categories within <strong>{$current_cluster?.Name ?? ""}</strong>
         </p>
     </header>
     <fieldset class="ttc-fields">
