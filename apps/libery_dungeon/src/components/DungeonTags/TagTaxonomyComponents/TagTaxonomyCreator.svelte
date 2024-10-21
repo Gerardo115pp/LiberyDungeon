@@ -63,7 +63,6 @@
         justify-content: center;
         align-items: center;
         padding: 0 var(--spacing-3);
-        border-bottom: var(--border-thin-grey);
     }
 
     fieldset.ttc-fields {
