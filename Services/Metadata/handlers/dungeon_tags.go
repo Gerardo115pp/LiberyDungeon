@@ -306,8 +306,67 @@ func postDungeonTagHandler(response http.ResponseWriter, request *http.Request) 
 }
 
 func patchDungeonTagsHandler(response http.ResponseWriter, request *http.Request) {
-	response.WriteHeader(http.StatusMethodNotAllowed)
-	return
+	var resource string = request.URL.Path
+	var handler_func http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
+
+	switch resource {
+	case "/dungeon-tags/taxonomy/name":
+		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsTaxonomyCreate(patchDungeonTagTaxonomyNameHandler)
+	case "/dungeon-tags/tag/name":
+		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsCreate(patchDungeonTagNameHandler)
+	default:
+		echo.Echo(echo.RedFG, fmt.Sprintf("In patchDungeonTagsHandler, invalid resource: %s\n", resource))
+	}
+
+	handler_func(response, request)
+}
+
+func patchDungeonTagTaxonomyNameHandler(response http.ResponseWriter, request *http.Request) {
+	var taxonomy_uuid string = request.URL.Query().Get("uuid")
+	var new_name string = request.URL.Query().Get("new_name")
+
+	if taxonomy_uuid == "" || new_name == "" {
+		echo.Echo(echo.RedFG, "In patchDungeonTagTaxonomyNameHandler, taxonomy_uuid or new_name is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	err := repository.DungeonTagsRepo.UpdateTaxonomyNameCTX(request.Context(), taxonomy_uuid, new_name)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In patchDungeonTagTaxonomyNameHandler, while updating taxonomy name: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	response.WriteHeader(204)
+}
+
+func patchDungeonTagNameHandler(response http.ResponseWriter, request *http.Request) {
+	var tag_id_str string = request.URL.Query().Get("id")
+	var new_name string = request.URL.Query().Get("new_name")
+
+	if tag_id_str == "" || new_name == "" {
+		echo.Echo(echo.RedFG, "In patchDungeonTagNameHandler, tag_id or new_name is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	var tag_id int
+	tag_id, err := strconv.Atoi(tag_id_str)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In patchDungeonTagNameHandler, while converting tag_id to int: %s\n", err))
+		response.WriteHeader(400)
+		return
+	}
+
+	err = repository.DungeonTagsRepo.UpdateTagNameCTX(request.Context(), tag_id, new_name)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In patchDungeonTagNameHandler, while updating tag name: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	response.WriteHeader(204)
 }
 
 func deleteDungeonTagsHandler(response http.ResponseWriter, request *http.Request) {
