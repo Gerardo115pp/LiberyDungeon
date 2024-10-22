@@ -256,6 +256,27 @@ func (dt_db *DungeonTagsDB) GetTaxonomyTags(taxonomy_uuid string) ([]service_mod
 	return dt_db.GetTaxonomyTagsCTX(context.Background(), taxonomy_uuid)
 }
 
+func (dt_db *DungeonTagsDB) GetTagTaxonomyCTX(ctx context.Context, taxonomy_uuid string) (service_models.TagTaxonomy, error) {
+	var taxonomy service_models.TagTaxonomy
+
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, "SELECT `uuid`, `name`, `internal`, `cluster_domain` FROM `tag_taxonomies` WHERE `uuid`=?")
+	if err != nil {
+		return taxonomy, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRowContext(ctx, taxonomy_uuid).Scan(&taxonomy.UUID, &taxonomy.Name, &taxonomy.IsInternal, &taxonomy.ClusterDomain)
+	if err != nil {
+		return taxonomy, err
+	}
+
+	return taxonomy, nil
+}
+
+func (dt_db *DungeonTagsDB) GetTagTaxonomy(taxonomy_uuid string) (service_models.TagTaxonomy, error) {
+	return dt_db.GetTagTaxonomyCTX(context.Background(), taxonomy_uuid)
+}
+
 func (dt_db *DungeonTagsDB) GetEntityTaggingsCTX(ctx context.Context, entity_uuid, cluster_domain string) ([]service_models.DungeonTagging, error) {
 	var taggings []service_models.DungeonTagging = make([]service_models.DungeonTagging, 0)
 
