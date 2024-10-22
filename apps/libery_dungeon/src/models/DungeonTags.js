@@ -291,7 +291,7 @@ export class DungeonTagging {
     /**
      * Returns all the TagTaxonomies associated with the cluster.
      * @param {string} cluster_uuid
-     * @returns {Promise<TaxonomyTags[]>}
+     * @returns {Promise<TagTaxonomy[]>}
      */
     export const getClusterTaxonomies = async (cluster_uuid) => {
         /**
@@ -304,7 +304,7 @@ export class DungeonTagging {
         const response = await request.do();
         
         if (response.Ok) {
-            cluster_taxonomies = response.data.map(taxonomy_params => new TaxonomyTags(taxonomy_params));
+            cluster_taxonomies = response.data.map(taxonomy_params => new TagTaxonomy(taxonomy_params));
         }
 
         return cluster_taxonomies;
