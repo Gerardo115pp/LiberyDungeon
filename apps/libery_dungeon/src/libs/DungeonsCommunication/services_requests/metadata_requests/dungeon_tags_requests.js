@@ -287,6 +287,51 @@ export class GetClusterTagsRequest {
 }
 
 /**
+ * Returns a TaxonomyTags corresponding to the given taxonomy id
+ */
+export class GetTaxonomyTagsRequest {
+
+    static endpoint = `${metadata_server}/dungeon-tags/taxonomy/tags`;
+
+    /**
+     * @param {string} taxonomy
+     */
+    constructor(taxonomy) {
+        this.taxonomy = taxonomy;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import("@models/DungeonTags").TaxonomyTagsParams | null>>}
+     */
+    do = async () => {
+        const url = `${GetTaxonomyTagsRequest.endpoint}?taxonomy=${this.taxonomy}`;
+
+        /** @type {import("@models/DungeonTags").TaxonomyTagsParams} */
+        let taxonomy_tags = null;
+
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        try {
+            response = await fetch(url);
+
+            if (response.ok) {
+                taxonomy_tags = await response.json();
+            }
+
+        } catch (error) {
+            console.error("Error getting taxonomy tags: ", error);
+        }
+
+        return new HttpResponse(response, taxonomy_tags);
+    }
+}
+
+/**
  * Creates a TagTaxonomy.
  */
 export class PostTagTaxonomyRequest {
