@@ -56,6 +56,8 @@ func getDungeonTagsHandler(response http.ResponseWriter, request *http.Request) 
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonClusterTaxonomiesHandler)
 	case "/dungeon-tags/tag":
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonTagsTagHandler)
+	case "/dungeon-tags/taxonomy/tags":
+		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonTaxonomyTags)
 	case "/dungeon-tags/entity-tags":
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getEntityTagsHandler)
 	case "/dungeon-tags/cluster-tags":
@@ -204,6 +206,40 @@ func getDungeonTagByNameHandler(response http.ResponseWriter, request *http.Requ
 	response.WriteHeader(200)
 
 	json.NewEncoder(response).Encode(tag)
+}
+
+func getDungeonTaxonomyTags(response http.ResponseWriter, request *http.Request) {
+	var taxonomy_uuid string = request.URL.Query().Get("taxonomy")
+
+	if taxonomy_uuid == "" {
+		echo.Echo(echo.RedFG, "In getDungeonTaxonomyTags, taxonomy_uuid is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	tag_taxonomy, err := repository.DungeonTagsRepo.GetTagTaxonomyCTX(request.Context(), taxonomy_uuid)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getDungeonTaxonomyTags, while getting taxonomy: %s\n", err))
+		response.WriteHeader(404)
+		return
+	}
+
+	tags, err := repository.DungeonTagsRepo.GetTaxonomyTagsCTX(request.Context(), taxonomy_uuid)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getDungeonTaxonomyTags, while getting taxonomy tags: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	taxonomy_tags := service_models.TaxonomyTags{
+		Taxonomy: &tag_taxonomy,
+		Tags:     tags,
+	}
+
+	response.Header().Add("Content-Type", "application/json")
+	response.WriteHeader(200)
+
+	json.NewEncoder(response).Encode(taxonomy_tags)
 }
 
 func postDungeonTagsHandler(response http.ResponseWriter, request *http.Request) {
