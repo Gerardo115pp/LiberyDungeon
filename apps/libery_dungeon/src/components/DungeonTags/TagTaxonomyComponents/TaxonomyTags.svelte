@@ -30,6 +30,7 @@
     <TagGroup 
         dungeon_tags={taxonomy_tags.Tags}
         enable_tag_creator={enable_tag_creation}
+        on:tag-selected
     />
 </section>
 

@@ -1,5 +1,6 @@
 <script>
     import DeleteableItem from "@components/ListItems/DeleteableItem.svelte";
+    import { createEventDispatcher } from "svelte";
     
     /*=============================================
     =            Properties            =
@@ -39,8 +40,34 @@
              * @default true
              */
             export let expose_indexes = true;
+        
+        const dispatch = createEventDispatcher();
     
     /*=====  End of Properties  ======*/
+    
+    
+    /*=============================================
+    =            Method            =
+    =============================================*/
+    
+        /**
+         * Handles the tag selection event.
+         * @param {CustomEvent<{item_id: string}>} event
+         */    
+        const handleTagSelection = (event) => {
+            emitTagSelected(event.detail.item_id);
+        }
+
+        /**
+         * Emits the tag-selected event.
+         * @param {number} tag_id
+        */
+        const emitTagSelected = (tag_id) => {
+            dispatch("tag-selected", {tag_id});
+        }
+    
+    /*=====  End of Method  ======*/
+    
     
 </script>
 
@@ -48,6 +75,8 @@
     {#each dungeon_tags as tag, index (tag.Id)}
         <DeleteableItem 
             item_color={tag_group_color}
+            item_id={tag.Id}
+            on:item-selected={handleTagSelection}
         >
             <p class="dtg-tag-name taxonomy-member">
                 {#if expose_indexes}

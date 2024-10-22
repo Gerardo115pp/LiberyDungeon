@@ -4,9 +4,11 @@
     import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
     import { onMount } from "svelte";
     import { current_cluster } from "@stores/clusters";
+    import { current_category } from "@stores/categories_tree";
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import TaxonomyTags from "../TagTaxonomyComponents/TaxonomyTags.svelte";
+    import ClusterPublicTags from "./sub-componenets/ClusterPublicTags.svelte";
 
     
     /*=============================================
@@ -40,6 +42,23 @@
     /*=============================================
     =            Methods            =
     =============================================*/
+
+        /**
+         * Handles the tag-taxonomy-created event from the TagTaxonomyCreator component.
+         */
+        const handleTagTaxonomyCreated = async () => {
+            await refreshClusterTagsNoCheck($current_cluster.UUID);
+        }
+        
+        /**
+         * Handles the tag-selected event from the ClusterPublicTags component.
+         * @param {CustomEvent<{item_id: string}>} event
+         */
+        const handleTagSelection = (event) => {
+            const tag_id = event.detail.tag_id;
+
+            console.log(`Tag selected: ${tag_id} -> ${$current_category.uuid}`);
+        }
     
         /**
          * Verifies the cluster_tags correctness with respect to the current_cluster. And if necessary, updates the cluster_tags.
@@ -72,21 +91,18 @@
 </script>
 
 <dialog open id="dungeon-category-tagger-tool" class="libery-dungeon-window">
-    <section id="tag-taxonomy-creator-section" class="dctt-section">
-        <TagTaxonomyCreator />
+    <section tabindex="-1" id="tag-taxonomy-creator-section" class="dctt-section">
+        <TagTaxonomyCreator
+            on:tag-taxonomy-created={handleTagTaxonomyCreated}
+        />
     </section>
     <article id="dctt-cluster-user-tags"
         class="dungeon-scroll dctt-section"
     >
         {#if cluster_tags_checked}
-            {#each $cluster_tags as taxonomy_tags}
-                {#if !taxonomy_tags.Taxonomy.IsInternal}
-                    <TaxonomyTags 
-                        taxonomy_tags={taxonomy_tags}
-                        enable_tag_creation
-                    />
-                {/if} 
-            {/each}
+            <ClusterPublicTags 
+                on:tag-selected={handleTagSelection}
+            />
         {/if}
     </article>
 </dialog>
@@ -109,11 +125,9 @@
     }
 
     article#dctt-cluster-user-tags {
-        display: flex;
         height: 35cqh;
-        flex-direction: column;
-        row-gap: var(--spacing-2);
         overflow-y: auto;
-        padding: 0 var(--spacing-2);
+        border-left: var(--border-thick-main);
+        padding: var(--spacing-1) var(--spacing-2);
     }
 </style>

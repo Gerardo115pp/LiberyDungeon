@@ -19,8 +19,14 @@
          */
         export let is_protected = false;
 
+        /**
+         * If passed, when the item is clicked outside the delete button. it will event the item-selected event with this value.
+         * @type {string}
+         */
+        export let item_id = null;
+
         const dispatch = createEventDispatcher();
-    
+            
     /*=====  End of Properties  ======*/
     
    
@@ -39,7 +45,7 @@
          * Emits the item-selected event.
          */
         const emitSelectItem = () => {
-            dispatch("item-selected");
+            dispatch("item-selected", { item_id });
         }
 
         /**
@@ -54,6 +60,8 @@
          * Handles the click event on the item.
          */
         const handleSelectClick = () => {
+            if (item_id === null) return;
+
             emitSelectItem();
         }
    
@@ -62,7 +70,8 @@
 </script>
 
 <li class="deletable-item"
-    style:background="{item_color}"
+    class:item-selectable={item_id !== null}
+    style:--item-color={item_color}
     on:click={handleSelectClick}
 >
     <div class="deletable-item-content">
@@ -85,6 +94,7 @@
         display: flex;
         align-self: center;
         align-items: center;
+        background: var(--item-color);
         gap: var(--spacing-1);
         padding: var(--spacing-1) calc(1.2 * var(--spacing-1));
         border-radius: var(--border-radius-2);
@@ -92,6 +102,15 @@
         
         &:has(button.delete-item:hover) {
             background: var(--danger-7) !important;
+        }
+        
+        &.item-selectable {
+            cursor: default;
+        }
+
+        &.item-selectable:hover {
+            background: hsl(from var(--item-color) h s calc(l * 1.2));
+            transition: background .2s ease-out;
         }
     }
 
