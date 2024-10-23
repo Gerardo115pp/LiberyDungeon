@@ -20,7 +20,7 @@
         export let is_protected = false;
 
         /**
-         * If passed, when the item is clicked outside the delete button. it will event the item-selected event with this value.
+         * If passed, it will be present on any event triggered by this component on the event.detail.item_id property.
          * @type {string}
          */
         export let item_id = null;
@@ -38,7 +38,7 @@
          * Emits the item-deleted event.
          */
         const emitDeleteItem = () => {
-            dispatch("item-deleted");
+            dispatch("item-deleted", { item_id });
         }
 
         /**

@@ -60,7 +60,6 @@
     
     /*=====  End of Properties  ======*/
     
-    
     /*=============================================
     =            Method            =
     =============================================*/
@@ -130,6 +129,14 @@
         }
 
         /**
+         * Handles the item-deleted event triggered by the DeleteableItem component.
+         * @param {CustomEvent<{item_id: string}>} event
+         */
+        const handleTagDeletion = (event) => {
+            emitTagDeleted(event.detail.item_id);
+        }
+
+        /**
          * Emits the tag-created event.
          * @param {string} tag_name
          */
@@ -173,6 +180,7 @@
                 item_color={tag_group_color}
                 item_id={tag.Id}
                 on:item-selected={handleTagSelection}
+                on:item-deleted={handleTagDeletion}
             >
                 <p class="dtg-tag-name taxonomy-member">
                     {#if expose_indexes}

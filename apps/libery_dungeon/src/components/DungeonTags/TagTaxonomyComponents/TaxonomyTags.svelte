@@ -1,5 +1,5 @@
 <script>
-    import { createDungeonTag } from "@models/DungeonTags";
+    import { createDungeonTag, deleteDungeonTag } from "@models/DungeonTags";
     import TagGroup from "../Tags/TagGroup.svelte";
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
     import { createEventDispatcher } from "svelte";
@@ -54,6 +54,27 @@
         }
 
         /**
+         * Handles the tag deleted event.
+         * @param {CustomEvent<{tag_id: string}>} event
+         */
+        const handleTagDeleted = async event => {
+            
+            let tag_id = event?.detail?.tag_id;
+
+            if (tag_id == null) return;
+
+            let tag_deleted = await deleteDungeonTag(tag_id);
+
+            if (!tag_deleted) {
+                const labeled_err = new LabeledError("In TaxonomyTags.handleTagDeleted", `Failed to delete tag with id '${tag_id}'`);
+                labeled_err.alert();
+                return;
+            }
+
+            emitTaxonomyContentChange();
+        }
+
+        /**
          * Emits an event that should be interpreted as 'the tag taxonomy content has changed'. The taxonomy emits an event with a detail.taxonomy, this
          * contains the tag taxonomy uuid. 
          */
@@ -76,6 +97,7 @@
         enable_tag_creator={enable_tag_creation}
         on:tag-selected
         on:tag-created={handleTagCreated}
+        on:tag-deleted={handleTagDeleted}
     />
 </section>
 
