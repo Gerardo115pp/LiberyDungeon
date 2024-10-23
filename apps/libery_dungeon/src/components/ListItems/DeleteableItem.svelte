@@ -25,6 +25,19 @@
          */
         export let item_id = null;
 
+        
+        /*=============================================
+        =            Style            =
+        =============================================*/
+        
+            /**
+             * Whether the deletable item should have a squared style.
+             * @type {boolean}
+             */
+            export let squared_style = false;
+        
+        /*=====  End of Style  ======*/
+
         const dispatch = createEventDispatcher();
             
     /*=====  End of Properties  ======*/
@@ -71,6 +84,7 @@
 
 <li class="deletable-item"
     class:item-selectable={item_id !== null}
+    class:squared-style={squared_style}
     style:--item-color={item_color}
     on:click={handleSelectClick}
 >
@@ -106,6 +120,11 @@
         
         &.item-selectable {
             cursor: default;
+        }
+
+        &.squared-style {
+            border-radius: .3em;
+            padding: calc(.65 * var(--spacing-1)) calc(1.2 * var(--spacing-1));
         }
 
         &.item-selectable:hover {
