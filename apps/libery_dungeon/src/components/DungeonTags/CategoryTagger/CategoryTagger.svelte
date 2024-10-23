@@ -8,7 +8,8 @@
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import TaxonomyTags from "../TagTaxonomyComponents/TaxonomyTags.svelte";
-    import ClusterPublicTags from "./sub-componenets/ClusterPublicTags.svelte";
+    import ClusterPublicTags from "./sub-components/ClusterPublicTags.svelte";
+    import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
 
     
     /*=============================================
@@ -152,6 +153,12 @@
             on:tag-taxonomy-created={handleTagTaxonomyCreated}
         />
     </section>
+    <article id="dctt-current-category-tags-wrapper"
+        class="dungeon-scroll dctt-section"
+    >
+        <CategoryTaggings 
+        />
+    </article>
     <article id="dctt-cluster-user-tags"
         class="dungeon-scroll dctt-section"
     >
@@ -167,14 +174,18 @@
 <style>
     #dungeon-category-tagger-tool {
         display: flex;
-        width: clamp(400px, 70dvw, 1440px);
-        height: calc(calc(100dvh - var(--navbar-height)) * 0.8);
+        width: clamp(400px, 82dvw, 1800px);
+        height: calc(calc(100dvh - var(--navbar-height)) * 0.9);
         container-type: size;
         flex-direction: column;
-        row-gap: var(--spacing-3);
+        row-gap: calc(var(--spacing-2) + var(--spacing-1));
         padding: var(--spacing-1);
         z-index: var(--z-index-t-1);
         outline: none;
+
+        & > .dctt-section {
+            padding: 0 var(--spacing-2);
+        }
     
         & > .dctt-section:not(:last-child) {
             border-bottom: var(--border-thin-grey-8);
@@ -185,6 +196,10 @@
         height: 35cqh;
         overflow-y: auto;
         border-left: var(--border-thick-main);
-        padding: var(--spacing-1) var(--spacing-2);
+    }
+
+    article#dctt-current-category-tags-wrapper {
+        height: 30cqh;
+        overflow: auto;
     }
 </style>
