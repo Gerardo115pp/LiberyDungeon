@@ -265,7 +265,7 @@ func postDungeonTagEntityHandler(response http.ResponseWriter, request *http.Req
 	var entity_identifier string = request.URL.Query().Get("entity")
 
 	if tag_id_str == "" || entity_identifier == "" {
-		echo.Echo(echo.RedFG, "In postDungeonTagEntityHandler, tag_id or entity_uuid is empty\n")
+		echo.Echo(echo.RedFG, "In postDungeonTagEntityHandler, tag_id or entity is empty\n")
 		response.WriteHeader(400)
 		return
 	}
