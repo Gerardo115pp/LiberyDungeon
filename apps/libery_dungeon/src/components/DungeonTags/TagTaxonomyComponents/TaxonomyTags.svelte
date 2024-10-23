@@ -3,6 +3,7 @@
     import TagGroup from "../Tags/TagGroup.svelte";
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
     import { createEventDispatcher } from "svelte";
+    import { confirmPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
 
     /*=============================================
     =            Properties            =
@@ -29,6 +30,25 @@
     =            Methods            =
     =============================================*/
     
+
+        /**
+         * Returns the name of a tag by it's given id or an empty string if not found.
+         * @param {number} tag_id
+         * @returns {string}
+         */
+        const getTagNameByID = tag_id => {
+            let tag_name = "";
+
+            for (let dungeon_tag of taxonomy_tags.Tags) {
+                if (dungeon_tag.Id === tag_id) {
+                    tag_name = dungeon_tag.Name;
+                    break;
+                }
+            }
+
+            return tag_name;
+        }
+
         /**
          * Handles the tag created event.
          * @param {CustomEvent<{tag_name: string}>} event
@@ -62,6 +82,24 @@
             let tag_id = event?.detail?.tag_id;
 
             if (tag_id == null) return;
+
+            const tag_name = getTagNameByID(tag_id);
+
+            if (tag_name === "") {
+                console.error(`Tag id: '${tag_id}' did not match an dungeon tag withing ${taxonomy_tags.Taxonomy.Name}`);
+                return;
+            }
+
+            const user_choice = await confirmPlatformMessage({
+                message_title: `Delete value '${tag_name}'`,
+                question_message: `Are you sure you want to delete '${tag_name}'? it will be disassociated from all medias and categorys it is set to.`,
+                danger_level: 1,
+                cancel_label: "cancel",
+                confirm_label: "Delete it",
+                auto_focus_cancel: true,
+            });
+
+            if (user_choice !== 1) return;
 
             let tag_deleted = await deleteDungeonTag(tag_id);
 
