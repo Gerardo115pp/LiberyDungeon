@@ -95,61 +95,66 @@
             /* Elements */
             --html-tag-color: var(--grey-8);
         /* Borders */
+
+            --thin-border-width: 1px;
+            --med-border-width: 2px;
+            --thick-border-width: 8px;
+        
             /* Grey-Thin */
-            --border-thin-grey: 1px solid var(--grey);
-            --border-thin-grey-9: 1px solid var(--grey-9);
-            --border-thin-grey-8: 1px solid var(--grey-8);
-            --border-thin-grey-7: 1px solid var(--grey-7);
-            --border-thin-grey-6: 1px solid var(--grey-6);
-            --border-thin-grey-5: 1px solid var(--grey-5);
-            --border-thin-grey-4: 1px solid var(--grey-4);
-            --border-thin-grey-3: 1px solid var(--grey-3);
-            --border-thin-grey-2: 1px solid var(--grey-2);
-            --border-thin-grey-1: 1px solid var(--grey-1);
+            --border-thin-grey: var(--thin-border-width) solid var(--grey);
+            --border-thin-grey-9: var(--thin-border-width) solid var(--grey-9);
+            --border-thin-grey-8: var(--thin-border-width) solid var(--grey-8);
+            --border-thin-grey-7: var(--thin-border-width) solid var(--grey-7);
+            --border-thin-grey-6: var(--thin-border-width) solid var(--grey-6);
+            --border-thin-grey-5: var(--thin-border-width) solid var(--grey-5);
+            --border-thin-grey-4: var(--thin-border-width) solid var(--grey-4);
+            --border-thin-grey-3: var(--thin-border-width) solid var(--grey-3);
+            --border-thin-grey-2: var(--thin-border-width) solid var(--grey-2);
+            --border-thin-grey-1: var(--thin-border-width) solid var(--grey-1);
             /* Grey-Med */
-            --border-med-grey: 2px solid var(--grey);
-            --border-med-grey-9: 2px solid var(--grey-9);
-            --border-med-grey-8: 2px solid var(--grey-8);
-            --border-med-grey-7: 2px solid var(--grey-7);
-            --border-med-grey-6: 2px solid var(--grey-6);
-            --border-med-grey-5: 2px solid var(--grey-5);
-            --border-med-grey-4: 2px solid var(--grey-4);
-            --border-med-grey-3: 2px solid var(--grey-3);
-            --border-med-grey-2: 2px solid var(--grey-2);
-            --border-med-grey-1: 2px solid var(--grey-1);
+            --border-med-grey: var(--med-border-width) solid var(--grey);
+            --border-med-grey-9: var(--med-border-width) solid var(--grey-9);
+            --border-med-grey-8: var(--med-border-width) solid var(--grey-8);
+            --border-med-grey-7: var(--med-border-width) solid var(--grey-7);
+            --border-med-grey-6: var(--med-border-width) solid var(--grey-6);
+            --border-med-grey-5: var(--med-border-width) solid var(--grey-5);
+            --border-med-grey-4: var(--med-border-width) solid var(--grey-4);
+            --border-med-grey-3: var(--med-border-width) solid var(--grey-3);
+            --border-med-grey-2: var(--med-border-width) solid var(--grey-2);
+            --border-med-grey-1: var(--med-border-width) solid var(--grey-1);
             /* Main-Thin */
-            --border-thin-main: 1px solid var(--main);
-            --border-thin-main-9: 1px solid var(--main-9);
-            --border-thin-main-8: 1px solid var(--main-8);
-            --border-thin-main-7: 1px solid var(--main-7);
-            --border-thin-main-6: 1px solid var(--main-6);
-            --border-thin-main-5: 1px solid var(--main-5);
-            --border-thin-main-4: 1px solid var(--main-4);
-            --border-thin-main-3: 1px solid var(--main-3);
-            --border-thin-main-2: 1px solid var(--main-2);
-            --border-thin-main-1: 1px solid var(--main-1);
+            --border-thin-main: var(--thin-border-width) solid var(--main);
+            --border-thin-main-9: var(--thin-border-width) solid var(--main-9);
+            --border-thin-main-8: var(--thin-border-width) solid var(--main-8);
+            --border-thin-main-7: var(--thin-border-width) solid var(--main-7);
+            --border-thin-main-6: var(--thin-border-width) solid var(--main-6);
+            --border-thin-main-5: var(--thin-border-width) solid var(--main-5);
+            --border-thin-main-4: var(--thin-border-width) solid var(--main-4);
+            --border-thin-main-3: var(--thin-border-width) solid var(--main-3);
+            --border-thin-main-2: var(--thin-border-width) solid var(--main-2);
+            --border-thin-main-1: var(--thin-border-width) solid var(--main-1);
             /* Main-Med */
-            --border-med-main: 2px solid var(--main);
-            --border-med-main-9: 2px solid var(--main-9);
-            --border-med-main-8: 2px solid var(--main-8);
-            --border-med-main-7: 2px solid var(--main-7);
-            --border-med-main-6: 2px solid var(--main-6);
-            --border-med-main-5: 2px solid var(--main-5);
-            --border-med-main-4: 2px solid var(--main-4);
-            --border-med-main-3: 2px solid var(--main-3);
-            --border-med-main-2: 2px solid var(--main-2);
-            --border-med-main-1: 2px solid var(--main-1);
+            --border-med-main: var(--med-border-width) solid var(--main);
+            --border-med-main-9: var(--med-border-width) solid var(--main-9);
+            --border-med-main-8: var(--med-border-width) solid var(--main-8);
+            --border-med-main-7: var(--med-border-width) solid var(--main-7);
+            --border-med-main-6: var(--med-border-width) solid var(--main-6);
+            --border-med-main-5: var(--med-border-width) solid var(--main-5);
+            --border-med-main-4: var(--med-border-width) solid var(--main-4);
+            --border-med-main-3: var(--med-border-width) solid var(--main-3);
+            --border-med-main-2: var(--med-border-width) solid var(--main-2);
+            --border-med-main-1: var(--med-border-width) solid var(--main-1);
             /* Main-Thick */
-            --border-thick-main: 8px solid var(--main);
-            --border-thick-main-9: 8px solid var(--main-9);
-            --border-thick-main-8: 8px solid var(--main-8);
-            --border-thick-main-7: 8px solid var(--main-7);
-            --border-thick-main-6: 8px solid var(--main-6);
-            --border-thick-main-5: 8px solid var(--main-5);
-            --border-thick-main-4: 8px solid var(--main-4);
-            --border-thick-main-3: 8px solid var(--main-3);
-            --border-thick-main-2: 8px solid var(--main-2);
-            --border-thick-main-1: 8px solid var(--main-1);
+            --border-thick-main: var(--thick-border-width) solid var(--main);
+            --border-thick-main-9: var(--thick-border-width) solid var(--main-9);
+            --border-thick-main-8: var(--thick-border-width) solid var(--main-8);
+            --border-thick-main-7: var(--thick-border-width) solid var(--main-7);
+            --border-thick-main-6: var(--thick-border-width) solid var(--main-6);
+            --border-thick-main-5: var(--thick-border-width) solid var(--main-5);
+            --border-thick-main-4: var(--thick-border-width) solid var(--main-4);
+            --border-thick-main-3: var(--thick-border-width) solid var(--main-3);
+            --border-thick-main-2: var(--thick-border-width) solid var(--main-2);
+            --border-thick-main-1: var(--thick-border-width) solid var(--main-1);
 
         /* Spacing */
             /* 

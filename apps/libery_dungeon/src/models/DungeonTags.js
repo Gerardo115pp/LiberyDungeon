@@ -5,6 +5,7 @@ import {
     GetEntityTaggingsRequest,
     GetEntitiesWithTagsRequest,
     GetClusterTagsRequest,
+    GetTaxonomyTagsRequest,
     PostTagTaxonomyRequest,
     PostDungeonTagRequest,
     PostTagEntityRequest,
@@ -412,6 +413,26 @@ export class DungeonTagging {
         }
 
         return cluster_tags;
+    }
+
+    /**
+     * Returns a TaxonomyTags object for a specific taxonomy.
+     * @param {string} taxonomy_uuid
+     * @returns {Promise<TaxonomyTags | null>}
+     */
+    export const getTaxonomyTagsByUUID = async (taxonomy_uuid) => {
+        /** @type {TaxonomyTags | null} */
+        let taxonomy_tags = null;
+
+        const request = new GetTaxonomyTagsRequest(taxonomy_uuid);
+
+        const response = await request.do();
+
+        if (response.Ok) {
+            taxonomy_tags = new TaxonomyTags(response.data);
+        }
+
+        return taxonomy_tags;
     }
 
     /**

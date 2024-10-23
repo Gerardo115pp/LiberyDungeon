@@ -5,10 +5,11 @@
 </script>
 
 <div id="cpt-wrapper">
-    {#each $cluster_tags as taxonomy_tags}
+    {#each $cluster_tags as taxonomy_tags (taxonomy_tags.Taxonomy.UUID)}
         {#if !taxonomy_tags.Taxonomy.IsInternal}
             <TaxonomyTags 
                 on:tag-selected
+                on:taxonomy-content-change
                 taxonomy_tags={taxonomy_tags}
                 enable_tag_creation
             />
