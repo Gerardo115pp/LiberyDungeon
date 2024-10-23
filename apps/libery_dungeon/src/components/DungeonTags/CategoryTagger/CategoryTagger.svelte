@@ -1,5 +1,5 @@
 <script>
-    import { getClusterTags, getTaxonomyTagsByUUID } from "@models/DungeonTags";
+    import { getClusterTags, getTaxonomyTagsByUUID, tagEntity } from "@models/DungeonTags";
     import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
     import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
     import { onMount } from "svelte";
@@ -96,10 +96,24 @@
          * Handles the tag-selected event from the ClusterPublicTags component.
          * @param {CustomEvent<{item_id: string}>} event
          */
-        const handleTagSelection = (event) => {
+        const handleTagSelection = async (event) => {
             const tag_id = event.detail.tag_id;
 
-            console.log(`Tag selected: ${tag_id} -> ${$current_category.uuid}`);
+            let tagging_id = await tagEntity($current_category.uuid, tag_id);
+
+            if (tagging_id == null) {
+                const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.handleTagSelection");
+
+                variable_environment.addVariable("tag_id", tag_id);
+                variable_environment.addVariable("current_category.uuid", $current_category.uuid);
+
+                const labeled_error = new LabeledError(variable_environment, "Failed to tag the entity. Duplicated tagging?", lf_errors.ERR_LOADING_ERROR);
+
+                labeled_error.alert();
+                return;
+            }
+
+            console.log("Tagging ID: ", tagging_id);
         }
     
         /**
