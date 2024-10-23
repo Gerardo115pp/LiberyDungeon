@@ -1,5 +1,5 @@
 <script>
-    import { getClusterTags, getTaxonomyTagsByUUID, tagEntity } from "@models/DungeonTags";
+    import { getClusterTags, getEntityTaggings, getTaxonomyTagsByUUID, tagEntity } from "@models/DungeonTags";
     import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
     import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
     import { onMount } from "svelte";
@@ -22,8 +22,15 @@
          */ 
         let cluster_tags_checked = false;
 
+        /**
+         * Current category taggings.
+         * @type {import("@models/DungeonTags").DungeonTagging[]}
+         */
+        let current_category_taggings = [];
+
 
         let current_cluster_unsubscriber = () => {};
+        let current_category_unsubscriber = () => {};
     
     /*=====  End of Properties  ======*/
 
@@ -38,11 +45,25 @@
         } else {
             await verifyLoadedClusterTags();
         }
+
+        current_category_unsubscriber = current_category.subscribe(handleCurrentCategoryChange)
     });
     
     /*=============================================
     =            Methods            =
     =============================================*/
+
+        /**
+         * Handles the change of the current category.
+         * @param {import("@models/Categories").CategoryLeaf} new_category
+         */
+        const handleCurrentCategoryChange = async new_category => {
+            console.log("Refreshing taggings of:", new_category);
+
+            if (new_category === null) return;
+
+            await refreshCurrentCategoryTaggings();
+        }
 
         /**
          * Handles the tag-taxonomy-created event from the TagTaxonomyCreator component.
@@ -54,7 +75,7 @@
         /**
          * Refreshes the content of a TagTaxonomy.
          * @param {CustomEvent<{taxonomy: string}>} event
-        */
+         */
         const handleTaxonomyContentChanged = async event => {
             const taxonomy_uuid = event?.detail?.taxonomy;
             console.log("Refreshing: ", event.detail.taxonomy);
@@ -115,6 +136,21 @@
             }
 
             console.log("Tagging ID: ", tagging_id);
+
+            await refreshCurrentCategoryTaggings();
+        }
+
+        /**
+         * Refreshes the current category taggings and sets them on current_category_taggings property.
+         */
+        const refreshCurrentCategoryTaggings = async () => {
+            let new_taggings = await getEntityTaggings($current_category.uuid, $current_category.ClusterUUID);
+
+            const category_uuid = $current_category.uuid;
+
+            console.log(`'${category_uuid}' had taggings:`, new_taggings);
+
+            current_category_taggings = new_taggings;
         }
     
         /**
@@ -157,6 +193,7 @@
         class="dungeon-scroll dctt-section"
     >
         <CategoryTaggings 
+            current_category_taggings={current_category_taggings}
         />
     </article>
     <article id="dctt-cluster-user-tags"

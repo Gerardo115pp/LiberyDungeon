@@ -15,8 +15,10 @@
          * The current category's taggings.
          * @type {import("@models/DungeonTags").DungeonTagging[]}
          */ 
-        let current_category_taggings = [];
+        export let current_category_taggings = [];
         $: globalThis.current_category_taggings = current_category_taggings;
+        $: handleCategoryTaggingsChange(current_category_taggings);
+
 
         /**
          * A map of TagTaxonomy names -> DungeonTags.
@@ -25,21 +27,14 @@
         let tag_taxonomy_map = null;
         $: globalThis.tag_taxonomy_map = tag_taxonomy_map;
 
-
-        let current_category_unsubscriber = () => {};
-        let cluster_tags_unsubscriber = () => {};
     
     /*=====  End of Properties  ======*/
 
     onMount(async () => {
-        current_category_unsubscriber = current_category.subscribe(handleCurrentCategoryChange);
-        cluster_tags_unsubscriber = cluster_tags.subscribe(handleClusterTagsChange);
     });
 
     onDestroy(() => {
-        cluster_tags_unsubscriber();
-        current_category_unsubscriber();
-    })
+    });
     
     /*=============================================
     =            Methods            =
@@ -97,49 +92,20 @@
         }
 
         /**
-         * Handles changes to the current category.
-         * @param {import("@models/Categories").CategoryLeaf} new_category
-         */
-        const handleCurrentCategoryChange = async new_category => {
-            if (new_category == null) return;
-
-            const new_current_category_taggings = await getEntityTaggings(new_category.uuid, new_category.ClusterUUID);
-
-            if ((new_current_category_taggings?.length ?? 0) <= 0) {
-                const variable_environment = new VariableEnvironmentContextError("In CategoryTaggings.handleCurrentCategoryChange");
-
-                variable_environment.addVariable("Category uuid", new_category.uuid);
-                variable_environment.addVariable("Cluster uuid(aka cluster domain)", new_category.ClusterUUID);
-
-                const labeled_err = new LabeledError(variable_environment, "Error loading the current category attributes.", lf_errors.ERR_LOADING_ERROR);
-
-                labeled_err.alert()
-            }
-
-            const new_tag_taxonomy_map = getTagTaxonomyMap(new_current_category_taggings);
-
-            if (new_tag_taxonomy_map.size < 0) {
-                console.warn("No tag taxonomies found for the current category.");
-                return;
-            }
-
-            tag_taxonomy_map = new_tag_taxonomy_map;
-            current_category_taggings = new_current_category_taggings;
-        }
-
-        /**
          * Handles changes to the cluster tags.
-         * @param {import("@models/DungeonTags").TaxonomyTags[]} new_cluster_tags
+         * @param {import("@models/DungeonTags").DungeonTagging[]} new_taggings
          */
-        const handleClusterTagsChange = async new_cluster_tags => {
-            if (current_category_taggings.length <= 0) return;
+        function handleCategoryTaggingsChange(new_taggings) {
+            if (new_taggings.length <= 0) return;
 
-            const updated_tag_taxonomy_map = getTagTaxonomyMap(current_category_taggings);
+            const updated_tag_taxonomy_map = getTagTaxonomyMap(new_taggings);
 
             if (updated_tag_taxonomy_map.size <= 0) {
                 console.warn("No tag taxonomies found for the current category.");
                 return;
             }
+
+            console.log("Updating taxonomy map:", updated_tag_taxonomy_map);
 
             tag_taxonomy_map = updated_tag_taxonomy_map;
         }
