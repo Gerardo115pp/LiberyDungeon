@@ -441,6 +441,13 @@
         }
     }
 
+    .dungeon-tag-container {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: start;
+        gap: var(--spacing-1);
+    }
+
     .dungeon-tag-list {
         display: flex;
         flex-wrap: wrap;
