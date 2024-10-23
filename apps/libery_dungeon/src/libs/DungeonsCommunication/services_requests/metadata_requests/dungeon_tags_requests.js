@@ -461,7 +461,7 @@ export class PostTagEntityRequest {
      * @returns {Promise<HttpResponse<import("../../base").SingleNumberResponse>>}
      */
     do = async () => {
-        const url = PostTagEntityRequest.endpoint;
+        const url = `${PostTagEntityRequest.endpoint}?entity=${this.entity}&tag_id=${this.tag_id}`;
 
         /**
          * @type {Response}
@@ -476,10 +476,6 @@ export class PostTagEntityRequest {
         try {
             response = await fetch(url, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: this.toJson()
             });
 
         } catch (error) {
