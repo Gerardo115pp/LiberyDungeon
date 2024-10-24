@@ -276,6 +276,99 @@
 
             scrollbar-width: none;
     }
+
+    @supports (color: hsl(from white h s l)) {
+        :root {
+            /* Color palette */
+            /* Main */
+            --main: hsl(30, 100%, 50%);
+            --main-9: hsl(from var(--main) h s 12.5% / 1);
+            --main-8: hsl(from var(--main) h s 24.9% / 1);
+            --main-7: hsl(from var(--main) h s 37.5% / 1);
+            --main-6: hsl(from var(--main) h s 49.8% / 1);
+            --main-5: hsl(from var(--main) calc(h * 1.1) s 60% / 1);
+            --main-4: hsl(from var(--main) calc(h * 1.03) s 70% / 1);
+            --main-3: hsl(from var(--main) calc(h * 1.03) s 75% / 1);
+            --main-2: hsl(from var(--main) calc(h * 1.2) s 80% / 1);
+            --main-1: hsl(from var(--main)  calc(h * .8) s 88.6% / 1);
+            /* Dark */
+            --main-dark: hsl(19, 100%, 49%);
+            --main-dark-color-9: hsl(from var(--main-dark) h s 12.4% / 1);
+            --main-dark-color-8: hsl(from var(--main-dark) calc(h * 1.06) s 24.5% / 1);
+            --main-dark-color-7: hsl(from var(--main-dark) h s 36.9% / 1);
+            --main-dark-color-6: hsl(from var(--main-dark) calc(h * 1.15) s 49.8% / 1);
+            --main-dark-color-5: hsl(from var(--main-dark) calc(h * 1.3) s 50% / 1);
+            --main-dark-color-4: hsl(from var(--main-dark) calc(h * 1.3) s 60% / 1);
+            --main-dark-color-3: hsl(from var(--main-dark) calc(h * 1.15) 98.7% 69.8% / 1);
+            --main-dark-color-2: hsl(from var(--main-dark) calc(h * 1.05) 96.2% 79.6% / 1);
+            --main-dark-color-1: hsl(from var(--main-dark) h 85.5% 89.2% / 1);
+            --main-dark-transparent: hsl(from var(--main-dark) h s l / 0.3);
+            /* Accent */
+            --accent: hsl(211, 100%, 52.5%);
+            --accent-9: hsl(from var(--accent) h 88% 3% / 1);
+            --accent-8: hsl(from var(--accent) h 91% 13.1% / 1);
+            --accent-7: hsl(from var(--accent) h 90.1% 19.8% / 1);
+            --accent-6: hsl(from var(--accent) h 89.6% 26.5% / 1);
+            --accent-5: hsl(from var(--accent) h 90.7% 29.4% / 1);
+            --accent-4: hsl(from var(--accent) h 90% 39.4% / 1);
+            --accent-3: hsl(from var(--accent) h 58.7% 51.6% / 1);
+            --accent-2: hsl(from var(--accent) h s 71.6% / 1);
+            --accent-1: hsl(from var(--accent) h s 81% / 1);
+            /* Grey */
+            --grey: hsl(0, 0%, 5.9%);
+            --grey-9: hsl(from var(--grey) h s calc(l * 1.27119) / 1);
+            --grey-8: hsl(from var(--grey) h s calc(l * 2.322) / 1);
+            --grey-7: hsl(from var(--grey) h s calc(l * 2.52542) / 1);
+            --grey-6: hsl(from var(--grey) h s calc(l * 3.79661) / 1);
+            --grey-5: hsl(from var(--grey) h s calc(l * 3.3898) / 1);
+            --grey-4: hsl(from var(--grey) h s calc(l * 4.6610) / 1);
+            --grey-3: hsl(from var(--grey) h s calc(l * 9.3050) / 1);
+            --grey-2: hsl(from var(--grey) h s calc(l * 12.3559) / 1);
+            --grey-1: hsl(from var(--grey) h s calc(l * 15.4237) / 1);
+            --grey-t: hsl(from var(--grey) h s l / .6);
+            /* Success */
+            --success: hsl(104, 100%, 51.2%);
+            --success-9: hsl(from var(--success) h s calc(l * 0.2441) / 1);
+            --success-8: hsl(from var(--success) h s calc(l * 0.4902) / 1);
+            --success-7: hsl(from var(--success) h s calc(l * 0.7324) / 1);
+            --success-6: hsl(from var(--success) h s calc(l * 0.9765) / 1);
+            --success-5: hsl(from var(--success) h s calc(l * 1.1718) / 1);
+            --success-4: hsl(from var(--success) h s calc(l * 1.2695) / 1);
+            --success-3: hsl(from var(--success) h s calc(l * 1.3671) / 1);
+            --success-2: hsl(from var(--success) h s calc(l * 1.5625) / 1);
+            --success-1: hsl(from var(--success) h s calc(l * 1.5703) / 1);
+            --success-t: hsl(from var(--success) h s l / 0.7);
+            /* Warning */
+            --warning: hsl(49, 100%, 49.6%);
+            --warning-9: hsl(from var(--warning) h s calc(l * 0.0584) / 1);
+            --warning-8: hsl(from var(--warning) h s calc(l * 0.1854) / 1);
+            --warning-7: hsl(from var(--warning) h s calc(l * 0.25) / 1);
+            --warning-6: hsl(from var(--warning) h s calc(l * 0.5020) / 1);
+            --warning-5: hsl(from var(--warning) h s calc(l * 0.5604) / 1);
+            --warning-4: hsl(from var(--warning) h s calc(l * 0.7479) / 1);
+            --warning-3: hsl(from var(--warning) h s calc(l * 1.1) / 1);
+            --warning-2: hsl(from var(--warning) h s calc(l * 1.2580) / 1);
+            --warning-1: hsl(from var(--warning) h s calc(l * 1.6088) / 1);
+            /* Danger */
+            --danger: hsl(3, 100%, 44.9%);
+            --danger-9: hsl(from var(--danger) h s calc(l * 0.2494) / 1);
+            --danger-8: hsl(from var(--danger) h s calc(l * 0.5100) / 1);
+            --danger-7: hsl(from var(--danger) h s calc(l * 0.7683) / 1);
+            --danger-6: hsl(from var(--danger) h s calc(l * 1.1046) / 1);
+            --danger-5: hsl(from var(--danger) h s calc(l * 1.3318) / 1);
+            --danger-4: hsl(from var(--danger) h s calc(l * 1.5545) / 1);
+            --danger-3: hsl(from var(--danger) h s calc(l * 1.7683) / 1);
+            --danger-2: hsl(from var(--danger) h s calc(l * 1.9866) / 1);
+            --danger-1: hsl(from var(--danger) h s calc(l * 1.9866) / 1);
+
+            /* Gradients */
+            --glass-gradient: linear-gradient(90deg, var(--grey) 0%, var(--grey) 9%, hsla(0, 0%, 5%, .1) 29%, var(--grey) 80%);
+            --black-glass-gradient: linear-gradient(90deg, black 0%, black 9%, hsla(0, 0%, 0%, .1) 29%, black 80%);
+
+            /* Elements */
+            --html-tag-color: var(--grey-8);
+        }
+    }
 }
 
 /*=============================================
