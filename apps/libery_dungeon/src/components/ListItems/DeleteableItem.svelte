@@ -21,7 +21,7 @@
 
         /**
          * If passed, it will be present on any event triggered by this component on the event.detail.item_id property.
-         * @type {string}
+         * @type {any}
          */
         export let item_id = null;
 
