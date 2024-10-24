@@ -288,7 +288,7 @@
 
                     if ($current_user_identity.canViewTrashcan()) {
                         hotkeys_context.register(["="], handleEnableTransactionManagementToolState, {
-                            description: "<content>Open the transaction management tool. This tool allows you manage your trashcan"
+                            description: "<tools>Open the transaction management tool. This tool allows you manage your trashcan"
                         });
                     }
 
@@ -298,6 +298,10 @@
 
                     hotkeys_context.register(["g", "shift+g"], enableMediaGalleryMode, {
                         description: "<content>Opens the category content as a gallery. the Shift key will automatically focus on the last viewed media.",
+                    });
+
+                    hotkeys_context.register(["t"], handleEnableCategoryTaggerTool, {
+                        description: "<tools>Opens the category tagger tool."
                     });
             
                     global_hotkeys_manager.declareContext(hotkey_context_name, hotkeys_context);
@@ -457,6 +461,15 @@
 
             const handleEnableTransactionManagementToolState = () => {
                 media_transactions_tool_mounted.set(!$media_transactions_tool_mounted); 
+            }
+
+            /**
+             * Opens the category tagger tool. Handled by hotkeys
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleEnableCategoryTaggerTool = (event, hotkey) => {
+                category_tagger_tool_mounted.set(true);
             }
 
             /**
@@ -891,6 +904,13 @@
         }
 
         /**
+         * Handles close-category-tagger event emitted by the CategoryTagger component.
+         */
+        const handleCategoryTaggerClose = () => {
+            category_tagger_tool_mounted.set(false);
+        }
+
+        /**
          * Navigates to a selected category. Determines if the category is a child category in which case it will navigate to it using SPA navigation.
          * If the category is not a child category or parent, it will navigate it using the browser's navigation.
          * @param {string} category_uuid
@@ -1166,7 +1186,9 @@
         </div>
     {/if}
     {#if $category_tagger_tool_mounted}
-        <CategoryTagger/>
+        <CategoryTagger
+            on:close-category-tagger={handleCategoryTaggerClose}
+        />
     {/if}
     <div id="lce-floating-controls-overlay">
         {#if category_name_filter_interval_id != null}

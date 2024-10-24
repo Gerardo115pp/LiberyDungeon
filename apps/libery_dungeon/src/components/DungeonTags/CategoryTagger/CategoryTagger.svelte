@@ -2,7 +2,7 @@
     import { getClusterTags, getEntityTaggings, getTaxonomyTagsByUUID, tagEntity, untagEntity } from "@models/DungeonTags";
     import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
     import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
-    import { onMount } from "svelte";
+    import { createEventDispatcher, onDestroy, onMount } from "svelte";
     import { current_cluster } from "@stores/clusters";
     import { current_category } from "@stores/categories_tree";
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
@@ -11,11 +11,28 @@
     import ClusterPublicTags from "./sub-components/ClusterPublicTags.svelte";
     import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
     import { json } from "@sveltejs/kit";
+    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
+    import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
+    import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+    import { toggleHotkeysSheet } from "@stores/layout";
 
     
     /*=============================================
     =            Properties            =
     =============================================*/
+
+        /*=============================================
+        =            Hotkeys            =
+        =============================================*/
+        
+            /**
+             * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager}
+             */
+            const global_hotkeys_manager = getHotkeysManager();
+
+            const hotkeys_context_name = "category-tagger-tool";
+        
+        /*=====  End of Hotkeys  ======*/
     
         /**
          * Whether the cluster_tags correctness with respect to the current_cluster has been checked.
@@ -32,6 +49,8 @@
 
         let current_cluster_unsubscriber = () => {};
         let current_category_unsubscriber = () => {};
+
+        const dispatch = createEventDispatcher();
     
     /*=====  End of Properties  ======*/
 
@@ -48,11 +67,73 @@
         }
 
         current_category_unsubscriber = current_category.subscribe(handleCurrentCategoryChange)
+
+        defineDesktopKeybinds();
     });
+
+    onDestroy(() => {
+        resetHotkeyContext();
+    })
     
     /*=============================================
     =            Methods            =
     =============================================*/
+        
+        /*=============================================
+        =            Keybinds            =
+        =============================================*/
+        
+            /**
+             * Defines the tools hotkeys.
+             */ 
+            const defineDesktopKeybinds = () => {
+                if (global_hotkeys_manager.hasContext(hotkeys_context_name)) {
+                    global_hotkeys_manager.dropContext(hotkeys_context_name);
+                }
+
+                const hotkeys_context = new HotkeysContext();
+
+                hotkeys_context.register(["q"], handleCloseCategoryTaggerTool, {
+                    description: `<${HOTKEYS_GENERAL_GROUP}>Closes the category tagger tool.`,
+                    await_execution: false
+                });
+
+                hotkeys_context.register(["?"], toggleHotkeysSheet, {
+                    description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
+                });
+
+                global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+
+                global_hotkeys_manager.loadContext(hotkeys_context_name);
+            }
+
+            /**
+             * Emits an event to close the category tagger tool and drops the hotkeys context.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleCloseCategoryTaggerTool = (event, hotkey) => {
+                resetHotkeyContext();
+                emitCloseCategoryTagger();
+            }
+
+            /**
+             * Drops the tools hotkey contexts and loads the previous context.
+             */
+            const resetHotkeyContext = () => {
+                if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+
+                global_hotkeys_manager.loadPreviousContext();
+            }
+        
+        /*=====  End of Keybinds  ======*/
+
+        /**
+         * Emits an event to the parent to close the category tagger tool.
+         */
+        const emitCloseCategoryTagger = () => {
+            dispatch("close-category-tagger");
+        }
 
         /**
          * Handles the change of the current category.
