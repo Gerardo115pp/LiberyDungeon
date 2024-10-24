@@ -2,7 +2,7 @@
     import { current_category } from "@stores/categories_tree";
     import { cluster_tags } from "@stores/dungeons_tags";
     import { getEntityTaggings } from "@models/DungeonTags";
-    import { onDestroy, onMount } from "svelte";
+    import { createEventDispatcher, onDestroy, onMount } from "svelte";
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import DeleteableItem from "@components/ListItems/DeleteableItem.svelte";
@@ -27,6 +27,7 @@
         let tag_taxonomy_map = null;
         $: globalThis.tag_taxonomy_map = tag_taxonomy_map;
 
+        const dispatch = createEventDispatcher();
     
     /*=====  End of Properties  ======*/
 
@@ -110,6 +111,24 @@
             tag_taxonomy_map = updated_tag_taxonomy_map;
         }
 
+        /**
+         * Handles the item-deleted event on one of the current category tags.
+         * @param {CustomEvent<{item_id: number}>} event 
+         */
+        const handleCategoryTagDeleted = event => {
+            let tag_id = event?.detail?.item_id
+
+            emitRemoveCategoryTagEvent(tag_id);
+        }
+
+        /**
+         * Emits the remove-category-tag event with the given tag id.
+         * @param {number} tag_id
+         */
+        const emitRemoveCategoryTagEvent = tag_id => {
+            dispatch("remove-category-tag", {removed_tag: tag_id});
+        }
+
     /*=====  End of Methods  ======*/
     
 </script>
@@ -129,7 +148,8 @@
                 {#each taxonomy_members as dungeon_tagging}
                     <DeleteableItem
                         item_color="var(--grey)"
-                        item_id={dungeon_tagging.TaggingID}
+                        item_id={dungeon_tagging.Tag.Id}
+                        on:item-deleted={handleCategoryTagDeleted}
                         squared_style
                     >
                         <span class="cca-attribute-name">

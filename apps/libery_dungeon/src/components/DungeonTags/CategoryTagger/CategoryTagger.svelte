@@ -1,5 +1,5 @@
 <script>
-    import { getClusterTags, getEntityTaggings, getTaxonomyTagsByUUID, tagEntity } from "@models/DungeonTags";
+    import { getClusterTags, getEntityTaggings, getTaxonomyTagsByUUID, tagEntity, untagEntity } from "@models/DungeonTags";
     import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
     import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
     import { onMount } from "svelte";
@@ -10,6 +10,7 @@
     import TaxonomyTags from "../TagTaxonomyComponents/TaxonomyTags.svelte";
     import ClusterPublicTags from "./sub-components/ClusterPublicTags.svelte";
     import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
+    import { json } from "@sveltejs/kit";
 
     
     /*=============================================
@@ -63,6 +64,18 @@
             if (new_category === null) return;
 
             await refreshCurrentCategoryTaggings();
+        }
+
+        /**
+         * Handles the remove-category-tag event emitted by the CategoryTaggings component.
+         * @param {CustomEvent<{removed_tag: number}>} event
+         */
+        const handleRemoveCategoryTag = event => {
+            let tag_id = event?.detail?.removed_tag;
+
+            if (tag_id == null) return;
+
+            removeCategoryTag(tag_id);
         }
 
         /**
@@ -152,6 +165,32 @@
 
             current_category_taggings = new_taggings;
         }
+
+        /**
+         * Removes a given tag from the current category.
+         * @param {number} tag_id
+         */
+        const removeCategoryTag = async tag_id => {
+            if (tag_id < 0) {
+                console.error(`Tag ids are always positive numbers. got ${tag_id}`);
+                return;
+            }
+
+            const deleted = await untagEntity($current_category.uuid, tag_id);
+
+            if (!deleted) {
+                const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.removeCategoryTag");
+
+                variable_environment.addVariable("tag_id", tag_id);
+                variable_environment.addVariable("current_category.uuid", $current_category.uuid);
+
+                const labeled_err = new LabeledError(variable_environment, "Could not remove attribute.", lf_errors.ERR_PROCESSING_ERROR);
+
+                labeled_err.alert();
+            }
+
+            await refreshCurrentCategoryTaggings();
+        }
     
         /**
          * Verifies the cluster_tags correctness with respect to the current_cluster. And if necessary, updates the cluster_tags.
@@ -194,6 +233,7 @@
     >
         <CategoryTaggings 
             current_category_taggings={current_category_taggings}
+            on:remove-category-tag={handleRemoveCategoryTag}
         />
     </article>
     <article id="dctt-cluster-user-tags"
