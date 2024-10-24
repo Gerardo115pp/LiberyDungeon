@@ -1,21 +1,24 @@
 <script>
-    import { getClusterTags, getEntityTaggings, getTaxonomyTagsByUUID, tagEntity, untagEntity } from "@models/DungeonTags";
-    import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
-    import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
-    import { createEventDispatcher, onDestroy, onMount } from "svelte";
-    import { current_cluster } from "@stores/clusters";
-    import { current_category } from "@stores/categories_tree";
-    import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
-    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
-    import TaxonomyTags from "../TagTaxonomyComponents/TaxonomyTags.svelte";
-    import ClusterPublicTags from "./sub-components/ClusterPublicTags.svelte";
-    import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
-    import { json } from "@sveltejs/kit";
-    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
-    import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
-    import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
-    import { toggleHotkeysSheet } from "@stores/layout";
-
+    /*=============================================
+    =            Imports            =
+    =============================================*/
+        import { getClusterTags, getEntityTaggings, getTaxonomyTagsByUUID, tagEntity, untagEntity } from "@models/DungeonTags";
+        import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
+        import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
+        import { createEventDispatcher, onDestroy, onMount } from "svelte";
+        import { current_cluster } from "@stores/clusters";
+        import { current_category } from "@stores/categories_tree";
+        import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
+        import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
+        import TaxonomyTags from "../TagTaxonomyComponents/TaxonomyTags.svelte";
+        import ClusterPublicTags from "./sub-components/ClusterPublicTags.svelte";
+        import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
+        import { json } from "@sveltejs/kit";
+        import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
+        import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
+        import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+        import { toggleHotkeysSheet } from "@stores/layout";   
+    /*=====  End of Imports  ======*/
     
     /*=============================================
     =            Properties            =
