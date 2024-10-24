@@ -93,7 +93,7 @@
 
                 const hotkeys_context = new HotkeysContext();
 
-                hotkeys_context.register(["q"], handleCloseCategoryTaggerTool, {
+                hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
                     description: `<${HOTKEYS_GENERAL_GROUP}>Closes the category tagger tool.`,
                     await_execution: false
                 });
