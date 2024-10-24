@@ -208,7 +208,7 @@
                 placeholder="New tag"
                 minlength="1"
                 maxlength="64"
-                pattern="{'[A-z_\\d][A-z_\\s\\d]{1,64}'}"
+                pattern="{'[A-z_\\d][A-z_\\-\\s\\d]{1,64}'}"
                 required
             />
         </DeleteableItem>
