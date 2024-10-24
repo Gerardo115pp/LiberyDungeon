@@ -9,6 +9,7 @@ import (
 	dungeon_tags_database "libery-metadata-service/database/dungeon_tags"
 	watch_point_database "libery-metadata-service/database/watch_points"
 	"libery-metadata-service/handlers"
+	"libery-metadata-service/handlers/dungeon_tags_handler"
 	"libery-metadata-service/repository"
 	"libery-metadata-service/server"
 
@@ -20,7 +21,7 @@ func BinderRoutes(server libery_networking.Server, router *patriot_router.Router
 	router.RegisterRoute(patriot_router.NewRoute("/alive", true), handlers.AliveHandler(server))
 	router.RegisterRoute(patriot_router.NewRoute("/watch-points", true), handlers.WatchPointsHandler(server))
 	router.RegisterRoute(handlers.CLUSTER_METADATA_ROUTE, handlers.ClusterMetadataHandler(server))
-	router.RegisterRoute(handlers.DUNGEON_TAGS_ROUTE, handlers.DungeonTagsHandler(server)) // This is the new standard for route registration and ownership. TODO: Adapt all routes(in all services) to this new standard
+	router.RegisterRoute(dungeon_tags_handler.DUNGEON_TAGS_ROUTE, dungeon_tags_handler.DungeonTagsHandler(server)) // This is the new standard for route registration and ownership. TODO: Adapt all routes(in all services) to this new standard
 }
 
 func main() {
