@@ -22,5 +22,6 @@ CREATE TABLE IF NOT EXISTS `taggings` (
     `tagging_id` INTEGER PRIMARY KEY AUTOINCREMENT,
     `tag` INTEGER NOT NULL,
     `taggable_id` TEXT NOT NULL,
-    FOREIGN KEY(`tag`) REFERENCES `dungeon_tags`(`id`) ON DELETE CASCADE
+    FOREIGN KEY(`tag`) REFERENCES `dungeon_tags`(`id`) ON DELETE CASCADE,
+    UNIQUE(`tag`, `taggable_id`)
 );
