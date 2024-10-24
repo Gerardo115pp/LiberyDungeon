@@ -6,7 +6,7 @@ import { metadata_server } from "../../services"
  */
 export class GetClusterTaxonomiesRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/cluster-taxonomies`;
+    static endpoint = `${metadata_server}/dungeon-tags/taxonomies/cluster`;
 
     /**
      * @param {string} cluster_uuid 
@@ -52,7 +52,7 @@ export class GetClusterTaxonomiesRequest {
  */
 export class GetDungeonTagByIDRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/tag`;
+    static endpoint = `${metadata_server}/dungeon-tags/tags`;
 
     /**
      * @param {number} id
@@ -97,7 +97,7 @@ export class GetDungeonTagByIDRequest {
  */
 export class GetDungeonTagByNameRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/tag`;
+    static endpoint = `${metadata_server}/dungeon-tags/tags`;
 
     /**
      * @param {string} name
@@ -144,7 +144,7 @@ export class GetDungeonTagByNameRequest {
  */
 export class GetEntityTaggingsRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/entity-tags`;
+    static endpoint = `${metadata_server}/dungeon-tags/tags/entity`;
 
     /**
      * @param {string} entity
@@ -193,7 +193,7 @@ export class GetEntityTaggingsRequest {
  */
 export class GetEntitiesWithTagsRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/entities-with-tags`;
+    static endpoint = `${metadata_server}/dungeon-tags/tags/matching-entities`;
 
     /**
      * @param {number[]} tag_ids
@@ -246,7 +246,7 @@ export class GetEntitiesWithTagsRequest {
  */
 export class GetClusterTagsRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/cluster-tags`;
+    static endpoint = `${metadata_server}/dungeon-tags/tags/cluster`;
 
     /**
      * @param {string} cluster_uuid
@@ -291,7 +291,7 @@ export class GetClusterTagsRequest {
  */
 export class GetTaxonomyTagsRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/taxonomy/tags`;
+    static endpoint = `${metadata_server}/dungeon-tags/taxonomies/tags`;
 
     /**
      * @param {string} taxonomy
@@ -336,7 +336,7 @@ export class GetTaxonomyTagsRequest {
  */
 export class PostTagTaxonomyRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/taxonomy`;
+    static endpoint = `${metadata_server}/dungeon-tags/taxonomies`;
 
     /**
      * @param {import("@models/DungeonTags").TagTaxonomyParams} param0
@@ -390,7 +390,7 @@ export class PostTagTaxonomyRequest {
  */
 export class PostDungeonTagRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/tag`;
+    static endpoint = `${metadata_server}/dungeon-tags/tags`;
 
     /**
      * @param {string} name
@@ -544,7 +544,7 @@ export class DeleteUntagEntityRequest {
  */
 export class DeleteTagTaxonomyRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/taxonomy`;
+    static endpoint = `${metadata_server}/dungeon-tags/taxonomies`;
 
     /**
      * @param {string} uuid
@@ -591,7 +591,7 @@ export class DeleteTagTaxonomyRequest {
  */
 export class DeleteDungeonTagRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/tag`;
+    static endpoint = `${metadata_server}/dungeon-tags/tags`;
 
     /**
      * @param {number} id
@@ -638,7 +638,7 @@ export class DeleteDungeonTagRequest {
  */
 export class PatchRenameTagTaxonomyRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/taxonomy/name`;
+    static endpoint = `${metadata_server}/dungeon-tags/taxonomies/name`;
 
     /**
      * @param {string} uuid
@@ -690,7 +690,7 @@ export class PatchRenameTagTaxonomyRequest {
  */
 export class PatchRenameDungeonTagRequest {
     
-    static endpoint = `${metadata_server}/dungeon-tags/tag/name`;
+    static endpoint = `${metadata_server}/dungeon-tags/tags/name`;
 
     /**
      * @param {number} id
