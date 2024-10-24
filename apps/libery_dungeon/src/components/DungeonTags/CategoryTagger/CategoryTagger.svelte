@@ -46,6 +46,15 @@
          */
         let current_category_taggings = [];
 
+        
+        /*----------  Hotkey movement  ----------*/
+        
+            /**
+             * The focused section indicator.
+             * @type {nummber}
+             */ 
+            let ct_focused_section = 0;
+
 
         let current_cluster_unsubscriber = () => {};
         let current_category_unsubscriber = () => {};
@@ -304,13 +313,17 @@
 </script>
 
 <dialog open id="dungeon-category-tagger-tool" class="libery-dungeon-window">
-    <section tabindex="-1" id="tag-taxonomy-creator-section" class="dctt-section">
+    <section id="tag-taxonomy-creator-section" 
+        class="dctt-section"
+        class:focused-section={ct_focused_section === 0}
+    >
         <TagTaxonomyCreator
             on:tag-taxonomy-created={handleTagTaxonomyCreated}
         />
     </section>
     <article id="dctt-current-category-tags-wrapper"
         class="dungeon-scroll dctt-section"
+        class:focused-section={ct_focused_section === 1}
     >
         <CategoryTaggings 
             current_category_taggings={current_category_taggings}
@@ -319,6 +332,7 @@
     </article>
     <article id="dctt-cluster-user-tags"
         class="dungeon-scroll dctt-section"
+        class:focused-section={ct_focused_section === 2}
     >
         {#if cluster_tags_checked}
             <ClusterPublicTags 
@@ -353,11 +367,14 @@
     article#dctt-cluster-user-tags {
         height: 35cqh;
         overflow-y: auto;
-        border-left: var(--border-thick-main);
     }
 
     article#dctt-current-category-tags-wrapper {
         height: 30cqh;
         overflow: auto;
+    }
+
+    .dctt-section.focused-section {
+        border-left: var(--border-thick-main);
     }
 </style>
