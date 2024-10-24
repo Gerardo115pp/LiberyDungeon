@@ -524,7 +524,7 @@ export class DungeonTagging {
         const response = await request.do();
 
         if (response.Ok) {
-            success = response.data.response;
+            success = response.data;
         }
 
         return success;
