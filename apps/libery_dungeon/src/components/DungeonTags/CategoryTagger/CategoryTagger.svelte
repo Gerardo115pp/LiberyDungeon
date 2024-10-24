@@ -291,7 +291,7 @@
                 variable_environment.addVariable("cluster_tags", $cluster_tags);
                 variable_environment.addVariable("last_cluster_domain", $last_cluster_domain);
 
-                const labeled_error = new LabeledError(variable_environment, "Failed to load current dungeon tags. Please try again later.", lf_errors.ERR_LOADING_ERROR);
+                const labeled_error = new LabeledError(variable_environment, `No attributes set for '${$current_cluster.Name}'. Try adding some.`, lf_errors.ERR_LOADING_ERROR);
 
                 labeled_error.alert();
             }
