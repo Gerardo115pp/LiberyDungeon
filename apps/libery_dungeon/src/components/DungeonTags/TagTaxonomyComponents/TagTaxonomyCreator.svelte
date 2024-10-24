@@ -50,6 +50,8 @@
          */
         const createNewTagTaxonomyIfValid = async () => {
             if (!new_tag_taxonomy_name_is_valid) return;
+            
+            new_attribute_name = new_attribute_name.trim();
 
             let is_available_and_valid = CheckNewTagTaxonomyName();
 
@@ -163,9 +165,9 @@
                 on:keydown={handleKeyDown}
                 on:keyup={handleKeyUp}
                 spellcheck="true"
-                minlength="3"
+                minlength="2"
                 maxlength="64"
-                pattern="{'[A-z_]{1,64}'}"
+                pattern="{'[A-z_][A-z_\\s]{2,64}'}"
                 required
             >
         </label>
