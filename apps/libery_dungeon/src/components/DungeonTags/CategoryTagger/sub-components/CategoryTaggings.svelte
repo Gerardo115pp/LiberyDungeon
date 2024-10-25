@@ -10,6 +10,7 @@
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { toggleHotkeysSheet } from "@stores/layout";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+    import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     
     /*=============================================
     =            Properties            =
@@ -46,6 +47,27 @@
                 }
         
             /*=====  End of Hotkeys state  ======*/
+            
+            
+            /*=============================================
+            =            Hotkey movement                 = 
+            =============================================*/
+            
+                /**
+                 * The focused TagTaxonomy list index.
+                 * @type {number}
+                 */
+                let focused_taxonomy_index = 0;
+
+                /**
+                 * The focused taxonomy's focused tag index.
+                 * @type {number}
+                 */
+                let focused_tag_index = 0;
+            
+            /*=====  End of Hotkey movements  ======*/
+            
+            
 
         /*=====  End of Hotkeys  ======*/        
     
@@ -56,7 +78,6 @@
         export let current_category_taggings = [];
         $: globalThis.current_category_taggings = current_category_taggings;
         $: handleCategoryTaggingsChange(current_category_taggings);
-
 
         /**
          * A map of TagTaxonomy names -> DungeonTags.
@@ -91,6 +112,10 @@
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
 
+                    hotkeys_context.register(["w", "s"], handleTagTaxonomyNavigation, {
+                        description: "<navigation>move the focused attributed up and down.",
+                    });
+                    
                     hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
                         description: `<${HOTKEYS_GENERAL_GROUP}>Closes the category tagger tool.`,
                         await_execution: false
@@ -120,6 +145,33 @@
              */
             const emitDropHotkeyContext = () => {
                 dispatch("drop-hotkeys-control");
+            }
+
+            /**
+             * Handles the TagTaxonomy navigation hotkey.
+             * @param {KeyboardEvent} event 
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey 
+             */
+            const handleTagTaxonomyNavigation = (event, hotkey) => {
+                if (tag_taxonomy_map == null) return;
+
+                const taxonomies = Array.from(tag_taxonomy_map.keys());
+
+                if (taxonomies.length <= 0) return;
+                
+
+                let new_focused_taxonomy_index = focused_taxonomy_index;
+
+                let navigation_step = event.key === "w" ? -1 : 1;
+
+                new_focused_taxonomy_index = linearCycleNavigationWrap(new_focused_taxonomy_index, (taxonomies.length - 1), navigation_step).value;
+                console.log(`new_focused_taxonomy_index: ${new_focused_taxonomy_index}`);
+
+                let taxonomy_tag_count = tag_taxonomy_map.get(taxonomies[new_focused_taxonomy_index]).length;
+
+                focused_tag_index = Math.max(0, Math.min((taxonomy_tag_count - 1), focused_tag_index));
+
+                focused_taxonomy_index = new_focused_taxonomy_index;
             }
 
             /**
@@ -242,14 +294,17 @@
                 Attributes for <span>{$current_category.name}</span>
             </h4>
         </header>
-        {#each tag_taxonomy_map as [taxonomy_name, taxonomy_members]}
+        {#each tag_taxonomy_map as [taxonomy_name, taxonomy_members], h}
+            {@const is_taxonomy_keyboard_focused = focused_taxonomy_index === h && has_hotkey_control}
             <ol id="{$current_category.uuid}-attribute-{taxonomy_name}"
                 class="current-category-attribute dungeon-tag-container"
+                class:focused-attribute={is_taxonomy_keyboard_focused}
             >
                 <p class="dungeons-field-label">{taxonomy_name}</p>
-                {#each taxonomy_members as dungeon_tagging}
+                {#each taxonomy_members as dungeon_tagging, k}
+                    {@const is_tag_keyboard_focused = is_taxonomy_keyboard_focused && focused_tag_index === k}
                     <DeleteableItem
-                        item_color="var(--grey)"
+                        item_color={!is_tag_keyboard_focused ? "var(--grey)" : "var(--grey-8)"}
                         item_id={dungeon_tagging.Tag.Id}
                         on:item-deleted={handleCategoryTagDeleted}
                         squared_style
@@ -302,6 +357,10 @@
             display: flex;
             align-items: center;
             line-height: 1;
+        }
+
+        &.focused-attribute p.dungeons-field-label:first-child {
+            color: var(--main);
         }
     }
 </style>
