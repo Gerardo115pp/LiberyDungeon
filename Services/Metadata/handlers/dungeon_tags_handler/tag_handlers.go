@@ -168,7 +168,7 @@ func getDungeonClusterNonInternalTaxonomiesHandler(response http.ResponseWriter,
 		return
 	}
 
-	taxonomies, err := repository.DungeonTagsRepo.GetClusterTaxonomiesByInternalValueCTX(request.Context(), cluster_uuid, false)
+	taxonomy_tags, err := repository.DungeonTagsRepo.GetClusterTagsByInternalValueCTX(request.Context(), cluster_uuid, false)
 	if err != nil {
 		echo.Echo(echo.RedFG, fmt.Sprintf("In getDungeonClusterNonInternalTaxonomiesHandler, while getting cluster taxonomies: %s\n", err))
 		response.WriteHeader(404)
@@ -179,7 +179,7 @@ func getDungeonClusterNonInternalTaxonomiesHandler(response http.ResponseWriter,
 
 	response.WriteHeader(200)
 
-	json.NewEncoder(response).Encode(taxonomies)
+	json.NewEncoder(response).Encode(taxonomy_tags)
 }
 
 func getEntitiesWithTagsHandler(response http.ResponseWriter, request *http.Request) {

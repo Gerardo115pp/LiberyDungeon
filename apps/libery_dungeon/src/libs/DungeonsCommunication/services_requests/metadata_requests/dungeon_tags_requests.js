@@ -291,7 +291,7 @@ export class GetClusterTagsRequest {
  */
 export class GetClusterUserTagsRequest {
 
-    static endpoint = `${metadata_server}/dungeon-tags/taxonomies/user-defined/cluster`;
+    static endpoint = `${metadata_server}/dungeon-tags/tags/user-defined/cluster`;
 
     /**
      * @param {string} cluster_uuid
@@ -306,7 +306,7 @@ export class GetClusterUserTagsRequest {
      * @returns {Promise<HttpResponse<import("@models/DungeonTags").TaxonomyTagsParams[]>>}
      */
     do = async () => {
-        const url = `${GetClusterTagsRequest.endpoint}?cluster_uuid=${this.cluster_uuid}`;
+        const url = `${GetClusterUserTagsRequest.endpoint}?cluster_uuid=${this.cluster_uuid}`;
 
         /** @type {import("@models/DungeonTags").TaxonomyTagsParams[]} */
         let cluster_tags = [];
