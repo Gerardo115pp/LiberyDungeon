@@ -49,8 +49,22 @@
          */
         let current_category_taggings = [];
 
+        /**
+         * The category tagger tool node.
+         * @type {HTMLDialogElement}
+         */
+        let the_category_tagger_tool = null;
+
         
-        /*----------  Hotkey movement  ----------*/
+        /*----------  Component metadata  ----------*/
+        
+            /**
+             * The count of dtt-sections in the category tagger.
+             * @type {number}
+             */
+            let dtt_sections_count;
+        
+        /*----------  Hotkey state  ----------*/
         
             /**
              * The focused section indicator.
@@ -58,6 +72,11 @@
              */ 
             let ct_focused_section = 0;
 
+            /**
+             * Section active.
+             * @type {boolean}
+             */
+            let ct_section_active = false;
 
         let current_cluster_unsubscriber = () => {};
         let current_category_unsubscriber = () => {};
@@ -67,6 +86,8 @@
     /*=====  End of Properties  ======*/
 
     onMount(async () => {
+        defineComponentMetadata();
+
         if ($current_cluster === null) {
             current_cluster_unsubscriber = current_cluster.subscribe(async (value) => {
                 if (value !== null) {
@@ -110,6 +131,16 @@
                     await_execution: false
                 });
 
+                hotkeys_context.register(["w", "s"], handleSectionFocusNavigation, {
+                    description: `<navigation>Moves up and down through the tool's sections.`,
+                    await_execution: false
+                });
+
+                hotkeys_context.register(["e"], handleSectionSelection, {
+                    description: `<navigation>Selects the current section.`,
+                    await_execution: false
+                });
+
                 hotkeys_context.register(["?"], toggleHotkeysSheet, {
                     description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
                 });
@@ -130,6 +161,40 @@
             }
 
             /**
+             * Handles the section focus navigation.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleSectionFocusNavigation = (event, hotkey) => {
+                if (ct_section_active) return;
+
+                let new_focused_section = ct_focused_section;
+
+                const navigation_step = event.key === "w" ? -1 : 1;
+
+                new_focused_section += navigation_step;
+
+                if (new_focused_section < 0) {
+                    new_focused_section = dtt_sections_count - 1;
+                } else if (new_focused_section >= dtt_sections_count) {
+                    new_focused_section = 0;
+                }
+
+                ct_focused_section = new_focused_section;
+            }
+
+            /**
+             * Handles the selection of tools sections.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleSectionSelection = (event, hotkey) => {
+                event.preventDefault();
+
+                ct_section_active = true;
+            }
+
+            /**
              * Drops the tools hotkey contexts and loads the previous context.
              */
             const resetHotkeyContext = () => {
@@ -141,10 +206,27 @@
         /*=====  End of Keybinds  ======*/
 
         /**
+         * Defines the component's content metadata.
+         */
+        const defineComponentMetadata = () => {
+            let dtt_sections = getSectionNodes();
+
+            dtt_sections_count = dtt_sections.length;
+        }
+        
+        /**
          * Emits an event to the parent to close the category tagger tool.
          */
         const emitCloseCategoryTagger = () => {
             dispatch("close-category-tagger");
+        }
+
+        /**
+         * Returns all the section nodes of the category tagger tool.
+         * @returns {NodeListOf<HTMLElement>}
+         */
+        const getSectionNodes = () => {
+            return the_category_tagger_tool.querySelectorAll(".dctt-section");
         }
 
         /**
@@ -169,6 +251,13 @@
             if (tag_id == null) return;
 
             removeCategoryTag(tag_id);
+        }
+
+        /**
+         * Recovers the hotkeys control and deactivates the active section.
+         */
+        const handleRecoverHotkeysControl = () => {
+            ct_section_active = false;
         }
 
         /**
@@ -315,13 +404,19 @@
     
 </script>
 
-<dialog open id="dungeon-category-tagger-tool" class="libery-dungeon-window">
+<dialog open id="dungeon-category-tagger-tool"
+    bind:this={the_category_tagger_tool}
+    class:section-activated={ct_section_active}
+    class="libery-dungeon-window"
+>
     <section id="tag-taxonomy-creator-section" 
         class="dctt-section"
         class:focused-section={ct_focused_section === 0}
     >
         <TagTaxonomyCreator
+            has_hotkey_control={ct_focused_section === 0 && ct_section_active}
             on:tag-taxonomy-created={handleTagTaxonomyCreated}
+            on:drop-hotkeys-control={handleRecoverHotkeysControl}
         />
     </section>
     <article id="dctt-current-category-tags-wrapper"
@@ -360,10 +455,24 @@
 
         & > .dctt-section {
             padding: 0 var(--spacing-2);
+            border-left-width: calc(var(--med-border-width) * 1.5);
+            border-style: solid;
+            border-left-color:  transparent;
         }
     
         & > .dctt-section:not(:last-child) {
             border-bottom: var(--border-thin-grey-8);
+        }
+
+        & > .dctt-section.focused-section {
+            border-left-color: hsl(from var(--main-6) h s l / 0.7);
+            transition: border-left-color 0.3s ease-out;
+        }
+    }
+
+    #dungeon-category-tagger-tool.section-activated {
+        & > .dctt-section.focused-section {
+            border-left-width: calc(var(--med-border-width) * 2.5);
         }
     }
 
@@ -375,9 +484,5 @@
     article#dctt-current-category-tags-wrapper {
         height: 30cqh;
         overflow: auto;
-    }
-
-    .dctt-section.focused-section {
-        border-left: var(--border-thick-main);
     }
 </style>

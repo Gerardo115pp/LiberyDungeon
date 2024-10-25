@@ -4,13 +4,31 @@
     import { createTagTaxonomy } from "@models/DungeonTags";
     import { LabeledError } from "@libs/LiberyFeedback/lf_models";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onDestroy, onMount } from "svelte";
+    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
+    import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
+    import { toggleHotkeysSheet } from "@stores/layout";
+    import { browser } from "$app/environment";
+    import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     
     /*=============================================
     =            Properties            =
     =============================================*/
         // NOTE: Call TagTaxonomy -> Attributes in the UI. It's a more user-friendly term.
-    
+        
+        /*=============================================
+        =            Hotkeys            =
+        =============================================*/
+        
+            /**
+             * @type {import("@libs/LiberyHotkeys/libery_hotkeys").HotkeyContextManager}
+             */ 
+            const global_hotkeys_manager = getHotkeysManager();
+
+            const hotkeys_context_name = "tag-taxonomy-creator";
+        
+        /*=====  End of Hotkeys  ======*/
+        
         /**
          * The name of the would-be tag taxonomy.
          * @type {string}
@@ -35,15 +53,109 @@
          * @type {boolean}
          */
         let new_tag_taxonomy_name_is_valid = false;
+        
+        /*=============================================
+        =            Hotkeys state            =
+        =============================================*/
+
+            /**
+             * Whether the component has mounted or not.
+             * @type {boolean}
+             */
+            let has_mounted = false;
+        
+            /**
+             * Whether it has hotkey control.
+             * @type {boolean}
+             */ 
+            export let has_hotkey_control = false;
+            $: if (has_hotkey_control && has_mounted) {
+                defineDesktopKeybinds();
+                focusNewAttributeNameInput();
+            }
+        
+        /*=====  End of Hotkeys state  ======*/
 
         const dispatch = createEventDispatcher();
     
     /*=====  End of Properties  ======*/
 
+    onMount(() => {
+        has_mounted = true;
+    });
+
+    onDestroy(() => {
+        if (!browser) return; 
+
+        dropHotkeyContext();
+    });
+
     /*=============================================
     =            Methods            =
     =============================================*/
 
+        /*=============================================
+        =            Keybinds            =
+        =============================================*/
+        
+            /**
+             * Defines the tools hotkeys.
+             */ 
+            const defineDesktopKeybinds = () => {
+                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
+                    const hotkeys_context = new HotkeysContext();
+    
+                    hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
+                        description: `<${HOTKEYS_GENERAL_GROUP}>Closes the category tagger tool.`,
+                        await_execution: false
+                    });
+    
+                    hotkeys_context.register(["?"], toggleHotkeysSheet, {
+                        description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
+                    });
+                    
+                    global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                }
+
+                global_hotkeys_manager.loadContext(hotkeys_context_name);
+            }
+
+            /**
+             * Drops the component hotkey context
+             */
+            const dropHotkeyContext = () => {
+                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
+
+                global_hotkeys_manager.dropContext(hotkeys_context_name);
+            }
+
+            /**
+             * Emits an event to drop the hotkeys context
+             */
+            const emitDropHotkeyContext = () => {
+                dispatch("drop-hotkeys-control");
+            }
+
+            /**
+             * Emits an event to close the category tagger tool and drops the hotkeys context.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleCloseCategoryTaggerTool = (event, hotkey) => {
+                resetHotkeyContext();
+                emitDropHotkeyContext()
+            }
+
+            /**
+             * Drops the tools hotkey contexts and loads the previous context.
+             */
+            const resetHotkeyContext = () => {
+                if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+
+                global_hotkeys_manager.loadPreviousContext();
+            }
+
+        /*=====  End of Keybinds  ======*/    
 
         /**
          * Creates a new tag taxonomy.
@@ -53,11 +165,12 @@
             
             new_attribute_name = new_attribute_name.trim();
 
-            let is_available_and_valid = CheckNewTagTaxonomyName();
+            let is_available_and_valid = checkNewTagTaxonomyName();
 
             if (!is_available_and_valid) return;
 
-            let new_taxonomy = await createTagTaxonomy(new_attribute_name, $current_cluster.UUID, false);
+            let new_taxonomy = true;
+            // let new_taxonomy = await createTagTaxonomy(new_attribute_name, $current_cluster.UUID, false);
 
             if (new_taxonomy === null) {
                 let labeled_err = new LabeledError("In TagTaxonomyCreator.createTagTaxonomyIfValid", "The was an error creating the new tag taxonomy.", lf_errors.ERR_PROCESSING_ERROR);
@@ -74,7 +187,7 @@
          * Checks whether the new tag taxonomy name is valid.
          * @returns {boolean}
          */         
-        const CheckNewTagTaxonomyName = () => {
+        const checkNewTagTaxonomyName = () => {
             let is_valid = the_tag_taxonomy_name_input.checkValidity();
 
             if (!is_valid) return false;
@@ -97,6 +210,13 @@
         }
 
         /**
+         * Focuses the new attribute name input field.
+         */
+        const focusNewAttributeNameInput = () => {
+            the_tag_taxonomy_name_input.focus();
+        }
+
+        /**
          * Handles the keydown event on the new_attribute_name input field.
          * @param {KeyboardEvent} event
          */
@@ -104,6 +224,10 @@
             if (event.key === "Enter") {
                 event.preventDefault();
                 createNewTagTaxonomyIfValid();
+            }
+
+            if (event.key === "Escape") {
+                the_tag_taxonomy_name_input.blur();
             }
         }
 
