@@ -424,8 +424,10 @@
         class:focused-section={ct_focused_section === 1}
     >
         <CategoryTaggings 
+            has_hotkey_control={ct_focused_section === 1 && ct_section_active}
             current_category_taggings={current_category_taggings}
             on:remove-category-tag={handleRemoveCategoryTag}
+            on:drop-hotkeys-control={handleRecoverHotkeysControl}
         />
     </article>
     <article id="dctt-cluster-user-tags"

@@ -6,10 +6,48 @@
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import DeleteableItem from "@components/ListItems/DeleteableItem.svelte";
+    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
+    import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
+    import { toggleHotkeysSheet } from "@stores/layout";
+    import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     
     /*=============================================
     =            Properties            =
     =============================================*/
+
+        /*=============================================
+        =            Hotkeys            =
+        =============================================*/
+    
+            /**
+             * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager}
+             */
+            const global_hotkeys_manager = getHotkeysManager();
+
+            const hotkeys_context_name = "category_attributes";
+
+            /*=============================================
+            =            Hotkeys state            =
+            =============================================*/
+
+                /**
+                 * Whether the component has mounted or not.
+                 * @type {boolean}
+                 */
+                let component_mounted = false;
+            
+                /**
+                 * Whether it has hotkey control.
+                 * @type {boolean}
+                 */ 
+                export let has_hotkey_control = false;
+                $: if (has_hotkey_control && component_mounted) {
+                    defineDesktopKeybinds();
+                }
+        
+            /*=====  End of Hotkeys state  ======*/
+
+        /*=====  End of Hotkeys  ======*/        
     
         /**
          * The current category's taggings.
@@ -32,6 +70,7 @@
     /*=====  End of Properties  ======*/
 
     onMount(async () => {
+        component_mounted = true;
     });
 
     onDestroy(() => {
@@ -40,7 +79,70 @@
     /*=============================================
     =            Methods            =
     =============================================*/
-    
+
+        /*=============================================
+        =            Keybinds            =
+        =============================================*/
+        
+            /**
+             * Defines the tools hotkeys.
+             */ 
+            const defineDesktopKeybinds = () => {
+                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
+                    const hotkeys_context = new HotkeysContext();
+
+                    hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
+                        description: `<${HOTKEYS_GENERAL_GROUP}>Closes the category tagger tool.`,
+                        await_execution: false
+                    });
+
+                    hotkeys_context.register(["?"], toggleHotkeysSheet, {
+                        description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
+                    });
+
+                    global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                }
+                
+                global_hotkeys_manager.loadContext(hotkeys_context_name);
+            }
+
+            /**
+             * Drops the component hotkey context
+             */
+            const dropHotkeyContext = () => {
+                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
+
+                global_hotkeys_manager.dropContext(hotkeys_context_name);
+            }
+
+            /**
+             * Emits an event to drop the hotkeys context
+             */
+            const emitDropHotkeyContext = () => {
+                dispatch("drop-hotkeys-control");
+            }
+
+            /**
+             * Emits an event to close the category tagger tool and drops the hotkeys context.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleCloseCategoryTaggerTool = (event, hotkey) => {
+                resetHotkeyContext();
+                emitDropHotkeyContext();
+            }
+
+            /**
+             * Drops the tools hotkey contexts and loads the previous context.
+             */
+            const resetHotkeyContext = () => {
+                if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+
+                global_hotkeys_manager.loadPreviousContext();
+            }
+
+        /*=====  End of Keybinds  ======*/
+
         /**
          * Returns the tag taxonomy map from the taxonomies contained on the current category taggings. 
          * @param {import("@models/DungeonTags").DungeonTagging[]} taggings
