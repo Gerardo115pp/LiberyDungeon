@@ -11,6 +11,7 @@
     import { toggleHotkeysSheet } from "@stores/layout";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+    import { browser } from "$app/environment";
     
     /*=============================================
     =            Properties            =
@@ -95,6 +96,9 @@
     });
 
     onDestroy(() => {
+        if (!browser) return;
+
+        dropHotkeyContext();
     });
     
     /*=============================================
@@ -114,6 +118,14 @@
 
                     hotkeys_context.register(["w", "s"], handleTagTaxonomyNavigation, {
                         description: "<navigation>move the focused attributed up and down.",
+                    });
+
+                    hotkeys_context.register(["a", "d"], handleTaxonomyTagNavigation, {
+                        description: "<navigation>move the focused tag left and right.",
+                    });
+
+                    hotkeys_context.register(["\\d g"], handleTaxonomyTagGoto, {
+                        description: "<navigation>go to the typed tag index.",
                     });
                     
                     hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
@@ -172,6 +184,50 @@
                 focused_tag_index = Math.max(0, Math.min((taxonomy_tag_count - 1), focused_tag_index));
 
                 focused_taxonomy_index = new_focused_taxonomy_index;
+            }
+
+            /**
+             * Handles the TaxonomyTag navigation hotkey.
+             * @param {KeyboardEvent} event 
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey 
+             */
+            const handleTaxonomyTagNavigation = (event, hotkey) => {
+                if (tag_taxonomy_map == null) return;
+
+                const taxonomies = Array.from(tag_taxonomy_map.keys());
+
+                if (taxonomies.length <= 0) return;
+
+                let taxonomy_tag_count = tag_taxonomy_map.get(taxonomies[focused_taxonomy_index]).length;
+
+                let new_focused_tag_index = focused_tag_index;
+
+                let navigation_step = event.key === "a" ? -1 : 1;
+
+                new_focused_tag_index = linearCycleNavigationWrap(new_focused_tag_index, (taxonomy_tag_count - 1), navigation_step).value;
+
+                focused_tag_index = new_focused_tag_index;
+            }
+
+            /**
+             * Handles the TaxonomyTag goto hotkey.
+             * @param {KeyboardEvent} event 
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey 
+             */
+            const handleTaxonomyTagGoto = (event, hotkey) => {
+                if (tag_taxonomy_map == null || !hotkey?.WithVimMotion) return;
+
+                const taxonomies = Array.from(tag_taxonomy_map.keys());
+
+                if (taxonomies.length <= 0 || !hotkey.HasMatch) return;
+
+                let vim_motion_value = hotkey.MatchMetadata.MotionMatches[0];
+
+                vim_motion_value--; // 1-based index to 0-based index
+
+                vim_motion_value = Math.max(0, Math.min((tag_taxonomy_map.get(taxonomies[focused_taxonomy_index]).length - 1), vim_motion_value));
+
+                focused_tag_index = vim_motion_value;
             }
 
             /**
@@ -288,7 +344,9 @@
 </script>
 
 {#if tag_taxonomy_map != null && $cluster_tags.length > 0} 
-    <div id="cpt-current-category-tags">
+    <div id="cpt-current-category-tags"
+        class:hotkey-control={has_hotkey_control}
+    >
         <header id="cpt-cct-header">
             <h4>
                 Attributes for <span>{$current_category.name}</span>
@@ -309,9 +367,14 @@
                         on:item-deleted={handleCategoryTagDeleted}
                         squared_style
                     >
-                        <span class="cca-attribute-name">
-                            {dungeon_tagging.Tag.Name}
-                        </span>
+                        <p class="cca-attribute-name-wrapper">
+                            <i>
+                                {k + 1}
+                            </i>
+                            <span class="cca-attribute-name">
+                                {dungeon_tagging.Tag.Name}
+                            </span>
+                        </p>
                     </DeleteableItem>
                 {/each}
             </ol>
@@ -353,6 +416,16 @@
             font-size: var(--font-size-1);
         }
 
+        & .cca-attribute-name-wrapper {
+            display: flex;
+            column-gap: var(--spacing-1);
+        }
+
+        & .cca-attribute-name-wrapper > i {
+            visibility: hidden;
+            color: var(--grey-6);
+        }
+
         & span.cca-attribute-name {
             display: flex;
             align-items: center;
@@ -362,5 +435,9 @@
         &.focused-attribute p.dungeons-field-label:first-child {
             color: var(--main);
         }
+    }
+
+    #cpt-current-category-tags.hotkey-control .cca-attribute-name-wrapper > i {
+        visibility: visible;        
     }
 </style>
