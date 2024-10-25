@@ -154,6 +154,38 @@ func (dt_db *DungeonTagsDB) GetClusterTaxonomies(cluster_uuid string) ([]service
 	return dt_db.GetClusterTaxonomiesCTX(context.Background(), cluster_uuid)
 }
 
+func (db_db *DungeonTagsDB) GetClusterTaxonomiesByInternalValueCTX(ctx context.Context, cluster_uuid string, internal bool) ([]service_models.TagTaxonomy, error) {
+	var taxonomies []service_models.TagTaxonomy = make([]service_models.TagTaxonomy, 0)
+
+	stmt, err := db_db.db_conn.PrepareContext(ctx, "SELECT `uuid`, `name`, `internal`, `cluster_domain` FROM `tag_taxonomies` WHERE `cluster_domain`=? AND `internal`=?")
+	if err != nil {
+		return taxonomies, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx, cluster_uuid, internal)
+	if err != nil {
+		return taxonomies, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var taxonomy service_models.TagTaxonomy
+		err = rows.Scan(&taxonomy.UUID, &taxonomy.Name, &taxonomy.IsInternal, &taxonomy.ClusterDomain)
+		if err != nil {
+			return taxonomies, err
+		}
+
+		taxonomies = append(taxonomies, taxonomy)
+	}
+
+	return taxonomies, nil
+}
+
+func (db_db *DungeonTagsDB) GetClusterTaxonomiesByInternalValue(cluster_uuid string, internal bool) ([]service_models.TagTaxonomy, error) {
+	return db_db.GetClusterTaxonomiesByInternalValueCTX(context.Background(), cluster_uuid, internal)
+}
+
 func (db_db *DungeonTagsDB) GetClusterTagsCTX(ctx context.Context, cluster_uuid string) ([]service_models.TaxonomyTags, error) {
 	var taxonomies_tags []service_models.TaxonomyTags = make([]service_models.TaxonomyTags, 0)
 
@@ -187,6 +219,41 @@ func (db_db *DungeonTagsDB) GetClusterTagsCTX(ctx context.Context, cluster_uuid 
 
 func (db_db *DungeonTagsDB) GetClusterTags(cluster_uuid string) ([]service_models.TaxonomyTags, error) {
 	return db_db.GetClusterTagsCTX(context.Background(), cluster_uuid)
+}
+
+func (db_db *DungeonTagsDB) GetClusterTagsByInternalValueCTX(ctx context.Context, cluster_uuid string, internal bool) ([]service_models.TaxonomyTags, error) {
+	var taxonomies_tags []service_models.TaxonomyTags = make([]service_models.TaxonomyTags, 0)
+
+	taxonomies, err := db_db.GetClusterTaxonomiesByInternalValueCTX(ctx, cluster_uuid, internal)
+	if err != nil {
+		return taxonomies_tags, err
+	}
+
+	for _, taxonomy := range taxonomies {
+		var taxonomy_copy *service_models.TagTaxonomy = new(service_models.TagTaxonomy)
+
+		taxonomy_copy.UUID = taxonomy.UUID
+		taxonomy_copy.Name = taxonomy.Name
+		taxonomy_copy.IsInternal = taxonomy.IsInternal
+		taxonomy_copy.ClusterDomain = taxonomy.ClusterDomain
+
+		var taxonomy_tags service_models.TaxonomyTags = service_models.TaxonomyTags{Taxonomy: taxonomy_copy}
+
+		tags, err := db_db.GetTaxonomyTagsCTX(ctx, taxonomy.UUID)
+		if err != nil {
+			return taxonomies_tags, err
+		}
+
+		taxonomy_tags.Tags = tags
+
+		taxonomies_tags = append(taxonomies_tags, taxonomy_tags)
+	}
+
+	return taxonomies_tags, nil
+}
+
+func (db_db *DungeonTagsDB) GetClusterTagsByInternalValue(cluster_uuid string, internal bool) ([]service_models.TaxonomyTags, error) {
+	return db_db.GetClusterTagsByInternalValueCTX(context.Background(), cluster_uuid, internal)
 }
 
 func (dt_db *DungeonTagsDB) GetTagByIdCTX(ctx context.Context, tag_id int) (service_models.DungeonTag, error) {
