@@ -287,6 +287,51 @@ export class GetClusterTagsRequest {
 }
 
 /**
+ * Returns all the tags present and unique to a cluster that were defined by the user(non-internal), as an array of TaxonomyTagsParams.
+ */
+export class GetClusterUserTagsRequest {
+
+    static endpoint = `${metadata_server}/dungeon-tags/taxonomies/user-defined/cluster`;
+
+    /**
+     * @param {string} cluster_uuid
+     */
+    constructor(cluster_uuid) {
+        this.cluster_uuid = cluster_uuid;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import("@models/DungeonTags").TaxonomyTagsParams[]>>}
+     */
+    do = async () => {
+        const url = `${GetClusterTagsRequest.endpoint}?cluster_uuid=${this.cluster_uuid}`;
+
+        /** @type {import("@models/DungeonTags").TaxonomyTagsParams[]} */
+        let cluster_tags = [];
+
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        try {
+            response = await fetch(url);
+
+            if (response.ok) {
+                cluster_tags = await response.json();
+            }
+
+        } catch (error) {
+            console.error("Error getting cluster tags: ", error);
+        }
+
+        return new HttpResponse(response, cluster_tags);
+    }
+}
+
+/**
  * Returns a TaxonomyTags corresponding to the given taxonomy id
  */
 export class GetTaxonomyTagsRequest {

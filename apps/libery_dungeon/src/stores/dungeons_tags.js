@@ -1,8 +1,8 @@
-import { getClusterTags } from "@models/DungeonTags";
+import { getClusterUserDefinedTags } from "@models/DungeonTags";
 import { get, writable } from "svelte/store";
 
 /**
-* All the available tags in the current cluster as list of TaxonomyTags objects.
+* All the available user-defined tags in the current cluster as list of TaxonomyTags objects.
  * @type {import('svelte/store').Writable<import('@models/DungeonTags').TaxonomyTags[]>>}
  */
 export const cluster_tags = writable([]);
@@ -35,7 +35,8 @@ export const refreshClusterTags = async (cluster_uuid, force = false) => {
  * @returns {Promise<boolean>}
  */
 export const refreshClusterTagsNoCheck = async (cluster_uuid) => {
-    const new_taxonomy_tags = await getClusterTags(cluster_uuid);
+    console.log("Refreshing tags for cluster: " + cluster_uuid);
+    const new_taxonomy_tags = await getClusterUserDefinedTags(cluster_uuid);
 
     if (new_taxonomy_tags.length === 0) {
         return false;

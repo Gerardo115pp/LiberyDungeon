@@ -2,7 +2,7 @@
     /*=============================================
     =            Imports            =
     =============================================*/
-        import { getClusterTags, getEntityTaggings, getTaxonomyTagsByUUID, tagEntity, untagEntity } from "@models/DungeonTags";
+        import { getEntityTaggings, getTaxonomyTagsByUUID, tagEntity, untagEntity } from "@models/DungeonTags";
         import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
         import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
         import { createEventDispatcher, onDestroy, onMount } from "svelte";
@@ -195,6 +195,13 @@
             }
 
             /**
+             * Recovers the hotkeys control and deactivates the active section.
+             */
+            const handleRecoverHotkeysControl = () => {
+                ct_section_active = false;
+            }
+
+            /**
              * Drops the tools hotkey contexts and loads the previous context.
              */
             const resetHotkeyContext = () => {
@@ -251,13 +258,6 @@
             if (tag_id == null) return;
 
             removeCategoryTag(tag_id);
-        }
-
-        /**
-         * Recovers the hotkeys control and deactivates the active section.
-         */
-        const handleRecoverHotkeysControl = () => {
-            ct_section_active = false;
         }
 
         /**
@@ -436,8 +436,10 @@
     >
         {#if cluster_tags_checked}
             <ClusterPublicTags 
+                has_hotkey_control={ct_focused_section === 2 && ct_section_active}
                 on:tag-selected={handleTagSelection}
                 on:taxonomy-content-change={handleTaxonomyContentChanged}
+                on:drop-hotkeys-control={handleRecoverHotkeysControl}
             />
         {/if}
     </article>

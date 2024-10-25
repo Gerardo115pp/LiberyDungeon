@@ -195,7 +195,7 @@
 
         // DELETE EVERYTHING BELOW THIS LINE
 
-        // media_transactions_tool_mounted.set(true);
+        category_tagger_tool_mounted.set(true);
     });
 
     onDestroy(() => {

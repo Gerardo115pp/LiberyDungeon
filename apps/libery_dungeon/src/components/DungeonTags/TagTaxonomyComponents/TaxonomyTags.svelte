@@ -2,12 +2,58 @@
     import { createDungeonTag, deleteDungeonTag } from "@models/DungeonTags";
     import TagGroup from "../Tags/TagGroup.svelte";
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onDestroy, onMount } from "svelte";
     import { confirmPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
+    import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
+    import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+    import { toggleHotkeysSheet } from "@stores/layout";
+    import { browser } from "$app/environment";
 
     /*=============================================
     =            Properties            =
     =============================================*/
+
+        /*=============================================
+        =            Hotkeys            =
+        =============================================*/
+    
+            /**
+             * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager}
+             */
+            const global_hotkeys_manager = getHotkeysManager(); 
+
+            const hotkeys_context_name = "taxonomy_tags";
+
+            /*=============================================
+            =            Hotkeys state            =
+            =============================================*/
+
+                /**
+                 * Whether the component has mounted or not.
+                 * @type {boolean}
+                 */
+                let has_taxonomy_tag_mounted = false;
+            
+                /**
+                 * Whether it has hotkey control.
+                 * @type {boolean}
+                 */ 
+                export let has_hotkey_control = false;
+                $: if (has_hotkey_control && has_taxonomy_tag_mounted) {
+                    defineDesktopKeybinds();
+                }
+        
+            /*=====  End of Hotkeys state  ======*/
+
+            /**
+             * Whether the TagTaxonomy component is been focused by a keyboard cursor. This does not mean that the
+             * component has hotkey control.
+             * @type {boolean}
+             */
+            export let is_keyboard_focused = false;
+
+        /*=====  End of Hotkeys  ======*/
     
         /**
          * The Taxonomy tags composition class.
@@ -25,11 +71,84 @@
         const dispatch = createEventDispatcher();
 
     /*=====  End of Properties  ======*/
+
+    onMount(() => {
+        has_taxonomy_tag_mounted = true;
+    });
+
+    onDestroy(() => {
+        if (!browser) return;
+
+        dropHotkeyContext();
+    });
     
     /*=============================================
     =            Methods            =
     =============================================*/
-    
+
+        /*=============================================
+        =            Keybinds            =
+        =============================================*/
+        
+            /**
+             * Defines the tools hotkeys.
+             */ 
+            const defineDesktopKeybinds = () => {
+                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
+                    const hotkeys_context = new HotkeysContext(); 
+
+                    hotkeys_context.register(["q", "t"], handleHotkeyControlDrop, {
+                        description: `<${HOTKEYS_GENERAL_GROUP}>Diselects the selected attribute section.`, 
+                        await_execution: false
+                    });
+
+                    hotkeys_context.register(["?"], toggleHotkeysSheet, { 
+                        description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
+                    });
+
+                    global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                }
+                
+                global_hotkeys_manager.loadContext(hotkeys_context_name);
+            }
+
+            /**
+             * Drops the component hotkey context
+             */
+            const dropHotkeyContext = () => {
+                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
+
+                global_hotkeys_manager.dropContext(hotkeys_context_name);
+            }
+
+            /**
+             * Emits an event to drop the hotkeys context
+             */
+            const emitDropHotkeyContext = () => {
+                dispatch("drop-hotkeys-control"); 
+            }
+
+            /**
+             * Emits an event to close the section and drops the hotkeys context.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleHotkeyControlDrop = (event, hotkey) => {
+                resetHotkeyContext();
+                emitDropHotkeyContext();
+                console.log("Add you'r close function here");
+            }
+
+            /**
+             * Drops the tools hotkey contexts and loads the previous context.
+             */
+            const resetHotkeyContext = () => {
+                if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+
+                global_hotkeys_manager.loadPreviousContext();
+            }
+
+        /*=====  End of Keybinds  ======*/
 
         /**
          * Returns the name of a tag by it's given id or an empty string if not found.
@@ -124,7 +243,10 @@
     
 </script>
 
-<section class="dungeon-taxonomy-content">
+<section class="dungeon-taxonomy-content"
+    class:is-keyboard-focused={is_keyboard_focused}
+    class:hotkey-control={has_hotkey_control}
+>
     <header class="taxonomy-header">
         <h4>
             {taxonomy_tags.Taxonomy.Name}
@@ -144,5 +266,17 @@
         display: flex;
         flex-direction: column;
         gap: var(--spacing-1);
+    }
+
+    .dungeon-taxonomy-content.is-keyboard-focused {
+        & header.taxonomy-header h4 {
+            color: var(--main);
+        }
+    }
+
+    .dungeon-taxonomy-content.hotkey-control {
+        & header.taxonomy-header > h4 {
+            color: var(--main-dark);
+        }
     }
 </style>

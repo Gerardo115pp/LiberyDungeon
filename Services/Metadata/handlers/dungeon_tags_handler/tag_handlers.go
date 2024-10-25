@@ -48,6 +48,8 @@ func getTagHandler(response http.ResponseWriter, request *http.Request) {
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getEntityTagsHandler)
 	case "/dungeon-tags/tags/cluster":
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonClusterTagsHandler)
+	case "/dungeon-tags/tags/user-defined/cluster":
+		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonClusterNonInternalTaxonomiesHandler)
 	case "/dungeon-tags/tags/matching-entities":
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getEntitiesWithTagsHandler)
 	}
@@ -155,6 +157,29 @@ func getDungeonClusterTagsHandler(response http.ResponseWriter, request *http.Re
 	response.WriteHeader(200)
 
 	json.NewEncoder(response).Encode(tags)
+}
+
+func getDungeonClusterNonInternalTaxonomiesHandler(response http.ResponseWriter, request *http.Request) {
+	var cluster_uuid string = request.URL.Query().Get("cluster_uuid")
+
+	if cluster_uuid == "" {
+		echo.Echo(echo.RedFG, "In getDungeonClusterNonInternalTaxonomiesHandler, cluster_uuid is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	taxonomies, err := repository.DungeonTagsRepo.GetClusterTaxonomiesByInternalValueCTX(request.Context(), cluster_uuid, false)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getDungeonClusterNonInternalTaxonomiesHandler, while getting cluster taxonomies: %s\n", err))
+		response.WriteHeader(404)
+		return
+	}
+
+	response.Header().Add("Content-Type", "application/json")
+
+	response.WriteHeader(200)
+
+	json.NewEncoder(response).Encode(taxonomies)
 }
 
 func getEntitiesWithTagsHandler(response http.ResponseWriter, request *http.Request) {

@@ -5,6 +5,7 @@ import {
     GetEntityTaggingsRequest,
     GetEntitiesWithTagsRequest,
     GetClusterTagsRequest,
+    GetClusterUserTagsRequest,
     GetTaxonomyTagsRequest,
     PostTagTaxonomyRequest,
     PostDungeonTagRequest,
@@ -405,6 +406,26 @@ export class DungeonTagging {
         let cluster_tags = [];
 
         const request = new GetClusterTagsRequest(cluster_uuid);
+
+        const response = await request.do();
+
+        if (response.Ok) {
+            cluster_tags = response.data.map(taxonomy_params => new TaxonomyTags(taxonomy_params));
+        }
+
+        return cluster_tags;
+    }
+
+    /**
+     * Returns all the tags present and unique to a cluster that were defined by a user(non-internal).
+     * @param {string} cluster_uuid
+     * @returns {Promise<TaxonomyTags[]>}
+     */
+    export const getClusterUserDefinedTags = async (cluster_uuid) => {
+        /** @type {TaxonomyTags[]} */
+        let cluster_tags = [];
+
+        const request = new GetClusterUserTagsRequest(cluster_uuid);
 
         const response = await request.do();
 
