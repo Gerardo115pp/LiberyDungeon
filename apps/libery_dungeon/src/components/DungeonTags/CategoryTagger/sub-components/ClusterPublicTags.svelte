@@ -7,6 +7,7 @@
     import { toggleHotkeysSheet } from "@stores/layout";
     import { createEventDispatcher, onDestroy, onMount } from "svelte";
     import { browser } from "$app/environment";
+    import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     
     /*=============================================
     =            Properties            =
@@ -62,8 +63,6 @@
                     let cpt_focused_tag_taxonomy_active = false;
                 
                 /*=====  End of Hotkeys movement  ======*/
-                
-                
 
             /*=====  End of Hotkeys  ======*/
 
@@ -148,7 +147,17 @@
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
             const handleTagTaxonomyNavigation = (event, hotkey) => {
+                if ($cluster_tags?.length === 0 || (event.key !== "w" && event.key !== "s")) return;
 
+                let new_cpt_focused_tag_taxonomy_index = cpt_focused_tag_taxonomy_index;
+
+                let navigation_step = event.key === "w" ? -1 : 1;
+
+                new_cpt_focused_tag_taxonomy_index = linearCycleNavigationWrap(new_cpt_focused_tag_taxonomy_index, $cluster_tags.length - 1, navigation_step).value;
+                console.log("new_cpt_focused_tag_taxonomy_index:", new_cpt_focused_tag_taxonomy_index);
+                console.log("$cluster_tags.length:", $cluster_tags.length);
+
+                cpt_focused_tag_taxonomy_index = new_cpt_focused_tag_taxonomy_index;
             }
 
             /**
@@ -180,45 +189,27 @@
 
         /*=====  End of Keybinds  ======*/
 
-        /**
-         * Returns all the non-internal TaxonomyTag count.
-         * @returns {number}
-         */
-        const getNonInternalTagTaxonomyCount = () => {
-            let count = 0;
-
-            $cluster_tags.forEach(taxonomy_tags => {
-                if (!taxonomy_tags.Taxonomy.IsInternal) {
-                    count++;
-                }
-            });
-
-            return count;
-        }
-
     /*=====  End of Methods  ======*/
 
 </script>
 
-<div id="cpt-wrapper">
+<div id="cpt-sections-wrapper">
     {#each $cluster_tags as taxonomy_tags, h (taxonomy_tags.Taxonomy.UUID)}
-        {#if !taxonomy_tags.Taxonomy.IsInternal}
-            {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && has_hotkey_control}
-            <TaxonomyTags 
-                taxonomy_tags={taxonomy_tags}
-                has_hotkey_control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
-                is_keyboard_focused={is_keyboard_focused}
-                enable_tag_creation
-                on:tag-selected
-                on:taxonomy-content-change
-                on:drop-hotkeys-control={handleDropHotkeyControl}
-            />
-        {/if} 
+        {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && has_hotkey_control}
+        <TaxonomyTags 
+            taxonomy_tags={taxonomy_tags}
+            has_hotkey_control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
+            is_keyboard_focused={is_keyboard_focused}
+            enable_tag_creation
+            on:tag-selected
+            on:taxonomy-content-change
+            on:drop-hotkeys-control={handleDropHotkeyControl}
+        />
     {/each}
 </div>
 
 <style>
-    #cpt-wrapper {
+    #cpt-sections-wrapper {
         display: flex;
         flex-direction: column;
         row-gap: var(--spacing-2);

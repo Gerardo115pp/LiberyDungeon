@@ -44,7 +44,6 @@ export class GetClusterTaxonomiesRequest {
 
         return new HttpResponse(response, cluster_taxonomies);
     }
-
 }
 
 /**

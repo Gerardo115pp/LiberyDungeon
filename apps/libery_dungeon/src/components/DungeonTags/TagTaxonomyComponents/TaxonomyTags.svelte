@@ -52,6 +52,9 @@
              * @type {boolean}
              */
             export let is_keyboard_focused = false;
+            $: if (is_keyboard_focused) {
+                ensureTaxonomyTagVisible();
+            }
 
         /*=====  End of Hotkeys  ======*/
     
@@ -67,6 +70,12 @@
          * @type {boolean}
          */
         export let enable_tag_creation = false;
+
+        /**
+         * The Taxonomy tags section
+         * @type {HTMLElement}
+         */
+        let the_taxonomy_tags_section;
 
         const dispatch = createEventDispatcher();
 
@@ -149,6 +158,15 @@
             }
 
         /*=====  End of Keybinds  ======*/
+
+        /**
+         * Ensures that if the element is keyboard focused, it is visible in the scroll container.
+         */
+        const ensureTaxonomyTagVisible = () => {
+            if (!the_taxonomy_tags_section || !is_keyboard_focused) return;
+
+            the_taxonomy_tags_section.scrollIntoView({behavior: "smooth", block: "center"});
+        }
 
         /**
          * Returns the name of a tag by it's given id or an empty string if not found.
@@ -244,6 +262,7 @@
 </script>
 
 <section class="dungeon-taxonomy-content"
+    bind:this={the_taxonomy_tags_section}
     class:is-keyboard-focused={is_keyboard_focused}
     class:hotkey-control={has_hotkey_control}
 >
