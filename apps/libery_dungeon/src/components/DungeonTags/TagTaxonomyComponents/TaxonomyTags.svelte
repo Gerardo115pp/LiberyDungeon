@@ -98,7 +98,7 @@
          * The tag group component.
          * @type {TagGroup}
          */
-        let tag_group_component;
+        let the_tag_group_component;
 
         const dispatch = createEventDispatcher();
 
@@ -149,9 +149,17 @@
                 });
 
                 hotkeys_context.register(["c"], handleFocusTagCreator, {
-                    description: "<navigation>Focuses the tag creator input.", 
+                    description: "<content>Focuses the tag creator input.", 
                     await_execution: false,
                     mode: "keyup"
+                });
+
+                hotkeys_context.register(["e"], handleSelectFocusedTag, {
+                    description: "<content>Selects the focused value.", 
+                });
+                
+                hotkeys_context.register(["x"], handleDeleteFocusedTag, {
+                    description: "<content>Deletes the focused value.", 
                 });
 
                 hotkeys_context.register(["?"], toggleHotkeysSheet, { 
@@ -222,8 +230,47 @@
             const handleFocusTagCreator = () => {
                 if (!has_hotkey_control) return;
 
-                tag_group_component.focusTagCreator();
+                the_tag_group_component.focusTagCreator();
             }
+
+            /**
+             * Handles the select focused tag hotkey.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleSelectFocusedTag = (event, hotkey) => {
+                if (!has_hotkey_control) return;
+
+                if (taxonomy_tags.Tags.length === 0) return;
+
+                let focused_tag_id = taxonomy_tags.Tags[focused_tag_index]?.Id;
+
+                if (focused_tag_id == null) return;
+
+                the_tag_group_component.emitTagSelected(focused_tag_id);
+            }
+
+            /**
+             * Handles the deletion of the focused tag.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleDeleteFocusedTag = (event, hotkey) => {
+                if (!has_hotkey_control) return;
+
+                if (taxonomy_tags.Tags.length === 0) return;
+
+                let focused_tag_id = taxonomy_tags.Tags[focused_tag_index]?.Id;
+
+                if (focused_tag_id == null) return;
+
+                if (focused_tag_index === taxonomy_tags.Tags.length - 1) {
+                    focused_tag_index--;
+                }
+
+                the_tag_group_component.emitTagDeleted(focused_tag_id);
+            }
+
 
             /**
              * Emits an event to close the section and drops the hotkeys context.
@@ -361,7 +408,7 @@
         </h4>
     </header>
     <TagGroup 
-        bind:this={tag_group_component}
+        bind:this={the_tag_group_component}
         dungeon_tags={taxonomy_tags.Tags}
         enable_tag_creator={enable_tag_creation}
         enable_keyboard_selection={has_hotkey_control}

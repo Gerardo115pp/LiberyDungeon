@@ -100,7 +100,7 @@
          * Emits the tag-deleted event.
          * @param {number} tag_id
          */
-        const emitTagDeleted = (tag_id) => {
+        export const emitTagDeleted = (tag_id) => {
             dispatch("tag-deleted", {tag_id});
         }
 
@@ -108,7 +108,7 @@
          * Emits the tag-selected event.
          * @param {number} tag_id
          */
-        const emitTagSelected = (tag_id) => {
+        export const emitTagSelected = (tag_id) => {
             dispatch("tag-selected", {tag_id});
         }
 
