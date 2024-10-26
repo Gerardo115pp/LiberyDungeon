@@ -1,9 +1,9 @@
 <script>
-    import { createDungeonTag, deleteDungeonTag } from "@models/DungeonTags";
+    import { createDungeonTag, deleteDungeonTag, renameDungeonTag } from "@models/DungeonTags";
     import TagGroup from "../Tags/TagGroup.svelte";
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
     import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
-    import { confirmPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+    import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
@@ -11,6 +11,7 @@
     import { browser } from "$app/environment";
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     import AnchorsOne from "@components/UI/AnchorsOne.svelte";
+    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
 
     /*=============================================
     =            Properties            =
@@ -36,6 +37,12 @@
                  * @type {boolean}
                  */
                 let has_taxonomy_tag_mounted = false;
+
+                /**
+                 * Whether to enable the tag renamer for the focused tag.
+                 * @type {boolean}
+                 */
+                let renaming_focused_tag = false;
             
                 /**
                  * Whether it has hotkey control.
@@ -47,7 +54,6 @@
                 }
         
             /*=====  End of Hotkeys state  ======*/
-
             
             /*=============================================
             =            Hotkeys movement            =
@@ -60,8 +66,6 @@
                 let focused_tag_index = 0;
             
             /*=====  End of Hotkeys movement  ======*/
-            
-            
 
             /**
              * Whether the TagTaxonomy component is been focused by a keyboard cursor. This does not mean that the
@@ -99,6 +103,7 @@
          * @type {TagGroup}
          */
         let the_tag_group_component;
+        
 
         const dispatch = createEventDispatcher();
 
@@ -148,9 +153,14 @@
                     await_execution: false
                 });
 
-                hotkeys_context.register(["c"], handleFocusTagCreator, {
+                hotkeys_context.register(["i"], handleFocusTagCreator, {
                     description: "<content>Focuses the tag creator input.", 
                     await_execution: false,
+                    mode: "keyup"
+                });
+
+                hotkeys_context.register(["c c"], handlesTagRenamerHotkey, {
+                    description: "<content>Renames the focused value.",
                     mode: "keyup"
                 });
 
@@ -222,6 +232,19 @@
                 let new_focused_tag_index = Math.max(0, Math.min(tag_count -1, vim_motion_value));
 
                 focused_tag_index = new_focused_tag_index;
+            }
+
+            /**
+             * Handles the tag renamer hotkey.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handlesTagRenamerHotkey = (event, hotkey) => {
+                if (!has_hotkey_control) return;
+
+                if (taxonomy_tags.Tags.length === 0) return;
+
+                setTagRenamerState(true);
             }
 
             /**
@@ -305,6 +328,14 @@
         }
 
         /**
+         * Emits an event that should be interpreted as 'the tag taxonomy content has changed'. The taxonomy emits an event with a detail.taxonomy, this
+         * contains the tag taxonomy uuid. 
+         */
+        const emitTaxonomyContentChange = () => {
+            dispatch("taxonomy-content-change", {taxonomy: taxonomy_tags.Taxonomy.UUID});
+        }
+
+        /**
          * Returns the name of a tag by it's given id or an empty string if not found.
          * @param {number} tag_id
          * @returns {string}
@@ -337,7 +368,7 @@
                 variable_environment.addVariable("triggering_event", event);
                 variable_environment.addVariable("taxonomy_tags.Taxonomy.UUID", taxonomy_tags.Taxonomy.UUID);
 
-                const labeled_err = new LabeledError(variable_environment, `Failed to create tag '${event?.detail?.tag_name}'`);
+                const labeled_err = new LabeledError(variable_environment, `Failed to create tag '${event?.detail?.tag_name}'`, lf_errors.ERR_PROCESSING_ERROR);
 
                 labeled_err.alert();
                 return;
@@ -377,7 +408,7 @@
             let tag_deleted = await deleteDungeonTag(tag_id);
 
             if (!tag_deleted) {
-                const labeled_err = new LabeledError("In TaxonomyTags.handleTagDeleted", `Failed to delete tag with id '${tag_id}'`);
+                const labeled_err = new LabeledError("In TaxonomyTags.handleTagDeleted", `Failed to delete tag with id '${tag_id}'`, lf_errors.ERR_PROCESSING_ERROR);
                 labeled_err.alert();
                 return;
             }
@@ -386,11 +417,57 @@
         }
 
         /**
-         * Emits an event that should be interpreted as 'the tag taxonomy content has changed'. The taxonomy emits an event with a detail.taxonomy, this
-         * contains the tag taxonomy uuid. 
+         * Handles the tag-renamed event.
+         * @param {CustomEvent<{tag_id: number, new_tag_name: string}>} event
          */
-        const emitTaxonomyContentChange = () => {
-            dispatch("taxonomy-content-change", {taxonomy: taxonomy_tags.Taxonomy.UUID});
+        const handleTagRenamed = async event => {
+            const tag_id = event?.detail?.tag_id;
+            const new_name = event?.detail?.new_tag_name;
+
+            if (tag_id == null || new_name == null) return;
+
+            const tag_name = getTagNameByID(tag_id);
+            if (tag_name === "") {
+                console.error(`Tag id: '${tag_id}' did not match an dungeon tag withing ${taxonomy_tags.Taxonomy.Name}`);
+                return;
+            }
+
+            if (tag_name === new_name) {
+                setTagRenamerState(false);
+                return;
+            }
+
+            setTagRenamerState(false);
+
+            console.log(`Renaming tag '${tag_name}' to '${new_name}'`);
+
+            const tag_renamed = await renameDungeonTag(tag_id, new_name);
+
+            if (tag_renamed) {
+                emitPlatformMessage(`Renamed '${tag_name}' to '${new_name}'`);
+            } if (!tag_renamed) {
+                const labeled_err = new LabeledError("In TaxonomyTags.handleTagRenamed", `Failed to rename tag with id '${tag_id}'`, lf_errors.ERR_PROCESSING_ERROR);
+                labeled_err.alert();
+                return;
+            }
+
+            emitTaxonomyContentChange();
+        }
+
+        /**
+         * Handles the tag-rename-cancelled event.
+         */
+        const handleTagRenameCancelled = () => {
+            setTagRenamerState(false);
+        }
+        
+
+        /**
+         * Set tag renamer state.
+         * @param {boolean} state
+         */
+        const setTagRenamerState = state => {
+            renaming_focused_tag = state;
         }
     
     /*=====  End of Methods  ======*/
@@ -412,10 +489,13 @@
         dungeon_tags={taxonomy_tags.Tags}
         enable_tag_creator={enable_tag_creation}
         enable_keyboard_selection={has_hotkey_control}
+        rename_focused_tag={renaming_focused_tag}
         focused_tag_index={focused_tag_index}
         on:tag-selected
         on:tag-created={handleTagCreated}
         on:tag-deleted={handleTagDeleted}
+        on:tag-renamed={handleTagRenamed}
+        on:tag-rename-cancelled={handleTagRenameCancelled}
     />
 </section>
 
