@@ -177,8 +177,9 @@ export class HotkeysController {
             await hotkey.run(event);
         } catch (error) {
             console.error(`Error executing hotkey ${hotkey.KeyCombo}`, error);
+        } finally {
+            this.#locked_on_execution = false;
         }
-        this.#locked_on_execution = false;
     }
 
     /**
