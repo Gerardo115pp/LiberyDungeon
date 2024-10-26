@@ -9,6 +9,7 @@
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import { toggleHotkeysSheet } from "@stores/layout";
     import { browser } from "$app/environment";
+    import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
 
     /*=============================================
     =            Properties            =
@@ -46,6 +47,21 @@
         
             /*=====  End of Hotkeys state  ======*/
 
+            
+            /*=============================================
+            =            Hotkeys movement            =
+            =============================================*/
+            
+                /**
+                 * The index of the focused tag.
+                 * @type {number}
+                 */
+                let focused_tag_index = 0;
+            
+            /*=====  End of Hotkeys movement  ======*/
+            
+            
+
             /**
              * Whether the TagTaxonomy component is been focused by a keyboard cursor. This does not mean that the
              * component has hotkey control.
@@ -76,6 +92,12 @@
          * @type {HTMLElement}
          */
         let the_taxonomy_tags_section;
+
+        /**
+         * The tag group component.
+         * @type {TagGroup}
+         */
+        let tag_group_component;
 
         const dispatch = createEventDispatcher();
 
@@ -111,7 +133,12 @@
                 const hotkeys_context = new HotkeysContext(); 
 
                 hotkeys_context.register(["q", "t"], handleHotkeyControlDrop, {
-                    description: `<${HOTKEYS_GENERAL_GROUP}>Diselects the selected attribute section.`, 
+                    description: `<${HOTKEYS_GENERAL_GROUP}>Deselects the selected attribute section.`, 
+                    await_execution: false
+                });
+
+                hotkeys_context.register(["a", "d"], handleTagNavigation, {
+                    description: `<${HOTKEYS_GENERAL_GROUP}>Navigates the tags.`, 
                     await_execution: false
                 });
 
@@ -138,6 +165,23 @@
              */
             const emitDropHotkeyContext = () => {
                 dispatch("drop-hotkeys-control"); 
+            }
+
+            /**
+             * Handles the navigation of the tags.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleTagNavigation = (event, hotkey) => {
+                if (!has_hotkey_control || (event.key !== "a" && event.key !== "d")) return;
+
+                let tag_count = taxonomy_tags.Tags.length;
+
+                if (tag_count === 0) return;
+
+                let navigation_step = event.key === "a" ? -1 : 1;
+
+                focused_tag_index = linearCycleNavigationWrap(focused_tag_index, tag_count - 1, navigation_step).value;
             }
 
             /**
@@ -276,8 +320,11 @@
         </h4>
     </header>
     <TagGroup 
+        bind:this={tag_group_component}
         dungeon_tags={taxonomy_tags.Tags}
         enable_tag_creator={enable_tag_creation}
+        enable_keyboard_selection={has_hotkey_control}
+        focused_tag_index={focused_tag_index}
         on:tag-selected
         on:tag-created={handleTagCreated}
         on:tag-deleted={handleTagDeleted}

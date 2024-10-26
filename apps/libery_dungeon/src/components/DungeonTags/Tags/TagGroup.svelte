@@ -14,6 +14,21 @@
         export let dungeon_tags = [];
 
         
+        /*----------  State  ----------*/
+
+            /**
+             * Whether to enable tag selection by keyboard.
+             * @type {boolean}
+             * @default false
+             */
+            export let enable_keyboard_selection = false;
+
+            /**
+             * The currently focused tag index.
+             * @type {number}
+             */
+            export let focused_tag_index = 0;
+        
         /*----------  Tag creator  ----------*/
 
             /**
@@ -175,9 +190,10 @@
 
 <ol class="dungeon-tag-group dungeon-tag-list">
     {#key dungeon_tags.length}
-        {#each dungeon_tags as tag, index (tag.Name)}
+        {#each dungeon_tags as tag, h (tag.Name)}
+            {@const is_keyboard_selected = enable_keyboard_selection && h === focused_tag_index}
             <DeleteableItem 
-                item_color={tag_group_color}
+                item_color={!is_keyboard_selected ? tag_group_color : "var(--main-dark-transparent)"}
                 item_id={tag.Id}
                 on:item-selected={handleTagSelection}
                 on:item-deleted={handleTagDeletion}
@@ -185,7 +201,7 @@
                 <p class="dtg-tag-name taxonomy-member">
                     {#if expose_indexes}
                         <i class="dtg-tag-index">
-                            {index + 1}
+                            {h + 1}
                         </i>
                     {/if}
                     <span>
