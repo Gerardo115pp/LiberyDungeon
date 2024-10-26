@@ -89,6 +89,37 @@
         }
 
         /**
+         * Emits the tag-created event.
+         * @param {string} tag_name
+         */
+        const emitTagCreated = (tag_name) => {
+            dispatch("tag-created", {tag_name});
+        }
+
+        /**
+         * Emits the tag-deleted event.
+         * @param {number} tag_id
+         */
+        const emitTagDeleted = (tag_id) => {
+            dispatch("tag-deleted", {tag_id});
+        }
+
+        /**
+         * Emits the tag-selected event.
+         * @param {number} tag_id
+         */
+        const emitTagSelected = (tag_id) => {
+            dispatch("tag-selected", {tag_id});
+        }
+
+        /**
+         * Focuses the tag creator input element.
+         */
+        export const focusTagCreator = () => {
+            the_tag_creator_input.focus();
+        }
+
+        /**
          * Handles the keydown event on the tag creator input.
          * @param {KeyboardEvent} event
          */
@@ -149,30 +180,6 @@
          */
         const handleTagDeletion = (event) => {
             emitTagDeleted(event.detail.item_id);
-        }
-
-        /**
-         * Emits the tag-created event.
-         * @param {string} tag_name
-         */
-        const emitTagCreated = (tag_name) => {
-            dispatch("tag-created", {tag_name});
-        }
-
-        /**
-         * Emits the tag-deleted event.
-         * @param {number} tag_id
-         */
-        const emitTagDeleted = (tag_id) => {
-            dispatch("tag-deleted", {tag_id});
-        }
-
-        /**
-         * Emits the tag-selected event.
-         * @param {number} tag_id
-         */
-        const emitTagSelected = (tag_id) => {
-            dispatch("tag-selected", {tag_id});
         }
 
         /**

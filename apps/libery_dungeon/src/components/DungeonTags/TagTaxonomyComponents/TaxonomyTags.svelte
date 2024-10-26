@@ -133,7 +133,7 @@
 
                 const hotkeys_context = new HotkeysContext(); 
 
-                hotkeys_context.register(["q", "t"], handleHotkeyControlDrop, {
+                hotkeys_context.register(["q"], handleHotkeyControlDrop, {
                     description: `<${HOTKEYS_GENERAL_GROUP}>Deselects the selected attribute section.`, 
                     await_execution: false
                 });
@@ -146,6 +146,12 @@
                 hotkeys_context.register(["\\d g"], handleTagIndexGoto, {
                     description: "<navigation>Navigates to the typed index value", 
                     await_execution: false
+                });
+
+                hotkeys_context.register(["c"], handleFocusTagCreator, {
+                    description: "<navigation>Focuses the tag creator input.", 
+                    await_execution: false,
+                    mode: "keyup"
                 });
 
                 hotkeys_context.register(["?"], toggleHotkeysSheet, { 
@@ -208,6 +214,15 @@
                 let new_focused_tag_index = Math.max(0, Math.min(tag_count -1, vim_motion_value));
 
                 focused_tag_index = new_focused_tag_index;
+            }
+
+            /**
+             * Handles the focus tag creator hotkey.
+             */
+            const handleFocusTagCreator = () => {
+                if (!has_hotkey_control) return;
+
+                tag_group_component.focusTagCreator();
             }
 
             /**
