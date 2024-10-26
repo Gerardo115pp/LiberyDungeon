@@ -10,6 +10,7 @@
     import { toggleHotkeysSheet } from "@stores/layout";
     import { browser } from "$app/environment";
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+    import AnchorsOne from "@components/UI/AnchorsOne.svelte";
 
     /*=============================================
     =            Properties            =
@@ -138,7 +139,12 @@
                 });
 
                 hotkeys_context.register(["a", "d"], handleTagNavigation, {
-                    description: `<${HOTKEYS_GENERAL_GROUP}>Navigates the tags.`, 
+                    description: "<navigation>Navigates the value.", 
+                    await_execution: false
+                });
+
+                hotkeys_context.register(["\\d g"], handleTagIndexGoto, {
+                    description: "<navigation>Navigates to the typed index value", 
                     await_execution: false
                 });
 
@@ -182,6 +188,26 @@
                 let navigation_step = event.key === "a" ? -1 : 1;
 
                 focused_tag_index = linearCycleNavigationWrap(focused_tag_index, tag_count - 1, navigation_step).value;
+            }
+
+            /**
+             * Handles the tag index goto hotkey.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleTagIndexGoto = (event, hotkey) => {
+                if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
+
+                let vim_motion_value = hotkey.MatchMetadata.MotionMatches[0];
+                vim_motion_value--; // 1 based index to 0 based index
+
+                let tag_count = taxonomy_tags.Tags.length;
+
+                if (tag_count === 0) return;
+
+                let new_focused_tag_index = Math.max(0, Math.min(tag_count -1, vim_motion_value));
+
+                focused_tag_index = new_focused_tag_index;
             }
 
             /**
