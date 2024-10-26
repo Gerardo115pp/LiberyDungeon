@@ -49,7 +49,6 @@
         
             /*=====  End of Hotkeys state  ======*/
             
-            
             /*=============================================
             =            Hotkey movement                 = 
             =============================================*/
@@ -67,8 +66,6 @@
                 let focused_tag_index = 0;
             
             /*=====  End of Hotkey movements  ======*/
-            
-            
 
         /*=====  End of Hotkeys  ======*/        
     
@@ -127,6 +124,10 @@
                     hotkeys_context.register(["\\d g"], handleTaxonomyTagGoto, {
                         description: "<navigation>go to the typed tag index.",
                     });
+
+                    hotkeys_context.register(["x"], handleCategoryUnassignTag, {
+                        description: "<navigation>Removes the focused attribute value from the current category.",
+                    });
                     
                     hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
                         description: `<${HOTKEYS_GENERAL_GROUP}>Closes the category tagger tool.`,
@@ -157,6 +158,24 @@
              */
             const emitDropHotkeyContext = () => {
                 dispatch("drop-hotkeys-control");
+            }
+
+            /**
+             * Returns the focused tagging.
+             * @returns {import("@models/DungeonTags").DungeonTagging | null}
+             */
+            const getFocusedTagging = () => {
+                if (tag_taxonomy_map == null) return;
+
+                const taxonomies = Array.from(tag_taxonomy_map.keys());
+
+                if (taxonomies.length <= 0) return;
+
+                let focused_taxonomy = taxonomies[focused_taxonomy_index];
+
+                let focused_tagging = tag_taxonomy_map.get(focused_taxonomy)[focused_tag_index];
+
+                return focused_tagging;
             }
 
             /**
@@ -228,6 +247,23 @@
                 vim_motion_value = Math.max(0, Math.min((tag_taxonomy_map.get(taxonomies[focused_taxonomy_index]).length - 1), vim_motion_value));
 
                 focused_tag_index = vim_motion_value;
+            }
+
+            /**
+             * Removes the focused tag from the current category.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleCategoryUnassignTag = async (event, hotkey) => {
+                let focused_tagging = getFocusedTagging();
+
+                console.log("focused_tagging:", focused_tagging);
+
+                if (focused_tagging == null) return;
+
+                emitRemoveCategoryTagEvent(focused_tagging.Tag.Id);
+
+                focused_tag_index = Math.max(0, focused_tag_index - 1);
             }
 
             /**
