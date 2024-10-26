@@ -169,8 +169,7 @@
 
             if (!is_available_and_valid) return;
 
-            let new_taxonomy = true;
-            // let new_taxonomy = await createTagTaxonomy(new_attribute_name, $current_cluster.UUID, false);
+            let new_taxonomy = await createTagTaxonomy(new_attribute_name, $current_cluster.UUID, false);
 
             if (new_taxonomy === null) {
                 let labeled_err = new LabeledError("In TagTaxonomyCreator.createTagTaxonomyIfValid", "The was an error creating the new tag taxonomy.", lf_errors.ERR_PROCESSING_ERROR);
