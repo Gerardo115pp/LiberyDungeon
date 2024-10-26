@@ -8,6 +8,7 @@
     import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
     import { browser } from "$app/environment";
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+    import { confirmPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     
     /*=============================================
     =            Properties            =
@@ -111,6 +112,11 @@
                         description: "<navigation>Selects the focused attribute.",
                     });
 
+                    hotkeys_context.register(["x"], handleFocusedTagTaxonomyDeletion, {
+                        description: "<content>Deletes the focused attribute.",
+                        await_execution: false,
+                    });
+
                     hotkeys_context.register(["?"], toggleHotkeysSheet, {
                         description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
                     });
@@ -168,6 +174,34 @@
             }
 
             /**
+             * Deletes the focused tag taxonomy.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleFocusedTagTaxonomyDeletion = async (event, hotkey) => {
+                if (cpt_focused_tag_taxonomy_active) return;
+
+                let focused_taxonomy = $cluster_tags[cpt_focused_tag_taxonomy_index];
+
+                if (focused_taxonomy == null) return;
+
+                let user_choice = await confirmPlatformMessage({
+                    message_title: `Delete '${focused_taxonomy.Taxonomy.Name}'`,
+                    question_message: `Are you sure you wish to delete '${focused_taxonomy.Taxonomy.Name}' this will make it unavailable in the entire dungeon, remove any associations it was with medias or categories, and remove any values( it has ${focused_taxonomy.Tags.length}) associated with the attribute.`,
+                    auto_focus_cancel: true,
+                    danger_level: 2,
+                    confirm_label: "Deleted it",
+                    cancel_label: "cancel",
+                });
+
+                if (user_choice !== 1) return;
+
+                emitDeleteTagTaxonomy(focused_taxonomy.Taxonomy.UUID);
+
+                cpt_focused_tag_taxonomy_index = Math.max(0, cpt_focused_tag_taxonomy_index - 1);
+            }
+
+            /**
              * Recovers the hotkeys control and deactivates the active section.
              */
             const handleRecoverHotkeysControl = () => {
@@ -208,6 +242,16 @@
             focused_tag_taxonomy.scrollIntoView({
                 block: "center",
                 inline: "center"
+            });
+        }
+
+        /**
+         * Emits an event to delete a given tag taxonomy by its UUID.
+         * @param {string} taxonomy_uuid
+         */
+        const emitDeleteTagTaxonomy = (taxonomy_uuid) => {
+            dispatch("delete-taxonomy", {
+                taxonomy_uuid
             });
         }
 

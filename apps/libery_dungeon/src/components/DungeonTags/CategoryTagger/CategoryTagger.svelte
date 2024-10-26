@@ -2,7 +2,7 @@
     /*=============================================
     =            Imports            =
     =============================================*/
-        import { getEntityTaggings, getTaxonomyTagsByUUID, tagEntity, untagEntity } from "@models/DungeonTags";
+        import { deleteTagTaxonomy, getEntityTaggings, getTaxonomyTagsByUUID, tagEntity, untagEntity } from "@models/DungeonTags";
         import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
         import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
         import { createEventDispatcher, onDestroy, onMount } from "svelte";
@@ -268,6 +268,31 @@
         }
 
         /**
+         * Handles the delete-taxonomy event from the ClusterPublicTags component.
+         * @param {CustomEvent<{taxonomy_uuid: string}>} event
+         */
+        const handleTagTaxonomyDeleted = async event => {
+            const taxonomy_uuid = event?.detail?.taxonomy_uuid;
+
+            if (taxonomy_uuid == null) return;
+
+            let deleted = await deleteTagTaxonomy(taxonomy_uuid);
+
+            if (!deleted) {
+                const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.handleTagTaxonomyDeleted");
+
+                variable_environment.addVariable("taxonomy_uuid", taxonomy_uuid);
+
+                const labeled_error = new LabeledError(variable_environment, "Failed to delete the tag taxonomy.", lf_errors.ERR_PROCESSING_ERROR);
+
+                labeled_error.alert();
+                return;
+            }
+
+            await refreshClusterTagsNoCheck($current_cluster.UUID);
+        }
+
+        /**
          * Refreshes the content of a TagTaxonomy.
          * @param {CustomEvent<{taxonomy: string}>} event
          */
@@ -438,6 +463,7 @@
             <ClusterPublicTags 
                 has_hotkey_control={ct_focused_section === 2 && ct_section_active}
                 on:tag-selected={handleTagSelection}
+                on:delete-taxonomy={handleTagTaxonomyDeleted}
                 on:taxonomy-content-change={handleTaxonomyContentChanged}
                 on:drop-hotkeys-control={handleRecoverHotkeysControl}
             />
