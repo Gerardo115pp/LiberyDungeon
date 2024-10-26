@@ -431,7 +431,7 @@
         />
     </article>
     <article id="dctt-cluster-user-tags"
-        class="dungeon-scroll dctt-section"
+        class="dctt-section"
         class:focused-section={ct_focused_section === 2}
     >
         {#if cluster_tags_checked}
@@ -482,7 +482,7 @@
 
     article#dctt-cluster-user-tags {
         height: 35cqh;
-        overflow-y: auto;
+        container-type: size;
     }
 
     article#dctt-current-category-tags-wrapper {

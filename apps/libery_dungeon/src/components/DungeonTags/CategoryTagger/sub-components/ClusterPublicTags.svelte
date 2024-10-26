@@ -55,6 +55,9 @@
                      * @type {number}
                      */
                     let cpt_focused_tag_taxonomy_index = 0;
+                    $: if (cpt_focused_tag_taxonomy_index > 0 && has_hotkey_control) {
+                        ensureFocusedTagTaxonomyVisible();
+                    }
 
                     /**
                      * Whether the focused tag taxonomy is active.
@@ -189,6 +192,20 @@
 
         /*=====  End of Keybinds  ======*/
 
+        /**
+         * Ensures that focused tag taxonomy item on the minimap are visible.
+         */
+        const ensureFocusedTagTaxonomyVisible = () => {
+            const focused_tag_taxonomy = document.querySelector(".cpt-ttm-taxonomy.keyboard-focused");
+
+            if (!focused_tag_taxonomy) return;
+
+            focused_tag_taxonomy.scrollIntoView({
+                block: "center",
+                inline: "center"
+            });
+        }
+
     /*=====  End of Methods  ======*/
 
 </script>
@@ -202,7 +219,10 @@
         </header>
         <ol class="cpt-ttm-tag-taxonomies">
             {#each $cluster_tags as taxonomy_tags, h (taxonomy_tags.Taxonomy.UUID)}
-                <li class="cpt-ttm-taxonomy">
+                {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && has_hotkey_control}
+                <li  class="cpt-ttm-taxonomy"
+                    class:keyboard-focused={is_keyboard_focused}
+                >
                     <p class="cpt-ttm-taxonomy-name">
                         {taxonomy_tags.Taxonomy.Name}
                     </p>
@@ -210,7 +230,9 @@
             {/each}
         </ol>
     </aside>
-    <div id="cpt-sections-wrapper">
+    <div id="cpt-sections-wrapper"
+        class="dungeon-scroll" 
+    >
         {#each $cluster_tags as taxonomy_tags, h (taxonomy_tags.Taxonomy.UUID)}
             {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && has_hotkey_control}
             <TaxonomyTags 
@@ -228,10 +250,12 @@
 
 <style>
     #cluster-public-tags {
-        display: flex;
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        box-sizing: border-box;
+        width: 100%;
         column-gap: var(--spacing-2);
     }
-    
     
     /*=============================================
     =            Taxonomy tags minimap            =
@@ -239,9 +263,12 @@
     
         aside.cpt-taxonomy-tags-minimap {
             display: flex;
-            width: fit-content;
+            height: 100cqh;
             flex-direction: column;
+            overflow-y: auto;
+            border-bottom: 0.2px solid var(--main-9);
             row-gap: var(--spacing-1);
+            scrollbar-width: none;
         } 
 
         aside.cpt-taxonomy-tags-minimap header.cpt-ttm-header {
@@ -272,15 +299,21 @@
                 line-height: 1;
                 text-transform: lowercase;
             }
+
+            & li.cpt-ttm-taxonomy.keyboard-focused {
+                background: var(--main-7);
+                transition: background .2s ease-out;
+            }
+            
         }
     
     /*=====  End of Taxonomy tags minimap   ======*/
-    
-    
 
     #cpt-sections-wrapper {
         display: flex;
         flex-direction: column;
+        height: 100cqh;
         row-gap: var(--spacing-2);
+        overflow-y: auto;
     }
 </style>
