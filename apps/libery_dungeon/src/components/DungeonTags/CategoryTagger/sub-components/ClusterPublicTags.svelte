@@ -5,7 +5,7 @@
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import { toggleHotkeysSheet } from "@stores/layout";
-    import { createEventDispatcher, onDestroy, onMount } from "svelte";
+    import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
     import { browser } from "$app/environment";
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     
@@ -55,7 +55,7 @@
                      * @type {number}
                      */
                     let cpt_focused_tag_taxonomy_index = 0;
-                    $: if (cpt_focused_tag_taxonomy_index > 0 && has_hotkey_control) {
+                    $: if (cpt_focused_tag_taxonomy_index >= 0 && has_hotkey_control) {
                         ensureFocusedTagTaxonomyVisible();
                     }
 
@@ -104,7 +104,11 @@
                     });
 
                     hotkeys_context.register(["w", "s"], handleTagTaxonomyNavigation, {
-                        description: "<navigation>Moves the focused tag taxonomy up or down.",
+                        description: "<navigation>Moves the changes the focused attribute up/down.",
+                    });
+
+                    hotkeys_context.register(["e"], handleTagTaxonomySelection, {
+                        description: "<navigation>Selects the focused attribute.",
                     });
 
                     hotkeys_context.register(["?"], toggleHotkeysSheet, {
@@ -138,7 +142,7 @@
              * @param {KeyboardEvent} event
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
-            const handleSectionSelection = (event, hotkey) => {
+            const handleTagTaxonomySelection = (event, hotkey) => {
                 event.preventDefault();
 
                 cpt_focused_tag_taxonomy_active = true; 
@@ -167,7 +171,7 @@
              * Recovers the hotkeys control and deactivates the active section.
              */
             const handleRecoverHotkeysControl = () => {
-                ct_section_active = false;
+                cpt_focused_tag_taxonomy_active = false;
             }
 
             /**
@@ -178,7 +182,6 @@
             const handleDropHotkeyControl = (event, hotkey) => {
                 resetHotkeyContext();
                 emitDropHotkeyContext();
-                console.log("Add you'r close function here");
             }
 
             /**
@@ -195,7 +198,9 @@
         /**
          * Ensures that focused tag taxonomy item on the minimap are visible.
          */
-        const ensureFocusedTagTaxonomyVisible = () => {
+        const ensureFocusedTagTaxonomyVisible = async () => {
+            await tick();
+
             const focused_tag_taxonomy = document.querySelector(".cpt-ttm-taxonomy.keyboard-focused");
 
             if (!focused_tag_taxonomy) return;
@@ -222,6 +227,7 @@
                 {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && has_hotkey_control}
                 <li  class="cpt-ttm-taxonomy"
                     class:keyboard-focused={is_keyboard_focused}
+                    class:has-hotkey-control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
                 >
                     <p class="cpt-ttm-taxonomy-name">
                         {taxonomy_tags.Taxonomy.Name}
@@ -242,7 +248,7 @@
                 enable_tag_creation
                 on:tag-selected
                 on:taxonomy-content-change
-                on:drop-hotkeys-control={handleDropHotkeyControl}
+                on:drop-hotkeys-control={handleRecoverHotkeysControl}
             />
         {/each}
     </div>
@@ -304,7 +310,14 @@
                 background: var(--main-7);
                 transition: background .2s ease-out;
             }
-            
+
+            & li.cpt-ttm-taxonomy.has-hotkey-control {
+                background: var(--main-dark);
+            }
+
+            & li.cpt-ttm-taxonomy.has-hotkey-control p.cpt-ttm-taxonomy-name {
+                color: var(--grey-1);
+            }
         }
     
     /*=====  End of Taxonomy tags minimap   ======*/

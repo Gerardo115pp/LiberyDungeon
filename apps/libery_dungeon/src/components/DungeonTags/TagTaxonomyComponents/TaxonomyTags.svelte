@@ -2,7 +2,7 @@
     import { createDungeonTag, deleteDungeonTag } from "@models/DungeonTags";
     import TagGroup from "../Tags/TagGroup.svelte";
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
-    import { createEventDispatcher, onDestroy, onMount } from "svelte";
+    import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
     import { confirmPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
@@ -103,20 +103,23 @@
              * Defines the tools hotkeys.
              */ 
             const defineDesktopKeybinds = () => {
-                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
-                    const hotkeys_context = new HotkeysContext(); 
-
-                    hotkeys_context.register(["q", "t"], handleHotkeyControlDrop, {
-                        description: `<${HOTKEYS_GENERAL_GROUP}>Diselects the selected attribute section.`, 
-                        await_execution: false
-                    });
-
-                    hotkeys_context.register(["?"], toggleHotkeysSheet, { 
-                        description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
-                    });
-
-                    global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                if (global_hotkeys_manager.hasContext(hotkeys_context_name)) {
+                    global_hotkeys_manager.dropContext(hotkeys_context_name);
                 }
+                console.log(`Defining hotkeys for taxonomy tags<${taxonomy_tags.Taxonomy.Name}>`);
+
+                const hotkeys_context = new HotkeysContext(); 
+
+                hotkeys_context.register(["q", "t"], handleHotkeyControlDrop, {
+                    description: `<${HOTKEYS_GENERAL_GROUP}>Diselects the selected attribute section.`, 
+                    await_execution: false
+                });
+
+                hotkeys_context.register(["?"], toggleHotkeysSheet, { 
+                    description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
+                });
+
+                global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
                 
                 global_hotkeys_manager.loadContext(hotkeys_context_name);
             }
@@ -145,7 +148,6 @@
             const handleHotkeyControlDrop = (event, hotkey) => {
                 resetHotkeyContext();
                 emitDropHotkeyContext();
-                console.log("Add you'r close function here");
             }
 
             /**
@@ -162,7 +164,9 @@
         /**
          * Ensures that if the element is keyboard focused, it is visible in the scroll container.
          */
-        const ensureTaxonomyTagVisible = () => {
+        const ensureTaxonomyTagVisible = async () => {
+            await tick();
+
             if (!the_taxonomy_tags_section || !is_keyboard_focused) return;
 
             the_taxonomy_tags_section.scrollIntoView({behavior: "smooth", block: "center"});
