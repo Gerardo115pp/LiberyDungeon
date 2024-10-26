@@ -123,7 +123,7 @@
         }
 
         &.squared-style {
-            border-radius: .3em;
+            border-radius: var(--rounded-box-border-radius);
             padding: calc(.65 * var(--spacing-1)) calc(1.2 * var(--spacing-1));
         }
 

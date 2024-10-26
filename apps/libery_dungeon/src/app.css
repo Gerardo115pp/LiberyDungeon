@@ -267,6 +267,7 @@
              */
             --fullhieght-page: calc(calc(100dvh - var(--navbar-height)) - 3px);
             --border-radius: 4px;
+            --rounded-box-border-radius: .3em;
             --border-radius-2: 19px;
             --page-content-width: 90.41%;
             --page-content-static-width: 1440px;

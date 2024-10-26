@@ -193,22 +193,91 @@
 
 </script>
 
-<div id="cpt-sections-wrapper">
-    {#each $cluster_tags as taxonomy_tags, h (taxonomy_tags.Taxonomy.UUID)}
-        {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && has_hotkey_control}
-        <TaxonomyTags 
-            taxonomy_tags={taxonomy_tags}
-            has_hotkey_control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
-            is_keyboard_focused={is_keyboard_focused}
-            enable_tag_creation
-            on:tag-selected
-            on:taxonomy-content-change
-            on:drop-hotkeys-control={handleDropHotkeyControl}
-        />
-    {/each}
+<div id="cluster-public-tags">
+    <aside class="cpt-taxonomy-tags-minimap">
+        <header class="cpt-ttm-header">
+            <h4>
+                Attributes
+            </h4>
+        </header>
+        <ol class="cpt-ttm-tag-taxonomies">
+            {#each $cluster_tags as taxonomy_tags, h (taxonomy_tags.Taxonomy.UUID)}
+                <li class="cpt-ttm-taxonomy">
+                    <p class="cpt-ttm-taxonomy-name">
+                        {taxonomy_tags.Taxonomy.Name}
+                    </p>
+                </li>
+            {/each}
+        </ol>
+    </aside>
+    <div id="cpt-sections-wrapper">
+        {#each $cluster_tags as taxonomy_tags, h (taxonomy_tags.Taxonomy.UUID)}
+            {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && has_hotkey_control}
+            <TaxonomyTags 
+                taxonomy_tags={taxonomy_tags}
+                has_hotkey_control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
+                is_keyboard_focused={is_keyboard_focused}
+                enable_tag_creation
+                on:tag-selected
+                on:taxonomy-content-change
+                on:drop-hotkeys-control={handleDropHotkeyControl}
+            />
+        {/each}
+    </div>
 </div>
 
 <style>
+    #cluster-public-tags {
+        display: flex;
+        column-gap: var(--spacing-2);
+    }
+    
+    
+    /*=============================================
+    =            Taxonomy tags minimap            =
+    =============================================*/
+    
+        aside.cpt-taxonomy-tags-minimap {
+            display: flex;
+            width: fit-content;
+            flex-direction: column;
+            row-gap: var(--spacing-1);
+        } 
+
+        aside.cpt-taxonomy-tags-minimap header.cpt-ttm-header {
+            text-align: center;
+
+            & h4 {
+                font-family: var(--font-read);
+                color: var(--grey-6);
+                font-weight: 600;
+            }
+        }
+
+        aside.cpt-taxonomy-tags-minimap ol.cpt-ttm-tag-taxonomies {
+            display: flex;
+            flex-direction: column;
+            row-gap: calc(0.25 * var(--spacing-1));
+
+            & li.cpt-ttm-taxonomy {
+                text-align: center;
+                color: var(--grey-2);
+                background: var(--grey-8);
+                padding: var(--spacing-1) var(--spacing-2);
+                border-radius: var(--border-radius);
+            }
+
+            & li.cpt-ttm-taxonomy p {
+                font-size: var(--font-size-1);
+                line-height: 1;
+                text-transform: lowercase;
+            }
+        }
+    
+    /*=====  End of Taxonomy tags minimap   ======*/
+    
+    
+
     #cpt-sections-wrapper {
         display: flex;
         flex-direction: column;
