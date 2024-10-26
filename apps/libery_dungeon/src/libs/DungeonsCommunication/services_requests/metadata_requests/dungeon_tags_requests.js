@@ -699,7 +699,7 @@ export class PatchRenameTagTaxonomyRequest {
      * @returns {Promise<HttpResponse<boolean>>}
      */
     do = async () => {
-        const url = PatchRenameTagTaxonomyRequest.endpoint;
+        const url = `${PatchRenameTagTaxonomyRequest.endpoint}?uuid=${this.uuid}&new_name=${this.new_name}`;
 
         /**
          * @type {Response}
@@ -714,10 +714,6 @@ export class PatchRenameTagTaxonomyRequest {
         try {
             response = await fetch(url, {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: this.toJson()
             });
         } catch (error) {
             console.error("Error renaming tag taxonomy: ", error);
@@ -751,7 +747,7 @@ export class PatchRenameDungeonTagRequest {
      * @returns {Promise<HttpResponse<boolean>>}
      */
     do = async () => {
-        const url = PatchRenameDungeonTagRequest.endpoint;
+        const url = `${PatchRenameDungeonTagRequest.endpoint}?id=${this.id}&new_name=${this.new_name}`;
 
         /**
          * @type {Response}
@@ -766,10 +762,6 @@ export class PatchRenameDungeonTagRequest {
         try {
             response = await fetch(url, {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: this.toJson()
             });
         } catch (error) {
             console.error("Error renaming dungeon tag: ", error);
