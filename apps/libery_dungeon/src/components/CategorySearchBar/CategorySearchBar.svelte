@@ -70,8 +70,6 @@
                 results: search_results,
                 search_query,
             });
-
-            search_field_data.clear();
         }
 
         /**
