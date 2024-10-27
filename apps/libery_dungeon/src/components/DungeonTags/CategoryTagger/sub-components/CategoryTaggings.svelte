@@ -468,6 +468,14 @@
             line-height: 1;
         }
 
+        & p.dungeons-field-label {
+            text-transform: lowercase;
+        }
+
+        & p.dungeons-field-label::first-letter {
+            text-transform: uppercase;
+        }
+
         &.focused-attribute p.dungeons-field-label:first-child {
             color: var(--main);
         }
