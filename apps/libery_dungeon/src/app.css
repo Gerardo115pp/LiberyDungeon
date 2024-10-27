@@ -746,6 +746,13 @@
         }
     }
 
+    .rename-input {
+        background: transparent;
+        color: var(--grey-1);
+        border: none;
+        outline: none;
+    }
+
     @media (pointer: fine) {
         .dungeon-button-1:not(:disabled):hover {
             background: var(--main-dark);
