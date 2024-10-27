@@ -491,10 +491,23 @@ export class PostTagEntityRequest {
 
     /**
      * @param {string} entity
+     * @param {string} entity_type
      * @param {number} tag_id
      */
-    constructor(entity, tag_id) {
+    constructor(entity, entity_type, tag_id) {
+        if (entity === "" || entity_type == null) {
+            throw new Error("Entity and entity_type must be defined");
+        }
         this.entity = entity;
+
+        if (entity_type === "" || entity_type == null) {
+            throw new Error("Entity type must be defined");
+        }
+        this.entity_type = entity_type;
+
+        if (tag_id == null || tag_id < 0) {
+            throw new Error("Tag id must be defined and positive");
+        }
         this.tag_id = tag_id;
     }
 
@@ -505,7 +518,7 @@ export class PostTagEntityRequest {
      * @returns {Promise<HttpResponse<import("../../base").SingleNumberResponse>>}
      */
     do = async () => {
-        const url = `${PostTagEntityRequest.endpoint}?entity=${this.entity}&tag_id=${this.tag_id}`;
+        const url = `${PostTagEntityRequest.endpoint}?entity=${this.entity}&tag_id=${this.tag_id}&entity_type=${this.entity_type}`;
 
         /**
          * @type {Response}
