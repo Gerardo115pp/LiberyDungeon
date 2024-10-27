@@ -29,6 +29,7 @@ func (dt *DungeonTag) RecalculateNameTaxonomy() {
 
 type DungeonTagging struct {
 	TaggingID        int64       `json:"tagging_id"`
+	EntityType       string      `json:"entity_type"`
 	Tag              *DungeonTag `json:"tag"`
 	TaggedEntityUUID string      `json:"tagged_entity_uuid"`
 }
