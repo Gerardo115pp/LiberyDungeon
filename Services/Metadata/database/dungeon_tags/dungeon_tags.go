@@ -301,7 +301,7 @@ func (dt_db *DungeonTagsDB) GetTagByName(tag_name, taxonomy string) (service_mod
 func (dt_db *DungeonTagsDB) GetTaxonomyTagsCTX(ctx context.Context, taxonomy_uuid string) ([]service_models.DungeonTag, error) {
 	var tags []service_models.DungeonTag = make([]service_models.DungeonTag, 0)
 
-	rows, err := dt_db.db_conn.QueryContext(ctx, "SELECT `id`, `name`, `taxonomy`, `name_taxonomy` FROM `dungeon_tags` WHERE `taxonomy`=?", taxonomy_uuid)
+	rows, err := dt_db.db_conn.QueryContext(ctx, "SELECT `id`, `name`, `taxonomy`, `name_taxonomy` FROM `dungeon_tags` WHERE `taxonomy`=? ORDER BY `name`", taxonomy_uuid)
 	if err != nil {
 		return tags, err
 	}
