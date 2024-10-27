@@ -332,6 +332,8 @@
             }
 
             cluster_tags.set(new_cluster_tags);
+
+            await refreshCurrentCategoryTaggings();
         }
         
         /**
