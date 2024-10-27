@@ -43,6 +43,7 @@ import {
 * @typedef {Object} DungeonTaggingParams
  * @property {number} tagging_id - The identifier of the tagging.
  * @property {DungeonTagParams} tag - The tag object.
+ * @property {string} entity_type - The type of entity the tag is associated with. not enforced, just serves tell different types of entities apart.
  * @property {string} tagged_entity_uuid - An identifier(not enforced) of a generic entity the tag is associated with.
 */
 
@@ -247,6 +248,12 @@ export class DungeonTagging {
     #tag
 
     /**
+     * The type of entity the tag is associated with. not enforced, just serves tell different types of entities apart.
+     * @type {string}
+     */
+    #entity_type
+
+    /**
      * An identifier(not enforced) of a generic entity the tag is associated with.
      * @type {string}
      */
@@ -256,9 +263,10 @@ export class DungeonTagging {
      * @param {DungeonTaggingParams} params
      */
     constructor(params) {
-        this.#tagging_id = params.tagging_id
-        this.#tag = new DungeonTag(params.tag)
-        this.#tagged_entity_uuid = params.tagged_entity_uuid
+        this.#tagging_id = params.tagging_id;
+        this.#tag = new DungeonTag(params.tag);
+        this.#entity_type = params.entity_type;
+        this.#tagged_entity_uuid = params.tagged_entity_uuid;
     }
 
     /**
@@ -275,6 +283,14 @@ export class DungeonTagging {
      */
     get Tag() {
         return this.#tag;
+    }
+
+    /**
+     * The type of entity the tag is associated with. not enforced, just serves tell different types of entities apart.
+     * @type {string}
+     */
+    get EntityType() {
+        return this.#entity_type;
     }
 
     /**
