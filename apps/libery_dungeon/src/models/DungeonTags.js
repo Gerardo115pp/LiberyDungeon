@@ -538,9 +538,14 @@ export class DungeonTagging {
         /** @type {number | null} */
         let tagging_id = null;
 
+        /**
+         * @type {PostTagEntityRequest}
+         */
+        let request;
+
         try {
             // If any parameter is missing it will panic.
-            const request = new PostTagEntityRequest(entity, tag_id, entity_type);
+            request = new PostTagEntityRequest(entity, entity_type, tag_id);
         } catch (error) { 
             let variable_environment = new VariableEnvironmentContextError("In DungeonTags.tagEntity");
 
