@@ -1,5 +1,3 @@
-PRAGMA foreign_keys=ON;
-
 DROP TABLE IF EXISTS `tag_taxonomies`;
 CREATE TABLE IF NOT EXISTS `tag_taxonomies` (
     `uuid` TEXT PRIMARY KEY,
@@ -21,7 +19,8 @@ DROP TABLE IF EXISTS `taggings`;
 CREATE TABLE IF NOT EXISTS `taggings` (
     `tagging_id` INTEGER PRIMARY KEY AUTOINCREMENT,
     `tag` INTEGER NOT NULL,
+    `entity_type` TEXT NOT NULL DEFAULT '',
     `taggable_id` TEXT NOT NULL,
     FOREIGN KEY(`tag`) REFERENCES `dungeon_tags`(`id`) ON DELETE CASCADE,
-    UNIQUE(`tag`, `taggable_id`)
+    UNIQUE(`tag`, `taggable_id`) 
 );
