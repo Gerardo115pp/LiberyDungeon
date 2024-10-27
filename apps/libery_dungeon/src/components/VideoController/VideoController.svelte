@@ -652,6 +652,8 @@
          * @returns {void}
         */
         const updateVideoProgress = () => {
+            if (isNaN(video_element.duration)) return;
+
             video_progress = (video_element.currentTime / video_element.duration) * 100;
         }
 
