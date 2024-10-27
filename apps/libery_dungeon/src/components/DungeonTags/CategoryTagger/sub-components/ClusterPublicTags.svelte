@@ -8,7 +8,9 @@
     import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
     import { browser } from "$app/environment";
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
-    import { confirmPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+    import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+    import { renameTagTaxonomy } from "@models/DungeonTags";
+    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     
     /*=============================================
     =            Properties            =
@@ -70,6 +72,24 @@
 
             /*=====  End of Hotkeys  ======*/
 
+            /**
+             * Whether the focused tag taxonomy is on rename mode.
+             * @type {boolean}
+             */
+            let cpt_focused_tag_taxonomy_rename_mode = true;
+
+            /**
+             * The tag taxonomy renamer input element.
+             * @type {HTMLInputElement}
+             */
+            let the_taxonomy_renamer_input;
+
+            /**
+             * Whether the tag renamer name is ready.
+             * @type {boolean}
+             */
+            let taxonomy_renamer_is_ready = false;
+
             const dispatch = createEventDispatcher();
     
     /*=====  End of Properties  ======*/
@@ -115,6 +135,12 @@
                     hotkeys_context.register(["x"], handleFocusedTagTaxonomyDeletion, {
                         description: "<content>Deletes the focused attribute.",
                         await_execution: false,
+                    });
+
+                    hotkeys_context.register(["c c"], handleRenameFocusedTagTaxonomyHotkey, {
+                        description: "<content>Renames the focused attribute.",
+                        await_execution: false,
+                        mode: "keyup"
                     });
 
                     hotkeys_context.register(["?"], toggleHotkeysSheet, {
@@ -209,6 +235,17 @@
             }
 
             /**
+             * Handles the renaming of the focused tag taxonomy.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleRenameFocusedTagTaxonomyHotkey = (event, hotkey) => {
+                if (cpt_focused_tag_taxonomy_active) return;
+
+                cpt_focused_tag_taxonomy_rename_mode = true;
+            }
+
+            /**
              * Emits an event to close the category tagger tool and drops the hotkeys context.
              * @param {KeyboardEvent} event
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
@@ -229,6 +266,15 @@
 
         /*=====  End of Keybinds  ======*/
 
+        /**
+         * Checks if a Tag taxonomy exists by its name.
+         * @param {string} tag_name
+         * @returns {boolean}
+         */
+        const checkTaxonomyNameExists = (tag_name) => {
+            return $cluster_tags.some(taxonomy_tags => taxonomy_tags.Taxonomy.Name === tag_name);
+        }
+        
         /**
          * Ensures that focused tag taxonomy item on the minimap are visible.
          */
@@ -255,6 +301,119 @@
             });
         }
 
+        /**
+         * Emits the taxonomy-content-change event with the given taxonomy UUID.
+         * @param {string} taxonomy_uuid
+         */
+        const emitTaxonomyContentChange = taxonomy_uuid => {
+            dispatch("taxonomy-content-change", {taxonomy: taxonomy_uuid});
+        }
+
+        /**
+         * Returns the focused TaxonomyTags instances.
+         * @returns {import("@models/DungeonTags").TaxonomyTags | null}
+         */
+        const getFocusedTagTaxonomy = () => {
+            return $cluster_tags[cpt_focused_tag_taxonomy_index];
+        }
+
+        /**
+         * Handles the tag renamer keydown event.
+         * @param {KeyboardEvent} event
+         */
+        const handleTagRenamerKeyDown = (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                renameFocusedTagTaxonomy();
+                return;
+            }
+
+            if (event.key === "Escape") {
+                resetTaxonomyRenamerState();
+                return;
+            }
+        }
+
+        /**
+         * Handles the tag renamer keyup event.
+         * @param {KeyboardEvent} event
+         */
+        const handleTagRenamerKeyUp = (event) => {
+            event.preventDefault();
+
+            if (the_taxonomy_renamer_input.validationMessage !== "") {
+                the_taxonomy_renamer_input.setCustomValidity("");
+            }
+
+            taxonomy_renamer_is_ready = the_taxonomy_renamer_input.checkValidity() && the_taxonomy_renamer_input.value !== "";
+            console.log("Is tag renamer name valid: ", taxonomy_renamer_is_ready);
+        }
+
+        /**
+         * Renames the focused tag taxonomy with the value of the tag renamer input.
+         * @returns {Promise<void>}
+         */
+        const renameFocusedTagTaxonomy = async () => {
+            let focused_taxonomy_tags = getFocusedTagTaxonomy();
+
+            if (focused_taxonomy_tags == null) {
+                console.error("The focused tag index is out of bounds");
+                return;
+            }
+
+            let new_tag_name = the_taxonomy_renamer_input.value.trim();
+            
+            if (new_tag_name === focused_taxonomy_tags.Taxonomy.Name) {
+                resetTaxonomyRenamerState();
+                return;
+            }
+
+            if (!taxonomy_renamer_is_ready) {
+                the_taxonomy_renamer_input.reportValidity();
+                return;
+            }
+
+            let tag_name_available = !checkTaxonomyNameExists(new_tag_name);
+
+            if (!tag_name_available) {
+                let labeled_error = new LabeledError("In TagGroup.handleTagRenamerKeyDown", `The value '${new_tag_name}' already exists for this attribute`);
+
+                labeled_error.alert();
+                return;
+            }
+
+            const old_name = focused_taxonomy_tags.Taxonomy.Name;
+
+            let renamed = await renameTagTaxonomy(focused_taxonomy_tags.Taxonomy.UUID, new_tag_name);
+
+            if (!renamed) {
+                let labeled_error = new LabeledError("In TagGroup.handleTagRenamerKeyDown", `An error occurred while renaming the attribute '${old_name}' to '${new_tag_name}'`, lf_errors.ERR_PROCESSING_ERROR);
+
+                labeled_error.alert();
+            } else {
+                emitTaxonomyContentChange(focused_taxonomy_tags.Taxonomy.UUID);
+                emitPlatformMessage(`The attribute '${old_name}' was successfully renamed to '${new_tag_name}'`);
+            }
+
+            resetTaxonomyRenamerState();
+        }
+
+        /**
+         * Resets the tag renamer related state.
+         */
+        const resetTaxonomyRenamerState = () => {
+            taxonomy_renamer_is_ready = false;
+            setTagRenamerState(false);
+        }
+
+        /**
+         * Set tag renamer state.
+         * @param {boolean} state
+         */
+        const setTagRenamerState = state => {
+            cpt_focused_tag_taxonomy_rename_mode = state;
+        }
+
     /*=====  End of Methods  ======*/
 
 </script>
@@ -273,9 +432,26 @@
                     class:keyboard-focused={is_keyboard_focused}
                     class:has-hotkey-control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
                 >
-                    <p class="cpt-ttm-taxonomy-name">
-                        {taxonomy_tags.Taxonomy.Name}
-                    </p>
+                    {#if is_keyboard_focused && cpt_focused_tag_taxonomy_rename_mode}
+                        <input 
+                            class="rename-input cpt-ttm-taxonomy-name"
+                            bind:this={the_taxonomy_renamer_input}
+                            value="{taxonomy_tags.Taxonomy.Name}"
+                            on:keydown={handleTagRenamerKeyDown}
+                            on:keyup={handleTagRenamerKeyUp}
+                            type="text"
+                            minlength="2"
+                            maxlength="64"
+                            pattern="{'[A-z_][A-z_\\s]{2,64}'}"
+                            spellcheck="true"
+                            autofocus
+                            required
+                        />
+                    {:else}
+                        <p class="cpt-ttm-taxonomy-name">
+                            {taxonomy_tags.Taxonomy.Name}
+                        </p>
+                    {/if}
                 </li>
             {/each}
         </ol>
