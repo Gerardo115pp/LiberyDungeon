@@ -270,7 +270,7 @@
                     });
                     
                     if ($current_user_identity.canPublicContentAlter()) {
-                        hotkeys_context.register("t", handleMediaMovementToggle, {
+                        hotkeys_context.register("alt+c", handleMediaMovementToggle, {
                             description: "<media_modification>Toggle the media movement manager.",
                             mode: "keyup"
                         });
@@ -475,8 +475,11 @@
 
             /**
              * Handles the toggling of the media movement manager
+             * @param {KeyboardEvent} event
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
-            const handleMediaMovementToggle = () => {
+            const handleMediaMovementToggle = (event, hotkey) => {
+                event.preventDefault();
                 show_media_movement_manager = !show_media_movement_manager;
 
                 global_hotkeys_manager.Binder.pause();
