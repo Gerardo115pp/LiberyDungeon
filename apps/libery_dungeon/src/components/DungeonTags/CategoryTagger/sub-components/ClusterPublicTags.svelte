@@ -477,7 +477,7 @@
 <style>
     #cluster-public-tags {
         display: grid;
-        grid-template-columns: max-content 1fr;
+        grid-template-columns: 8cqw 1fr;
         box-sizing: border-box;
         width: 100%;
         column-gap: var(--spacing-2);
@@ -520,7 +520,7 @@
                 border-radius: var(--border-radius);
             }
 
-            & li.cpt-ttm-taxonomy p {
+            & li.cpt-ttm-taxonomy p, & li.cpt-ttm-taxonomy input {
                 font-size: var(--font-size-1);
                 line-height: 1;
                 text-transform: lowercase;
@@ -537,6 +537,13 @@
 
             & li.cpt-ttm-taxonomy.has-hotkey-control p.cpt-ttm-taxonomy-name {
                 color: var(--grey-1);
+            }
+
+            & li.cpt-ttm-taxonomy input.rename-input {
+                display: block;
+                text-transform: none;
+                width: 100%;
+                line-height: 1;
             }
         }
     
