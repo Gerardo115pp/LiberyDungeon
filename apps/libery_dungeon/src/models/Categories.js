@@ -184,6 +184,13 @@ export const moveCategory = async (moved_category, new_parent_category) => {
      * @property {string} cluster_path
     */
 
+    /**
+    * @typedef {Object} InnerCategoryParams
+     * @property {string} name the name of the category
+     * @property {string} uuid the 40 character identifier of the category
+     * @property {string} fullpath the full path of the category in the virtual file system
+    */
+
     export class CategoryWeakIdentity {
 
         /**
@@ -235,6 +242,9 @@ export const moveCategory = async (moved_category, new_parent_category) => {
          */
         fullpath;
 
+        /**
+         * @param {InnerCategoryParams} param0 
+         */
         constructor ({name, uuid, fullpath}) {
             if (name === undefined || uuid === undefined) {
                 throw new Error("The name and uuid of the category must be set");
