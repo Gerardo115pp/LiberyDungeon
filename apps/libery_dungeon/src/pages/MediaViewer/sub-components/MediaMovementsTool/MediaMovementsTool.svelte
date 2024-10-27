@@ -283,10 +283,13 @@
             toggleAutoMoveState(true);
         }
 
+        /**
+         * Handles the event of a new search result being received
+         * @param {CustomEvent<SearchResultsEventDetail>} e
+         * @typedef {Object} SearchResultsEventDetail
+         * @property {import('@models/Categories').InnerCategoryParams[]} results
+         */
         const handleSearchResults = e => {
-            /**
-             * @type {Object[]}
-             */
             let new_search_results = e.detail.results;
 
             if (new_search_results.length === 0) return;
@@ -411,7 +414,7 @@
 {#if show_quick_move_tool}
     <QuickMovementsTools used_categories={$media_changes_manager.UsedCategories} {quick_selected_category_index}/>
 {/if}
-<div id="mv-category-tree-model" class:adebug={false} class="libery-scroll" style:visibility={is_component_visible ? "visible" : "hidden"}>
+<div id="mv-category-tree-model" class:adebug={false} class="dungeon-scroll libery-dungeon-window" style:visibility={is_component_visible ? "visible" : "hidden"}>
     <div class="mv-ctm-category" id="mv-ctm-searh-bar-section">
         <div id="mv-ctm-search-bar-wrapper">
             {#if is_component_visible}
@@ -455,7 +458,6 @@
     #mv-category-tree-model {
         box-sizing: border-box;
         height: 100%;
-        background: var(--grey-7);
         padding: var(--vspacing-3) 0;
         overflow-y: auto;
     }
