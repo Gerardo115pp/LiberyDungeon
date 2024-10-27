@@ -347,7 +347,7 @@ func (dt_db *DungeonTagsDB) GetTagTaxonomy(taxonomy_uuid string) (service_models
 func (dt_db *DungeonTagsDB) GetEntityTaggingsCTX(ctx context.Context, entity_uuid, cluster_domain string) ([]service_models.DungeonTagging, error) {
 	var taggings []service_models.DungeonTagging = make([]service_models.DungeonTagging, 0)
 
-	var sql_query string = "SELECT `tagging_id`, `tag`, `taggable_id` FROM `taggings` WHERE `taggable_id`=? AND `tag` IN (SELECT `id` FROM `dungeon_tags` WHERE `taxonomy` IN (SELECT `uuid` FROM `tag_taxonomies` WHERE `cluster_domain`=?))"
+	var sql_query string = "SELECT `tagging_id`, `tag`, `taggable_id`, `entity_type` FROM `taggings` WHERE `taggable_id`=? AND `tag` IN (SELECT `id` FROM `dungeon_tags` WHERE `taxonomy` IN (SELECT `uuid` FROM `tag_taxonomies` WHERE `cluster_domain`=?))"
 
 	stmt, err := dt_db.db_conn.PrepareContext(ctx, sql_query)
 	if err != nil {
@@ -363,7 +363,7 @@ func (dt_db *DungeonTagsDB) GetEntityTaggingsCTX(ctx context.Context, entity_uui
 	for rows.Next() {
 		var tagging service_models.DungeonTagging
 		var tag_id int
-		err = rows.Scan(&tagging.TaggingID, &tag_id, &tagging.TaggedEntityUUID)
+		err = rows.Scan(&tagging.TaggingID, &tag_id, &tagging.TaggedEntityUUID, &tagging.EntityType)
 		if err != nil {
 			return taggings, errors.Join(errors.New("Failed to scan row"), err)
 		}
@@ -438,6 +438,8 @@ func (dt_db *DungeonTagsDB) GetEntitiesWithTaggings(tags []int) ([]string, error
 	return dt_db.GetEntitiesWithTaggingsCTX(context.Background(), tags)
 }
 
+// TODO: Implement GetEntityWithTaggingsByType. Same as GetEntityWithTaggings but with an additional filter for the entity type.
+
 func (dt_db *DungeonTagsDB) RemoveTagFromEntityCTX(ctx context.Context, tag_id int, entity_uuid string) error {
 	stmt, err := dt_db.db_conn.PrepareContext(ctx, "DELETE FROM `taggings` WHERE `tag`=? AND `taggable_id`=?")
 	if err != nil {
@@ -453,13 +455,13 @@ func (dt_db *DungeonTagsDB) RemoveTagFromEntity(tag_id int, entity_uuid string) 
 	return dt_db.RemoveTagFromEntityCTX(context.Background(), tag_id, entity_uuid)
 }
 
-func (dt_db *DungeonTagsDB) TagEntityCTX(ctx context.Context, tag_id int, entity_uuid string) (int64, error) {
-	stmt, err := dt_db.db_conn.PrepareContext(ctx, "INSERT INTO `taggings`(`tag`, `taggable_id`) VALUES (?, ?)")
+func (dt_db *DungeonTagsDB) TagEntityCTX(ctx context.Context, tag_id int, entity_uuid, entity_type string) (int64, error) {
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, "INSERT INTO `taggings`(`tag`, `taggable_id`, `entity_type`) VALUES (?, ?, ?)")
 	if err != nil {
 		return 0, err
 	}
 
-	result, err := stmt.ExecContext(ctx, tag_id, entity_uuid)
+	result, err := stmt.ExecContext(ctx, tag_id, entity_uuid, entity_type)
 	if err != nil {
 		return 0, err
 	}
@@ -471,8 +473,8 @@ func (dt_db *DungeonTagsDB) TagEntityCTX(ctx context.Context, tag_id int, entity
 	return last_insert_id, err
 }
 
-func (dt_db *DungeonTagsDB) TagEntity(tag_id int, entity_uuid string) (int64, error) {
-	return dt_db.TagEntityCTX(context.Background(), tag_id, entity_uuid)
+func (dt_db *DungeonTagsDB) TagEntity(tag_id int, entity_uuid, entity_type string) (int64, error) {
+	return dt_db.TagEntityCTX(context.Background(), tag_id, entity_uuid, entity_type)
 }
 
 func (dt_db *DungeonTagsDB) UpdateTaxonomyNameCTX(ctx context.Context, taxonomy_uuid, new_name string) error {
