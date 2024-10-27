@@ -76,7 +76,7 @@
              * Whether the focused tag taxonomy is on rename mode.
              * @type {boolean}
              */
-            let cpt_focused_tag_taxonomy_rename_mode = true;
+            let cpt_focused_tag_taxonomy_rename_mode = false;
 
             /**
              * The tag taxonomy renamer input element.
