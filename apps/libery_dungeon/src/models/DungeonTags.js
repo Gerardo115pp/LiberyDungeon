@@ -16,6 +16,8 @@ import {
     PatchRenameTagTaxonomyRequest,
     PatchRenameDungeonTagRequest 
 } from '@libs/DungeonsCommunication/services_requests/metadata_requests/dungeon_tags_requests'
+import { lf_errors } from '@libs/LiberyFeedback/lf_errors'
+import { LabeledError, VariableEnvironmentContextError } from '@libs/LiberyFeedback/lf_models'
 
 /**
 * @typedef {Object} TagTaxonomyParams
@@ -529,13 +531,29 @@ export class DungeonTagging {
      * Tags a given entity identifier with a tag by the tag id. Returns the id of the tagging created.
      * @param {string} entity
      * @param {number} tag_id
+     * @param {string} entity_type
      * @returns {Promise<number | null>}
      */
-    export const tagEntity = async (entity, tag_id) => {
+    export const tagEntity = async (entity, tag_id, entity_type) => {
         /** @type {number | null} */
         let tagging_id = null;
 
-        const request = new PostTagEntityRequest(entity, tag_id);
+        try {
+            // If any parameter is missing it will panic.
+            const request = new PostTagEntityRequest(entity, tag_id, entity_type);
+        } catch (error) { 
+            let variable_environment = new VariableEnvironmentContextError("In DungeonTags.tagEntity");
+
+            variable_environment.addVariable("entity", entity);
+            variable_environment.addVariable("tag_id", tag_id);
+            variable_environment.addVariable("entity_type", entity_type);
+
+            let labeled_error = new LabeledError(variable_environment, "Programming error: Missing parameter in DungeonTags.tagEntity.", lf_errors.PROGRAMMING_ERROR__MISSING_PARAMETER);
+
+            labeled_error.alert();
+
+            return null;
+        }
 
         const response = await request.do();
 

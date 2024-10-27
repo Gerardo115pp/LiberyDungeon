@@ -18,6 +18,7 @@
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
         import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { toggleHotkeysSheet } from "@stores/layout";   
+    import { CATEGORY_ENTITY_TYPE } from "@app/config/dungeon_tags_config";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -343,7 +344,7 @@
         const handleTagSelection = async (event) => {
             const tag_id = event.detail.tag_id;
 
-            let tagging_id = await tagEntity($current_category.uuid, tag_id);
+            let tagging_id = await tagEntity($current_category.uuid, tag_id, CATEGORY_ENTITY_TYPE);
 
             if (tagging_id == null) {
                 const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.handleTagSelection");
