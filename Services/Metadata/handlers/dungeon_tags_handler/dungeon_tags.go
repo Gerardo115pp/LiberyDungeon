@@ -78,8 +78,9 @@ func postDungeonTagsHandler(response http.ResponseWriter, request *http.Request)
 func postDungeonTagEntityHandler(response http.ResponseWriter, request *http.Request) {
 	var tag_id_str string = request.URL.Query().Get("tag_id")
 	var entity_identifier string = request.URL.Query().Get("entity")
+	var entity_type string = request.URL.Query().Get("entity_type")
 
-	if tag_id_str == "" || entity_identifier == "" {
+	if tag_id_str == "" || entity_identifier == "" || entity_type == "" {
 		echo.Echo(echo.RedFG, "In postDungeonTagEntityHandler, tag_id or entity is empty\n")
 		response.WriteHeader(400)
 		return
@@ -93,7 +94,7 @@ func postDungeonTagEntityHandler(response http.ResponseWriter, request *http.Req
 		return
 	}
 
-	tagging_id, err := repository.DungeonTagsRepo.TagEntityCTX(request.Context(), tag_id, entity_identifier)
+	tagging_id, err := repository.DungeonTagsRepo.TagEntityCTX(request.Context(), tag_id, entity_identifier, entity_type)
 	if err != nil {
 		echo.Echo(echo.RedFG, fmt.Sprintf("In postDungeonTagEntityHandler, while tagging entity: %s\n", err))
 		response.WriteHeader(500)
