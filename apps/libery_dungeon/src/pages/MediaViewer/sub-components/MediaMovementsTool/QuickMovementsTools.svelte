@@ -1,13 +1,11 @@
 <script>
     import { InnerCategory } from "@models/Categories";
-    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     
     /*=============================================
     =            Properties            =
     =============================================*/
 
-        let global_hotkeys_manager = getHotkeysManager();
     
         /** @type {InnerCategory[]} the recently used categories */
         export let used_categories;

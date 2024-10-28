@@ -25,7 +25,7 @@
         import { create_subcategory } from "@pages/MediaViewer/app_page_store";
         import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { browser } from "$app/environment";
-    import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+        import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     
     /*=====  End of Imports  ======*/
     
@@ -105,98 +105,6 @@
         =            Keybinds            =
         =============================================*/
             // TODO: Fix this mess. Each hotkey handler need it's own named function. Anonymous functions seriously hurt the readability of the code.
-        
-            const defineQuickMoveHotkeys = () => {
-                const quick_move_tool_context = new HotkeysContext();
-
-                quick_move_tool_context.register(["a", "d"], handleQuickMoveToolNavigation, {
-                    description: "<navigation>Move the selected category on the quick move tool",
-                    can_repeat: true
-                });
-                
-                quick_move_tool_context.register("c", () => setQuickMoveToolState(false), {
-                    mode: "keyup",
-                    description: `<${HOTKEYS_GENERAL_GROUP}>Release the key to close the quick move tool`
-                });
-
-                global_hotkeys_manager.declareContext(quick_move_context_name, quick_move_tool_context);
-            }
-
-            const defineSearchResultsHotkeys = () => {
-                const search_results_context = new HotkeysContext();
-
-                if (global_hotkeys_manager.hasContext(search_results_context_name)) return;
-
-                search_results_context.register("s", () => {
-                        moveSearchResultFocus(1);
-                    }, {
-                        description: "<navigation>Move the focus to the next search result"
-                });
-
-                search_results_context.register("w", () => {
-                        moveSearchResultFocus(-1);
-                    }, {
-                        description: "<navigation>Move the focus to the previous search result"
-                });
-
-                search_results_context.register("e", () => {
-                        selectSearchResult(focused_search_result_index);
-
-                        exitSearchResultsHotkeysContext();
-                    }, {
-                        mode: "keyup",
-                        description: "<media_modification>Select the focused search result and move the active media to it",
-                });
-
-                search_results_context.register("q", () => {
-                        focusSearchBarComponent();
-                    }, {
-                        mode: "keyup",
-                        description: "<navigation>Focus the search bar"
-                });
-
-                // TODO: ⟱ ⟱ ⟱ This down below is DISGUSTING, I have to implement a cleaner way to create new subcategories.
-                search_results_context.register("n", () => {
-                    create_subcategory.set(true);
-                }, {
-                    mode: "keyup",
-                    description: "<media_modification>Creates a new subcategory on the focused category/search result"
-                });
-
-                search_results_context.register("\`", exitSearchResultsHotkeysContext, {
-                    mode: "keypress",
-                    description: "<navigation>Exit the search results tool",
-                });
-
-
-                global_hotkeys_manager.declareContext(search_results_context_name, search_results_context);
-            }
-
-            const exitSearchResultsHotkeysContext = () => {
-                let max_iterations = 100;
-                let iterations = 0;
-
-                while (global_hotkeys_manager.ContextName === search_results_context_name && iterations < max_iterations) {
-                    global_hotkeys_manager.loadPreviousContext();
-                    iterations++;
-                }
-            }
-
-            /**
-             * Handles the movement(left/right) of the quick move tool selected category
-             * @param {KeyboardEvent} event
-             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
-             */
-            const handleQuickMoveToolNavigation = (event, hotkey) => {
-                let direction = event.key === "d" ? 1 : -1;
-
-                const used_categories_count = $media_changes_manager.UsedCategories.length - 1; // -1 because the index is 0 based
-
-
-                if (used_categories_count === 0) return;
-
-                quick_selected_category_index = linearCycleNavigationWrap(quick_selected_category_index,used_categories_count, direction).value;
-            }
 
             /**
              * Registers the component extra hotkeys, if any of them are already registered then they are ignored and a warning is logged
@@ -207,11 +115,133 @@
 
 
                 // register the hotkeys for the quick move tool
-                if (!global_hotkeys_manager.hasHotkey("c", "keydown")) {
-                    global_hotkeys_manager.registerHotkeyOnContext("c", () => setQuickMoveToolState(true), {
-                        mode: "keydown",
-                        description: "<media_modification>Press the key to open the quick move tool. Release to close it."
+                global_hotkeys_manager.registerHotkeyOnContext("c", () => setQuickMoveToolState(true), {
+                    mode: "keydown",
+                    description: "<media_modification>Press the key to open the quick move tool. Release to close it."
+                });
+            }
+            
+            /*=============================================
+            =            Quick movements tools            =
+            =============================================*/
+            
+                const defineQuickMoveHotkeys = () => {
+                    const quick_move_tool_context = new HotkeysContext();
+
+                    quick_move_tool_context.register(["a", "d"], handleQuickMoveToolNavigation, {
+                        description: "<navigation>Move the selected category on the quick move tool",
+                        can_repeat: true
                     });
+                    
+                    quick_move_tool_context.register("c", () => setQuickMoveToolState(false), {
+                        mode: "keyup",
+                        description: `<${HOTKEYS_GENERAL_GROUP}>Release the key to close the quick move tool`
+                    });
+
+                    global_hotkeys_manager.declareContext(quick_move_context_name, quick_move_tool_context);
+                }
+
+                /**
+                 * Handles the movement(left/right) of the quick move tool selected category
+                 * @param {KeyboardEvent} event
+                 * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+                 */
+                const handleQuickMoveToolNavigation = (event, hotkey) => {
+                    let direction = event.key === "d" ? 1 : -1;
+
+                    const used_categories_count = $media_changes_manager.UsedCategories.length - 1; // -1 because the index is 0 based
+
+
+                    if (used_categories_count === 0) return;
+
+                    quick_selected_category_index = linearCycleNavigationWrap(quick_selected_category_index,used_categories_count, direction).value;
+                }
+
+            /*=====  End of Quick movements tools  ======*/
+            
+            /*=============================================
+            =            Search Results hotkeys            =
+            =============================================*/
+            
+                const defineSearchResultsHotkeys = () => {
+                    const search_results_context = new HotkeysContext();
+
+                    if (global_hotkeys_manager.hasContext(search_results_context_name)) return;
+
+                    // search_results_context.register("s", () => {
+                    //         moveSearchResultFocus(1);
+                    //     }, {
+                    //         description: "<navigation>Move the focus to the next search result"
+                    // });
+
+                    // search_results_context.register("w", () => {
+                    //         moveSearchResultFocus(-1);
+                    //     }, {
+                    //         description: "<navigation>Move the focus to the previous search result"
+                    // });
+
+                    search_results_context.register(["w", "s"], handleSearchResultsNavigation, {
+                        description: "<navigation>Move the focus to the next/previous search result",
+                        can_repeat: true
+                    });
+
+                    search_results_context.register("e", () => {
+                            selectSearchResult(focused_search_result_index);
+
+                            exitSearchResultsHotkeysContext();
+                        }, {
+                            mode: "keyup",
+                            description: "<media_modification>Select the focused search result and move the active media to it",
+                    });
+
+                    search_results_context.register("q", () => {
+                            focusSearchBarComponent();
+                        }, {
+                            mode: "keyup",
+                            description: "<navigation>Focus the search bar"
+                    });
+
+                    // TODO: ⟱ ⟱ ⟱ This down below is DISGUSTING, I have to implement a cleaner way to create new subcategories.
+                    search_results_context.register("n", () => {
+                        create_subcategory.set(true);
+                    }, {
+                        mode: "keyup",
+                        description: "<media_modification>Creates a new subcategory on the focused category/search result"
+                    });
+
+                    search_results_context.register("\`", exitSearchResultsHotkeysContext, {
+                        mode: "keypress",
+                        description: "<navigation>Exit the search results tool",
+                    });
+
+
+                    global_hotkeys_manager.declareContext(search_results_context_name, search_results_context);
+                }
+
+                /**
+                 * Handles the navigation of the search results
+                 * @param {KeyboardEvent} event
+                 * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+                 */
+                const handleSearchResultsNavigation = (event, hotkey) => {
+                    let direction = event.key === "s" ? 1 : -1;
+
+                    moveSearchResultFocus(direction);
+                }
+            
+            
+            /*=====  End of Search Results hotkeys  ======*/
+            
+            
+
+
+            const exitSearchResultsHotkeysContext = () => {
+                let max_iterations = 100;
+                let iterations = 0;
+
+                while (global_hotkeys_manager.ContextName === search_results_context_name && iterations < max_iterations) {
+                    global_hotkeys_manager.loadPreviousContext();
+                    iterations++;
                 }
             }
         
@@ -321,13 +351,12 @@
         }
 
         const moveSearchResultFocus = steps => {
-            focused_search_result_index = Math.max(Math.min(focused_search_result_index + steps, search_results.length - 1), 0);
-            console.log("focused_search_result_index: ", focused_search_result_index);
-            console.log("search_results: ", search_results);
+            focused_search_result_index = linearCycleNavigationWrap(focused_search_result_index, search_results.length - 1, steps).value;
 
             const focused_result = search_results[focused_search_result_index];
 
             const focused_result_element = document.getElementById(`inner-category-${focused_result.uuid}`);
+
             if (focused_result_element === null) return;
 
             focused_result_element.scrollIntoView({ behavior: "instant", block: "nearest" });
