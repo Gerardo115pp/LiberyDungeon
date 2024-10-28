@@ -270,7 +270,7 @@
                     });
                     
                     if ($current_user_identity.canPublicContentAlter()) {
-                        hotkeys_context.register("alt+c", handleMediaMovementToggle, {
+                        hotkeys_context.register(["f2"], handleMediaMovementToggle, {
                             description: "<media_modification>Toggle the media movement manager.",
                             mode: "keyup"
                         });
