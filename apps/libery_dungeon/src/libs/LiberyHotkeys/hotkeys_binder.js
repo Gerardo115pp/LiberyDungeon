@@ -121,7 +121,6 @@ export class HotkeysController {
      */
     #paused;
 
-
     constructor() {
         if (globalThis.addEventListener === undefined) {
             throw new Error("This environment does not support event listeners")

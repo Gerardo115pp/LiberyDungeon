@@ -1,3 +1,4 @@
+import { CATEGORY_ENTITY_TYPE, MEDIA_ENTITY_TYPE } from '@app/config/dungeon_tags_config'
 import {
     GetClusterTaxonomiesRequest,
     GetDungeonTagByIDRequest,
@@ -672,5 +673,32 @@ export class DungeonTagging {
         return success;
     }
 
-
 /*=====  End of Model actions  ======*/
+
+
+/*=============================================
+=            Known entities wrappers            =
+=============================================*/
+
+/**
+ * Tags a given category with a tag by the tag id. Returns the id of the tagging created.
+ * @param {string} category_uuid
+ * @param {number} tag_id
+ * @returns {Promise<number | null>}
+ */
+export const tagCategory = async (category_uuid, tag_id) => {
+    return tagEntity(category_uuid, tag_id, CATEGORY_ENTITY_TYPE);
+}
+
+/**
+ * Tags a given media with a tag by the tag id. Returns the id of the tagging created.
+ * @param {string} media_uuid
+ * @param {number} tag_id
+ * @returns {Promise<number | null>}
+ */
+export const tagMedia = async (media_uuid, tag_id) => {
+    return tagEntity(media_uuid, tag_id, MEDIA_ENTITY_TYPE);
+}
+
+/*=====  End of Known entities wrappers  ======*/
+
