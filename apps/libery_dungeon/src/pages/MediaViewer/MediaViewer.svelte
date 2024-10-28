@@ -1040,7 +1040,7 @@
         {#if video_element !== undefined && video_element !== null}
             <div id="mw-video-controller-wrapper">
                 <VideoController 
-                    video_element={video_element} 
+                    the_video_element={video_element} 
                     media_uuid={$current_category.content[$active_media_index].uuid}
                     auto_hide
                     on:capture-frame={captureVideoFrame}

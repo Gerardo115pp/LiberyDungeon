@@ -12,7 +12,7 @@
     =============================================*/
     
         /** @type {HTMLVideoElement} the video element that will be controlled */
-        export let video_element;
+        export let the_video_element;
 
         let global_hotkeys_manager = getHotkeysManager();
 
@@ -110,6 +110,13 @@
                     description: "Skip frame backward",
                 }
             },
+            REPLAY_FROM_LAST_FRAME_SKIP: {
+                key_combo: "!",
+                handler: handleReplayFromLastFrameSkip,
+                options: {
+                    description: "Replay from the last frame skip",
+                }
+            },
             SEEK_MINUTE: {
                 key_combo: "\\d m",
                 handler: handleSeekMinute,
@@ -192,7 +199,6 @@
              * @type {boolean}
              */
             let video_metadata_loaded = false;
-            
 
             /**
              * Whether the video is long enough to save watch progress.
@@ -200,7 +206,11 @@
              */
             let save_watch_progress = false;
 
-        
+            /**
+             * The last timestamp that was seeked back by using the frame skip(in backward direction). used to replay from that point on user input.
+             * @type {number}
+             */
+            let last_frame_skip_timestamp = 0;
         
         /*=====  End of State  ======*/
 
@@ -211,9 +221,9 @@
     /*=====  End of Properties  ======*/
     
     onMount(() => {
-        video_element.addEventListener("timeupdate", handleVideoTimeUpdate);
-        video_element.addEventListener("durationchange", handleVideoDurationChange);
-        video_element.addEventListener("loadedmetadata", handleVideoMetadataLoaded);
+        the_video_element.addEventListener("timeupdate", handleVideoTimeUpdate);
+        the_video_element.addEventListener("durationchange", handleVideoDurationChange);
+        the_video_element.addEventListener("loadedmetadata", handleVideoMetadataLoaded);
         window.addEventListener("beforeunload", saveVideoWatchProgress);
 
         active_media_index_unsubscriber = active_media_index.subscribe(handleActiveMediaIndexChange);
@@ -224,9 +234,9 @@
     onDestroy(() => {
         if (!browser) return;
 
-        video_element.removeEventListener("timeupdate", handleVideoTimeUpdate);
-        video_element.removeEventListener("durationchange", handleVideoDurationChange);
-        video_element.removeEventListener("loadedmetadata", handleVideoMetadataLoaded);
+        the_video_element.removeEventListener("timeupdate", handleVideoTimeUpdate);
+        the_video_element.removeEventListener("durationchange", handleVideoDurationChange);
+        the_video_element.removeEventListener("loadedmetadata", handleVideoMetadataLoaded);
         window.removeEventListener("beforeunload", saveVideoWatchProgress);
 
         active_media_index_unsubscriber();
@@ -299,8 +309,22 @@
                 setDiscreteFeedbackMessage(feedback_message);
             }
 
+            /**
+             * Replay from the last frame skip timestamp.
+             * @requires last_frame_skip_timestamp
+             * @param {KeyboardEvent} event
+             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             */
+            function handleReplayFromLastFrameSkip(event, hotkey) {
+                if (last_frame_skip_timestamp === 0) return;
+
+                the_video_element.currentTime = last_frame_skip_timestamp;
+            }
+
             function handleSkipFrameBackwardHotkey() {
                 skipFrame(false);
+
+                last_frame_skip_timestamp = the_video_element.currentTime;
 
                 let feedback_message = "<<< frame";
 
@@ -384,13 +408,13 @@
          * @param {number} amount the amount to change the volume by
          */
         const changeVolumenBy = (amount) => {
-            let new_volume = Math.min(1, Math.max(0, video_element.volume + amount));
+            let new_volume = Math.min(1, Math.max(0, the_video_element.volume + amount));
             
-            video_element.volume = new_volume;
+            the_video_element.volume = new_volume;
 
             let feedback_message = `volume: ${Math.round(new_volume * 100)}%`;
 
-            if (video_element.muted) {
+            if (the_video_element.muted) {
                 feedback_message += " (muted)";
             }
 
@@ -416,7 +440,7 @@
          * Returns the video_element currentTime in a string format "hh:mm:ss"
          */
         function getVideoCurrentProgressString() {
-            return videoDurationToString(video_element.currentTime);
+            return videoDurationToString(the_video_element.currentTime);
         }
 
         const handleActiveMediaIndexChange = (new_active_media_index) => {
@@ -434,14 +458,14 @@
         function handleSeekMinute(event, hotkey) {
             if (!hotkey.WithVimMotion) return;
 
-            let minutes_in_video = Math.trunc(video_element.duration / 60);
+            let minutes_in_video = Math.trunc(the_video_element.duration / 60);
             if (isNaN(minutes_in_video)) return;
 
             let minute_to_seek = hotkey.MatchMetadata.MotionMatches[0];
 
             minute_to_seek = Math.min(minutes_in_video, Math.max(0, minute_to_seek));
 
-            video_element.currentTime = minute_to_seek * 60;
+            the_video_element.currentTime = minute_to_seek * 60;
         }
         
         /**
@@ -486,9 +510,9 @@
             const rect = event.currentTarget.getBoundingClientRect();
             const clickX = event.clientX - rect.left;
             const new_progress = (clickX / rect.width);
-            let new_video_time =  new_progress * video_element.duration;
+            let new_video_time =  new_progress * the_video_element.duration;
             
-            video_element.currentTime = new_video_time;
+            the_video_element.currentTime = new_video_time;
         };
 
         const handleMouseMovement = () => {
@@ -523,12 +547,12 @@
         }
 
         function pauseVideo() {
-            video_paused = !video_paused;
+            video_paused = !the_video_element.paused;
             
             if (video_paused) {
-                video_element.pause();
+                the_video_element.pause();
             } else {
-                video_element.play();
+                the_video_element.play();
             }
         }
 
@@ -543,9 +567,9 @@
 
             let step = increase ? step_diff : -step_diff;
 
-            let new_playback_rate = Math.min(2, Math.max(0.25, video_element.playbackRate + step));
+            let new_playback_rate = Math.min(2, Math.max(0.25, the_video_element.playbackRate + step));
 
-            video_element.playbackRate = new_playback_rate;
+            the_video_element.playbackRate = new_playback_rate;
 
             return new_playback_rate;
         }
@@ -561,13 +585,13 @@
          * @returns {void}
         */
         function setVideoDuration(new_duration, overflow_allowed = false) {
-            let clamped_duration = Math.min(video_element.duration, Math.max(0, new_duration));
+            let clamped_duration = Math.min(the_video_element.duration, Math.max(0, new_duration));
             
             if (overflow_allowed && clamped_duration !== new_duration) {
-                clamped_duration = new_duration < 0 ? video_element.duration + new_duration : 0;
+                clamped_duration = new_duration < 0 ? the_video_element.duration + new_duration : 0;
             }
 
-            video_element.currentTime = clamped_duration;
+            the_video_element.currentTime = clamped_duration;
         }
 
         /**
@@ -587,7 +611,7 @@
         const saveVideoWatchProgress = () => {
             if (!save_watch_progress || media_uuid == null) return;
 
-            let watch_progress = Math.floor(video_element.currentTime * 1000);
+            let watch_progress = Math.floor(the_video_element.currentTime * 1000);
 
             saveMediaWatchPoint(media_uuid, watch_progress);
         }
@@ -601,9 +625,9 @@
         function skipVideoPercentage(forward) {
             let step = forward ? 1 : -1;
 
-            let video_percentage = video_element.duration * 0.05;
+            let video_percentage = the_video_element.duration * 0.05;
 
-            let new_time = video_element.currentTime + (step * video_percentage);
+            let new_time = the_video_element.currentTime + (step * video_percentage);
 
             setVideoDuration(new_time, forward);
 
@@ -616,7 +640,7 @@
         */
         function skipVideoSeconds(seconds) {
             let direction_forward = seconds > 0;
-            let new_time = video_element.currentTime + seconds;
+            let new_time = the_video_element.currentTime + seconds;
 
             setVideoDuration(new_time, direction_forward);
         }
@@ -631,10 +655,10 @@
         function skipFrame(forward, assumed_fps = 30) {
             let frame_duration = 1 / assumed_fps; 
             let step = forward ? frame_duration : -frame_duration;
-            let new_time = video_element.currentTime + step;
+            let new_time = the_video_element.currentTime + step;
 
-            if (!video_element.paused) {
-                video_element.pause();
+            if (!the_video_element.paused) {
+                the_video_element.pause();
             }
 
             setVideoDuration(new_time, forward);
@@ -652,9 +676,9 @@
          * @returns {void}
         */
         const updateVideoProgress = () => {
-            if (isNaN(video_element.duration)) return;
+            if (isNaN(the_video_element.duration)) return;
 
-            video_progress = (video_element.currentTime / video_element.duration) * 100;
+            video_progress = (the_video_element.currentTime / the_video_element.duration) * 100;
         }
 
         /**
@@ -687,7 +711,7 @@
     on:touchstart={handleControllerTouch}
 >
     <div id="lvc-progress-current-duration-label" class="lvc-time-label">
-        {#if !!video_element && video_element.readyState > 0}
+        {#if !!the_video_element && the_video_element.readyState > 0}
             <p>{video_progress_string}</p>
         {/if}
     </div>
