@@ -145,6 +145,13 @@
                     description: "Capture the current frame of the video and downloads it",
                 }
             },
+            PRINT_FRAME: {
+                key_combo: "v i",
+                handler: handlePrintVideoFrame,
+                options: {
+                    description: "Shows the current frame exact timestamp.",
+                }
+            },
             TOGGLE_AUTO_HIDE: {
                 key_combo: "p",
                 handler: handleTogglePlayerAutoHide,
@@ -357,6 +364,16 @@
 
             function handleCaptureVideoFrame() {
                 emitCaptureVideoFrame();
+            }
+
+            function handlePrintVideoFrame() {
+                let current_time = the_video_element.currentTime;
+
+                let milliseconds_part = Math.round((current_time - Math.trunc(current_time)) * 1000);
+
+                let feedback_message = `frame: ${videoDurationToString(current_time)}.${milliseconds_part}`;
+
+                setDiscreteFeedbackMessage(feedback_message);
             }
 
             function handleTogglePlayerAutoHide() {
