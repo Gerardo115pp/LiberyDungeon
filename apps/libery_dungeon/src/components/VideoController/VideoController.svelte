@@ -698,7 +698,7 @@
         <svg id="lvc-pbt-track-bar" viewBox="0 0 102 5" on:click={handleProgressClick} >
             <path id="lvc-pbt-tb-empty-track" d="M 2 2.5 L 100 2.5" />
             <path id="lvc-pbt-tb-progress-track" d="M 2 2.5 L {video_progress + 2} 2.5" />
-            <circle id="lvc-pbt-tb-progress-indicator" cx="{video_progress + 3}" cy="2.5" r="1.5" />
+            <circle id="lvc-pbt-tb-progress-indicator" cx="{video_progress + 3}" cy="2.5" r="2.5" />
         </svg>
     </div>
     <button id="lvc-back-btn" on:click={() => skipVideoPercentage(false)}>
