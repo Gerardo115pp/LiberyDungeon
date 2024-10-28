@@ -640,6 +640,8 @@
          * @returns {number}
          */
         function skipVideoPercentage(forward) {
+            if (isNaN(the_video_element.duration)) return 0; // If the video duration metadata hasn't been loaded, video.duration will be NaN. so we can't skip in percentage.
+
             let step = forward ? 1 : -1;
 
             let video_percentage = the_video_element.duration * 0.05;
