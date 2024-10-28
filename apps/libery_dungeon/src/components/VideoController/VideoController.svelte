@@ -283,9 +283,19 @@
             function handleVideoBackwardPercentageHotkey() {
                 let duration_skipped = skipVideoPercentage(false);
 
+                let milliseconds_part = 0;
+
+                if (duration_skipped < 1) {
+                    milliseconds_part = Math.round((duration_skipped - Math.trunc(duration_skipped)) * 1000);
+                }
+
                 let duration_string = videoDurationToString(duration_skipped);
 
                 let feedback_message = `-${duration_string}`;
+
+                if (milliseconds_part > 0) {
+                    feedback_message += `.${milliseconds_part}`;
+                }
 
                 setDiscreteFeedbackMessage(feedback_message);
             }
@@ -394,9 +404,19 @@
             function handleVideoForwardPercentageHotkey() {
                 let duration_skipped = skipVideoPercentage(true);
 
+                let milliseconds_part = 0;
+
+                if (duration_skipped < 1) {
+                    milliseconds_part = Math.round((duration_skipped - Math.trunc(duration_skipped)) * 1000);
+                }
+
                 let duration_string = videoDurationToString(duration_skipped);
 
                 let feedback_message = `+${duration_string}`;
+
+                if (milliseconds_part > 0) {
+                    feedback_message += `.${milliseconds_part}`;
+                }
 
                 setDiscreteFeedbackMessage(feedback_message);
             }
