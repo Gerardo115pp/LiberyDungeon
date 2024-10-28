@@ -613,6 +613,15 @@ export class HotkeyData {
     }
 
     /**
+     * Releases the hotkey's execution mutex. This should only be called by the HotkeyBinder to recover from panics on the hotkey's callback execution.
+     * DO NOT CALL THIS METHOD OUTSIDE OF THE HotkeyBinder OR YOU WILL BE FIRED(not really, i can't fire myself).
+     * @returns {void}
+     */
+    releaseExecutionMutex() {
+        this.#hotkey_execution_mutex = false;
+    }
+
+    /**
      * Splits the key combo into fragments. Fragments are split by ' '(aka \s). thats why the space key is represented as 'space' not ' '.
      * E.g: 'ctrl+k space' => [HotkeyFragment('ctrl+k'), HotkeyFragment('space')]
      * @returns {void}

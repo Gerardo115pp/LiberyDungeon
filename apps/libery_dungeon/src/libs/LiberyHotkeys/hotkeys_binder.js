@@ -175,6 +175,10 @@ export class HotkeysController {
         try {
             await hotkey.run(event);
         } catch (error) {
+            if (hotkey.Locked) {
+                hotkey.releaseExecutionMutex(); // Only needs to be in catch cause the run method doesn't locks execution and releases it on success. But if an error occurs, the lock should be released.
+            }
+
             console.error(`Error executing hotkey ${hotkey.KeyCombo}`, error);
         } finally {
             this.#locked_on_execution = false;
