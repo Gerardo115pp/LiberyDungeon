@@ -335,7 +335,7 @@
             function handleReplayFromLastFrameSkip(event, hotkey) {
                 if (last_frame_skip_timestamp === 0) return;
 
-                the_video_element.currentTime = last_frame_skip_timestamp;
+                setVideoDuration(last_frame_skip_timestamp);
             }
 
             function handleSkipFrameBackwardHotkey() {
@@ -428,12 +428,12 @@
 
                 setDiscreteFeedbackMessage(feedback_message);
             }
-
+            
             function handleVolumeDownHotkey() {
                 console.log("Changing volume down");
                 changeVolumenBy(-0.1);
             }
-
+    
             function handleVolumeUpHotkey() {
                 changeVolumenBy(0.1);
             }

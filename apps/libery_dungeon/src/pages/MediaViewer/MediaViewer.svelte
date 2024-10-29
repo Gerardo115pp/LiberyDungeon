@@ -218,7 +218,7 @@
                     });
 
                     hotkeys_context.register(["\\d g"], handleMediaPositionJump, {
-                        description: "<navigate>Jump to a specific media position. exapmle: '5 g' will jump to the 5th media."
+                        description: "<navigate>Jump to a specific media position. example: '5 g' will jump to the 5th media."
                     });
 
                     hotkeys_context.register("r", toggleRandomMediaNavigationHotkey, {
