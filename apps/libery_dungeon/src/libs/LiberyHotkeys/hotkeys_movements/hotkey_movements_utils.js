@@ -64,7 +64,6 @@ export const linearCycleNavigationWrap = (current, max, direction, min=0) => {
     return wrapped_value;
 }
 
-
 /**
  * An Row in the GridRowSequence. hold references to the previous and next row and an array with all the indexes of the original sequence the row contains.
  */
@@ -147,6 +146,32 @@ class HM_GridRow {
         wrapped_value.value = this.#row_index_members[clamped_index];
 
         return wrapped_value;
+    }
+
+    /**
+     * Returns whether a given index is on the bounds of the row.
+     * @param {number} index
+     * @returns {boolean}
+     */
+    hasIndex(index) {
+        return index >= this.MinIndex && index <= this.MaxIndex;
+    }
+
+    /**
+     * Returns the column index of a given sequence index. If not in the row, returns -1.
+     * @param {number} sequence_index
+     * @returns {number}
+     */
+    indexOf(sequence_index) {
+        if (!this.hasIndex(sequence_index)) {
+            return -1;
+        }
+
+        let min_index = this.MinIndex;
+
+        let index = sequence_index - min_index;
+
+        return index;        
     }
 
     /**
@@ -335,6 +360,35 @@ class HM_GridRowSequence {
     }
 
     /**
+     * Returns whether a give sequence index is out of bounds of the entire sequence. It checks if the index is larger the the first_row's MinIndex and smaller than the last_row MaxIndex.
+     * @param {number} sequence_index
+     * @returns {boolean} 
+     */
+    isIndexOutOfBounds(sequence_index) {
+        if (this.#first_row === null || this.#last_row === null) {
+            return true;
+        }
+
+        return sequence_index < this.#first_row.MinIndex || sequence_index > this.#last_row.MaxIndex;
+    }
+
+    /**
+     * Returns whether the GridSequence is empty. just checks if the row count is 0.
+     * @returns {boolean}
+     */
+    isEmpty() {
+        return this.#row_count === 0;
+    }
+
+    /**
+     * Returns whether the GridSequence is in a usable state, meaning there is a current row or current row can be set by calling focusFirstRow or focusLastRow.
+     * @returns {boolean}
+     */
+    isUsable() {
+        return this.#current_row !== null || (this.#first_row instanceof HM_GridRow && this.#last_row instanceof HM_GridRow);
+    }
+
+    /**
      * The row count of the Grid.
      * @type {number}
      */
@@ -443,7 +497,64 @@ class HM_GridRowSequence {
     }
 
     /**
+     * Sets the cursor to a given sequence index. returns true if the index was found and the cursor was set, false otherwise.
+     * @param {number} sequence_index
+     * @returns {boolean}
+     */
+    setCursor(sequence_index) {
+        if (!this.isUsable()) {
+            throw new Error("Grid sequence is not usable. No rows have been added.");
+        }
+
+        if (this.isEmpty()) {
+            console.error("Trying to set cursor for an empty grid sequence");
+            return false;
+        }
+
+        if (this.isIndexOutOfBounds(sequence_index)) {
+            return false;
+        }
+
+        let traverse_forward = true;
+
+        if (sequence_index < (this.#row_count / 2)) {
+            this.focusFirstRow();
+        } else {
+            this.focusLastRow();
+            traverse_forward = false;
+        } // Speed up index search by starting from the closest end of the sequence.
+
+        let traversal_function = traverse_forward ? this.#traverseForward : this.#traverseBackwards;
+
+        let infinite_loop_guard = 0;
+        let inspection_row = this.#current_row; // The inspection_row and this.#current_row are equal unless the traversal function cannot traverse(change the current row) in which case it returns null(but doesn't modify the current row) setting the inspection_row to null, so we can detect when we reach the last row.
+
+        while (inspection_row !== null && !this.#current_row.hasIndex(sequence_index)) {
+            inspection_row = traversal_function.call(this);
+            
+            infinite_loop_guard++;
+
+            if (infinite_loop_guard > this.#row_count) {
+                throw new Error("Infinite loop detected");
+            }
+        }
+
+        let new_column_index = this.#current_row.indexOf(sequence_index);
+
+        if (new_column_index === -1) {
+            // If we reach this point, it means that this.isIndexOutOfBounds failed to detect the index as out of bounds or it wasn't out of bounds and the algorithm failed to find the index,
+            // in either case we have a programming error, not a caller error.
+            throw new Error(`Index<${sequence_index}> not found in the grid sequence`);
+        }
+
+        this.#current_column_index = new_column_index;
+
+        return true;
+    }
+
+    /**
      * Sets a given row index as the current row.
+     * CANDIDATE FOR REMOVAL.
      * @param {number} row_index
      */
     setCurrentRow(row_index) {
@@ -655,7 +766,6 @@ export class GridNavigationWrapper {
         }
 
         let grid_members = this.#grid_parent.querySelectorAll(this.#grid_member_selector);
-        console.log("Grid members", grid_members);
 
         if (grid_members.length === 0) {
             console.warn(`No grid members found with selecto '${this.#grid_member_selector}'`);
@@ -667,8 +777,6 @@ export class GridNavigationWrapper {
 
         for (let h = 0; h < grid_members.length; h++) {
             let current_element_rect = grid_members[h].getBoundingClientRect();
-
-            console.log(`Current element rect y<${current_element_rect.y}> vs. previous element y<${previous_element_y}>`);
 
             if (isNaN(previous_element_y) || current_element_rect.y > previous_element_y) {
                 console.log("Adding row");
