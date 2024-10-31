@@ -150,7 +150,7 @@
                     await_execution: false
                 });
 
-                hotkeys_context.register(["a", "d"], handleTagNavigation, {
+                hotkeys_context.register(["w", "a", "s", "d"], handleTagNavigation, {
                     description: "<navigation>Navigates the value.", 
                     await_execution: false
                 });
@@ -212,15 +212,34 @@
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
             const handleTagNavigation = (event, hotkey) => {
-                if (!has_hotkey_control || (event.key !== "a" && event.key !== "d")) return;
+                const not_valid_key = (event.key !== "a" && event.key !== "d" && event.key !== "w" && event.key !== "s");
+                const no_grid_wrapper_set = the_grid_navigation_wrapper == null;
+
+                if (!has_hotkey_control || no_grid_wrapper_set || not_valid_key) return;
+
 
                 let tag_count = taxonomy_tags.Tags.length;
 
                 if (tag_count === 0) return;
 
-                let navigation_step = event.key === "a" ? -1 : 1;
+                let new_index = 0;
 
-                focused_tag_index = linearCycleNavigationWrap(focused_tag_index, tag_count - 1, navigation_step).value;
+                switch (event.key) {
+                case "w":
+                    new_index = the_grid_navigation_wrapper.Grid.moveUp().value;
+                    break;
+                case "s":
+                    new_index = the_grid_navigation_wrapper.Grid.moveDown().value;
+                    break;
+                case "a":
+                    new_index = the_grid_navigation_wrapper.Grid.moveLeft().value;
+                    break;
+                case "d":
+                    new_index = the_grid_navigation_wrapper.Grid.moveRight().value;
+                    break;
+                }
+
+                focused_tag_index = new_index;
             }
 
             /**
@@ -505,6 +524,10 @@
             the_grid_navigation_wrapper = new GridNavigationWrapper(tags_parent_selector, `${tags_parent_selector} li:not(:has(input))`);
 
             the_grid_navigation_wrapper.setup();
+
+            if (focused_tag_index !== 0 && !the_grid_navigation_wrapper.Grid.isIndexOutOfBounds(focused_tag_index)) {
+                the_grid_navigation_wrapper.Grid.setCursor(focused_tag_index);
+            }
 
             console.log("Grid navigation wrapper set for taxonomy tags<", taxonomy_tags.Taxonomy.UUID, ">", the_grid_navigation_wrapper);
             
