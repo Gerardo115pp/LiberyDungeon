@@ -13,6 +13,12 @@
          */ 
         export let dungeon_tags = [];
 
+        /**
+         * An html id for the tags container.
+         * @type {string}
+         */
+        export let tag_group_id;
+
         
         /*----------  State  ----------*/
 
@@ -300,7 +306,9 @@
     
 </script>
 
-<ol class="dungeon-tag-group dungeon-tag-list">
+<ol class="dungeon-tag-group dungeon-tag-list"
+    id="{tag_group_id}"
+>
     {#key dungeon_tags.length}
         {#each dungeon_tags as tag, h (tag.Name)}
             {@const is_keyboard_selected = enable_keyboard_selection && h === focused_tag_index}

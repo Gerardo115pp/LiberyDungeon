@@ -9,7 +9,7 @@
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import { toggleHotkeysSheet } from "@stores/layout";
     import { browser } from "$app/environment";
-    import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+    import { linearCycleNavigationWrap, GridNavigationWrapper } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     import AnchorsOne from "@components/UI/AnchorsOne.svelte";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
 
@@ -103,6 +103,12 @@
          * @type {TagGroup}
          */
         let the_tag_group_component;
+
+        /**
+         * The grid navigation wrapper.
+         * @type {GridNavigationWrapper | null}
+         */
+        let the_grid_navigation_wrapper = null;
         
 
         const dispatch = createEventDispatcher();
@@ -117,6 +123,7 @@
         if (!browser) return;
 
         dropHotkeyContext();
+        dropGridNavigationWrapper();
     });
     
     /*=============================================
@@ -179,6 +186,8 @@
                 global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
                 
                 global_hotkeys_manager.loadContext(hotkeys_context_name);
+
+                setGridNavigationWrapper(); 
             }
 
             /**
@@ -294,7 +303,6 @@
                 the_tag_group_component.emitTagDeleted(focused_tag_id);
             }
 
-
             /**
              * Emits an event to close the section and drops the hotkeys context.
              * @param {KeyboardEvent} event
@@ -303,6 +311,8 @@
             const handleHotkeyControlDrop = (event, hotkey) => {
                 resetHotkeyContext();
                 emitDropHotkeyContext();
+
+                dropGridNavigationWrapper();
             }
 
             /**
@@ -315,6 +325,15 @@
             }
 
         /*=====  End of Keybinds  ======*/
+
+        /**
+         * Drops the grid navigation wrapper if it exists.
+         */
+        const dropGridNavigationWrapper = () => {
+            if (the_grid_navigation_wrapper != null) {
+                the_grid_navigation_wrapper.destroy();
+            }
+        }
 
         /**
          * Ensures that if the element is keyboard focused, it is visible in the scroll container.
@@ -460,7 +479,6 @@
         const handleTagRenameCancelled = () => {
             setTagRenamerState(false);
         }
-        
 
         /**
          * Set tag renamer state.
@@ -469,6 +487,30 @@
         const setTagRenamerState = state => {
             renaming_focused_tag = state;
         }
+
+        /**
+         * Sets the grid navigation wrapper required data.
+         */
+        const setGridNavigationWrapper = () => {
+            if (!browser) return;
+
+            const tags_parent_selector = `#taxonomy-tags-${taxonomy_tags.Taxonomy.UUID} ol#tag-group-${taxonomy_tags.Taxonomy.UUID}`;
+
+            const matching_elements_count = document.querySelectorAll(tags_parent_selector).length;
+
+            if (matching_elements_count !== 1) {
+                throw new Error(`tag parent selector '${tags_parent_selector}' returned ${matching_elements_count}, expected exactly 1`);
+            }
+
+            the_grid_navigation_wrapper = new GridNavigationWrapper(tags_parent_selector, `${tags_parent_selector} li:not(:has(input))`);
+
+            the_grid_navigation_wrapper.setup();
+
+            console.log("Grid navigation wrapper set for taxonomy tags<", taxonomy_tags.Taxonomy.UUID, ">", the_grid_navigation_wrapper);
+            
+            globalThis.the_grid_navigation_wrapper = the_grid_navigation_wrapper; // TODO: Remove this after testing.
+            // TODO: GridNavigationWrapper.setup seems like it's working. add movement methods, destroy method, test the correct functionality of the mutation observer, implemented on the hotkey movement.
+        }
     
     /*=====  End of Methods  ======*/
     
@@ -476,6 +518,7 @@
 
 <section class="dungeon-taxonomy-content"
     bind:this={the_taxonomy_tags_section}
+    id="taxonomy-tags-{taxonomy_tags.Taxonomy.UUID}"
     class:is-keyboard-focused={is_keyboard_focused}
     class:hotkey-control={has_hotkey_control}
 >
@@ -486,6 +529,7 @@
     </header>
     <TagGroup 
         bind:this={the_tag_group_component}
+        tag_group_id="tag-group-{taxonomy_tags.Taxonomy.UUID}"
         dungeon_tags={taxonomy_tags.Tags}
         enable_tag_creator={enable_tag_creation}
         enable_keyboard_selection={has_hotkey_control}
