@@ -6,6 +6,33 @@
 */
 
 /**
+* @typedef {Object} GridWrappedValue
+ * @property {number}  value
+ * @property {boolean} overflowed_top
+ * @property {boolean} overflowed_right
+ * @property {boolean} overflowed_bottom
+ * @property {boolean} overflowed_left
+*/
+
+/**
+ * Returns and empty grid wrapped value.
+ * @returns {GridWrappedValue}
+ */
+const getEmptyGridWrappedValue = () => {
+
+    /** @type {GridWrappedValue} */
+    const wrapped_value = {
+        value: NaN,
+        overflowed_top: false,
+        overflowed_right: false,
+        overflowed_bottom: false,
+        overflowed_left: false
+    }
+
+    return wrapped_value;
+}
+
+/**
  * wrap the cursor around a linear navigation, if the cursor reaches the maximum or minium position it will it
  * will wrap around to the other side
  * @param {number} current - where the cursor is currently located
@@ -79,7 +106,7 @@ class HM_GridRow {
      * @returns {number}
      */
     addIndex() {
-        if (this.#previous_row === null) {
+        if (this.#previous_row === null && this.#row_index_members.length === 0) {
             this.#row_index_members = [0];
             return;
         }
@@ -95,7 +122,7 @@ class HM_GridRow {
      * @returns {number}
      */
     clampColumnIndex(column_index) {
-        return Math.min(0, Math.max(column_index, this.length - 1));
+        return Math.max(0, Math.min(column_index, this.length - 1));
     }
 
     /**
@@ -229,11 +256,11 @@ class HM_GridRowSequence {
      * as reference. if called with no rows, panics.
      */
     addIndex() {
-        if (this.#current_row === null) {
+        if (this.#last_row === null) {
             throw new Error("No rows in the sequence");
         }
 
-        this.#current_row.addIndex();
+        this.#last_row.addIndex();
     }
 
     /**
@@ -276,7 +303,7 @@ class HM_GridRowSequence {
             throw new Error("In LiberyHotkeys/hotkeys_movement HM_GridRowSequence.Cursor: Trying to access a null cursor. The cursor is a combination of the current row and the current column index. But the current row was null.");
         }
         
-        this.#current_row.getIndexInColumn(this.#current_column_index).value;
+        return this.#current_row.getIndexInColumn(this.#current_column_index).value;
     }
 
     /**
@@ -317,17 +344,16 @@ class HM_GridRowSequence {
 
     /**
      * Moves the cursor to the row above the current row and returns the new index of the sequence. 
-     * @param {boolean} cycle - if true, and the current row is the first row, the cursor will be set to the last row.
-     * @returns {number}
+     * @returns {GridWrappedValue}
      */
-    moveUp(cycle=false) {
+    moveUp() {
+        const wrapped_value = getEmptyGridWrappedValue();
+
         let previous_row = this.#traverseBackwards();
 
         if (previous_row == null) {
 
-            if (!cycle) {
-                return this.Cursor;
-            };
+            wrapped_value.overflowed_top = true;
 
             this.focusLastRow();
             previous_row = this.#current_row;
@@ -335,58 +361,72 @@ class HM_GridRowSequence {
 
         this.#current_column_index = previous_row.clampColumnIndex(this.#current_column_index);
 
-        return this.Cursor;
+        wrapped_value.value = this.Cursor;
+
+        return wrapped_value;
     }
 
     /**
      * move the cursor to the next index in the current row. If overflows, does nothing unless cycle is set to true. In that case calls traverseForwards with the cycle true and sets the column index to 0.
      * Returns the sequence index in the resulting current index.
-     * @param {boolean} cycle
-     * @returns {number}
+     * @returns {GridWrappedValue}
      */
-    moveRight(cycle=false) {
+    moveRight() {
+        const wrapped_value = getEmptyGridWrappedValue();
+
         let new_index = this.#current_column_index + 1;
 
         if (new_index >= this.#current_row.length) {
+            wrapped_value.overflowed_right = true;            
 
-            if (!cycle) {
-                return this.#current_row.MaxIndex;
+            let moved_to_next_row = this.#traverseForward() !== null;
+
+            if (!moved_to_next_row) {
+                this.focusFirstRow(); // Overflowed right on the last row, focus the first index of the first row.
             }
 
-            this.#traverseForward();
             new_index = 0;
         }
 
         this.#current_column_index = new_index;
 
-        return this.Cursor;
+        wrapped_value.value = this.Cursor;
+
+        return wrapped_value;
     }
 
     /**
      * Moves the cursor to the next row in the sequence. returns the new current row. If there is no more rows, returns null and doesn't modify the current row.
      * on traversal, update the column index to keep it within bounds of the new row.
-     * @param {boolean} cycle - if true, and the current row is the last row, the cursor will be set to the first row.
-     * @returns {number}
+     * @returns {GridWrappedValue}
      */
-    moveDown(cycle=false) {
+    moveDown() {
+        const wrapped_value = getEmptyGridWrappedValue();
+        
         if (this.#traverseForward() !== null) {
-            return this.Cursor;
+            wrapped_value.value = this.Cursor;
+            return wrapped_value;
         };
+
+        wrapped_value.overflowed_bottom = true;
 
         this.focusFirstRow();
 
         this.#current_column_index = this.#current_row.clampColumnIndex(this.#current_column_index);
 
-        return this.Cursor;
+        wrapped_value.value = this.Cursor;
+
+        return wrapped_value;
     }
 
     /**
      * moves the cursor to the previous index in the current row. If overflows, does nothing unless cycle is set to true. In that case calls traverseBackwards with the cycle true and sets the column index to the last index in the row.
      * Returns the sequence index in the resulting current index.
-     * @param {boolean} cycle
-     * @returns {number}
+     * @returns {GridWrappedValue}
      */
-    moveLeft(cycle=false) {
+    moveLeft() {
+        const wrapped_value = getEmptyGridWrappedValue();
+
         this.#current_column_index--;
 
         if (this.#current_column_index < 0) {
@@ -394,9 +434,12 @@ class HM_GridRowSequence {
 
             this.#current_column_index = this.#current_row.length - 1;
 
+            wrapped_value.overflowed_left = true;
         }
 
-        return this.Cursor;
+        wrapped_value.value = this.Cursor;
+
+        return wrapped_value;
     }
 
     /**
@@ -501,34 +544,6 @@ export class GridNavigationWrapper {
     #grid_member_selector;
 
     /**
-     * Whether to cycle on up overflow movement.
-     * @type {boolean}
-     * @default true
-     */
-    #cycle_up;
-
-    /**
-     * Whether to cycle on right overflow movement.
-     * @type {boolean}
-     * @default true
-     */
-    #cycle_right;
-
-    /**
-     * Whether to cycle on down overflow movement.
-     * @type {boolean}
-     * @default true
-     */
-    #cycle_down;
-
-    /**
-     * Whether to cycle on left overflow movement.
-     * @type {boolean}
-     * @default true
-     */
-    #cycle_left;
-
-    /**
      * The MutationObserver instance
      * @type {MutationObserver | null}
      */
@@ -550,90 +565,24 @@ export class GridNavigationWrapper {
         this.#grid_parent_selector = grid_parent_selector;
         this.#grid_member_selector = grid_member_selector;
 
-        this.#cycle_up = true;
-        this.#cycle_right = true;
-        this.#cycle_down = true;
-        this.#cycle_left = true;
-
         this.#mutation_observer = null;
         this.#mutation_config = {
             childList: true,
         };
     }
-    
-    /*=============================================
-    =            Cycle Getter and setters            =
-    =============================================*/
-    
-        /**
-         * Whether the wrapper cycles on up overflow movement.
-         * @type {boolean}
-         * @default true
-         */
-        get CycleUp() {
-            return this.#cycle_up;
+
+    /**
+     * Cleans all resources used by the wrapper.
+     */
+    destroy() {
+        if (this.#mutation_observer !== null) {
+            this.#mutation_observer.disconnect();
+            this.#mutation_observer = null;
         }
 
-        /**
-         * Whether the wrapper cycles on up overflow movement.
-         * @type {boolean}
-         */
-        set CycleUp(value) {
-            this.#cycle_up = value;
-        }
-
-        /**
-         * Whether the wrapper cycles on right overflow movement.
-         * @type {boolean}
-         * @default true
-         */
-        get CycleRight() {
-            return this.#cycle_right;
-        }
-
-        /**
-         * Whether the wrapper cycles on right overflow movement.
-         * @type {boolean}
-         */
-        set CycleRight(value) {
-            this.#cycle_right = value;
-        }
-
-        /**
-         * Whether the wrapper cycles on down overflow movement.
-         * @type {boolean}
-         * @default true
-         */
-        get CycleDown() {
-            return this.#cycle_down;
-        }
-
-        /**
-         * Whether the wrapper cycles on down overflow movement.
-         * @type {boolean}
-         */
-        set CycleDown(value) {
-            this.#cycle_down = value;
-        }
-
-        /**
-         * Whether the wrapper cycles on left overflow movement.
-         * @type {boolean}
-         * @default true
-         */
-        get CycleLeft() {
-            return this.#cycle_left;
-        }
-
-        /**
-         * Whether the wrapper cycles on left overflow movement.
-         * @type {boolean}
-         */
-        set CycleLeft(value) {
-            this.#cycle_left = value;
-        }
-    
-    /*=====  End of Cycle Getter and setters  ======*/
+        this.#grid_parent = null;
+        this.#grid_sequence.clear();
+    }
 
     /**
      * Returns the dom element matching the parent selector.
@@ -641,6 +590,14 @@ export class GridNavigationWrapper {
      */
     getDomParentElement() {
         return document.querySelector(this.#grid_parent_selector);
+    }
+
+    /**
+     * The grid used for movement operations.
+     * @type {HM_GridRowSequence}
+     */
+    get Grid() {
+        return this.#grid_sequence;
     }
 
     /**
@@ -693,12 +650,12 @@ export class GridNavigationWrapper {
      * Scans and creates the HM_GridRowSequence from the matching grid members. Determines which element belong to the same row by checking their .getBoundingClientRect().y value.
      */
     scanGridMembers() {
-
         if (!this.#grid_parent.hasChildNodes()) {
             return;
         }
 
         let grid_members = this.#grid_parent.querySelectorAll(this.#grid_member_selector);
+        console.log("Grid members", grid_members);
 
         if (grid_members.length === 0) {
             console.warn(`No grid members found with selecto '${this.#grid_member_selector}'`);
@@ -708,10 +665,14 @@ export class GridNavigationWrapper {
 
         let previous_element_y = NaN;
 
-        for (let h = 1; h < grid_members.length; h++) {
+        for (let h = 0; h < grid_members.length; h++) {
             let current_element_rect = grid_members[h].getBoundingClientRect();
 
+            console.log(`Current element rect y<${current_element_rect.y}> vs. previous element y<${previous_element_y}>`);
+
             if (isNaN(previous_element_y) || current_element_rect.y > previous_element_y) {
+                console.log("Adding row");
+
                 this.#grid_sequence.appendRow();
             }
                 
