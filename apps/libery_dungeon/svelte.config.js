@@ -25,6 +25,7 @@ const config = {
 			"@themes/*": "./src/themes/*",
 			"@app/*": "./src/*",
 			"@config/*": "./src/config/*",
+			"@common/*": "./src/common/*",
 		}
 	}
 };

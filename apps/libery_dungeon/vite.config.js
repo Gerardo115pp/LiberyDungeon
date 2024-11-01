@@ -44,6 +44,7 @@ export default defineConfig(async ({ command, mode, isSsrBuild, isPreview }) => 
 				"@stores": path.resolve(__dirname, 'src/stores'),
 				"@app": path.resolve(__dirname, 'src'),
 				"@config": path.resolve(__dirname, 'src/config'),
+				"@common": path.resolve(__dirname, 'src/common'),
 			}
 		},
 		plugins: [
