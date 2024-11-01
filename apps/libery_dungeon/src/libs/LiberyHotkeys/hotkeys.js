@@ -41,10 +41,11 @@ export const default_hotkey_register_options = {
 
 /**
  * The hotkey callback type
- * @callback HotkeyCallback
+* @callback HotkeyCallback
  * @param {KeyboardEvent} event
  * @param {HotkeyData} hotkey
- */
+ * @returns {void}
+*/
 
 class HotkeyMatch {
     /**
