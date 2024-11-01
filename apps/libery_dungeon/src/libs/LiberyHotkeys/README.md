@@ -59,28 +59,30 @@ even vanilla JS.
     }
 </script>
 ```
-**Explanation:**
-- `setupHotkeysManager`: function initializes both a singleton instance of a `HotkeyContextManager`(directly) and a `HotkeyBinder`(indirectly) accessible through the `getHotkeysManager` function. If called outside of a Window context, Sets a HotkeyContextManager but not the HotkeysBinder. It also defines the HotkeysContextManager as a global on globalThis. But you should never access it that way, as it's not guaranteed to be there. It only set's it up on globalThis for testing/debugging purposes. and although the behavior is not implemented, the idea is that on production builds it will be automatically removed.
-### `getHotkeysManager`
+### Explanation
+
+#### `setupHotkeysManager`
+function initializes both a singleton instance of a `HotkeyContextManager`(directly) and a `HotkeyBinder`(indirectly) accessible through the `getHotkeysManager` function. If called outside of a Window context, Sets a HotkeyContextManager but not the HotkeysBinder. It also defines the HotkeysContextManager as a global on globalThis. But you should never access it that way, as it's not guaranteed to be there. It only set's it up on globalThis for testing/debugging purposes. and although the behavior is not implemented, the idea is that on production builds it will be automatically removed.
+#### `getHotkeysManager`
 function returns a singleton instance of a `HotkeyContextManager` or null.
-### `HotkeysContext`
+#### `HotkeysContext`
 
 Is a collection of hotkeys that are meant to be 'turned on/off' together. It also has documentation capabilities to add information about a hotkey that can then be used to create components that show the user what hotkeys are available and what they do.
 
-### `hotkeys_context.register`
+#### `hotkeys_context.register`
 Registers a hotkey on a the `hotkeys_context`. The hotkey the will be binded when the global hotkeys manager loads the context(by calling `.loadContext`). The hotkey can have a single trigger(one string) or multiple triggers(an array of strings). The second argument is the callback that will be triggered when a sequence of keys matches the hotkey. The third argument is an object that can have a `description`, `mode`, `await_execution`, `consider_time_in_sequence` and `can_repeat` properties. these values are optional but the description shouldn't be omitted.
 
-### `hotkeys_context_name`: 
+#### `hotkeys_context_name`: 
 
 This is an identifier for the context. 
 
-### `global_hotkeys_manager.dropContext`:
+#### `global_hotkeys_manager.dropContext`:
 
 Unbinds all hotkeys in the context and removes it from the record of contexts. Should be called when the methods that handle a hotkey rely on references that about to te destroyed(e.g when a component is about to be unmounted/destroyed).
 
 If you want to unbind the context but keep a reference to it(so it can be loaded again later) you can use `global_hotkeys_manager.loadPreviousContext` instead. which will unbind the current context and load the one that was loaded before it.
 
-### `global_hotkeys_manager.declareContext vs. global_hotkeys_manager.loadContext`: 
+#### `global_hotkeys_manager.declareContext vs. global_hotkeys_manager.loadContext`: 
 
 `declareContext` is links the context to the given name, but doesn't bind the hotkeys. `loadContext` binds the hotkeys so they can be triggered by the user. But the context must already be declared.
 
