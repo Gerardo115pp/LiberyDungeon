@@ -96,6 +96,25 @@ export class CursorMovementWASD {
     }
 
     /**
+     * Changes the grid container selector.
+     * @param {string} grid_container_selector - The selector for the grid container.
+     * @param {string} [grid_member_selector] - a new selector for the grid members. If not passed, keeps the one in the options and prepends the grid container selector to it.
+     */
+    changeGridContainer(grid_container_selector, grid_member_selector) {
+        if (grid_member_selector == null || grid_member_selector === "") {
+            grid_member_selector = this.#movement_options.grid_member_selector;
+        } else {
+            this.#movement_options.grid_member_selector = grid_member_selector;
+        }
+
+        if (this.#grid_navigation_wrapper != null) {
+            this.#grid_navigation_wrapper.destroy();
+        }
+
+        this.#grid_navigation_wrapper = new GridNavigationWrapper(grid_container_selector, grid_member_selector);
+    }
+
+    /**
      * Cleans resources used by the CursorMovementWASD wrapper.
      * @returns {void}
      */
@@ -430,5 +449,4 @@ export class CursorMovementWASD {
             this.#grid_navigation_wrapper.Grid.setCursor(current_cursor);
         }
     }
-        
 }
