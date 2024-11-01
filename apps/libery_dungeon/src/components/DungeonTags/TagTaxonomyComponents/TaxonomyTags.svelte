@@ -9,7 +9,7 @@
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import { toggleHotkeysSheet } from "@stores/layout";
     import { browser } from "$app/environment";
-    import { linearCycleNavigationWrap, GridNavigationWrapper } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+    import { CursorMovementWASD } from "@common/keybinds/CursorMovement";
     import AnchorsOne from "@components/UI/AnchorsOne.svelte";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
 
@@ -106,7 +106,7 @@
 
         /**
          * The grid navigation wrapper.
-         * @type {GridNavigationWrapper | null}
+         * @type {CursorMovementWASD | null}
          */
         let the_grid_navigation_wrapper = null;
         
@@ -150,15 +150,7 @@
                     await_execution: false
                 });
 
-                hotkeys_context.register(["w", "a", "s", "d"], handleTagNavigation, {
-                    description: "<navigation>Navigates the value.", 
-                    await_execution: false
-                });
-
-                hotkeys_context.register(["\\d g"], handleTagIndexGoto, {
-                    description: "<navigation>Navigates to the typed index value", 
-                    await_execution: false
-                });
+                setGridNavigationWrapper(hotkeys_context);
 
                 hotkeys_context.register(["i"], handleFocusTagCreator, {
                     description: "<content>Focuses the tag creator input.", 
@@ -186,8 +178,6 @@
                 global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
                 
                 global_hotkeys_manager.loadContext(hotkeys_context_name);
-
-                setGridNavigationWrapper(); 
             }
 
             /**
@@ -240,6 +230,16 @@
                 }
 
                 focused_tag_index = new_index;
+            }
+
+            /**
+             * Handles the Cursor update event emitted by the_grid_navigation_wrapper.
+             * @type {import("@common/keybinds/CursorMovement").CursorPositionCallback}
+             */
+            const handleCursorUpdate = (cursor_wrapped_value) => {
+                focused_tag_index = cursor_wrapped_value.value;
+
+                return false;
             }
 
             /**
@@ -343,6 +343,38 @@
                 if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
+            }
+
+            /**
+             * Sets the grid navigation wrapper required data.
+             * @param {import("@libs/LiberyHotkeys/hotkeys_context").HotkeyContext} hotkeys_context
+             */
+            const setGridNavigationWrapper = (hotkeys_context) => {
+                if (!browser) return;
+
+                if (the_grid_navigation_wrapper != null) {
+                    the_grid_navigation_wrapper.destroy();
+                }
+
+
+                const tags_parent_selector = `#taxonomy-tags-${taxonomy_tags.Taxonomy.UUID} ol#tag-group-${taxonomy_tags.Taxonomy.UUID}`;
+
+                const matching_elements_count = document.querySelectorAll(tags_parent_selector).length;
+                if (matching_elements_count !== 1) {
+                    throw new Error(`tag parent selector '${tags_parent_selector}' returned ${matching_elements_count}, expected exactly 1`);
+                }
+
+
+                the_grid_navigation_wrapper = new CursorMovementWASD(tags_parent_selector, handleCursorUpdate, {
+                    initial_cursor_position: focused_tag_index,
+                    sequence_item_name: "value",
+                    sequence_item_plural_name: "values",
+                    grid_member_selector: `${tags_parent_selector} li:not(:has(input))`,
+                });
+                the_grid_navigation_wrapper.setup(hotkeys_context);
+                
+
+                globalThis.the_grid_navigation_wrapper = the_grid_navigation_wrapper; 
             }
 
         /*=====  End of Keybinds  ======*/
@@ -507,33 +539,6 @@
          */
         const setTagRenamerState = state => {
             renaming_focused_tag = state;
-        }
-
-        /**
-         * Sets the grid navigation wrapper required data.
-         */
-        const setGridNavigationWrapper = () => {
-            if (!browser) return;
-
-            const tags_parent_selector = `#taxonomy-tags-${taxonomy_tags.Taxonomy.UUID} ol#tag-group-${taxonomy_tags.Taxonomy.UUID}`;
-
-            const matching_elements_count = document.querySelectorAll(tags_parent_selector).length;
-
-            if (matching_elements_count !== 1) {
-                throw new Error(`tag parent selector '${tags_parent_selector}' returned ${matching_elements_count}, expected exactly 1`);
-            }
-
-            the_grid_navigation_wrapper = new GridNavigationWrapper(tags_parent_selector, `${tags_parent_selector} li:not(:has(input))`);
-
-            the_grid_navigation_wrapper.setup();
-
-            if (focused_tag_index !== 0 && !the_grid_navigation_wrapper.Grid.isIndexOutOfBounds(focused_tag_index)) {
-                the_grid_navigation_wrapper.Grid.setCursor(focused_tag_index);
-            }
-
-            console.log("Grid navigation wrapper set for taxonomy tags<", taxonomy_tags.Taxonomy.UUID, ">", the_grid_navigation_wrapper);
-            
-            globalThis.the_grid_navigation_wrapper = the_grid_navigation_wrapper; 
         }
     
     /*=====  End of Methods  ======*/
