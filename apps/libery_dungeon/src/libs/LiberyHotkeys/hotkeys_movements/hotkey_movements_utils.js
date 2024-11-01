@@ -760,13 +760,14 @@ export class GridNavigationWrapper {
 
     /**
      * @param {string} grid_parent_selector - the selector for the grid parent
-     * @param {string} grid_member_selector - the selector for the grid members
+     * @param {string} grid_member_selector - the selector for the grid members. the grid parent selector will be prepended to this selector.
      */
     constructor(grid_parent_selector, grid_member_selector) {
         this.#grid_sequence = new HM_GridRowSequence();
         this.#grid_parent = null;
+
         this.#grid_parent_selector = grid_parent_selector;
-        this.#grid_member_selector = grid_member_selector;
+        this.#grid_member_selector = `${grid_parent_selector} ${grid_member_selector}`;
 
         this.#mutation_observer = null;
         this.#mutation_config = {
