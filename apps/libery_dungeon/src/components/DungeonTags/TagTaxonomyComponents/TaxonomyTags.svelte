@@ -259,6 +259,8 @@
 
                 let new_focused_tag_index = Math.max(0, Math.min(tag_count -1, vim_motion_value));
 
+                the_grid_navigation_wrapper.Grid.setCursor(new_focused_tag_index);
+
                 focused_tag_index = new_focused_tag_index;
             }
 
@@ -531,8 +533,7 @@
 
             console.log("Grid navigation wrapper set for taxonomy tags<", taxonomy_tags.Taxonomy.UUID, ">", the_grid_navigation_wrapper);
             
-            globalThis.the_grid_navigation_wrapper = the_grid_navigation_wrapper; // TODO: Remove this after testing.
-            // TODO: GridNavigationWrapper.setup seems like it's working. add movement methods, destroy method, test the correct functionality of the mutation observer, implemented on the hotkey movement.
+            globalThis.the_grid_navigation_wrapper = the_grid_navigation_wrapper; 
         }
     
     /*=====  End of Methods  ======*/
