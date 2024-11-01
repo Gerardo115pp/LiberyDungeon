@@ -231,6 +231,8 @@ class HM_GridRow {
  * A class to represent a sequence of rows with different lengths, each row represents an index of the sequence
  */
 class HM_GridRowSequence {
+    // Golden rule of this class: NEVER, expose rows to the outside world. That way we ensure that the sequence is always in a valid state. (or that if it's wrong, then thats because of a programming error)
+
     /**
      * The first row in the grid
      * @type {HM_GridRow}
@@ -296,7 +298,7 @@ class HM_GridRowSequence {
 
         if (this.#first_row === null) {
             this.#first_row = new_row;
-            this.focusFirstRow();
+            this.#focusFirstRow();
         }
 
         if (this.#last_row !== null) {
@@ -332,9 +334,46 @@ class HM_GridRowSequence {
     }
 
     /**
+     * Returns a GridWrappedValue of the current cursor. It's always just the current value and all overflowed values set to false.
+     * @returns {GridWrappedValue}
+     */
+    get CursorWrapped() {
+        const wrapped_value = getEmptyGridWrappedValue();
+
+        wrapped_value.value = this.Cursor;
+
+        return wrapped_value;
+    }
+
+    /**
+     * Returns the current column index.
+     * @type {number}
+     */
+    get CursorColumn() {
+        return this.#current_column_index;
+    }
+
+    /**
+     * Returns the current rowid. which is sort of like it's index in the row linked list.
+     * @type {number}
+     */
+    get CursorRow() {
+        return this.#current_rowid;
+    }
+
+    /**
+     * Clamps a sequence index to be in bounds of the whole sequence. 
+     * @param {number} sequence_index
+     * @returns {number}
+     */
+    clampSequenceIndex(sequence_index) {
+        return Math.max(this.#first_row.MinIndex, Math.min(sequence_index, this.#last_row.MaxIndex));
+    }
+
+    /**
      * Sets the row focus to the first row.
      */
-    focusFirstRow() {
+    #focusFirstRow() {
         this.#current_row = this.#first_row;
         this.#current_rowid = 0;
     }
@@ -342,9 +381,27 @@ class HM_GridRowSequence {
     /**
      * Sets the row focus to the last row.
      */
-    focusLastRow() {
+    #focusLastRow() {
         this.#current_row = this.#last_row;
         this.#current_rowid = this.#row_count - 1;
+    }
+
+    /**
+     * Sets the row focus to the first row and clamps the column index to the row's bounds.
+     */
+    focusFirstRow() {
+        this.#focusFirstRow();
+
+        this.#current_column_index = this.#current_row.clampColumnIndex(this.#current_column_index);
+    }
+
+    /**
+     * Sets the row focus to the last row and clamps the column index to the row's bounds.
+     */
+    focusLastRow() {
+        this.#focusLastRow();
+
+        this.#current_column_index = this.#current_row.clampColumnIndex(this.#current_column_index);
     }
 
     /**
@@ -353,7 +410,7 @@ class HM_GridRowSequence {
      */
     getCurrentRow() {
         if (this.#current_row === null) {
-            this.focusFirstRow();
+            this.#focusFirstRow();
         }
 
         return this.#current_row;
@@ -393,7 +450,7 @@ class HM_GridRowSequence {
      * @type {number}
      */
     get length() {
-        return this.#current_row;
+        return this.#row_count;
     }
 
     /**
@@ -409,7 +466,7 @@ class HM_GridRowSequence {
 
             wrapped_value.overflowed_top = true;
 
-            this.focusLastRow();
+            this.#focusLastRow();
             previous_row = this.#current_row;
         }
 
@@ -436,7 +493,7 @@ class HM_GridRowSequence {
             let moved_to_next_row = this.#traverseForward() !== null;
 
             if (!moved_to_next_row) {
-                this.focusFirstRow(); // Overflowed right on the last row, focus the first index of the first row.
+                this.#focusFirstRow(); // Overflowed right on the last row, focus the first index of the first row.
             }
 
             new_index = 0;
@@ -464,7 +521,7 @@ class HM_GridRowSequence {
 
         wrapped_value.overflowed_bottom = true;
 
-        this.focusFirstRow();
+        this.#focusFirstRow();
 
         this.#current_column_index = this.#current_row.clampColumnIndex(this.#current_column_index);
 
@@ -497,6 +554,26 @@ class HM_GridRowSequence {
     }
 
     /**
+     * Moves the cursor to start of the current row.
+     * @returns {GridWrappedValue}
+     */
+    moveRowStart() {
+        this.#current_column_index = 0;
+        
+        return this.CursorWrapped;
+    }
+
+    /**
+     * Moves the cursor to the end of the current row.
+     * @returns {GridWrappedValue}
+     */
+    moveRowEnd() {
+        this.#current_column_index = this.#current_row.length - 1;
+
+        return this.CursorWrapped;
+    }        
+
+    /**
      * Sets the cursor to a given sequence index. returns true if the index was found and the cursor was set, false otherwise.
      * @param {number} sequence_index
      * @returns {boolean}
@@ -518,9 +595,9 @@ class HM_GridRowSequence {
         let traverse_forward = true;
 
         if (sequence_index < (this.#row_count / 2)) {
-            this.focusFirstRow();
+            this.#focusFirstRow();
         } else {
-            this.focusLastRow();
+            this.#focusLastRow();
             traverse_forward = false;
         } // Speed up index search by starting from the closest end of the sequence.
 
@@ -563,12 +640,15 @@ class HM_GridRowSequence {
         }
 
         if (row_index < this.#current_rowid) {
-            this.focusFirstRow();
+            this.#focusFirstRow();
         }
+
+        console.log("seek rowid", row_index);
 
         let infinite_loop_guard = 0;
 
-        while (this.#current_rowid < row_index) {
+        while (row_index !== this.#current_rowid) {
+            console.log("Rowid", this.#current_rowid);
             this.#traverseForward();
             infinite_loop_guard++;
 
@@ -576,6 +656,18 @@ class HM_GridRowSequence {
                 throw new Error("Infinite loop detected");
             }
         }
+
+        console.log("Rowid", this.#current_rowid);
+
+        this.#current_column_index = this.#current_row.clampColumnIndex(this.#current_column_index);
+    }
+
+    /**
+     * Sets the cursor to a column on the current row. If the column index is out of bounds, it will be clamped to the row's bounds.
+     * @param {number} column_index
+     */
+    setCurrentRowColumn(column_index) {
+        this.#current_column_index = this.#current_row.clampColumnIndex(column_index);
     }
 
     /**
@@ -585,7 +677,7 @@ class HM_GridRowSequence {
      */
     #traverseBackwards() {
         if (this.#current_row == null) {
-            this.focusFirstRow();
+            this.#focusFirstRow();
             return null;
         }
 
@@ -608,7 +700,7 @@ class HM_GridRowSequence {
      */
     #traverseForward() {
         if (this.#current_row === null) {
-            return this.focusFirstRow();
+            return this.#focusFirstRow();
         }
 
         if (this.#current_row.NextRow === null) {
