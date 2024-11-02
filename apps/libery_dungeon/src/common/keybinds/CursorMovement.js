@@ -1,11 +1,18 @@
 import { GridNavigationWrapper } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
 
-/** 
+/**
  * A class used by default by the GridMovement wrappers to determine the sequence members. it is appended to the passed grid container selector resulting in a selector of the
  * form "#the-container-selector .dungeon-grid-member-item"
+ * @type {string}
+ * @default "dungeon-grid-member-item"
+ */
+export const GRID_MOVEMENT_ITEM_CLASS = "dungeon-grid-member-item";
+
+/** 
+ * A selector for the grid members.
  * @type {string} 
  */
-export const GRID_MOVEMENT_ITEM_CLASS = ".dungeon-grid-member-item";
+const GRID_MOVEMENT_ITEM_CLASS_SELECTOR = `.${GRID_MOVEMENT_ITEM_CLASS}`;
 
 /**
 * A callback function that is called when the cursor position index is updated. If the callback returns true(and only true, not any other truthy value), the cursor position will be rolled back to the previous position.
@@ -37,7 +44,7 @@ export const GRID_MOVEMENT_ITEM_CLASS = ".dungeon-grid-member-item";
  * @type {MovementModelOptions}
  */
 const default_cursor_movement_wasd_options = {
-    grid_member_selector: GRID_MOVEMENT_ITEM_CLASS,
+    grid_member_selector: GRID_MOVEMENT_ITEM_CLASS_SELECTOR,
     initial_cursor_position: 0,
     sequence_item_name: "item",
     sequence_item_name_plural: "items",
@@ -112,6 +119,15 @@ export class CursorMovementWASD {
         }
 
         this.#grid_navigation_wrapper = new GridNavigationWrapper(grid_container_selector, grid_member_selector);
+
+        try {
+            this.#grid_navigation_wrapper.setup();
+        } catch (e) {
+            console.error("In common/keybinds/CursorMovement.CursorMovementWASD while calling this.#grid_navigation_wrapper.setup(), selector exists?");
+            throw e;
+        }
+
+        console.log("CursorMovementWASD: Grid container selector changed to", grid_container_selector);
     }
 
     /**
@@ -194,65 +210,79 @@ export class CursorMovementWASD {
     }
 
     /**
-     * Returns an array with the wasd movement triggers.
-     * @returns {string[]}
+     * The GridNavigationWrapper instance that is used to navigate through the grid.
+     * @type {GridNavigationWrapper}
      */
-    #getWASDMovementTriggers() {
-        return [
-            this.#movement_options.up_trigger,
-            this.#movement_options.down_trigger,
-            this.#movement_options.left_trigger,
-            this.#movement_options.right_trigger
-        ]   
+    get MovementController() {
+        return this.#grid_navigation_wrapper;
     }
 
-    /**
-     * Returns an array with the goto triggers for signle elements.
-     * @returns {string[]}
-     */
-    #getGotoItemTriggers() {
-        return [ `\\d ${this.#movement_options.goto_item_finalizer}` ];
-    }
+    /*=============================================
+    =            Trigger getters            =
+    =============================================*/
 
-    /**
-     * Returns an array with the goto triggers for rows.
-     * @returns {string[]}
-     */
-    #getGotoRowTriggers() {
-        return [ `\\d ${this.#movement_options.goto_row_finalizer}` ];
-    }
+        /**
+         * Returns an array with the wasd movement triggers.
+         * @returns {string[]}
+         */
+        #getWASDMovementTriggers() {
+            return [
+                this.#movement_options.up_trigger,
+                this.#movement_options.down_trigger,
+                this.#movement_options.left_trigger,
+                this.#movement_options.right_trigger
+            ]   
+        }
 
-    /**
-     * Returns an array with the triggers for row start.
-     * @returns {string[]}
-     */
-    #getRowStartTriggers() {
-        return [ this.#movement_options.row_start_trigger ];
-    }
+        /**
+         * Returns an array with the goto triggers for signle elements.
+         * @returns {string[]}
+         */
+        #getGotoItemTriggers() {
+            return [ `\\d ${this.#movement_options.goto_item_finalizer}` ];
+        }
 
-    /**
-     * Returns an array with the triggers for row end.
-     * @returns {string[]}
-     */
-    #getRowEndTriggers() {
-        return [ this.#movement_options.row_end_trigger ];
-    }   
+        /**
+         * Returns an array with the goto triggers for rows.
+         * @returns {string[]}
+         */
+        #getGotoRowTriggers() {
+            return [ `\\d ${this.#movement_options.goto_row_finalizer}` ];
+        }
 
-    /**
-     * Returns an array with the triggers for the first row.
-     * @returns {string[]}
-     */
-    #getFirstRowTriggers() {
-        return [ this.#movement_options.first_row_trigger ];
-    }
+        /**
+         * Returns an array with the triggers for row start.
+         * @returns {string[]}
+         */
+        #getRowStartTriggers() {
+            return [ this.#movement_options.row_start_trigger ];
+        }
 
-    /**
-     * Returns an array with the triggers for the last row.
-     * @returns {string[]}
-     */
-    #getLastRowTriggers() {
-        return [ this.#movement_options.last_row_trigger ];
-    }
+        /**
+         * Returns an array with the triggers for row end.
+         * @returns {string[]}
+         */
+        #getRowEndTriggers() {
+            return [ this.#movement_options.row_end_trigger ];
+        }   
+
+        /**
+         * Returns an array with the triggers for the first row.
+         * @returns {string[]}
+         */
+        #getFirstRowTriggers() {
+            return [ this.#movement_options.first_row_trigger ];
+        }
+
+        /**
+         * Returns an array with the triggers for the last row.
+         * @returns {string[]}
+         */
+        #getLastRowTriggers() {
+            return [ this.#movement_options.last_row_trigger ];
+        }
+    
+    /*=====  End of Trigger getters  ======*/
 
     /**
      * Initializes the CursorMovementWASD wrapper. Call it only when the grid parent is mounted.
@@ -283,170 +313,175 @@ export class CursorMovementWASD {
 
         this.#defineWASDMovementHotkeys(hotkeys_context);
     }
+    
+    /*=============================================
+    =            Hotkey Handlers            =
+    =============================================*/
+        /**
+         * Handles the cursor basic wasd movement.
+         * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+         */
+        #wasdMovementHandler = (event, hotkey) => {
+            let current_cursor_position = this.#grid_navigation_wrapper.Grid.Cursor;
 
-    /**
-     * Handles the cursor basic wasd movement.
-     * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
-     */
-    #wasdMovementHandler = (event, hotkey) => {
-        let current_cursor_position = this.#grid_navigation_wrapper.Grid.Cursor;
+            /**
+             * @type {import("@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils").GridWrappedValue}
+             */
+            let cursor_position;
+
+            /**
+             * The function to call and rollback the cursor position if the callback returns true.
+             * @type {() => void}
+             */
+            let backward_move_function;
+
+            switch (event.key) {
+                case this.#movement_options.up_trigger:
+                    cursor_position = this.#grid_navigation_wrapper.Grid.moveUp();
+                    backward_move_function = this.#grid_navigation_wrapper.Grid.moveDown.bind(this.#grid_navigation_wrapper.Grid);
+                    break;
+                case this.#movement_options.down_trigger:
+                    cursor_position = this.#grid_navigation_wrapper.Grid.moveDown();
+                    backward_move_function = this.#grid_navigation_wrapper.Grid.moveUp.bind(this.#grid_navigation_wrapper.Grid);
+                    break;
+                case this.#movement_options.left_trigger:
+                    cursor_position = this.#grid_navigation_wrapper.Grid.moveLeft();
+                    backward_move_function = this.#grid_navigation_wrapper.Grid.moveRight.bind(this.#grid_navigation_wrapper.Grid);
+                    break;
+                case this.#movement_options.right_trigger:
+                    cursor_position = this.#grid_navigation_wrapper.Grid.moveRight();
+                    backward_move_function = this.#grid_navigation_wrapper.Grid.moveLeft.bind(this.#grid_navigation_wrapper.Grid);
+                    break;
+            }
+
+            let should_rollback = this.#cursor_position_callback(cursor_position);
+
+            if (should_rollback === true) {
+                backward_move_function();
+            }
+        }
 
         /**
-         * @type {import("@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils").GridWrappedValue}
+         * Handles the cursor goto element movement.
+         * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
          */
-        let cursor_position;
+        #wasdGotoItemHandler = (event, hotkey) => {
+            if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
+
+            let starting_cursor_position = this.#grid_navigation_wrapper.Grid.Cursor;
+
+            let requested_position = hotkey.MatchMetadata.MotionMatches[0];
+            console.log("requested_position", requested_position);
+
+            requested_position = requested_position - 1; // 1-based index to 0-based index.
+
+            requested_position = this.#grid_navigation_wrapper.Grid.clampSequenceIndex(requested_position);
+            
+
+            this.#grid_navigation_wrapper.Grid.setCursor(requested_position);
+
+
+            let wrapped_cursor_position = this.#grid_navigation_wrapper.Grid.CursorWrapped;
+
+            let should_rollback = this.#cursor_position_callback(wrapped_cursor_position);
+            if (should_rollback === true) {
+                this.#grid_navigation_wrapper.Grid.setCursor(starting_cursor_position);
+            }
+        }
 
         /**
-         * The function to call and rollback the cursor position if the callback returns true.
-         * @type {() => void}
+         * Handles the cursor goto row movement.
+         * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
          */
-        let backward_move_function;
+        #wasdGotoRowHandler = (event, hotkey) => {
+            if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
 
-        switch (event.key) {
-            case this.#movement_options.up_trigger:
-                cursor_position = this.#grid_navigation_wrapper.Grid.moveUp();
-                backward_move_function = this.#grid_navigation_wrapper.Grid.moveDown.bind(this.#grid_navigation_wrapper.Grid);
-                break;
-            case this.#movement_options.down_trigger:
-                cursor_position = this.#grid_navigation_wrapper.Grid.moveDown();
-                backward_move_function = this.#grid_navigation_wrapper.Grid.moveUp.bind(this.#grid_navigation_wrapper.Grid);
-                break;
-            case this.#movement_options.left_trigger:
-                cursor_position = this.#grid_navigation_wrapper.Grid.moveLeft();
-                backward_move_function = this.#grid_navigation_wrapper.Grid.moveRight.bind(this.#grid_navigation_wrapper.Grid);
-                break;
-            case this.#movement_options.right_trigger:
-                cursor_position = this.#grid_navigation_wrapper.Grid.moveRight();
-                backward_move_function = this.#grid_navigation_wrapper.Grid.moveLeft.bind(this.#grid_navigation_wrapper.Grid);
-                break;
+            let starting_cursor_position = this.#grid_navigation_wrapper.Grid.CursorRow;
+
+            let requested_position = hotkey.MatchMetadata.MotionMatches[0];
+
+            requested_position = requested_position - 1; // 1-based index to 0-based index.
+            console.log("requested_position", requested_position);
+
+            requested_position = Math.max(0, Math.min(requested_position, this.#grid_navigation_wrapper.Grid.length - 1));
+
+            this.#grid_navigation_wrapper.Grid.setCurrentRow(requested_position);
+
+            let wrapped_cursor_position = this.#grid_navigation_wrapper.Grid.CursorWrapped;
+
+            let should_rollback = this.#cursor_position_callback(wrapped_cursor_position);
+            if (should_rollback === true) {
+                this.#grid_navigation_wrapper.Grid.setCurrentRow(starting_cursor_position);
+            }
         }
 
-        let should_rollback = this.#cursor_position_callback(cursor_position);
+        /**
+         * Handles the cursor row start movement.
+         * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+         */
+        #wasdRowStartHandler = (event, hotkey) => {
+            let current_column = this.#grid_navigation_wrapper.Grid.CursorColumn;
 
-        if (should_rollback === true) {
-            backward_move_function();
+            let cursor_position = this.#grid_navigation_wrapper.Grid.moveRowStart();
+
+            let should_rollback = this.#cursor_position_callback(cursor_position);
+
+            if (should_rollback === true) {
+                this.#grid_navigation_wrapper.Grid.setCurrentRowColumn(current_column);
+            }
         }
-    }
 
-    /**
-     * Handles the cursor goto element movement.
-     * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
-     */
-    #wasdGotoItemHandler = (event, hotkey) => {
-        if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
+        /**
+         * Handles the cursor row end movement.
+         * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+         */
+        #wasdRowEndHandler = (event, hotkey) => {
+            let current_column = this.#grid_navigation_wrapper.Grid.CursorColumn;
 
-        let starting_cursor_position = this.#grid_navigation_wrapper.Grid.Cursor;
+            let cursor_position = this.#grid_navigation_wrapper.Grid.moveRowEnd();
 
-        let requested_position = hotkey.MatchMetadata.MotionMatches[0];
-        console.log("requested_position", requested_position);
+            let should_rollback = this.#cursor_position_callback(cursor_position);
 
-        requested_position = requested_position - 1; // 1-based index to 0-based index.
-
-        requested_position = this.#grid_navigation_wrapper.Grid.clampSequenceIndex(requested_position);
-        
-
-        this.#grid_navigation_wrapper.Grid.setCursor(requested_position);
-
-
-        let wrapped_cursor_position = this.#grid_navigation_wrapper.Grid.CursorWrapped;
-
-        let should_rollback = this.#cursor_position_callback(wrapped_cursor_position);
-        if (should_rollback === true) {
-            this.#grid_navigation_wrapper.Grid.setCursor(starting_cursor_position);
+            if (should_rollback === true) {
+                this.#grid_navigation_wrapper.Grid.setCurrentRowColumn(current_column);
+            }
         }
-    }
 
-    /**
-     * Handles the cursor goto row movement.
-     * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
-     */
-    #wasdGotoRowHandler = (event, hotkey) => {
-        if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
+        /**
+         * Handles the cursor first row movement.
+         * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+         */
+        #wasdFirstRowHandler = (event, hotkey) => {
+            let current_cursor = this.#grid_navigation_wrapper.Grid.Cursor;
 
-        let starting_cursor_position = this.#grid_navigation_wrapper.Grid.CursorRow;
+            this.#grid_navigation_wrapper.Grid.focusFirstRow();
 
-        let requested_position = hotkey.MatchMetadata.MotionMatches[0];
+            let cursor_position = this.#grid_navigation_wrapper.Grid.CursorWrapped;
 
-        requested_position = requested_position - 1; // 1-based index to 0-based index.
-        console.log("requested_position", requested_position);
+            let should_rollback = this.#cursor_position_callback(cursor_position);
 
-        requested_position = Math.max(0, Math.min(requested_position, this.#grid_navigation_wrapper.Grid.length - 1));
-
-        this.#grid_navigation_wrapper.Grid.setCurrentRow(requested_position);
-
-        let wrapped_cursor_position = this.#grid_navigation_wrapper.Grid.CursorWrapped;
-
-        let should_rollback = this.#cursor_position_callback(wrapped_cursor_position);
-        if (should_rollback === true) {
-            this.#grid_navigation_wrapper.Grid.setCurrentRow(starting_cursor_position);
+            if (should_rollback === true) {
+                this.#grid_navigation_wrapper.Grid.setCursor(current_cursor);
+            }
         }
-    }
 
-    /**
-     * Handles the cursor row start movement.
-     * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
-     */
-    #wasdRowStartHandler = (event, hotkey) => {
-        let current_column = this.#grid_navigation_wrapper.Grid.CursorColumn;
+        /**
+         * Handles the cursor last row movement.
+         * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+         */
+        #wasdLastRowHandler = (event, hotkey) => {
+            let current_cursor = this.#grid_navigation_wrapper.Grid.Cursor;
 
-        let cursor_position = this.#grid_navigation_wrapper.Grid.moveRowStart();
+            this.#grid_navigation_wrapper.Grid.focusLastRow();
 
-        let should_rollback = this.#cursor_position_callback(cursor_position);
+            let cursor_position = this.#grid_navigation_wrapper.Grid.CursorWrapped;
 
-        if (should_rollback === true) {
-            this.#grid_navigation_wrapper.Grid.setCurrentRowColumn(current_column);
+            let should_rollback = this.#cursor_position_callback(cursor_position);
+
+            if (should_rollback === true) {
+                this.#grid_navigation_wrapper.Grid.setCursor(current_cursor);
+            }
         }
-    }
+    /*=====  End of Hotkey Handlers  ======*/
 
-    /**
-     * Handles the cursor row end movement.
-     * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
-     */
-    #wasdRowEndHandler = (event, hotkey) => {
-        let current_column = this.#grid_navigation_wrapper.Grid.CursorColumn;
-
-        let cursor_position = this.#grid_navigation_wrapper.Grid.moveRowEnd();
-
-        let should_rollback = this.#cursor_position_callback(cursor_position);
-
-        if (should_rollback === true) {
-            this.#grid_navigation_wrapper.Grid.setCurrentRowColumn(current_column);
-        }
-    }
-
-    /**
-     * Handles the cursor first row movement.
-     * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
-     */
-    #wasdFirstRowHandler = (event, hotkey) => {
-        let current_cursor = this.#grid_navigation_wrapper.Grid.Cursor;
-
-        this.#grid_navigation_wrapper.Grid.focusFirstRow();
-
-        let cursor_position = this.#grid_navigation_wrapper.Grid.CursorWrapped;
-
-        let should_rollback = this.#cursor_position_callback(cursor_position);
-
-        if (should_rollback === true) {
-            this.#grid_navigation_wrapper.Grid.setCursor(current_cursor);
-        }
-    }
-
-    /**
-     * Handles the cursor last row movement.
-     * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
-     */
-    #wasdLastRowHandler = (event, hotkey) => {
-        let current_cursor = this.#grid_navigation_wrapper.Grid.Cursor;
-
-        this.#grid_navigation_wrapper.Grid.focusLastRow();
-
-        let cursor_position = this.#grid_navigation_wrapper.Grid.CursorWrapped;
-
-        let should_rollback = this.#cursor_position_callback(cursor_position);
-
-        if (should_rollback === true) {
-            this.#grid_navigation_wrapper.Grid.setCursor(current_cursor);
-        }
-    }
 }
