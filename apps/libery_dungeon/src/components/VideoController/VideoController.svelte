@@ -53,14 +53,14 @@
                 }
             },
             VOLUMEN_UP: {
-                key_combo: "up",
+                key_combo: "shift+up",
                 handler: handleVolumeUpHotkey,
                 options: {
                     description: "Increase volume by 10%",
                 }
             },
             VOLUMEN_DOWN: {
-                key_combo: "down",
+                key_combo: "shift+down",
                 handler: handleVolumeDownHotkey,
                 options: {
                     description: "Decrease volume by 10%",
