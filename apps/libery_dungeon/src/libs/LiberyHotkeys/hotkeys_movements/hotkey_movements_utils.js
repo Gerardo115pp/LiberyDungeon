@@ -828,7 +828,13 @@ export class GridNavigationWrapper {
     #onMutation(mutations, observer) {
         console.log("Mutation detected", mutations);
 
+        let current_cursor = this.#grid_sequence.Cursor;
+
         this.scanGridMembers();
+
+        current_cursor = this.#grid_sequence.clampSequenceIndex(current_cursor);
+
+        this.#grid_sequence.setCursor(current_cursor);
     }
 
     /**
