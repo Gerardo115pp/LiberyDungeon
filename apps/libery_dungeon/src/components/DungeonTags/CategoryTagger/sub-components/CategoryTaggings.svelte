@@ -108,6 +108,7 @@
         if (!browser) return;
 
         dropHotkeyContext();
+        dropGridNavigationWrapper();
     });
     
     /*=============================================
@@ -189,6 +190,12 @@
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
 
                 global_hotkeys_manager.dropContext(hotkeys_context_name);
+            }
+
+            const dropGridNavigationWrapper = () => {
+                if (the_wasd_keybind_wrapper != null) {
+                    the_wasd_keybind_wrapper.destroy();
+                }
             }
 
             /**
