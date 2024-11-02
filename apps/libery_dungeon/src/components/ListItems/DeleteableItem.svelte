@@ -1,6 +1,5 @@
 <script>
     import { createEventDispatcher } from "svelte";
-
     
     /*=============================================
     =            Properties            =
@@ -35,13 +34,26 @@
              * @type {boolean}
              */
             export let squared_style = false;
+
+            /**
+             * An optional id selector for the component.
+             * @type {string | null}
+             * @default null
+             */
+            export let id_selector = null;
+
+            /**
+             * An optional class(or classes just space separated) for the component.
+             * @type {string}
+             * @default ""
+             */
+            export let class_selector = "";
         
         /*=====  End of Style  ======*/
 
         const dispatch = createEventDispatcher();
             
     /*=====  End of Properties  ======*/
-    
    
    /*=============================================
    =            Methods            =
@@ -82,7 +94,8 @@
     
 </script>
 
-<li class="deletable-item"
+<li class="deletable-item {class_selector}"
+    id={id_selector}
     class:item-selectable={item_id !== null}
     class:squared-style={squared_style}
     style:--item-color={item_color}
