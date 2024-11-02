@@ -797,6 +797,14 @@ export class GridNavigationWrapper {
     }
 
     /**
+     * the selector for the grid parent.
+     * @type {string}
+     */
+    DomParentSelector() {
+        return this.#grid_parent_selector;
+    }
+
+    /**
      * The grid used for movement operations.
      * @type {HM_GridRowSequence}
      */
