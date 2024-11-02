@@ -11,6 +11,7 @@
     import { toggleHotkeysSheet } from "@stores/layout";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+    import { CursorMovementWASD, GRID_MOVEMENT_ITEM_CLASS } from "@app/common/keybinds/CursorMovement";
     import { browser } from "$app/environment";
     
     /*=============================================
@@ -64,6 +65,19 @@
                  * @type {number}
                  */
                 let focused_tag_index = 0;
+
+                /**
+                 * The grid navigation WASD keybind setter.
+                 * @type {CursorMovementWASD | null}
+                 */
+                let the_wasd_keybind_wrapper = null;
+
+                /**
+                 * A map to cache last cursor position when changing taxonomies tagging lists.
+                 * @type {Map<string, number>}
+                 */
+                const last_cursor_positions = new Map();
+                
             
             /*=====  End of Hotkey movements  ======*/
 
@@ -74,7 +88,6 @@
          * @type {import("@models/DungeonTags").DungeonTagging[]}
          */ 
         export let current_category_taggings = [];
-        $: globalThis.current_category_taggings = current_category_taggings;
         $: handleCategoryTaggingsChange(current_category_taggings);
 
         /**
@@ -82,7 +95,6 @@
          * @type {Map<string, import("@models/DungeonTags").DungeonTagging[]> | null}
          */
         let tag_taxonomy_map = null;
-        $: globalThis.tag_taxonomy_map = tag_taxonomy_map;
 
         const dispatch = createEventDispatcher();
     
@@ -113,16 +125,10 @@
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
 
-                    hotkeys_context.register(["w", "s"], handleTagTaxonomyNavigation, {
+                    setGridNavigationWrapper(hotkeys_context);
+
+                    hotkeys_context.register(["alt+w", "alt+s"], handleTagTaxonomyNavigation, {
                         description: "<navigation>move the focused attributed up and down.",
-                    });
-
-                    hotkeys_context.register(["a", "d"], handleTaxonomyTagNavigation, {
-                        description: "<navigation>move the focused tag left and right.",
-                    });
-
-                    hotkeys_context.register(["\\d g"], handleTaxonomyTagGoto, {
-                        description: "<navigation>go to the typed tag index.",
                     });
 
                     hotkeys_context.register(["x"], handleCategoryUnassignTag, {
@@ -142,6 +148,38 @@
                 }
                 
                 global_hotkeys_manager.loadContext(hotkeys_context_name);
+            }
+
+            /**
+             * Changes the taxonomy grid used by the WASD keybind wrapper. called by handleTagTaxonomyNavigation.
+             */
+            const changeTaxonomyGrid = () => {
+                if (the_wasd_keybind_wrapper == null) return;
+
+
+                const old_grid_parent_selector = the_wasd_keybind_wrapper.MovementController.DomParentSelector;
+
+                last_cursor_positions.set(old_grid_parent_selector, focused_tag_index);
+
+
+                const grid_selectors = getFocusedTaggingsGridSelectors();
+
+                the_wasd_keybind_wrapper.changeGridContainer(grid_selectors.grid_parent_selector, grid_selectors.grid_member_selector);
+
+
+                const last_cursor_position = last_cursor_positions.get(grid_selectors.grid_parent_selector);
+
+                if (last_cursor_position != null) {
+                    let settled = the_wasd_keybind_wrapper.MovementController.Grid.setCursor(last_cursor_position);
+
+                    if (settled) {
+                        focused_tag_index = last_cursor_position;
+                    }
+                } else {
+                    focused_tag_index = the_wasd_keybind_wrapper.MovementController.Grid.clampSequenceIndex(focused_tag_index);
+
+                    the_wasd_keybind_wrapper.MovementController.Grid.setCursor(focused_tag_index);
+                }
             }
 
             /**
@@ -184,69 +222,20 @@
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey 
              */
             const handleTagTaxonomyNavigation = (event, hotkey) => {
-                if (tag_taxonomy_map == null) return;
-
-                const taxonomies = Array.from(tag_taxonomy_map.keys());
-
-                if (taxonomies.length <= 0) return;
+                if (tag_taxonomy_map == null || tag_taxonomy_map.size === 0) return;
                 
 
                 let new_focused_taxonomy_index = focused_taxonomy_index;
 
-                let navigation_step = event.key === "w" ? -1 : 1;
+                let navigation_step = event.key.toLowerCase() === "w" ? -1 : 1;
 
-                new_focused_taxonomy_index = linearCycleNavigationWrap(new_focused_taxonomy_index, (taxonomies.length - 1), navigation_step).value;
+
+                new_focused_taxonomy_index = linearCycleNavigationWrap(new_focused_taxonomy_index, (tag_taxonomy_map.size - 1), navigation_step).value;
                 console.log(`new_focused_taxonomy_index: ${new_focused_taxonomy_index}`);
 
-                let taxonomy_tag_count = tag_taxonomy_map.get(taxonomies[new_focused_taxonomy_index]).length;
-
-                focused_tag_index = Math.max(0, Math.min((taxonomy_tag_count - 1), focused_tag_index));
-
                 focused_taxonomy_index = new_focused_taxonomy_index;
-            }
 
-            /**
-             * Handles the TaxonomyTag navigation hotkey.
-             * @param {KeyboardEvent} event 
-             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey 
-             */
-            const handleTaxonomyTagNavigation = (event, hotkey) => {
-                if (tag_taxonomy_map == null) return;
-
-                const taxonomies = Array.from(tag_taxonomy_map.keys());
-
-                if (taxonomies.length <= 0) return;
-
-                let taxonomy_tag_count = tag_taxonomy_map.get(taxonomies[focused_taxonomy_index]).length;
-
-                let new_focused_tag_index = focused_tag_index;
-
-                let navigation_step = event.key === "a" ? -1 : 1;
-
-                new_focused_tag_index = linearCycleNavigationWrap(new_focused_tag_index, (taxonomy_tag_count - 1), navigation_step).value;
-
-                focused_tag_index = new_focused_tag_index;
-            }
-
-            /**
-             * Handles the TaxonomyTag goto hotkey.
-             * @param {KeyboardEvent} event 
-             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey 
-             */
-            const handleTaxonomyTagGoto = (event, hotkey) => {
-                if (tag_taxonomy_map == null || !hotkey?.WithVimMotion) return;
-
-                const taxonomies = Array.from(tag_taxonomy_map.keys());
-
-                if (taxonomies.length <= 0 || !hotkey.HasMatch) return;
-
-                let vim_motion_value = hotkey.MatchMetadata.MotionMatches[0];
-
-                vim_motion_value--; // 1-based index to 0-based index
-
-                vim_motion_value = Math.max(0, Math.min((tag_taxonomy_map.get(taxonomies[focused_taxonomy_index]).length - 1), vim_motion_value));
-
-                focused_tag_index = vim_motion_value;
+                changeTaxonomyGrid();
             }
 
             /**
@@ -274,6 +263,14 @@
             const handleCloseCategoryTaggerTool = (event, hotkey) => {
                 resetHotkeyContext();
                 emitDropHotkeyContext();
+            }
+
+            /**
+             * Handles the cursor update event from the grid navigation wrapper.
+             * @param {import("@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils").GridWrappedValue} cursor
+             */
+            const handleCursorUpdate = cursor => {
+                focused_tag_index = cursor.value;
             }
 
             /**
@@ -339,6 +336,65 @@
         }
 
         /**
+         * Returns the focused Taggings list pair of selectors on a 2 sized array with index 0 being the grid-parent selector and the index 1 being the grid-member selector.
+         * This is used for the parameters of the CursorMovementWASD either on creation or afterwards for it's changeGridContainer method.
+         * @returns {GridSelectors | null}
+         * @typedef {Object} GridSelectors
+         * @property {string} grid_parent_selector
+         * @property {string} grid_member_selector
+         */
+        const getFocusedTaggingsGridSelectors = () => {
+            if (tag_taxonomy_map == null) return null;
+
+            const grid_selectors = {
+                grid_parent_selector: "",
+                grid_member_selector: "",
+            }
+
+
+            const taxonomy_name = getFocusedTagTaxonomyName();
+
+            grid_selectors.grid_parent_selector = `#category-${$current_category.uuid}-attribute-${taxonomy_name}`;
+            grid_selectors.grid_member_selector = `.${taxonomy_name}-${GRID_MOVEMENT_ITEM_CLASS}`;
+
+
+            return grid_selectors;
+        }
+
+        /**
+         * Returns the taxonomy of the focused array of taggings.
+         * @returns {import("@models/DungeonTags").TagTaxonomy | null}
+         */
+        const getFocusedTagTaxonomy = () => {
+            if (tag_taxonomy_map == null) return;
+
+            const [taxonomy_name, current_category_taggings] = [...tag_taxonomy_map][focused_taxonomy_index];
+
+            if (current_category_taggings.length === 0) {
+                console.warn(`This should never happen, a taxonomy in the tag_taxonomy_map['${taxonomy_name}'] has not taggings for the current category. but members of the_taxonomy_map are generated from the taggins of the current category. Reeks of a programming error.`);
+                return;
+            }
+
+            const taxonomy_uuid = current_category_taggings[0].Tag.TaxonomyUUID;
+
+            const focused_taxonomy = $cluster_tags.find(tag_taxonomy => tag_taxonomy.Taxonomy.UUID === taxonomy_uuid);
+
+            return focused_taxonomy;
+        }
+
+        /**
+         * Returns the focused tag taxonomy name.
+         * @returns {string | null}
+         */
+        const getFocusedTagTaxonomyName = () => {
+            if (tag_taxonomy_map == null) return;
+
+            const [taxonomy_name, current_category_taggings] = [...tag_taxonomy_map][focused_taxonomy_index];
+
+            return taxonomy_name;
+        }
+
+        /**
          * Handles changes to the cluster tags.
          * @param {import("@models/DungeonTags").DungeonTagging[]} new_taggings
          */
@@ -375,6 +431,37 @@
             dispatch("remove-category-tag", {removed_tag: tag_id});
         }
 
+        /**
+         * Sets the grid navigation wrapper required data.
+         * @param {import("@libs/LiberyHotkeys/hotkeys_context").default} hotkeys_context
+         */
+        const setGridNavigationWrapper = (hotkeys_context) => {
+            if (!browser) return;
+
+            if (the_wasd_keybind_wrapper != null) {
+                the_wasd_keybind_wrapper.destroy();
+            }
+
+            const grid_selectors = getFocusedTaggingsGridSelectors();
+
+            const matching_elements_count = document.querySelectorAll(grid_selectors.grid_parent_selector).length;
+            if (matching_elements_count !== 1) {
+                throw new Error(`tag parent selector '${grid_selectors.grid_parent_selector}' returned ${matching_elements_count}, expected exactly 1`);
+            }
+
+
+            the_wasd_keybind_wrapper = new CursorMovementWASD(grid_selectors.grid_parent_selector, handleCursorUpdate, {
+                initial_cursor_position: focused_tag_index,
+                sequence_item_name: "value",
+                sequence_item_plural_name: "values",
+                grid_member_selector: grid_selectors.grid_member_selector,
+            });
+            the_wasd_keybind_wrapper.setup(hotkeys_context);
+            
+
+            globalThis.the_grid_navigation_wrapper = the_wasd_keybind_wrapper; 
+        }
+
     /*=====  End of Methods  ======*/
     
 </script>
@@ -390,7 +477,8 @@
         </header>
         {#each tag_taxonomy_map as [taxonomy_name, taxonomy_members], h}
             {@const is_taxonomy_keyboard_focused = focused_taxonomy_index === h && has_hotkey_control}
-            <ol id="{$current_category.uuid}-attribute-{taxonomy_name}"
+            {@const taxonomy_members_list_id_selector = `category-${$current_category.uuid}-attribute-${taxonomy_name}`}
+            <ol id={taxonomy_members_list_id_selector}
                 class="current-category-attribute dungeon-tag-container"
                 class:focused-attribute={is_taxonomy_keyboard_focused}
             >
@@ -398,6 +486,7 @@
                 {#each taxonomy_members as dungeon_tagging, k}
                     {@const is_tag_keyboard_focused = is_taxonomy_keyboard_focused && focused_tag_index === k}
                     <DeleteableItem
+                        class_selector="{taxonomy_name}-{GRID_MOVEMENT_ITEM_CLASS}"
                         item_color={!is_tag_keyboard_focused ? "var(--grey)" : "var(--grey-8)"}
                         item_id={dungeon_tagging.Tag.Id}
                         on:item-deleted={handleCategoryTagDeleted}
