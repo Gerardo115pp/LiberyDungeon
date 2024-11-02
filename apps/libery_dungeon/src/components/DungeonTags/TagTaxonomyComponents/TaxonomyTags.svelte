@@ -197,42 +197,6 @@
             }
 
             /**
-             * Handles the navigation of the tags.
-             * @param {KeyboardEvent} event
-             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
-             */
-            const handleTagNavigation = (event, hotkey) => {
-                const not_valid_key = (event.key !== "a" && event.key !== "d" && event.key !== "w" && event.key !== "s");
-                const no_grid_wrapper_set = the_grid_navigation_wrapper == null;
-
-                if (!has_hotkey_control || no_grid_wrapper_set || not_valid_key) return;
-
-
-                let tag_count = taxonomy_tags.Tags.length;
-
-                if (tag_count === 0) return;
-
-                let new_index = 0;
-
-                switch (event.key) {
-                case "w":
-                    new_index = the_grid_navigation_wrapper.Grid.moveUp().value;
-                    break;
-                case "s":
-                    new_index = the_grid_navigation_wrapper.Grid.moveDown().value;
-                    break;
-                case "a":
-                    new_index = the_grid_navigation_wrapper.Grid.moveLeft().value;
-                    break;
-                case "d":
-                    new_index = the_grid_navigation_wrapper.Grid.moveRight().value;
-                    break;
-                }
-
-                focused_tag_index = new_index;
-            }
-
-            /**
              * Handles the Cursor update event emitted by the_grid_navigation_wrapper.
              * @type {import("@common/keybinds/CursorMovement").CursorPositionCallback}
              */
@@ -240,28 +204,6 @@
                 focused_tag_index = cursor_wrapped_value.value;
 
                 return false;
-            }
-
-            /**
-             * Handles the tag index goto hotkey.
-             * @param {KeyboardEvent} event
-             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
-             */
-            const handleTagIndexGoto = (event, hotkey) => {
-                if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
-
-                let vim_motion_value = hotkey.MatchMetadata.MotionMatches[0];
-                vim_motion_value--; // 1 based index to 0 based index
-
-                let tag_count = taxonomy_tags.Tags.length;
-
-                if (tag_count === 0) return;
-
-                let new_focused_tag_index = Math.max(0, Math.min(tag_count -1, vim_motion_value));
-
-                the_grid_navigation_wrapper.Grid.setCursor(new_focused_tag_index);
-
-                focused_tag_index = new_focused_tag_index;
             }
 
             /**
