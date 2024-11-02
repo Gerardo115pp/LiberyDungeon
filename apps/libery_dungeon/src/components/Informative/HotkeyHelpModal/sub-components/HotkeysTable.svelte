@@ -19,13 +19,12 @@
          */
         export let context_name = "";
 
-
         /**
-         * @typedef {Object} HotkeyMetadata
+        * @typedef {Object} HotkeyMetadata
          * @property {string} hotkey
          * @property {string} description
          * @property {string} group parsed from the description. e.g  if the description starts with `<group_name>` then the group is `group_name`
-         */
+        */
 
         /**
          * @type {Object<string,HotkeyMetadata[]>} The metadata of the hotkeys to display. Grouped by the group name.
@@ -37,6 +36,12 @@
          * @type {HotkeyMetadata[]}
          */
         let general_hotkeys = [];
+
+        /**
+         * The hotkeys table HTML element.
+         * @type {HTMLDivElement}
+         */
+        let the_hotkeys_table = null;
 
         
         /*----------  Styling  ----------*/
@@ -60,6 +65,8 @@
 
         general_hotkeys = hotkey_metadata[HOTKEYS_GENERAL_GROUP] ?? [];
         delete hotkey_metadata[HOTKEYS_GENERAL_GROUP];
+
+        focusHotkeysTable();
     });
 
     
@@ -115,6 +122,15 @@
 
             return hotkey_metadata;
         }
+
+        /**
+         * Focuses the hotkeys table.
+         */
+        const focusHotkeysTable = () => {
+            if (the_hotkeys_table == null) return;
+
+            the_hotkeys_table.focus();
+        }
         
     
     /*=====  End of Methods  ======*/
@@ -123,6 +139,8 @@
 
 {#if current_hotkeys != null}
     <div id="hotkeys-table-wrapper"
+        tabindex="-1"
+        bind:this={the_hotkeys_table}
         style:width={`calc(calc(${max_description_length}ch * 0.9) + ${static_padding_width})`} 
     >
         <h5 id="hotkeys-context-name">
