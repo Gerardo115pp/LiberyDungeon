@@ -369,7 +369,7 @@
                     initial_cursor_position: focused_tag_index,
                     sequence_item_name: "value",
                     sequence_item_plural_name: "values",
-                    grid_member_selector: `${tags_parent_selector} li:not(:has(input))`,
+                    grid_member_selector: 'li:not(:has(input))',
                 });
                 the_grid_navigation_wrapper.setup(hotkeys_context);
                 
