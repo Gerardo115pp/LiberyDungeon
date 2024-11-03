@@ -309,6 +309,114 @@ import { emitLabeledError } from "./lf_utils";
         NO_CHOICE: -1
     }
 
+    /**
+     * Class that holds data on how to reference an arbitrary entity in the UI.
+     */
+    export class UIReference {
+        /**
+         * The name of the entity.
+         * @type {string}
+         * @default "entity"
+         */
+        #entity_name;
+
+        /**
+         * A plural version of the entity name.
+         * @type {string}
+         * @default "entities"
+         */
+        #entity_name_plural;
+
+        /**
+         * An optional acronym for the entity.
+         * @type {string | null}
+         */
+        #acronym;
+
+        /**
+         * An optional description of the entity.
+         * @type {string | null}
+         */
+        #description;
+
+        /**
+         * A map of key value pairs that matches a 'usage' to a 'ui message'.
+         * @type {Map<string, string>}
+         */
+        #usage_map;
+
+        /**
+         * @param {string} entity_name
+         * @param {string} entity_name_plural
+         * @param {UIReferenceParams} params
+         * @typedef {Object} UIReferenceParams
+         * @property {string} [acronym]
+         * @property {string} [description]
+         * @property {Object<string, string>} [usage_map]
+         */        
+        constructor(entity_name, entity_name_plural, { acronym = null, description = null, usage_map = {} }) {
+            this.#entity_name = entity_name;
+            this.#entity_name_plural = entity_name_plural;
+            this.#acronym = acronym;
+            this.#description = description;
+            this.#usage_map = new Map(Object.entries(usage_map));
+        }
+
+        /**
+         * The name to describe a single entity.
+         * @returns {string}
+         */
+        get EntityName() {
+            return this.#entity_name;
+        }
+
+        /**
+         * The name to describe multiple entities.
+         * @returns {string}
+         */
+        get EntityNamePlural() {
+            return this.#entity_name_plural;
+        }
+
+        /**
+         * The acronym for the entity. this is optional and not always present.
+         * @returns {string | null}
+         */
+        get Acronym() {
+            return this.#acronym;
+        }
+
+        /**
+         * A description of the entity.
+         * @returns {string | null}
+         */
+        get Description() {
+            return this.#description;
+        }
+
+        /**
+         * Returns a usage message for the given usage key.
+         * @param {string} usage_key
+         * @returns {string}
+         */
+        getUsage(usage_key) {
+            return this.#usage_map.get(usage_key);
+        }
+
+        /**
+         * Adds a usage message to the usage map.
+         * @param {string} usage_key
+         * @param {string} usage_message
+         */
+        addUsage(usage_key, usage_message) {
+            if (this.#usage_map.has(usage_key)) {
+                console.warn(`Overwriting usage message for key: ${usage_key}`);
+            }
+
+            this.#usage_map.set(usage_key, usage_message);
+        }
+    }
+
 /*=====  End of Messages  ======*/
 
 
