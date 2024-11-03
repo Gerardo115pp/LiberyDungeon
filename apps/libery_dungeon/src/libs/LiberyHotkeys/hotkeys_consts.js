@@ -1,5 +1,15 @@
 
+/**
+ * A null handler for hotkeys.
+ * @type {import('./hotkeys').HotkeyCallback}
+ */
+export const HOTKEY_NULLISH_HANDLER = (event, hotkey) => console.error("Called a nullish hotkey handler");
 
+/**
+ * The default keyboard event mode for hotkeys that don't specify one.
+ * @type {"keydown" | "keyup" | "keypress"}
+ */
+export const DEFAULT_KEYBOARD_EVENT_MODE = "keydown";
 
 /*=============================================
 =            Hotkeys information            =
