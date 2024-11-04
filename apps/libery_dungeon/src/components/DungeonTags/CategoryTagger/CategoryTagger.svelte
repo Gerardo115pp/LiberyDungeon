@@ -10,10 +10,8 @@
         import { current_category } from "@stores/categories_tree";
         import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
-        import TaxonomyTags from "../TagTaxonomyComponents/TaxonomyTags/TaxonomyTags.svelte";
         import ClusterPublicTags from "./sub-components/ClusterPublicTags.svelte";
         import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
-        import { json } from "@sveltejs/kit";
         import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
         import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
@@ -29,7 +27,7 @@
         =============================================*/
         
             /**
-             * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager}
+             * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager | null}
              */
             const global_hotkeys_manager = getHotkeysManager();
 
@@ -51,7 +49,7 @@
 
         /**
          * The category tagger tool node.
-         * @type {HTMLDialogElement}
+         * @type {HTMLDialogElement | null}
          */
         let the_category_tagger_tool = null;
 
@@ -68,7 +66,7 @@
         
             /**
              * The focused section indicator.
-             * @type {nummber}
+             * @type {number}
              */ 
             let ct_focused_section = 0;
 
@@ -120,6 +118,11 @@
              * Defines the tools hotkeys.
              */ 
             const defineDesktopKeybinds = () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("Hotkeys manager not available.");
+                    return;
+                };
+
                 if (global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     global_hotkeys_manager.dropContext(hotkeys_context_name);
                 }
@@ -205,6 +208,8 @@
              * Drops the tools hotkey contexts and loads the previous context.
              */
             const resetHotkeyContext = () => {
+                if (global_hotkeys_manager == null) return;
+
                 if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
@@ -218,6 +223,11 @@
         const defineComponentMetadata = () => {
             let dtt_sections = getSectionNodes();
 
+            if (dtt_sections == null) {
+                console.error("Could not find the category tagger tool sections.");
+                return;
+            }
+
             dtt_sections_count = dtt_sections.length;
         }
         
@@ -230,9 +240,11 @@
 
         /**
          * Returns all the section nodes of the category tagger tool.
-         * @returns {NodeListOf<HTMLElement>}
+         * @returns {NodeListOf<HTMLElement> | undefined}
          */
         const getSectionNodes = () => {
+            if (the_category_tagger_tool == null) return; 
+
             return the_category_tagger_tool.querySelectorAll(".dctt-section");
         }
 
@@ -319,6 +331,9 @@
             }
 
             // Ensure the taxonomy is inserted at the same index as it was before.
+            /**
+             * @type {import("@models/DungeonTags").TaxonomyTags[]}
+             */
             let new_cluster_tags = [];
 
             if (taxonomy_tags_index > 0) {
@@ -338,7 +353,7 @@
         
         /**
          * Handles the tag-selected event from the ClusterPublicTags component.
-         * @param {CustomEvent<{item_id: string}>} event
+         * @param {CustomEvent<{tag_id: number}>} event
          */
         const handleTagSelection = async (event) => {
             const tag_id = event.detail.tag_id;
