@@ -16,5 +16,12 @@
         NAVIGATION_ITEM_GOTO_FINALIZER: ["g"],
     }
 
+    export const global_hotkey_movement_triggers = [
+        ...global_hotkey_action_triggers.NAVIGATION_UP,
+        ...global_hotkey_action_triggers.NAVIGATION_DOWN,
+        ...global_hotkey_action_triggers.NAVIGATION_LEFT,
+        ...global_hotkey_action_triggers.NAVIGATION_RIGHT,
+    ]
+
 /*=====  End of GLOBAL  ======*/
 

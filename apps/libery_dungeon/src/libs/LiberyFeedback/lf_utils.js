@@ -193,6 +193,3 @@ export const subscribeToPlatformMessages = callback => {
     globalThis.setDiscreteFeedbackMessage = setDiscreteFeedbackMessage;
 
 /*=====  End of Discrete feedback messages  ======*/
-
-
-

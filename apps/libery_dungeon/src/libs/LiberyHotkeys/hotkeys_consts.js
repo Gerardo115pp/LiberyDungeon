@@ -29,6 +29,12 @@ export const HOTKEY_NULLISH_HANDLER = (event, hotkey) => console.error("Called a
     export const DEFAULT_HOTKEY_MODE = "keydown";
 
     /**
+     * A nullish hotkey description. All instances of this description should be replaced.
+     * @type {string}
+     */
+    export const HOTKEY_NULL_DESCRIPTION = "REPLACE ME";
+
+    /**
      * The default value for consider_time_in_sequence for hotkeys that don't specify one
      * @type {boolean}
      */

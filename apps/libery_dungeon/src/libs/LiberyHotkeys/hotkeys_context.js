@@ -1,6 +1,6 @@
 import { hasWindowContext } from "@libs/utils"
 import { HotkeyData, default_hotkey_register_options  } from "./hotkeys"
-import { HOTKEY_NULLISH_HANDLER } from "./hotkeys_consts"
+import { HOTKEY_NULL_DESCRIPTION, HOTKEY_NULLISH_HANDLER } from "./hotkeys_consts"
 
 /**
 * CHORE: Rename all references to key_combo to hotkey_trigger
@@ -134,11 +134,164 @@ export default class HotkeysContext {
  * Metadata about a hotkey action
 * @typedef {Object} HotkeyActionMeta
  * @property {Symbol} overwrite_behavior - how the component declares that will handle hotkey callback overriding for this action.
- * @property {boolean} overwritten_trigger
- * @property {boolean} overwritten_callback
- * @property {boolean} overwritten_options
+ * @property {boolean} [overwritten_trigger]
+ * @property {boolean} [overwritten_callback]
+ * @property {boolean} [overwritten_options]
  * @property {HotkeyRegisterParams} hotkey_register_params
 */
+
+export class HotkeyAction {
+    /**
+     * Overwriting behavior for the hotkey action
+     * @type {Symbol}
+     */
+    #overwrite_behavior
+
+    /**
+     * Whether the hotkey trigger has been overwritten
+     * @type {boolean}
+     * @default false
+     */
+    #overwritten_trigger
+
+    /**
+     * Whether the hotkey callback has been overwritten
+     * @type {boolean}
+     * @default false
+     */
+    #overwritten_callback
+
+
+    /**
+     * Whether the hotkey options have been overwritten
+     * @type {boolean}
+     * @default false
+     */
+    #overwritten_options
+
+    /**
+     * The hotkey register parameters
+     * @type {HotkeyRegisterParams}
+     */
+    #hotkey_register_params
+    
+    /**
+     * @param {HotkeyActionMeta} hotkey_action_meta
+     */
+    constructor(hotkey_action_meta) {
+        this.#overwrite_behavior = hotkey_action_meta.overwrite_behavior;
+
+        this.#overwritten_trigger = false;
+        this.#overwritten_callback = false;
+        this.#overwritten_options = false;
+
+        this.#hotkey_register_params = hotkey_action_meta.hotkey_register_params
+    }
+
+    /**
+     * The hotkey callback
+     * @type {import('./hotkeys').HotkeyCallback}
+     */
+    get Callback() {
+        return this.#hotkey_register_params.callback;
+    }
+
+    /**
+     * The hotkey callback
+     * @param {import('./hotkeys').HotkeyCallback} callback
+     * @returns {void}
+     */
+    set Callback(callback) {
+        this.#hotkey_register_params.callback = callback;
+        this.#overwritten_callback = true;
+    }
+
+    /**
+     * The hotkey triggers.
+     * @type {string | string[]}
+     */
+    get HotkeyTriggers() {
+        return this.#hotkey_register_params.hotkey_triggers;
+    }
+
+    /**
+     * The hotkey triggers.
+     * @param {string | string[]} hotkey_triggers
+     * @returns {void}
+     */
+    set HotkeyTriggers(hotkey_triggers) {
+        this.#hotkey_register_params.hotkey_triggers = hotkey_triggers;
+        this.#overwritten_trigger = true;
+    }
+
+    /**
+     * Whether the callback is nullish
+     * @returns {boolean}
+     */
+    HasNullishCallback() {
+        return this.#hotkey_register_params.callback === HOTKEY_NULLISH_HANDLER;
+    }
+
+    /**
+     * Whether the description is nullish
+     * @returns {boolean}
+     */
+    HasNullishDescription() {
+        return this.#hotkey_register_params.options.description === HOTKEY_NULL_DESCRIPTION;
+    }
+
+    /**
+     * The hotkey options
+     * @type {import('./hotkeys').HotkeyRegisterOptions}
+     */
+    get Options() {
+        return this.#hotkey_register_params.options;
+    }
+
+    /**
+     * The hotkey options
+     * @param {import('./hotkeys').HotkeyRegisterOptions} options
+     * @returns {void}
+     */
+    set Options(options) {
+        this.#hotkey_register_params.options = options;
+        this.#overwritten_options = true;
+    }
+
+    /**
+     * The overwriting behavior for the hotkey action
+     * @type {Symbol}
+     */
+    get OverwriteBehavior() {
+        return this.#overwrite_behavior;
+    }
+
+    /**
+     * Whether the hotkey trigger has been overwritten
+     * @type {boolean}
+     */
+    get OverwrittenTrigger() {
+        return this.#overwritten_trigger;
+    }
+
+    /**
+     * Whether the hotkey callback has been overwritten
+     * @type {boolean}
+     * @default false
+     */
+    get OverwrittenCallback() {
+        return this.#overwritten_callback;
+    }
+
+    /**
+     * Overwrites the hotkey description
+     * @param {string} new_description
+     */
+    overwriteDescription(new_description) {
+        this.#hotkey_register_params.options.description = new_description;
+        this.#overwritten_options = true;
+    }
+}
 
 /**
  * A wrapper class for the HotkeysContext. It's purpose is for components to expose the hotkeys it handles and allow a parent component to register over them or request a given action is taken when a hotkey triggers.
@@ -171,7 +324,7 @@ export class ComponentHotkeyContext {
 
     /** 
      * The actions that the component will handle.
-     * @type {Map<Symbol, HotkeyActionMeta>}
+     * @type {Map<Symbol, HotkeyAction>}
      */
     #actions
 
@@ -210,7 +363,7 @@ export class ComponentHotkeyContext {
             return undefined;
         }
 
-        return action.overwrite_behavior;
+        return action.OverwriteBehavior;
     }
 
     /**
@@ -234,6 +387,15 @@ export class ComponentHotkeyContext {
     }
 
     /**
+     * Returns a hotkey action meta for a given action name. If the action does not exist, it returns undefined.
+     * @param {Symbol} action_name
+     * @returns {HotkeyAction | undefined}
+     */
+    getHotkeyAction(action_name) {
+        return this.#actions.get(action_name);
+    }
+
+    /**
      * Generates a HotkeysContext based on the ComponentHotkeyContext's actions. If the hotkeys context has already been generated, it has to be dropped first or the method panics.
      * @returns {HotkeysContext}
      */
@@ -246,13 +408,46 @@ export class ComponentHotkeyContext {
 
         for (const [action_name, hotkey_action] of this.#actions) {
             this.#hotkeys_context.register(
-                hotkey_action.hotkey_register_params.hotkey_triggers,
-                hotkey_action.hotkey_register_params.callback,
-                hotkey_action.hotkey_register_params.options
+                hotkey_action.HotkeyTriggers,
+                hotkey_action.Callback,
+                hotkey_action.Options
             );
         }
 
         return this.#hotkeys_context;        
+    }
+
+    /**
+     * Returns the hotkey options for the given action. If the action does not exist, it returns undefined.
+     * @param {Symbol} action_name
+     * @returns {import('./hotkeys').HotkeyRegisterOptions | undefined}
+     */
+    getActionOptions(action_name) {
+        let action = this.#actions.get(action_name);
+
+        return action?.Options;    
+    }
+
+    /**
+     * Returns the hotkey callback for the given action. If the action does not exist, it returns a nullish handler.
+     * @param {Symbol} action_name
+     * @returns {import('./hotkeys').HotkeyCallback}
+     */
+    getActionCallback(action_name) {
+        let action = this.#actions.get(action_name);
+
+        return action?.Callback ?? HOTKEY_NULLISH_HANDLER;
+    }
+
+    /**
+     * Returns the hotkey trigger for the given action. If the action does not exist, it returns an empty array.
+     * @param {Symbol} action_name
+     * @returns {string | string[]}
+     */
+    getActionTrigger(action_name) {
+        let action = this.#actions.get(action_name);
+
+        return action?.HotkeyTriggers ?? [];
     }
    
     /**
@@ -298,7 +493,7 @@ export class ComponentHotkeyContext {
             throw new Error(`The action ${action_name} does not exist in the ComponentHotkeyContext.`);
         }
 
-        hotkey_action.hotkey_register_params.hotkey_triggers = hotkey_trigger;
+        hotkey_action.HotkeyTriggers = hotkey_trigger;
     }
 
     /**
@@ -317,10 +512,7 @@ export class ComponentHotkeyContext {
             throw new Error(`The action ${action_name} does not exist in the ComponentHotkeyContext.`);
         }
 
-        hotkey_data_params.hotkey_register_params = {
-            ...hotkey_data_params.hotkey_register_params,
-            callback: callback
-        };
+        hotkey_data_params.Callback = callback;
     }
 
     /**
@@ -340,8 +532,25 @@ export class ComponentHotkeyContext {
          */
         let safe_options = { ...default_hotkey_register_options, ...options };
 
-        hotkey_data_params.hotkey_register_params.options = safe_options;
+        hotkey_data_params.Options = safe_options;
     }
+
+    /**
+     * Overwrites the hotkey description for a given action. 
+     * @param {Symbol} action_name
+     * @param {string} new_description
+     * @returns {void}
+     */
+    overwriteHotkeyDescription(action_name, new_description) {
+        const hotkey_action = this.#actions.get(action_name);
+
+        if (hotkey_action == null) {
+            throw new Error(`The action ${action_name} does not exist in the ComponentHotkeyContext.`);
+        }
+
+        hotkey_action.overwriteDescription(new_description);
+    }
+    
 
     /**
      * Registers hotkey data parameters for a given action.
@@ -376,7 +585,9 @@ export class ComponentHotkeyContext {
             }
         };
 
-        this.#actions.set(action_name, safe_hotkey_action);
+        const new_hotkey_action = new HotkeyAction(safe_hotkey_action);
+
+        this.#actions.set(action_name, new_hotkey_action);
     }
 
     /**
