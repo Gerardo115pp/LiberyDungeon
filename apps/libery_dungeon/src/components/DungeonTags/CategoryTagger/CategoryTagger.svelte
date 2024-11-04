@@ -8,7 +8,7 @@
         import { createEventDispatcher, onDestroy, onMount } from "svelte";
         import { current_cluster } from "@stores/clusters";
         import { current_category } from "@stores/categories_tree";
-        import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
+        import { LabeledError, UIReference, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
         import ClusterPublicTags from "./sub-components/ClusterPublicTags.svelte";
         import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
@@ -53,6 +53,27 @@
          */
         let the_category_tagger_tool = null;
 
+
+        
+        /*----------  UI references  ----------*/
+        
+            /**
+             * A UiReference object, to create ui messages about the taggable entity. used to pass down to general purpose components
+             * @type {UIReference}
+             */
+            const entity_ui_reference = new UIReference("category", "categories");
+
+            /**
+             * A UiReference object, to create ui messages about the tag taxonomy. used to pass down to general purpose components.
+             * @type {UIReference}
+             */
+            const taxonomy_ui_reference = new UIReference("attribute", "attributes");
+
+            /**
+             * A UiReference object, to create ui messages about the dungeon-tag. used to pass down to general purpose components.
+             * @type {UIReference}
+             */
+            const tag_ui_reference = new UIReference("value", "values");
         
         /*----------  Component metadata  ----------*/
         
