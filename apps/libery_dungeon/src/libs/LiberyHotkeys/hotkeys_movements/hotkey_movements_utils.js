@@ -70,13 +70,13 @@ export const linearCycleNavigationWrap = (current, max, direction, min=0) => {
 class HM_GridRow {
     /**
      * The previous row in the sequence
-     * @type {HM_GridRow}
+     * @type {HM_GridRow | null}
      */
     #previous_row;
 
     /**
      * The next row in the sequence
-     * @type {HM_GridRow}
+     * @type {HM_GridRow | null}
      */
     #next_row;
 
@@ -87,7 +87,7 @@ class HM_GridRow {
     #row_index_members;
 
     /**
-     * @param {HM_GridRow} [previous_row] - the previous row in the sequence
+     * @param {HM_GridRow | null} [previous_row] - the previous row in the sequence
      */
     constructor(previous_row=null) {
         if (!(previous_row instanceof HM_GridRow) && previous_row !== null) {
@@ -107,12 +107,16 @@ class HM_GridRow {
     addIndex() {
         if (this.#previous_row === null && this.#row_index_members.length === 0) {
             this.#row_index_members = [0];
-            return;
+            return 1;
         }
 
+        // @ts-ignore - if the previous row is null and the row has no indexes, then the previous if statement catches it. if the previous row is null and the row has indexes, then the this.#previous_row.MaxIndex never is 
+        // evaluated.
         const last_index = this.#row_index_members[this.#row_index_members.length - 1] ?? this.#previous_row.MaxIndex;
         
         this.#row_index_members.push(last_index + 1);
+
+        return this.#row_index_members.length;
     }
 
     /**
@@ -235,19 +239,19 @@ class HM_GridRowSequence {
 
     /**
      * The first row in the grid
-     * @type {HM_GridRow}
+     * @type {HM_GridRow | null}
      */
     #first_row;
 
     /**
      * The last row in the grid
-     * @type {HM_GridRow}
+     * @type {HM_GridRow | null}
      */
     #last_row;
 
     /**
      * The row from which indexes for index operations are been taken from.
-     * @type {HM_GridRow}
+     * @type {HM_GridRow | null}
      */
     #current_row;
 
@@ -367,7 +371,11 @@ class HM_GridRowSequence {
      * @returns {number}
      */
     clampSequenceIndex(sequence_index) {
-        return Math.max(this.#first_row.MinIndex, Math.min(sequence_index, this.#last_row.MaxIndex));
+        if (this.#last_row === null) {
+            return 0;
+        }
+
+        return Math.max((this.#first_row?.MinIndex ?? 0), Math.min(sequence_index, this.#last_row.MaxIndex));
     }
 
     /**
@@ -390,8 +398,13 @@ class HM_GridRowSequence {
      * Sets the row focus to the first row and clamps the column index to the row's bounds.
      */
     focusFirstRow() {
+        if (this.#first_row === null) {
+            throw new Error("No rows in the sequence");
+        }
+
         this.#focusFirstRow();
 
+        // @ts-ignore
         this.#current_column_index = this.#current_row.clampColumnIndex(this.#current_column_index);
     }
 
@@ -399,8 +412,13 @@ class HM_GridRowSequence {
      * Sets the row focus to the last row and clamps the column index to the row's bounds.
      */
     focusLastRow() {
+        if (this.#last_row === null) {
+            throw new Error("Last row reference is null. Programming error or no rows in the sequence.");
+        }
+
         this.#focusLastRow();
 
+        // @ts-ignore
         this.#current_column_index = this.#current_row.clampColumnIndex(this.#current_column_index);
     }
 
@@ -409,10 +427,15 @@ class HM_GridRowSequence {
      * @returns {HM_GridRow}
      */
     getCurrentRow() {
+        if (this.#first_row === null) {
+            throw new Error("No rows in the sequence");
+        }
+
         if (this.#current_row === null) {
             this.#focusFirstRow();
         }
 
+        // @ts-ignore
         return this.#current_row;
     }
 
@@ -470,7 +493,7 @@ class HM_GridRowSequence {
             previous_row = this.#current_row;
         }
 
-        this.#current_column_index = previous_row.clampColumnIndex(this.#current_column_index);
+        this.#current_column_index = /** @type {HM_GridRow} */ (previous_row).clampColumnIndex(this.#current_column_index);
 
         wrapped_value.value = this.Cursor;
 
@@ -483,10 +506,21 @@ class HM_GridRowSequence {
      * @returns {GridWrappedValue}
      */
     moveRight() {
+        if (this.#current_row == null) {
+            console.error(`No current row focused having ${this.#row_count} rows. Focusing the first row.`);
+
+            if (this.#first_row === null) {
+                throw new Error("No rows in the sequence");
+            }
+
+            this.#focusFirstRow();
+        }
+
         const wrapped_value = getEmptyGridWrappedValue();
 
         let new_index = this.#current_column_index + 1;
 
+        // @ts-ignore
         if (new_index >= this.#current_row.length) {
             wrapped_value.overflowed_right = true;            
 
@@ -523,6 +557,7 @@ class HM_GridRowSequence {
 
         this.#focusFirstRow();
 
+        // @ts-ignore
         this.#current_column_index = this.#current_row.clampColumnIndex(this.#current_column_index);
 
         wrapped_value.value = this.Cursor;
@@ -542,6 +577,10 @@ class HM_GridRowSequence {
 
         if (this.#current_column_index < 0) {
             this.moveUp();
+
+            if (this.#current_row == null) {
+                throw new Error("In LiberyHotkey/hotkeys_movements/hotkey_movements_utils.js HM_GridRowSequence.moveLeft: After moving up, the current row was null");
+            }
 
             this.#current_column_index = this.#current_row.length - 1;
 
@@ -568,6 +607,10 @@ class HM_GridRowSequence {
      * @returns {GridWrappedValue}
      */
     moveRowEnd() {
+        if (this.#current_row == null) {
+            throw new Error("In LiberyHotkey/hotkeys_movements/hotkey_movements_utils.js HM_GridRowSequence.moveRowEnd: Current row is null");
+        }
+
         this.#current_column_index = this.#current_row.length - 1;
 
         return this.CursorWrapped;
@@ -606,6 +649,7 @@ class HM_GridRowSequence {
         let infinite_loop_guard = 0;
         let inspection_row = this.#current_row; // The inspection_row and this.#current_row are equal unless the traversal function cannot traverse(change the current row) in which case it returns null(but doesn't modify the current row) setting the inspection_row to null, so we can detect when we reach the last row.
 
+        // @ts-ignore
         while (inspection_row !== null && !this.#current_row.hasIndex(sequence_index)) {
             inspection_row = traversal_function.call(this);
             
@@ -616,6 +660,7 @@ class HM_GridRowSequence {
             }
         }
 
+        // @ts-ignore
         let new_column_index = this.#current_row.indexOf(sequence_index);
 
         if (new_column_index === -1) {
@@ -639,7 +684,7 @@ class HM_GridRowSequence {
             throw new Error("Row index out of bounds");
         }
 
-        if (row_index < this.#current_rowid) {
+        if (row_index < this.#current_rowid || this.#current_row === null) {
             this.#focusFirstRow();
         }
 
@@ -659,6 +704,7 @@ class HM_GridRowSequence {
 
         console.log("Rowid", this.#current_rowid);
 
+        // @ts-ignore
         this.#current_column_index = this.#current_row.clampColumnIndex(this.#current_column_index);
     }
 
@@ -667,6 +713,11 @@ class HM_GridRowSequence {
      * @param {number} column_index
      */
     setCurrentRowColumn(column_index) {
+        if (this.#current_row === null) {
+            console.error("No current row focused");
+            return;
+        }
+
         this.#current_column_index = this.#current_row.clampColumnIndex(column_index);
     }
 
@@ -700,7 +751,8 @@ class HM_GridRowSequence {
      */
     #traverseForward() {
         if (this.#current_row === null) {
-            return this.#focusFirstRow();
+            this.#focusFirstRow();
+            return this.#current_row;
         }
 
         if (this.#current_row.NextRow === null) {
@@ -790,7 +842,7 @@ export class GridNavigationWrapper {
 
     /**
      * Returns the dom element matching the parent selector.
-     * @returns {HTMLElement}
+     * @returns {HTMLElement | null}
      */
     getDomParentElement() {
         return document.querySelector(this.#grid_parent_selector);
@@ -798,7 +850,7 @@ export class GridNavigationWrapper {
 
     /**
      * the selector for the grid parent.
-     * @type {string}
+     * @returns {string}
      */
     DomParentSelector() {
         return this.#grid_parent_selector;
@@ -868,7 +920,7 @@ export class GridNavigationWrapper {
      * Scans and creates the HM_GridRowSequence from the matching grid members. Determines which element belong to the same row by checking their .getBoundingClientRect().y value.
      */
     scanGridMembers() {
-        if (!this.#grid_parent.hasChildNodes()) {
+        if (!this.#grid_parent?.hasChildNodes()) {
             return;
         }
 
