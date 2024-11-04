@@ -55,19 +55,26 @@
         /**
          * Handles the hotkeys context change event.
          * @type {import('@libs/LiberyHotkeys/hotkeys_events').HotkeysContextEventCallback}
-        */
-        const handleHotkeysContextChange = e => {
+         * @param {CustomEvent<import('@libs/LiberyHotkeys/hotkeys_events').HotkeysContextEventDetail>} event The event that triggered the context change.
+         * @returns {void}
+         */
+        const handleHotkeysContextChange = event => {
+            if (global_hotkeys_manager === null) {
+                console.error("Global hotkeys manager is null.");
+                return;
+            }
+
             if (!global_hotkeys_manager.hasLoadedContext()) {
                 setEmptyContextState();
                 return;
             }
 
             // If the context name is the same and the hotkeys count is the same, do nothing.
-            if (e.detail.context_name === current_context_name && current_hotkeys.length === global_hotkeys_manager.Context?.hotkeys.length) {
+            if (event.detail.context_name === current_context_name && current_hotkeys.length === global_hotkeys_manager.Context?.hotkeys.length) {
                 return;
             }
 
-            updateHotkeysValues(e.detail.context_name);
+            updateHotkeysValues(event.detail.context_name);
         }
 
         /**
