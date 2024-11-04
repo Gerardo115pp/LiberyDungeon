@@ -10,7 +10,7 @@
         import { current_category } from "@stores/categories_tree";
         import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
-        import TaxonomyTags from "../TagTaxonomyComponents/TaxonomyTags.svelte";
+        import TaxonomyTags from "../TagTaxonomyComponents/TaxonomyTags/TaxonomyTags.svelte";
         import ClusterPublicTags from "./sub-components/ClusterPublicTags.svelte";
         import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
         import { json } from "@sveltejs/kit";
