@@ -22,7 +22,7 @@ class HotkeyTriggeredEvent {
     #the_event;
 
     /**
-     * @param {import('./hotkeys')} hotkey 
+     * @param {import('./hotkeys').HotkeyData} hotkey 
      * @param {KeyboardEvent} event 
      */
     constructor(hotkey, event) {
@@ -75,18 +75,19 @@ export class HotkeysController {
 
     /**
      * keydown handler function bound to the HotkeyBinder instance so addEventListener wont override the this context with the EventTarget.
-     * @type {function}
+     * @type {EventListener}
      */
     #bound_handleKeyDown;
 
     /**
      * keyup handler function bound to the HotkeyBinder instance so addEventListener wont override the this context with the EventTarget.
-     * @type {function}
+     * @type {EventListener}
      */
     #bound_handleKeyUp;
 
     /**
      * Handler for the deprecated keypress event. It's only purpose is to block the event.
+     * @type {EventListener}
      */
     #bound_handleKeyPress;
 
@@ -307,6 +308,9 @@ export class HotkeysController {
 
         let lower_case_matching = triggers.get(key.toLowerCase()) ?? []; // This is done so, for example hotkeys like shift+a are able to
         let upper_case_matching = triggers.get(key.toUpperCase()) ?? [];// be matched, cause the event.key will return 'A' and not 'a'
+        /**
+         * @type {import('./hotkeys').HotkeyData[]}
+         */
         let exact_matching = [];
 
         if (key.length > 1) { // Allow matching hotkeys like 'up' which will match 'ArrowUp'. Same case for 'enter' that matches 'Enter', 'backspace' that matches 'Backspace' etc.
@@ -332,6 +336,7 @@ export class HotkeysController {
 
     /**
      * Handles the keydown event
+     * @type {EventListener}
      * @param {KeyboardEvent} event
      */
     #handleKeyDown(event) {
@@ -351,6 +356,7 @@ export class HotkeysController {
 
     /**
      * Handles the keyup event
+     * @type {EventListener}
      * @param {KeyboardEvent} event
      */
     #handleKeyUp(event) {
@@ -369,6 +375,7 @@ export class HotkeysController {
 
     /**
      * Handles the keypress event. It's only purpose is to block the event unless the event is produced on a Input like element.
+     * @type {EventListener}
      * @param {KeyboardEvent} event
      */
     #handleKeyPress(event) {
@@ -400,7 +407,7 @@ export class HotkeysController {
         let candidate_hotkeys = this.#getCandidateHotkeys(event.key, event.type);
         // console.log("candidate hotkeys: ", candidate_hotkeys);
 
-        if (candidate_hotkeys.length === 0) return;
+        if (candidate_hotkeys.length === 0) return null;
 
         /** @type {import('./hotkeys').HotkeyData | null} */
         let matching_hotkey = null;
@@ -491,10 +498,13 @@ export class HotkeysController {
             const hotkey_triggers = hotkey.Triggers;
 
             for (let trigger of hotkey_triggers) {
+                /**
+                 * @type {import('./hotkeys').HotkeyData[]}
+                 */
                 let hotkeys_on_trigger = [];
 
                 if (all_triggers.has(trigger)) {
-                    hotkeys_on_trigger = all_triggers.get(trigger);
+                    hotkeys_on_trigger = all_triggers.get(trigger) ?? [];
                 }
 
                 hotkeys_on_trigger.push(hotkey);

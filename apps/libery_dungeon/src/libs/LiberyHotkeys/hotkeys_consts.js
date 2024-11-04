@@ -5,11 +5,46 @@
  */
 export const HOTKEY_NULLISH_HANDLER = (event, hotkey) => console.error("Called a nullish hotkey handler");
 
-/**
- * The default keyboard event mode for hotkeys that don't specify one.
- * @type {"keydown" | "keyup" | "keypress"}
- */
-export const DEFAULT_KEYBOARD_EVENT_MODE = "keydown";
+
+/*=============================================
+=            Defaults            =
+=============================================*/
+
+    /**
+     * The default keyboard event mode for hotkeys that don't specify one.
+     * @type {"keydown" | "keyup"}
+     */
+    export const DEFAULT_KEYBOARD_EVENT_MODE = "keydown";
+
+    /**
+     * The default await execution value for hotkeys that don't specify one
+     * @type {boolean}
+     */
+    export const DEFAULT_AWAIT_EXECUTION = false;
+
+    /**
+     * The default hotkey mode for hotkeys that don't specify one
+     * @type {"keydown" | "keyup"}
+     */
+    export const DEFAULT_HOTKEY_MODE = "keydown";
+
+    /**
+     * The default value for consider_time_in_sequence for hotkeys that don't specify one
+     * @type {boolean}
+     */
+    export const DEFAULT_CONSIDER_TIME_IN_SEQUENCE = true;
+
+    /**
+     * The default value for can_repeat for hotkeys that don't specify one
+     * @type {boolean}
+     */
+    export const DEFAULT_CAN_REPEAT = true;
+
+
+/*=====  End of Defaults  ======*/
+
+
+
 
 /*=============================================
 =            Hotkeys information            =

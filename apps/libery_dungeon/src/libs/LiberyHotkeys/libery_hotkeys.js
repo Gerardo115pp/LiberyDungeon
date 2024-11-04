@@ -129,7 +129,6 @@ export class HotkeyContextManager {
 
     /**
      * Emits a context event
-     * @private
      * @param {hotkeys_context_events} event
      * @param {import('./hotkeys_events').HotkeysContextEventDetail} detail
      * @returns {void}
@@ -159,7 +158,7 @@ export class HotkeyContextManager {
     hasHotkey(hotkey, mode="keydown") {
         if (!this.hasLoadedContext()) return false;
 
-        return this.#current_context.hasHotkey(hotkey, mode);
+        return this.#current_context?.hasHotkey(hotkey, mode) ?? false;
     }
 
     /**
@@ -369,7 +368,7 @@ export class HotkeyContextManager {
         this.#hotkeys_controller.dropContext();
 
         this.#current_context = null;
-        this.#current_context_name = undefined;
+        this.#current_context_name = "";
 
         this.#emitContextEvent(hotkeys_context_events.CONTEXT_CHANGED, {context_name: ""});
     }

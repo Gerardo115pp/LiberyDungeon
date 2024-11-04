@@ -244,7 +244,11 @@ const isMetaKey = (key) => {
  * @returns {string[]}
  */
 const parseMetaKey = (key) => {
+    /**
+     * @type {string[]}
+     */
     let keys = [];
+
     switch (key) {
         case NUMERIC_METAKEY:
             keys = Array.from(number_hotkeys);
@@ -368,6 +372,7 @@ export class HotkeyFragment {
         this.#shift_modifier = false;
         this.#alt_modifier = false;
         this.#uppercase_explicit = false;
+        this.#numeric_metakey = false; // Overwritten by #parseIdentityMember
 
         this.#fragment_identity = "";
         this.#alternate_identities = [];
@@ -387,8 +392,10 @@ export class HotkeyFragment {
 
         let current_identities = [...this.#alternate_identities];
 
-        if (shift_mutations_us_keyboard.has(this.#fragment_identity)) {
-            this.#alternate_identities.push(shift_mutations_us_keyboard.get(this.#fragment_identity));
+        let shifted_fragment_identity = shift_mutations_us_keyboard.get(this.#fragment_identity);
+
+        if (shifted_fragment_identity != null) {
+            this.#alternate_identities.push(shifted_fragment_identity);
         }
 
         for (let identity of current_identities) {

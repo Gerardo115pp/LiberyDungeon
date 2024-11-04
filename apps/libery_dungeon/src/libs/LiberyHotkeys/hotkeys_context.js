@@ -76,7 +76,7 @@ export default class HotkeysContext {
      * Register a hotkey on the context, if the hotkey already exists it will be overwritten.
      * If a array of hotkeys is passed, all of them will be registered with the same callback
      * @param {string|string[]} name
-     * @param {function} callback
+     * @param {import('./hotkeys').HotkeyCallback} callback
      * @param {import('./hotkeys').HotkeyRegisterOptions} options
      */
     register(name, callback, options) {
@@ -95,7 +95,7 @@ export default class HotkeysContext {
     /**
      * Saves a given hotkey name as a HotkeyData in the appropriate mode.
      * @param {string} name
-     * @param {function} callback
+     * @param {import('./hotkeys').HotkeyCallback} callback
      * @param {import('./hotkeys').HotkeyRegisterOptions} options
      */
     #saveHotkey(name, callback, options) {
@@ -107,9 +107,6 @@ export default class HotkeysContext {
         }
 
         mode_hotkeys.set(name, new_hotkey)
-        if (options.bind) {
-            console.error("The bind option is deprecated and will be removed soon.");
-        }
     }
 
     /**

@@ -3,7 +3,7 @@ import {
     IsNumeric,
     IsModifier
 } from "./hotkeys_matchers";
-import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "./hotkeys_consts";
+import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP, DEFAULT_KEYBOARD_EVENT_MODE, DEFAULT_AWAIT_EXECUTION, DEFAULT_CONSIDER_TIME_IN_SEQUENCE, DEFAULT_CAN_REPEAT } from "./hotkeys_consts";
 import { 
     MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES,
     HOTKEY_SPECIFICITY_PRECEDENCE
@@ -11,9 +11,8 @@ import {
 
 /**
 * @typedef {Object} HotkeyRegisterOptions
- * @property {boolean} bind - If true the hotkey will be binded immediately. default is false
- * @property {?string} description - The hotkey's description   
- * @property {"keypress"|"keydown"|"keyup"} mode - The mode of the keypress event. Default is "keydown"
+ * @property {string} description - The hotkey's description   
+ * @property {"keydown"|"keyup"} mode - The mode of the keypress event. Default is "keydown"
  * @property {boolean} await_execution - Whether the execution of a callback should end before another hotkey can be triggered. Default is true
  * @property {boolean} consider_time_in_sequence - Whether the hotkey sequence should expire if they are to far apart in time. Default is false
  * @property {boolean} can_repeat - Whether the hotkey should be triggered if the trigger is repeating(holding down the key). Default is false
@@ -28,15 +27,14 @@ import {
 
 /**
 * The default hotkey register options
- * @type {HotkeyRegisterOptions}
  */
 export const default_hotkey_register_options = {
     bind: false,
-    description: null,
-    mode: "keydown",
-    await_execution: true,
-    consider_time_in_sequence: false,
-    can_repeat: false,
+    description: `<${HOTKEYS_GENERAL_GROUP}>No information available`,
+    mode: DEFAULT_KEYBOARD_EVENT_MODE,
+    await_execution: DEFAULT_AWAIT_EXECUTION,
+    consider_time_in_sequence: DEFAULT_CONSIDER_TIME_IN_SEQUENCE,
+    can_repeat: DEFAULT_CAN_REPEAT,
 }
 
 /**
@@ -177,7 +175,7 @@ export class HotkeyData {
     #callback
 
     /**
-     * @type {"keypress"|"keydown"|"keyup"} the mode of the keypress event
+     * @type {"keydown"|"keyup"} the mode of the keypress event
      */
     #mode
 
@@ -220,7 +218,7 @@ export class HotkeyData {
 
     /**
      * @param {string} name the key's name e.g: 'a', 'esc', '-', etc
-     * @param {function} callback the callback to be called when the key is pressed
+     * @param {HotkeyCallback} callback the callback to be called when the key is pressed
      * @param {HotkeyRegisterOptions} options
      * @constructor
      */
@@ -235,14 +233,22 @@ export class HotkeyData {
             ...options
         };
 
+        this.#description = this.#the_options.description;
+        this.#mode = this.#the_options.mode ?? DEFAULT_KEYBOARD_EVENT_MODE;
+
+        if (this.#the_options.await_execution === undefined) {
+            this.#the_options.await_execution = default_hotkey_register_options.await_execution;
+        }
         
-        this.#unpackOptions(options)
+        this.#verifyOptions();
+
         
         this.#is_valid = true;
         this.#has_vim_motion = false;
         this.#match_metadata = null;
         this.#hotkey_execution_mutex = false;
         this.#key_combo_specificity = 0;
+        this.#key_combo_fragments = []; // Overwritten by #splitFragments
 
         this.#splitFragments()
 
@@ -261,7 +267,6 @@ export class HotkeyData {
 
     /**
      * Creates and sets a new match metadata.
-     * @returns {HotkeyMatch}
      */
     #createMatchMetadata() {
         this.#match_metadata = new HotkeyMatch();
@@ -322,7 +327,12 @@ export class HotkeyData {
      * @returns {boolean}
      */
     get CanRepeat() {
-        return this.#the_options.can_repeat;
+        /**
+         * @type {boolean}
+         */
+        (default_hotkey_register_options.can_repeat);
+
+        return this.#the_options.can_repeat ?? default_hotkey_register_options.can_repeat;
     }
 
     /**
@@ -357,7 +367,7 @@ export class HotkeyData {
     get Group() {
         let hotkey_group = HOTKEYS_GENERAL_GROUP;
         
-        /** @type {RegExpMatchArray} */
+        /** @type {RegExpMatchArray | null} */
         let group_matches = this.#description.match(/<(.*)>/);
 
         if (group_matches != null && group_matches[1] !== undefined) {
@@ -504,6 +514,7 @@ export class HotkeyData {
 
             if (fragment.NumericMetakey) { // Parse vim motion. If matches, interrupts the flow in all cases.
                 // console.log("Parsing vim motion");
+
                 fragment_match = false;
 
                 if (event != null) {
@@ -522,7 +533,12 @@ export class HotkeyData {
                     continue;
                 }
 
-                this.#match_metadata.addReversedMotionMatch(motion_match_number);
+                if (this.#match_metadata == null) {
+                    this.#createMatchMetadata();
+                }
+
+                /** @type {HotkeyMatch} */
+                (this.#match_metadata).addReversedMotionMatch(motion_match_number);
                 fragment_h++;
                 fragment = history_fragments[fragment_h];
                 continue;
@@ -546,7 +562,9 @@ export class HotkeyData {
         if (!hotkey_matched) {
             this.#destroyMatchMetadata();
         } else {
-            this.#match_metadata.setSuccessful();
+            if (this.#match_metadata != null) {
+                this.#match_metadata.setSuccessful();
+            }
         }
 
         return hotkey_matched;
@@ -664,19 +682,13 @@ export class HotkeyData {
 
     /**
      * Unpacks the hotkey options into the hotkey data respective properties
-     * @param {HotkeyRegisterOptions} options
      */
-    #unpackOptions() {
-        this.#mode = this.#the_options.mode;
-        this.#description = this.#the_options.description;
-
-        if (this.#mode === "keypress") {
-            this.#mode = "keydown" // Keypress is deprecated and will(someday) be removed according to MDN
+    #verifyOptions() {
+        if (this.#mode !== "keydown" && this.#mode !== "keyup") {
+            throw new Error(`Invalid hotkey mode: ${this.#mode}`);
         }
 
-        if (this.#the_options.await_execution === undefined) {
-            this.#the_options.await_execution = default_hotkey_register_options.await_execution;
-        }
+
     }
 
     /**

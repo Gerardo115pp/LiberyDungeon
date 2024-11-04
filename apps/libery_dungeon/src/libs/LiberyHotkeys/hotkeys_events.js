@@ -30,6 +30,7 @@ export const hotkeys_context_events = {
 /**
  * @callback HotkeysContextEventCallback
  * @param {CustomEvent<HotkeysContextEventDetail>} event
+ * @returns {void}
  */
 
 /**
@@ -40,11 +41,15 @@ export const hotkeys_context_events = {
  */
 export const suscribeHotkeysContextEvents = (event, callback) => {
     // IMPORTANT: Use the window event target, for only this object is guaranteed to be available.
+
+    /** @type {EventListener} */
+    const wrappedCallback =  ((e) => callback(/** @type {CustomEvent<HotkeysContextEventDetail>} */(e)));
+
     const event_unsubscriber = () => {
-        window.removeEventListener(event, callback);
+        window.removeEventListener(event, wrappedCallback);
     }
 
-    window.addEventListener(event, callback);
+    window.addEventListener(event, wrappedCallback);
 
     return event_unsubscriber;
 }
