@@ -1,5 +1,6 @@
 <script>
     import DeleteableItem from "@components/ListItems/DeleteableItem.svelte";
+    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import { LabeledError } from "@libs/LiberyFeedback/lf_models";
     import { createEventDispatcher } from "svelte";
     
@@ -179,7 +180,7 @@
                 let tag_name_available = !checkTagExists(new_tag_name);
 
                 if (!tag_name_available) {
-                    let labeled_error = new LabeledError("In TagGroup.handleTagCreatorKeyDown", `The value '${new_tag_name}' already exists for this attribute`);
+                    let labeled_error = new LabeledError("In TagGroup.handleTagCreatorKeyDown", `The value '${new_tag_name}' already exists for this attribute`, lf_errors.ERR_FORBIDDEN_DUPLICATE);
 
                     labeled_error.alert();
                     return;
@@ -214,6 +215,10 @@
          * @param {KeyboardEvent} event
          */
         const handleTagRenamerKeyDown = (event) => {
+            if (the_tag_renamer_input == null) {
+                throw new Error("The tag renamer input this method is supposed to handle is null");
+            }
+
             if (event.key === "Enter") {
                 event.preventDefault();
 
@@ -239,7 +244,7 @@
                 let tag_name_available = !checkTagExists(new_tag_name);
 
                 if (!tag_name_available) {
-                    let labeled_error = new LabeledError("In TagGroup.handleTagRenamerKeyDown", `The value '${new_tag_name}' already exists for this attribute`);
+                    let labeled_error = new LabeledError("In TagGroup.handleTagRenamerKeyDown", `The value '${new_tag_name}' already exists for this attribute`, lf_errors.ERR_FORBIDDEN_DUPLICATE);
 
                     labeled_error.alert();
                     return;
@@ -261,6 +266,10 @@
          * @param {KeyboardEvent} event
          */
         const handleTagRenamerKeyUp = (event) => {
+            if (the_tag_renamer_input == null) {
+                throw new Error("The tag renamer input this method is supposed to handle is null");
+            }
+
             event.preventDefault();
 
             if (the_tag_renamer_input.validationMessage !== "") {
@@ -273,7 +282,7 @@
     
         /**
          * Handles the tag selection event.
-         * @param {CustomEvent<{item_id: string}>} event
+         * @param {CustomEvent<{item_id: number}>} event
          */    
         const handleTagSelection = (event) => {
             emitTagSelected(event.detail.item_id);
@@ -281,7 +290,7 @@
 
         /**
          * Handles the item-deleted event triggered by the DeleteableItem component.
-         * @param {CustomEvent<{item_id: string}>} event
+         * @param {CustomEvent<{item_id: number}>} event
          */
         const handleTagDeletion = (event) => {
             emitTagDeleted(event.detail.item_id);
@@ -328,7 +337,7 @@
                         pattern="{'[A-z_\\d][A-z_\\-\\s\\d]{1,64}'}"
                         minlength="1"
                         maxlength="64"
-                        spellcheck="on"
+                        spellcheck="true"
                         autofocus
                         required
                     >
