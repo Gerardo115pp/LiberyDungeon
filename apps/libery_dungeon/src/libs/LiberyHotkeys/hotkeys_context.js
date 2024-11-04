@@ -284,12 +284,19 @@ export class HotkeyAction {
     }
 
     /**
-     * Overwrites the hotkey description
+     * Whether the hotkey options have been overwritten
+     * @type {boolean}
+     */
+    get OverwrittenOptions() {
+        return this.#overwritten_options;
+    }
+
+    /**
+     * Overwrites the hotkey description. does not set the overwritten options flag.
      * @param {string} new_description
      */
     overwriteDescription(new_description) {
         this.#hotkey_register_params.options.description = new_description;
-        this.#overwritten_options = true;
     }
 }
 
@@ -536,7 +543,7 @@ export class ComponentHotkeyContext {
     }
 
     /**
-     * Overwrites the hotkey description for a given action. 
+     * Overwrites the hotkey description for a given action. Does not set the overwritten options flag.
      * @param {Symbol} action_name
      * @param {string} new_description
      * @returns {void}
