@@ -6,7 +6,7 @@
     import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
-    import taxonomy_tags_hotkeys, { taxonomy_tags_actions } from "./taxonomy_tags_hotkeys";
+    import generateTaxonomyTagsHotkeysContext, { taxonomy_tags_actions } from "./taxonomy_tags_hotkeys";
     import { browser } from "$app/environment";
     import { CursorMovementWASD } from "@common/keybinds/CursorMovement";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
@@ -25,6 +25,12 @@
              * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager | null}
              */
             const global_hotkeys_manager = getHotkeysManager(); 
+
+            /**
+             * The taxonomy tags component hotkey context.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+            */
+            export let component_hotkey_context = generateTaxonomyTagsHotkeysContext();
 
             /*=============================================
             =            Hotkeys state            =
@@ -176,71 +182,120 @@
         /*=============================================
         =            Keybinds            =
         =============================================*/
+
+            /* ------------------------------ Hotkey Setup ------------------------------ */
         
-            /**
-             * Defines the tools hotkeys.
-             */ 
-            const defineDesktopKeybinds = () => {
-                if (global_hotkeys_manager == null) {
-                    console.error("Global hotkeys manager is not available");
-                    return;
-                }
-
-                if (global_hotkeys_manager.hasContext(taxonomy_tags_hotkeys.HotkeysContextName)) {
-                    global_hotkeys_manager.dropContext(taxonomy_tags_hotkeys.HotkeysContextName);
-                }
-                console.log(`Defining hotkeys for taxonomy tags<${taxonomy_tags.Taxonomy.Name}>`);
-
-                const hotkeys_context = new HotkeysContext(); 
-
-
-
-                let drop_hotkey_context_action = taxonomy_tags_hotkeys.getHotkeyAction(taxonomy_tags_actions.DROP_HOTKEY_CONTEXT);
-
-                if (drop_hotkey_context_action != null) {
-                    let drop_hotkey_context_handler = handleHotkeyControlDrop;
-                    let drop_hotkey_context_description = `<${HOTKEYS_GENERAL_GROUP}> Deselects the active ${ui_taxonomy_name}`;
-
-                    if (!drop_hotkey_context_action.HasNullishCallback()) {
-                        drop_hotkey_context_handler = drop_hotkey_context_action.Callback;;
+                /**
+                 * Defines the tools hotkeys.
+                 */ 
+                const defineDesktopKeybinds = () => {
+                    if (global_hotkeys_manager == null) {
+                        console.error("Global hotkeys manager is not available");
+                        return;
                     }
 
-                    if (drop_hotkey_context_action.HasNullishDescription()) {
-                        drop_hotkey_context_action.overwriteDescription(drop_hotkey_context_description);
+                    if (global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+                        global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
                     }
 
+                    if (component_hotkey_context.HasGeneratedHotkeysContext()) {
+                        component_hotkey_context.dropHotkeysContext();
+                    }
 
-                    hotkeys_context.register(["q"], drop_hotkey_context_handler, drop_hotkey_context_action.Options);
+                    const hotkeys_context = preparePublicHotkeyActions(component_hotkey_context);
+
+
+                    setGridNavigationWrapper(hotkeys_context);
+
+                    wrapShowHotkeysTable(hotkeys_context);
+
+
+                    global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
+                    
+                    global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
+                }
+
+                /**
+                 * Prepares the public hotkey actions to generate the hotkeys context.
+                 * @param {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext} new_component_hotkey_context
+                 * @returns {import('@libs/LiberyHotkeys/hotkeys_context').default}
+                 */
+                const preparePublicHotkeyActions = (new_component_hotkey_context) => {
+
+                    /* -------------------------- Public hotkey actions ------------------------- */
+                        /* --------------------------- DROP_HOTKEY_CONTEXT -------------------------- */
+
+                            let drop_hotkey_context_action = new_component_hotkey_context.getHotkeyActionOrPanic(taxonomy_tags_actions.DROP_HOTKEY_CONTEXT);
+
+                            let drop_hotkey_context_description = `<${HOTKEYS_GENERAL_GROUP}> Deselects the active ${ui_taxonomy_name}`;
+
+                            if (drop_hotkey_context_action.HasNullishCallback()) {
+                                drop_hotkey_context_action.Callback = handleHotkeyControlDrop;
+                            }
+
+                            if (drop_hotkey_context_action.HasNullishDescription()) {
+                                drop_hotkey_context_action.overwriteDescription(drop_hotkey_context_description);
+                            }
+
+                        /* ---------------------------- FOCUS_TAG_CREATOR --------------------------- */
+
+                            const focus_tag_creator_action = new_component_hotkey_context.getHotkeyActionOrPanic(taxonomy_tags_actions.FOCUS_TAG_CREATOR);
+
+                            focus_tag_creator_action.Callback = handleFocusTagCreator;
+
+                            if (focus_tag_creator_action.HasNullishDescription()) {
+                                focus_tag_creator_action.overwriteDescription(`<content>Focuses the ${ui_tag_name} creator input.`);
+                            }
+
+                            if (focus_tag_creator_action.OverwrittenOptions) {
+                                throw new Error(`Something overwrote the options of the focus tag creator action. this is not allowed.`);
+                            }
+
+                        /* ------------------------------ RENAME_FOCUSED_TAG ------------------------------ */
+
+                            const rename_focused_tag_action = new_component_hotkey_context.getHotkeyActionOrPanic(taxonomy_tags_actions.RENAME_FOCUSED_TAG);
+
+                            rename_focused_tag_action.Callback = handlesTagRenamerHotkey;
+
+                            if (rename_focused_tag_action.HasNullishDescription()) {
+                                rename_focused_tag_action.overwriteDescription(`<content>Renames the focused ${ui_tag_name}.`);
+                            }
+
+                            rename_focused_tag_action.panicIfOptionsOverwritten();
+
+                        /* --------------------------- SELECT_FOCUSED_TAG --------------------------- */
+
+                            const select_focused_tag_action = new_component_hotkey_context.getHotkeyActionOrPanic(taxonomy_tags_actions.SELECT_FOCUSED_TAG);
+
+                            select_focused_tag_action.Callback = handleSelectFocusedTag;
+
+                            if (select_focused_tag_action.HasNullishDescription()) {
+                                select_focused_tag_action.overwriteDescription(`<content>Selects the focused ${ui_tag_name}.`);
+                            }
+
+                            select_focused_tag_action.panicIfOptionsOverwritten();
+
+                        /* --------------------------- DELETE_FOCUSED_TAG --------------------------- */
+
+                            const delete_focused_tag_action = component_hotkey_context.getHotkeyActionOrPanic(taxonomy_tags_actions.DELETE_FOCUSED_TAG);
+
+                            delete_focused_tag_action.Callback = handleDeleteFocusedTag;
+
+                            if (delete_focused_tag_action.HasNullishDescription()) {
+                                delete_focused_tag_action.overwriteDescription(`<content>Deletes the focused ${ui_tag_name}.`);
+                            }
+
+                            delete_focused_tag_action.panicIfOptionsOverwritten();
+
+                    /* -------------------------------------------------------------------------- */
+
+                    const hotkeys_context = component_hotkey_context.generateHotkeysContext();
+
+                    return hotkeys_context;
                 }
                 
 
-                setGridNavigationWrapper(hotkeys_context);
-
-                hotkeys_context.register(["i"], handleFocusTagCreator, {
-                    description: `<content>Focuses the ${ui_tag_name} creator input.`, 
-                    await_execution: false,
-                    mode: "keyup"
-                });
-
-                hotkeys_context.register(["c c"], handlesTagRenamerHotkey, {
-                    description: `<content>Renames the focused ${ui_tag_name}.`,
-                    mode: "keyup"
-                });
-
-                hotkeys_context.register(["e"], handleSelectFocusedTag, {
-                    description: `<content>Selects the focused ${ui_tag_name}.`, 
-                });
-                
-                hotkeys_context.register(["x"], handleDeleteFocusedTag, {
-                    description: `<content>Deletes the focused ${ui_tag_name}.`, 
-                });
-
-                wrapShowHotkeysTable(hotkeys_context);
-
-                global_hotkeys_manager.declareContext(taxonomy_tags_hotkeys.HotkeysContextName, hotkeys_context);
-                
-                global_hotkeys_manager.loadContext(taxonomy_tags_hotkeys.HotkeysContextName);
-            }
+            /* -------------------------------------------------------------------------- */
 
             /**
              * Drops the component hotkey context
@@ -251,9 +306,9 @@
                     return;
                 };
 
-                if (!global_hotkeys_manager.hasContext(taxonomy_tags_hotkeys.HotkeysContextName)) return;
+                if (!global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) return;
 
-                global_hotkeys_manager.dropContext(taxonomy_tags_hotkeys.HotkeysContextName);
+                global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
             }
 
             /**
@@ -354,7 +409,7 @@
                     return;
                 }
 
-                if (global_hotkeys_manager.ContextName !== taxonomy_tags_hotkeys.HotkeysContextName) return; 
+                if (global_hotkeys_manager.ContextName !== component_hotkey_context.HotkeysContextName) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
             }
