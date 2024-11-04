@@ -354,7 +354,7 @@ import { emitLabeledError } from "./lf_utils";
          * @property {string} [description]
          * @property {Object<string, string>} [usage_map]
          */        
-        constructor(entity_name, entity_name_plural, { acronym = null, description = null, usage_map = {} }) {
+        constructor(entity_name, entity_name_plural, { acronym = "", description = "", usage_map = {} }) {
             this.#entity_name = entity_name;
             this.#entity_name_plural = entity_name_plural;
             this.#acronym = acronym;
@@ -400,7 +400,7 @@ import { emitLabeledError } from "./lf_utils";
          * @returns {string}
          */
         getUsage(usage_key) {
-            return this.#usage_map.get(usage_key);
+            return this.#usage_map.get(usage_key) ?? "";
         }
 
         /**
