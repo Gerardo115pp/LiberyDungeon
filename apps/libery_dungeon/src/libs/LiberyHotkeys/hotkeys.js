@@ -12,10 +12,10 @@ import {
 /**
 * @typedef {Object} HotkeyRegisterOptions
  * @property {string} description - The hotkey's description   
- * @property {"keydown"|"keyup"} mode - The mode of the keypress event. Default is "keydown"
- * @property {boolean} await_execution - Whether the execution of a callback should end before another hotkey can be triggered. Default is true
- * @property {boolean} consider_time_in_sequence - Whether the hotkey sequence should expire if they are to far apart in time. Default is false
- * @property {boolean} can_repeat - Whether the hotkey should be triggered if the trigger is repeating(holding down the key). Default is false
+ * @property {"keydown"|"keyup"} [mode] - The mode of the keypress event. Default is "keydown"
+ * @property {boolean} [await_execution] - Whether the execution of a callback should end before another hotkey can be triggered. Default is true
+ * @property {boolean} [consider_time_in_sequence] - Whether the hotkey sequence should expire if they are to far apart in time. Default is false
+ * @property {boolean} [can_repeat] - Whether the hotkey should be triggered if the trigger is repeating(holding down the key). Default is false
 */
 
 /**
@@ -230,7 +230,8 @@ export class HotkeyData {
 
         this.#the_options = {
             ...default_hotkey_register_options,
-            ...options
+            ...options,
+            await_execution: options?.await_execution ?? default_hotkey_register_options.await_execution,
         };
 
         this.#description = this.#the_options.description;
@@ -262,7 +263,7 @@ export class HotkeyData {
      * @returns {boolean}
      */
     get AwaitExecution() {
-        return this.#the_options.await_execution;
+        return this.#the_options.await_execution ?? default_hotkey_register_options.await_execution;
     }
 
     /**
@@ -319,7 +320,7 @@ export class HotkeyData {
      * @returns {boolean}
      */
     get ConsiderTimeInSequence() {
-        return this.#the_options.consider_time_in_sequence;
+        return this.#the_options?.consider_time_in_sequence ?? default_hotkey_register_options.consider_time_in_sequence;
     }
 
     /**
@@ -480,9 +481,9 @@ export class HotkeyData {
 
         /** 
          * Whether the fragment matches it's corresponding event.
-         * @type {boolean} 
+         * @type {boolean | undefined} 
          */
-        let fragment_match;
+        let fragment_match = undefined;
 
         let last_sequence_time = -1;
 
@@ -501,7 +502,7 @@ export class HotkeyData {
                 break;
             }
             
-            if (IsModifier(event?.key)) {
+            if (event != null && IsModifier(event.key)) {
                 console.log(`Modifier ${event.key} found. Skipping.`);
                 continue;
             }
@@ -522,6 +523,7 @@ export class HotkeyData {
                 }
 
                 if (fragment_match) {
+                    // @ts-ignore
                     motion_match_number += event.key;
                     continue;
                 }
@@ -544,12 +546,14 @@ export class HotkeyData {
                 continue;
             } // Anything after this line can safely assume that this if statement did not match.
 
-            fragment_match = fragment.match(event);
+            fragment_match = event !== null ? fragment.match(event) : false;
 
-            if (!fragment_match) {
-                console.log(`Fragment ${fragment.Identity} did not match event ${event.key}`);
+            if (fragment_match !== undefined && !fragment_match) {
+                console.log(`Fragment ${fragment.Identity} did not match event ${event?.key}`);
                 hotkey_matched = false;
             }
+
+            if (event == null) break;
 
             fragment_h++;
             fragment = history_fragments[fragment_h];

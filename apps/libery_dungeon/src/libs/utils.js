@@ -22,6 +22,10 @@ export const genRandomColor = (saturation, lightness) => {
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
 
+/**
+ * @param {string} payload 
+ * @returns 
+ */
 export const createUnsecureJWT = payload => {
     /* 
         Keep in mind that this method of creating a JWT is not secure, as the JWT is not signed and could be easily tampered with. It is only suitable for passing simple parameters that do not need to be secured.
@@ -55,9 +59,15 @@ export const parseUnsecureJWT = jwt => {
 }
 
 // TODO: Remove attributesToJson and attributesToJsonExclusive from this file.
+/**
+ * @this {any}
+ */
 export function attributesToJson() {
+    /**
+     * @type {Object.<string, any>}
+     */
     const json_data = {};
-    console.log("AttributestoJson:" + this);
+
     Object.entries(this).forEach(([key, value]) => {
         if (!(this[key] instanceof Function) && key[0] !== '_') {
             json_data[key] = value;
@@ -66,8 +76,13 @@ export function attributesToJson() {
     return JSON.stringify(json_data);
 }
 
+/**
+ * @this {any}
+ */
 export function attributesToJsonExclusive() {
+    /** @type {Object<string, any>} */
     const json_data = {};
+
     Object.entries(this).forEach(([key, value]) => {
         if (!(this[key] instanceof Function) && key[0] !== '_' && value !== null) {
             json_data[key] = value;   
@@ -82,13 +97,21 @@ export function enterFullScreen() {
 
     if (elem.requestFullscreen) {
         elem.requestFullscreen();
+    // @ts-ignore
     } else if (elem.webkitRequestFullscreen) { /* Safari */
+        // @ts-ignore
         elem.webkitRequestFullscreen();
+        // @ts-ignore
     } else if (elem.msRequestFullscreen) { /* IE11 */
+        // @ts-ignore
         elem.msRequestFullscreen();
     }
 }
 
+/**
+ * @param {string} key 
+ * @returns 
+ */
 export const getUrlPARAM = key => {
     let url_string = window.location.href; 
     url_string = url_string.replace(/\/.{0,3}#/, ""); // remove #
@@ -96,28 +119,49 @@ export const getUrlPARAM = key => {
     return url.searchParams.get(key);
 }
 
+/**
+ * @param {string} media_url 
+ * @returns 
+ */
 export const isUrlVideo = media_url => {
     const video_extensions = ["mp4", "webm", "ogg"];
 
-    /** @type {string} */
+    /** @type {string | undefined} */
     let extension = media_url.split('.').pop();
+
+    if (extension == null) {
+        return false;
+    }
+
     extension = extension.toLowerCase();
 
 
     return video_extensions.includes(extension);
 }
 
+/**
+ * @param {string} media_url 
+ * @returns 
+ */
 export const isUrlImage = media_url => {
     const image_extensions = ["jpg", "jpeg", "png", "gif", "webp"];
 
-    /** @type {string} */
+    /** @type {string | undefined} */
     let extension = media_url.split('.').pop();
+
+    if (extension == null) {
+        return false;
+    }
     
     extension = extension.toLowerCase();
 
     return image_extensions.includes(extension);
 }
 
+/**
+ * @param {string} media_url 
+ * @returns 
+ */
 export const isUrlMediaFile = media_url => {
     return isUrlVideo(media_url) || isUrlImage(media_url);
 }
@@ -187,6 +231,10 @@ export const videoDurationToString = (duration, is_seconds = true) => {
         #value;
         /** @type {StackNode<T> | null} */
         #next;
+        
+        /**
+         * @param {T} value
+         */
         constructor(value) {
             this.#value = value;
             this.#next = null;
@@ -417,7 +465,7 @@ export const videoDurationToString = (duration, is_seconds = true) => {
 
         /**
          * Returns the element on the top without removing it from the stack.
-         * @returns {T}
+         * @returns {T | null}
          */
         Peek() {
             return this.#top?.Value ?? null;
@@ -427,7 +475,7 @@ export const videoDurationToString = (duration, is_seconds = true) => {
          * Peeks the Nth element zero indexed element, starting from top. Where top is 0. If the element is out of bounds, returns null.
          * Keep in mind, internally this is not an array, look up time is O(n). 
          * @param {number} index
-         * @returns {T}
+         * @returns {T | null}
          */
         PeekN(index) {
             if (index < 0 || index >= this.#size) return null;
@@ -443,7 +491,7 @@ export const videoDurationToString = (duration, is_seconds = true) => {
 
         /**
          * Returns and removes the element on the top of the stack. 
-         * @returns {T}
+         * @returns {T | null}
          */
         Pop() {
             if (this.#top === null) return null;
@@ -519,10 +567,12 @@ export const canUseDOMEvents = () => hasWindowContext() && typeof window.addEven
      * Returns whether the current context has permission to read from the clipboard. If the permission state is 'prompt', it will treat that 
      * the same way as 'denied' and return false.
      * @requires Permissions
-     * @returns {boolean} 
+     * @returns {Promise<boolean>} 
      */
     export const hasClipboardReadPermission = async () => {
-        let permission = await navigator.permissions.query({name: 'clipboard-read'});
+        // @ts-ignore
+        let permission = await navigator.permissions.query({name: 'clipboard-read'}); 
+
         return permission.state === 'granted';
     }
 
@@ -530,9 +580,10 @@ export const canUseDOMEvents = () => hasWindowContext() && typeof window.addEven
      * Returns whether the current context has permission to write to the clipboard. If the permission state is 'prompt', it will treat that 
      * the same way as 'denied' and return false.
      * @requires Permissions
-     * @returns {boolean} 
+     * @returns {Promise<boolean>} 
      */
     export const hasClipboardWritePermission = async () => {
+        // @ts-ignore
         let permission = await navigator.permissions.query({name: 'clipboard-write'});
         return permission.state === 'granted';
     }
