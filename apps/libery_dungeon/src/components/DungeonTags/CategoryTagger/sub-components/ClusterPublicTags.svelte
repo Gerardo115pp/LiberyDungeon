@@ -1,6 +1,6 @@
 <script>
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
-    import TaxonomyTags from "../../TagTaxonomyComponents/TaxonomyTags.svelte";
+    import TaxonomyTags from "../../TagTaxonomyComponents/TaxonomyTags/TaxonomyTags.svelte";
     import { cluster_tags } from "@stores/dungeons_tags";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
@@ -11,6 +11,7 @@
     import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     import { renameTagTaxonomy } from "@models/DungeonTags";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
+    import { LabeledError } from "@libs/LiberyFeedback/lf_models";
     
     /*=============================================
     =            Properties            =
@@ -21,12 +22,12 @@
             =============================================*/
         
                 /**
-                 * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager}
+                 * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager | null}
                  */
                 const global_hotkeys_manager = getHotkeysManager();
 
                 const hotkeys_context_name = "cluster_public_tags";
-
+                
                 /*=============================================
                 =            Hotkeys state            =
                 =============================================*/
@@ -116,6 +117,11 @@
              * Defines the tools hotkeys.
              */ 
             const defineDesktopKeybinds = () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("The hotkeys manager is not available");
+                    return;
+                }
+
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
 
@@ -157,7 +163,7 @@
              * Drops the component hotkey context
              */
             const dropHotkeyContext = () => {
-                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
+                if (global_hotkeys_manager == null || !global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
 
                 global_hotkeys_manager.dropContext(hotkeys_context_name);
             }
@@ -259,7 +265,7 @@
              * Drops the tools hotkey contexts and loads the previous context.
              */
             const resetHotkeyContext = () => {
-                if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+                if (global_hotkeys_manager == null || global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
             }
@@ -376,7 +382,7 @@
             let tag_name_available = !checkTaxonomyNameExists(new_tag_name);
 
             if (!tag_name_available) {
-                let labeled_error = new LabeledError("In TagGroup.handleTagRenamerKeyDown", `The value '${new_tag_name}' already exists for this attribute`);
+                let labeled_error = new LabeledError("In TagGroup.handleTagRenamerKeyDown", `The value '${new_tag_name}' already exists for this attribute`, lf_errors.ERR_FORBIDDEN_DUPLICATE);
 
                 labeled_error.alert();
                 return;
