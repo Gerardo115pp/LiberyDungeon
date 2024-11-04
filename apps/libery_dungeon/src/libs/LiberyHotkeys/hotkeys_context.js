@@ -298,6 +298,45 @@ export class HotkeyAction {
     overwriteDescription(new_description) {
         this.#hotkey_register_params.options.description = new_description;
     }
+
+    /**
+     * Panics if the HotkeyRegisterParams.options have been overwritten. Description overwriting is ignored.
+     * @param {string} [error_message]
+     * @returns {void}
+     */
+    panicIfOptionsOverwritten(error_message) {
+        if (!this.#overwritten_options) return;
+
+        error_message = error_message ?? "Overwriting the options for this action is not acceptable by the owner component.";
+
+        throw new Error(error_message);
+    }
+
+    /**
+     *  Panics if the HotkeyRegisterParams.callback has been overwritten.
+     * @param {string} [error_message]
+     * @returns {void}
+     */
+    panicIfCallbackOverwritten(error_message) {
+        if (!this.#overwritten_callback) return;
+
+        error_message = error_message ?? "Overwriting the callback for this action is not acceptable by the owner component.";
+
+        throw new Error(error_message);
+    }
+
+    /**
+     * Panics if the HotkeyRegisterParams.hotkey_triggers has been overwritten.
+     * @param {string} [error_message]
+     * @returns {void}
+     */
+    panicIfTriggerOverwritten(error_message) {
+        if (!this.#overwritten_trigger) return;
+
+        error_message = error_message ?? "Overwriting the trigger for this action is not acceptable by the owner component.";
+
+        throw new Error(error_message);
+    }
 }
 
 /**
@@ -394,12 +433,27 @@ export class ComponentHotkeyContext {
     }
 
     /**
-     * Returns a hotkey action meta for a given action name. If the action does not exist, it returns undefined.
+     * Returns a hotkey action for a given action name. If the action does not exist, it returns undefined.
      * @param {Symbol} action_name
      * @returns {HotkeyAction | undefined}
      */
     getHotkeyAction(action_name) {
         return this.#actions.get(action_name);
+    }
+
+    /**
+     * Returns a hotkey action for a given action name. If the action does not exist, it panics.
+     * @param {Symbol} action_name
+     * @returns {HotkeyAction}
+     */
+    getHotkeyActionOrPanic(action_name) {
+        let action = this.#actions.get(action_name);
+
+        if (action == null) {
+            throw new Error(`The action ${action_name} does not exist but it's required by the calling component.`);
+        }
+
+        return action;
     }
 
     /**
@@ -414,6 +468,11 @@ export class ComponentHotkeyContext {
         this.#hotkeys_context = new HotkeysContext();
 
         for (const [action_name, hotkey_action] of this.#actions) {
+            if (hotkey_action.HasNullishCallback() || hotkey_action.HasNullishDescription()) {
+                console.warn(`The action ${action_name.toString()} has a nullish callback or description. Ignoring...`);
+                continue;
+            }
+
             this.#hotkeys_context.register(
                 hotkey_action.HotkeyTriggers,
                 hotkey_action.Callback,
@@ -489,6 +548,14 @@ export class ComponentHotkeyContext {
     }
 
     /**
+     * Whether the ComponentHotkeyContext has generated a hotkeys context.
+     * @returns {boolean}
+     */
+    HasGeneratedHotkeysContext() {
+        return this.#hotkeys_context != null;
+    }
+
+    /**
      * Overwrites the hotkey trigger for a given action. The action name must exist in the ComponentHotkeyContext already or the method panics
      * @param {Symbol} action_name
      * @param {string | string[]} hotkey_trigger
@@ -558,6 +625,41 @@ export class ComponentHotkeyContext {
         hotkey_action.overwriteDescription(new_description);
     }
     
+    /**
+     * Panics if the HotkeyRegisterParams.options have been overwritten for a given action. description overwriting is ignored.
+     * @param {Symbol} action_name
+     * @param {string} [error_message]
+     * @returns {void}
+     */
+    panicIfOptionsOverwritten(action_name, error_message) {
+        const hotkey_action = this.getHotkeyActionOrPanic(action_name);
+
+        hotkey_action.panicIfOptionsOverwritten(error_message);
+    }
+
+    /**
+     * Panics if the HotkeyRegisterParams.callback has been overwritten for a given action.
+     * @param {Symbol} action_name
+     * @param {string} [error_message]
+     * @returns {void}
+     */
+    panicIfCallbackOverwritten(action_name, error_message) {
+        const hotkey_action = this.getHotkeyActionOrPanic(action_name);
+
+        hotkey_action.panicIfCallbackOverwritten(error_message);
+    }
+
+    /**
+     * Panics if the HotkeyRegisterParams.hotkey_triggers has been overwritten for a given action.
+     * @param {Symbol} action_name
+     * @param {string} [error_message]
+     * @returns {void}
+     */
+    panicIfTriggerOverwritten(action_name, error_message) {
+        const hotkey_action = this.getHotkeyActionOrPanic(action_name);
+
+        hotkey_action.panicIfTriggerOverwritten(error_message);
+    }
 
     /**
      * Registers hotkey data parameters for a given action.
