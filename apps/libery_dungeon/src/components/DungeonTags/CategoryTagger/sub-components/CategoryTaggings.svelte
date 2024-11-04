@@ -23,7 +23,7 @@
         =============================================*/
     
             /**
-             * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager}
+             * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager | null}
              */
             const global_hotkeys_manager = getHotkeysManager();
 
@@ -123,6 +123,8 @@
              * Defines the tools hotkeys.
              */ 
             const defineDesktopKeybinds = () => {
+                if (global_hotkeys_manager == null) return;
+
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
 
@@ -158,12 +160,17 @@
                 if (the_wasd_keybind_wrapper == null) return;
 
 
-                const old_grid_parent_selector = the_wasd_keybind_wrapper.MovementController.DomParentSelector;
+                const old_grid_parent_selector = the_wasd_keybind_wrapper.MovementController.DomParentSelector();
 
                 last_cursor_positions.set(old_grid_parent_selector, focused_tag_index);
 
 
                 const grid_selectors = getFocusedTaggingsGridSelectors();
+
+                if (grid_selectors == null) {
+                    console.error("No grid selectors found for the focused taggings.");
+                    return;
+                };
 
                 the_wasd_keybind_wrapper.changeGridContainer(grid_selectors.grid_parent_selector, grid_selectors.grid_member_selector);
 
@@ -187,7 +194,7 @@
              * Drops the component hotkey context
              */
             const dropHotkeyContext = () => {
-                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
+                if (global_hotkeys_manager == null || !global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
 
                 global_hotkeys_manager.dropContext(hotkeys_context_name);
             }
@@ -210,14 +217,17 @@
              * @returns {import("@models/DungeonTags").DungeonTagging | null}
              */
             const getFocusedTagging = () => {
-                if (tag_taxonomy_map == null) return;
+                if (tag_taxonomy_map == null) return null;
 
                 const taxonomies = Array.from(tag_taxonomy_map.keys());
 
-                if (taxonomies.length <= 0) return;
+                if (taxonomies.length <= 0) return null;
 
                 let focused_taxonomy = taxonomies[focused_taxonomy_index];
 
+                if (focused_taxonomy == null) return null;
+
+                // @ts-ignore
                 let focused_tagging = tag_taxonomy_map.get(focused_taxonomy)[focused_tag_index];
 
                 return focused_tagging;
@@ -284,7 +294,7 @@
              * Drops the tools hotkey contexts and loads the previous context.
              */
             const resetHotkeyContext = () => {
-                if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+                if (global_hotkeys_manager == null || global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
             }
@@ -373,20 +383,20 @@
          * @returns {import("@models/DungeonTags").TagTaxonomy | null}
          */
         const getFocusedTagTaxonomy = () => {
-            if (tag_taxonomy_map == null) return;
+            if (tag_taxonomy_map == null) return null;
 
             const [taxonomy_name, current_category_taggings] = [...tag_taxonomy_map][focused_taxonomy_index];
 
             if (current_category_taggings.length === 0) {
                 console.warn(`This should never happen, a taxonomy in the tag_taxonomy_map['${taxonomy_name}'] has not taggings for the current category. but members of the_taxonomy_map are generated from the taggins of the current category. Reeks of a programming error.`);
-                return;
+                return null;
             }
 
             const taxonomy_uuid = current_category_taggings[0].Tag.TaxonomyUUID;
 
             const focused_taxonomy = $cluster_tags.find(tag_taxonomy => tag_taxonomy.Taxonomy.UUID === taxonomy_uuid);
 
-            return focused_taxonomy;
+            return focused_taxonomy?.Taxonomy ?? null;
         }
 
         /**
@@ -394,7 +404,7 @@
          * @returns {string | null}
          */
         const getFocusedTagTaxonomyName = () => {
-            if (tag_taxonomy_map == null) return;
+            if (tag_taxonomy_map == null) return null;
 
             const [taxonomy_name, current_category_taggings] = [...tag_taxonomy_map][focused_taxonomy_index];
 
@@ -451,6 +461,11 @@
 
             const grid_selectors = getFocusedTaggingsGridSelectors();
 
+            if (grid_selectors == null) {
+                console.error("No grid selectors found for the focused taggings.");
+                return;
+            };
+
             const matching_elements_count = document.querySelectorAll(grid_selectors.grid_parent_selector).length;
             if (matching_elements_count !== 1) {
                 throw new Error(`tag parent selector '${grid_selectors.grid_parent_selector}' returned ${matching_elements_count}, expected exactly 1`);
@@ -460,12 +475,13 @@
             the_wasd_keybind_wrapper = new CursorMovementWASD(grid_selectors.grid_parent_selector, handleCursorUpdate, {
                 initial_cursor_position: focused_tag_index,
                 sequence_item_name: "value",
-                sequence_item_plural_name: "values",
+                sequence_item_name_plural: "values",
                 grid_member_selector: grid_selectors.grid_member_selector,
             });
             the_wasd_keybind_wrapper.setup(hotkeys_context);
             
 
+            // @ts-ignore
             globalThis.the_grid_navigation_wrapper = the_wasd_keybind_wrapper; 
         }
 
