@@ -1,17 +1,17 @@
 <script>
     import { createDungeonTag, deleteDungeonTag, renameDungeonTag } from "@models/DungeonTags";
-    import TagGroup from "../Tags/TagGroup.svelte";
+    import TagGroup from "../../Tags/TagGroup.svelte";
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
     import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
     import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
-    import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
-    import { toggleHotkeysSheet } from "@stores/layout";
+    import taxonomy_tags_hotkeys, { taxonomy_tags_actions } from "./taxonomy_tags_hotkeys";
     import { browser } from "$app/environment";
     import { CursorMovementWASD } from "@common/keybinds/CursorMovement";
-    import AnchorsOne from "@components/UI/AnchorsOne.svelte";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
+    import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
+    import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
 
     /*=============================================
     =            Properties            =
@@ -22,11 +22,9 @@
         =============================================*/
     
             /**
-             * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager}
+             * @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager | null}
              */
             const global_hotkeys_manager = getHotkeysManager(); 
-
-            const hotkeys_context_name = "taxonomy_tags";
 
             /*=============================================
             =            Hotkeys state            =
@@ -109,6 +107,51 @@
          * @type {CursorMovementWASD | null}
          */
         let the_grid_navigation_wrapper = null;
+
+        
+        /*----------  User feedback  ----------*/
+        
+            /**
+             * A name to use for the entity that would be tagged by the tags in the tag taxonomy.
+             * @type {string}
+             * @default "entity"
+             */
+            export let ui_entity_name = "entity";
+
+            /**
+             * A plural name to use for the entity that would be tagged by the tags in the tag taxonomy.
+             * @type {string}
+             */
+            export let ui_entity_plural_name = "entities";
+
+            /**
+             * A name to use for the tags in the tag taxonomy.
+             * @type {string}
+             * @default "value"
+             */
+            export let ui_tag_name = "value";
+
+            /**
+             * A plural name to use for the tags in the tag taxonomy.
+             * @type {string}
+             */
+            export let ui_tag_plural_name = "values";
+
+            /**
+             * A UI name for the tag taxonomy. Not for the specific tag taxonomy but a general name for tag taxonomies used in the current
+             * UI context.
+             * @type {string}
+             * @default "attribute"
+             */
+            export let ui_taxonomy_name = "attribute";
+
+
+            /**
+             * A plural name for the tag taxonomy. Not for the specific tag taxonomy but a general name for tag taxonomies used in the current
+             * UI context.
+             * @type {string}
+             */
+            export let ui_taxonomy_plural_name = "attributes";
         
 
         const dispatch = createEventDispatcher();
@@ -138,55 +181,79 @@
              * Defines the tools hotkeys.
              */ 
             const defineDesktopKeybinds = () => {
-                if (global_hotkeys_manager.hasContext(hotkeys_context_name)) {
-                    global_hotkeys_manager.dropContext(hotkeys_context_name);
+                if (global_hotkeys_manager == null) {
+                    console.error("Global hotkeys manager is not available");
+                    return;
+                }
+
+                if (global_hotkeys_manager.hasContext(taxonomy_tags_hotkeys.HotkeysContextName)) {
+                    global_hotkeys_manager.dropContext(taxonomy_tags_hotkeys.HotkeysContextName);
                 }
                 console.log(`Defining hotkeys for taxonomy tags<${taxonomy_tags.Taxonomy.Name}>`);
 
                 const hotkeys_context = new HotkeysContext(); 
 
-                hotkeys_context.register(["q"], handleHotkeyControlDrop, {
-                    description: `<${HOTKEYS_GENERAL_GROUP}>Deselects the selected attribute section.`, 
-                    await_execution: false
-                });
+
+
+                let drop_hotkey_context_action = taxonomy_tags_hotkeys.getHotkeyAction(taxonomy_tags_actions.DROP_HOTKEY_CONTEXT);
+
+                if (drop_hotkey_context_action != null) {
+                    let drop_hotkey_context_handler = handleHotkeyControlDrop;
+                    let drop_hotkey_context_description = `<${HOTKEYS_GENERAL_GROUP}> Deselects the active ${ui_taxonomy_name}`;
+
+                    if (!drop_hotkey_context_action.HasNullishCallback()) {
+                        drop_hotkey_context_handler = drop_hotkey_context_action.Callback;;
+                    }
+
+                    if (drop_hotkey_context_action.HasNullishDescription()) {
+                        drop_hotkey_context_action.overwriteDescription(drop_hotkey_context_description);
+                    }
+
+
+                    hotkeys_context.register(["q"], drop_hotkey_context_handler, drop_hotkey_context_action.Options);
+                }
+                
 
                 setGridNavigationWrapper(hotkeys_context);
 
                 hotkeys_context.register(["i"], handleFocusTagCreator, {
-                    description: "<content>Focuses the tag creator input.", 
+                    description: `<content>Focuses the ${ui_tag_name} creator input.`, 
                     await_execution: false,
                     mode: "keyup"
                 });
 
                 hotkeys_context.register(["c c"], handlesTagRenamerHotkey, {
-                    description: "<content>Renames the focused value.",
+                    description: `<content>Renames the focused ${ui_tag_name}.`,
                     mode: "keyup"
                 });
 
                 hotkeys_context.register(["e"], handleSelectFocusedTag, {
-                    description: "<content>Selects the focused value.", 
+                    description: `<content>Selects the focused ${ui_tag_name}.`, 
                 });
                 
                 hotkeys_context.register(["x"], handleDeleteFocusedTag, {
-                    description: "<content>Deletes the focused value.", 
+                    description: `<content>Deletes the focused ${ui_tag_name}.`, 
                 });
 
-                hotkeys_context.register(["?"], toggleHotkeysSheet, { 
-                    description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
-                });
+                wrapShowHotkeysTable(hotkeys_context);
 
-                global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                global_hotkeys_manager.declareContext(taxonomy_tags_hotkeys.HotkeysContextName, hotkeys_context);
                 
-                global_hotkeys_manager.loadContext(hotkeys_context_name);
+                global_hotkeys_manager.loadContext(taxonomy_tags_hotkeys.HotkeysContextName);
             }
 
             /**
              * Drops the component hotkey context
              */
             const dropHotkeyContext = () => {
-                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
+                if (global_hotkeys_manager == null) {
+                    console.error("Global hotkeys manager is not available");
+                    return;
+                };
 
-                global_hotkeys_manager.dropContext(hotkeys_context_name);
+                if (!global_hotkeys_manager.hasContext(taxonomy_tags_hotkeys.HotkeysContextName)) return;
+
+                global_hotkeys_manager.dropContext(taxonomy_tags_hotkeys.HotkeysContextName);
             }
 
             /**
@@ -282,14 +349,19 @@
              * Drops the tools hotkey contexts and loads the previous context.
              */
             const resetHotkeyContext = () => {
-                if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+                if (global_hotkeys_manager == null) {
+                    console.error("Global hotkeys manager is not available");
+                    return;
+                }
+
+                if (global_hotkeys_manager.ContextName !== taxonomy_tags_hotkeys.HotkeysContextName) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
             }
 
             /**
              * Sets the grid navigation wrapper required data.
-             * @param {import("@libs/LiberyHotkeys/hotkeys_context").HotkeyContext} hotkeys_context
+             * @param {import("@libs/LiberyHotkeys/hotkeys_context").default} hotkeys_context
              */
             const setGridNavigationWrapper = (hotkeys_context) => {
                 if (!browser) return;
@@ -309,13 +381,14 @@
 
                 the_grid_navigation_wrapper = new CursorMovementWASD(tags_parent_selector, handleCursorUpdate, {
                     initial_cursor_position: focused_tag_index,
-                    sequence_item_name: "value",
-                    sequence_item_plural_name: "values",
+                    sequence_item_name: ui_tag_name,
+                    sequence_item_name_plural: ui_tag_plural_name,
                     grid_member_selector: 'li:not(:has(input))',
                 });
                 the_grid_navigation_wrapper.setup(hotkeys_context);
                 
 
+                // @ts-ignore
                 globalThis.the_grid_navigation_wrapper = the_grid_navigation_wrapper; 
             }
 
@@ -382,7 +455,7 @@
                 variable_environment.addVariable("triggering_event", event);
                 variable_environment.addVariable("taxonomy_tags.Taxonomy.UUID", taxonomy_tags.Taxonomy.UUID);
 
-                const labeled_err = new LabeledError(variable_environment, `Failed to create tag '${event?.detail?.tag_name}'`, lf_errors.ERR_PROCESSING_ERROR);
+                const labeled_err = new LabeledError(variable_environment, `Failed to create ${ui_tag_name} '${event?.detail?.tag_name}'`, lf_errors.ERR_PROCESSING_ERROR);
 
                 labeled_err.alert();
                 return;
@@ -393,7 +466,7 @@
 
         /**
          * Handles the tag deleted event.
-         * @param {CustomEvent<{tag_id: string}>} event
+         * @param {CustomEvent<{tag_id: number}>} event
          */
         const handleTagDeleted = async event => {
             
@@ -409,8 +482,8 @@
             }
 
             const user_choice = await confirmPlatformMessage({
-                message_title: `Delete value '${tag_name}'`,
-                question_message: `Are you sure you want to delete '${tag_name}'? it will be disassociated from all medias and categorys it is set to.`,
+                message_title: `Delete ${ui_tag_name} '${tag_name}'`,
+                question_message: `Are you sure you want to delete the ${ui_entity_name} '${tag_name}'? it will be disassociated from all ${ui_entity_plural_name} and any other entity it is related to.`,
                 danger_level: 1,
                 cancel_label: "cancel",
                 confirm_label: "Delete it",
@@ -422,7 +495,7 @@
             let tag_deleted = await deleteDungeonTag(tag_id);
 
             if (!tag_deleted) {
-                const labeled_err = new LabeledError("In TaxonomyTags.handleTagDeleted", `Failed to delete tag with id '${tag_id}'`, lf_errors.ERR_PROCESSING_ERROR);
+                const labeled_err = new LabeledError("In TaxonomyTags.handleTagDeleted", `Failed to delete ${ui_tag_name} with id '${tag_id}'`, lf_errors.ERR_PROCESSING_ERROR);
                 labeled_err.alert();
                 return;
             }
@@ -460,7 +533,7 @@
             if (tag_renamed) {
                 emitPlatformMessage(`Renamed '${tag_name}' to '${new_name}'`);
             } if (!tag_renamed) {
-                const labeled_err = new LabeledError("In TaxonomyTags.handleTagRenamed", `Failed to rename tag with id '${tag_id}'`, lf_errors.ERR_PROCESSING_ERROR);
+                const labeled_err = new LabeledError("In TaxonomyTags.handleTagRenamed", `Failed to rename ${ui_tag_name} with id '${tag_id}'`, lf_errors.ERR_PROCESSING_ERROR);
                 labeled_err.alert();
                 return;
             }
