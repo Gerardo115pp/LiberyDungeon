@@ -348,18 +348,23 @@ import { emitLabeledError } from "./lf_utils";
         /**
          * @param {string} entity_name
          * @param {string} entity_name_plural
-         * @param {UIReferenceParams} params
+         * @param {UIReferenceParams} [params]
          * @typedef {Object} UIReferenceParams
          * @property {string} [acronym]
          * @property {string} [description]
          * @property {Object<string, string>} [usage_map]
          */        
-        constructor(entity_name, entity_name_plural, { acronym = "", description = "", usage_map = {} }) {
+        constructor(entity_name, entity_name_plural, params) {
             this.#entity_name = entity_name;
             this.#entity_name_plural = entity_name_plural;
-            this.#acronym = acronym;
-            this.#description = description;
-            this.#usage_map = new Map(Object.entries(usage_map));
+            this.#acronym = params?.acronym ?? null;
+            this.#description = params?.description ?? null;
+
+            this.#usage_map = new Map();
+
+            if (params?.usage_map != null) {
+                this.#usage_map = new Map(Object.entries(params.usage_map));
+            }
         }
 
         /**
