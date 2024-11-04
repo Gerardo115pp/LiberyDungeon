@@ -392,6 +392,12 @@ export const videoDurationToString = (duration, is_seconds = true) => {
         #bottom;
 
         /**
+         * A node for traversing the stack from the top
+         * @type {DoublyLinkedStackNode<T> | null} 
+         */
+        #traversing_node;
+
+        /**
          * @param {number} buffer_size - the max size of the stack
          */
         constructor(buffer_size) {
@@ -402,6 +408,8 @@ export const videoDurationToString = (duration, is_seconds = true) => {
             this.#size = 0;
             this.#top = null;
             this.#bottom = null;
+            this.#traversing_node = null;
+
         }
 
         /**
@@ -490,6 +498,29 @@ export const videoDurationToString = (duration, is_seconds = true) => {
         }
 
         /**
+         * Peeks the current traversing node value.
+         * @returns {T}
+         */
+        PeekTraversing() {
+            if (this.#traversing_node === null && this.#top === null) {
+                throw Error("Cannot peek traversing node of an empty stack.");
+            }
+
+            /**
+             * @type {T}
+             */
+            let current_value;
+
+            if (this.#traversing_node === null) {
+                current_value = /** @type {DoublyLinkedStackNode<T>} */ (this.#top).Value;
+            } else {
+                current_value = this.#traversing_node.Value;
+            }
+
+            return current_value;
+        }
+            
+        /**
          * Returns and removes the element on the top of the stack. 
          * @returns {T | null}
          */
@@ -537,11 +568,52 @@ export const videoDurationToString = (duration, is_seconds = true) => {
         }
 
         /**
+         * Starts traversing the stack from the top.
+         * @returns {void}
+         */
+        StartTraversal() {
+            this.#traversing_node = null;
+        }
+
+        /**
          * Returns the Size of the buffer
          * @type {number}
          */
         get Size() {
             return this.#size;
+        }
+
+        /**
+         * Returns the value of the current traversing node and moves to the next node.
+         * Returns null if the traversal has reached the end or StartTraversal was not called before traversing.
+         * @returns {T | null}
+         */
+        Traverse() {
+            if (this.#top === null) {
+                throw Error("Cannot traverse an empty stack.");
+            }
+
+            if (this.TraversalEnd) {
+                return null;
+            }
+
+            if (this.#traversing_node == null) {
+                this.#traversing_node = this.#top;
+            } else {
+                this.#traversing_node = /** @type {DoublyLinkedStackNode<T>} */ (this.#traversing_node).Next;
+            }
+
+            const current_value = /** @type {DoublyLinkedStackNode<T>} */ (this.#traversing_node).Value;
+
+            return current_value;
+        }
+
+        /**
+         * Whether the traversal has reach the end of the stack.
+         * @type {boolean}
+         */
+        get TraversalEnd() {
+            return this.#traversing_node !== null && this.#traversing_node.Next === null; 
         }
     }
 /*=====  End of Data structures  ======*/

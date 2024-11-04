@@ -83,6 +83,17 @@ class HotkeyMatch {
     }
 
     /**
+     * adds a number as a vim motion match. 
+     * @param {number} motion
+     */
+    addMotion(motion) {
+        this.#panicIfSuccessful();
+
+        this.#motion_matches.push(motion);
+    }
+
+
+    /**
      * Adds a numeric string just as addMotionMatch but reverses the string before parsing it.
      * returns true if the string was correctly parsed and added.
      * @param {string} numeric_string
@@ -268,9 +279,10 @@ export class HotkeyData {
 
     /**
      * Creates and sets a new match metadata.
+     * @returns {HotkeyMatch}
      */
     #createMatchMetadata() {
-        this.#match_metadata = new HotkeyMatch();
+        return new HotkeyMatch();
     }
 
     /**
@@ -459,7 +471,7 @@ export class HotkeyData {
     match(event_history) {
         if (!this.Valid || event_history.Size < this.Length) return false; // Now we are allowed to assume the hotkey has at least one fragment.
 
-        this.#createMatchMetadata();
+        this.#match_metadata = this.#createMatchMetadata();
 
         /**
          * We start assuming the hotkey is a match, if any fragment doesn't match it's corresponding event, we set this to false.
@@ -469,7 +481,6 @@ export class HotkeyData {
 
         // Iterator indexes
         let fragment_h = 0;
-        let event_k = 0;
 
         /**
          * If this is a match, the last fragment will be the first in the event history.
@@ -487,27 +498,22 @@ export class HotkeyData {
 
         let last_sequence_time = -1;
 
-        /**
-         * Used to store numeric key when parsing a vim motion.
-         * @type {string}
-         */
-        let motion_match_number = "";
+        event_history.StartTraversal();
 
         do {
-            let event = event_history.PeekN(event_k);
-            event_k++;
+            let event = event_history.Traverse();
 
-            if (event == null && motion_match_number === "") {
+            if (event == null) {
                 hotkey_matched = false;
                 break;
             }
             
-            if (event != null && IsModifier(event.key)) {
+            if (IsModifier(event.key)) {
                 console.log(`Modifier ${event.key} found. Skipping.`);
                 continue;
             }
 
-            if (event != null && this.#checkEventExpired(event, last_sequence_time)) {
+            if (this.#checkEventExpired(event, last_sequence_time)) {
                 hotkey_matched = false;
                 break;
             } 
@@ -516,59 +522,46 @@ export class HotkeyData {
             if (fragment.NumericMetakey) { // Parse vim motion. If matches, interrupts the flow in all cases.
                 // console.log("Parsing vim motion");
 
-                fragment_match = false;
-
-                if (event != null) {
-                    fragment_match = fragment.matchNumericMetakey(event);
-                }
-
+                fragment_match = fragment.matchNumericMetakey(event); // check if the key of this event is a digit.
+                
                 if (fragment_match) {
-                    // @ts-ignore
-                    motion_match_number += event.key;
-                    continue;
-                }
+                    // match all preceding digits
 
-                if (motion_match_number === "") {
-                    this.#destroyMatchMetadata();
-                    console.error("This doesn't make sense to me. There is probably some kind of bug if this line is ever triggered.");
+                    let motion_match_number = fragment.matchVimMotion(event_history);
+                    if (isNaN(motion_match_number)) {
+                        console.log(`Vim motion match failed. Hotkey ${this.#key_combo} did not match event_history:`, event_history);
+                        hotkey_matched = false;
+                        break;
+                    }
+
+                    this.#match_metadata.addMotion(motion_match_number);
+                } else {
+                    console.log(`Fragment ${fragment.Identity} did not match event ${event.key}`);
                     hotkey_matched = false;
-                    continue;
                 }
 
-                if (this.#match_metadata == null) {
-                    this.#createMatchMetadata();
+            } else {
+                fragment_match = event !== null ? fragment.match(event) : false;
+    
+                if (!fragment_match) {
+                    console.log(`Fragment ${fragment.Identity} did not match event ${event?.key}`);
+                    hotkey_matched = false;
                 }
+            } 
 
-                /** @type {HotkeyMatch} */
-                (this.#match_metadata).addReversedMotionMatch(motion_match_number);
-                fragment_h++;
-                fragment = history_fragments[fragment_h];
-                continue;
-            } // Anything after this line can safely assume that this if statement did not match.
-
-            fragment_match = event !== null ? fragment.match(event) : false;
-
-            if (fragment_match !== undefined && !fragment_match) {
-                console.log(`Fragment ${fragment.Identity} did not match event ${event?.key}`);
-                hotkey_matched = false;
-            }
-
-            if (event == null) break;
 
             fragment_h++;
             fragment = history_fragments[fragment_h];
             last_sequence_time = event.timeStamp;
 
-        } while (hotkey_matched && fragment != null); // If we run out of fragments and hotkey_matched is still true, that should mean a positive match.
+        } while (hotkey_matched && fragment != null && !event_history.TraversalEnd); // If we run out of fragments and hotkey_matched is still true, that should mean a positive match.
 
         console.log(`Hotkey ${this.#key_combo} matched: ${hotkey_matched}`);
 
         if (!hotkey_matched) {
             this.#destroyMatchMetadata();
         } else {
-            if (this.#match_metadata != null) {
-                this.#match_metadata.setSuccessful();
-            }
+            this.#match_metadata.setSuccessful();
         }
 
         return hotkey_matched;

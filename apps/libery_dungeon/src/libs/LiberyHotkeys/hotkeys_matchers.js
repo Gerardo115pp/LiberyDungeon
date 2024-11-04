@@ -580,6 +580,47 @@ export class HotkeyFragment {
     }
 
     /**
+     * Matches a vim motion from a sequence of events.
+     * @param {import("@libs/utils").StackBuffer<KeyboardEvent>} event_history
+     * @returns {number}
+     */
+    matchVimMotion(event_history) {
+        if (!this.NumericMetakey || event_history.IsEmpty()) return NaN;
+
+        let matched_motion = NaN;
+
+        /**
+         * numeric keys found in sequence.
+         * @type {string[]}
+         */
+        let numeric_keys = [];
+
+        let has_match = false;
+
+        /**
+         * @type {KeyboardEvent | null}
+         */
+        let event = event_history.PeekTraversing();
+
+        while (event != null && IsNumeric(event.key)) {
+            has_match = true;
+
+            let key = event.key;
+
+            numeric_keys.unshift(key);
+
+            event = event_history.Traverse();
+        }
+
+        if (has_match) {
+            matched_motion = parseInt(numeric_keys.join(""));
+        }
+
+        return matched_motion;
+    }
+
+
+    /**
      * Whether the fragment is a numeric metakey.
      * @type {boolean}
      */
