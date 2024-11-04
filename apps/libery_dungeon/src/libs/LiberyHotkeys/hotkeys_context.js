@@ -171,7 +171,7 @@ export class ComponentHotkeyContext {
 
     /** 
      * The actions that the component will handle.
-     * @type {Map<string, HotkeyActionMeta>}
+     * @type {Map<Symbol, HotkeyActionMeta>}
      */
     #actions
 
@@ -200,7 +200,7 @@ export class ComponentHotkeyContext {
 
     /**
      * Returns the overwriting behavior for a given action name. If the action does not exist, it returns undefined.
-     * @param {string} action_name
+     * @param {Symbol} action_name
      * @returns {Symbol | undefined}
      */
     checkOverwriteBehavior(action_name) {
@@ -273,7 +273,7 @@ export class ComponentHotkeyContext {
 
     /**
      * Returns whether the ComponentHotkeyContext has a given action.
-     * @param {string} action_name
+     * @param {Symbol} action_name
      * @returns {boolean}
      */
     hasAction(action_name) {
@@ -288,7 +288,7 @@ export class ComponentHotkeyContext {
 
     /**
      * Overwrites the hotkey trigger for a given action. The action name must exist in the ComponentHotkeyContext already or the method panics
-     * @param {string} action_name
+     * @param {Symbol} action_name
      * @param {string | string[]} hotkey_trigger
      */
     overwriteHotkeyTrigger(action_name, hotkey_trigger) {
@@ -303,7 +303,7 @@ export class ComponentHotkeyContext {
 
     /**
      * overwrites the hotkey callback for a given action. The action name must exist in the ComponentHotkeyContext already or the method panics.
-     * @param {string} action_name
+     * @param {Symbol} action_name
      * @param {import('./hotkeys').HotkeyCallback} callback
      */
     overwriteHotkeyCallback(action_name, callback) {
@@ -325,7 +325,7 @@ export class ComponentHotkeyContext {
 
     /**
      * Overwrites the hotkey options for a given action. The action name must exist in the ComponentHotkeyContext already or the method panics.
-     * @param {string} action_name
+     * @param {Symbol} action_name
      * @param {import('./hotkeys').HotkeyRegisterOptions} options
      */
     overwriteHotkeyOptions(action_name, options) {
@@ -345,7 +345,7 @@ export class ComponentHotkeyContext {
 
     /**
      * Registers hotkey data parameters for a given action.
-     * @param {string} action_name
+     * @param {Symbol} action_name
      * @param {HotkeyActionMeta} hotkey_action
      * @returns {void}
      */
@@ -376,7 +376,7 @@ export class ComponentHotkeyContext {
             }
         };
 
-        this.#actions.set(action_name, hotkey_action);
+        this.#actions.set(action_name, safe_hotkey_action);
     }
 
     /**
