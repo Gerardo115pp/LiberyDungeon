@@ -25,24 +25,21 @@ const GRID_MOVEMENT_ITEM_CLASS_SELECTOR = `.${GRID_MOVEMENT_ITEM_CLASS}`;
  * Optional parameters for the CursorMovementWASD wrapper. Setting any triggers to an empty string will disable the hotkey.
 * @typedef {Object} MovementModelOptions
  * @property {string} grid_member_selector - The selector for the grid members. Defaults to `GRID_MOVEMENT_ITEM_CLASS`
- * @property {number} initial_cursor_position - The initial cursor position. Defaults to 0
- * @property {string} sequence_item_name - Used to generate descriptions for user feedback. Defaults to "item"
- * @property {string} sequence_item_name_plural - Used to generate descriptions for user feedback. Defaults to "items"
- * @property {string} up_trigger - The key that moves the cursor up. Defaults to "w"
- * @property {string} down_trigger - The key that moves the cursor down. Defaults to "s"
- * @property {string} left_trigger - The key that moves the cursor left. Defaults to "a"
- * @property {string} right_trigger - The key that moves the cursor right. Defaults to "d"
- * @property {string} goto_item_finalizer - The key that finalizes the goto vim motion. Defaults to "g"
- * @property {string} goto_row_finalizer - The key that finalizes the goto row vim motion. Defaults to "l"(for line)
- * @property {string} row_start_trigger - The key that moves the cursor to the start of the row. Defaults to "shift+a"
- * @property {string} row_end_trigger - The key that moves the cursor to the end of the row. Defaults to "shift+d"
- * @property {string} first_row_trigger - The key that moves the cursor to the first row. Defaults to "shift+w"
- * @property {string} last_row_trigger - The key that moves the cursor to the last row. Defaults to "shift+s"
+ * @property {number} [initial_cursor_position] - The initial cursor position. Defaults to 0
+ * @property {string} [sequence_item_name] - Used to generate descriptions for user feedback. Defaults to "item"
+ * @property {string} [sequence_item_name_plural] - Used to generate descriptions for user feedback. Defaults to "items"
+ * @property {string} [up_trigger] - The key that moves the cursor up. Defaults to "w"
+ * @property {string} [down_trigger] - The key that moves the cursor down. Defaults to "s"
+ * @property {string} [left_trigger] - The key that moves the cursor left. Defaults to "a"
+ * @property {string} [right_trigger] - The key that moves the cursor right. Defaults to "d"
+ * @property {string} [goto_item_finalizer] - The key that finalizes the goto vim motion. Defaults to "g"
+ * @property {string} [goto_row_finalizer] - The key that finalizes the goto row vim motion. Defaults to "l"(for line)
+ * @property {string} [row_start_trigger] - The key that moves the cursor to the start of the row. Defaults to "shift+a"
+ * @property {string} [row_end_trigger] - The key that moves the cursor to the end of the row. Defaults to "shift+d"
+ * @property {string} [first_row_trigger] - The key that moves the cursor to the first row. Defaults to "shift+w"
+ * @property {string} [last_row_trigger] - The key that moves the cursor to the last row. Defaults to "shift+s"
 */
 
-/**
- * @type {MovementModelOptions}
- */
 const default_cursor_movement_wasd_options = {
     grid_member_selector: GRID_MOVEMENT_ITEM_CLASS_SELECTOR,
     initial_cursor_position: 0,
@@ -79,7 +76,7 @@ export class CursorMovementWASD {
     #grid_navigation_wrapper
 
     /**
-     * @type {MovementModelOptions}
+     * @type {typeof default_cursor_movement_wasd_options}
      */
     #movement_options;
 
@@ -90,7 +87,9 @@ export class CursorMovementWASD {
      */
     constructor(grid_container_selector, cursor_position_callback, options) {
         if (options == null) {
-            options = {};
+            options = {
+                ...default_cursor_movement_wasd_options
+            };
         }
 
         this.#cursor_position_callback = cursor_position_callback;
@@ -352,6 +351,9 @@ export class CursorMovementWASD {
                     cursor_position = this.#grid_navigation_wrapper.Grid.moveRight();
                     backward_move_function = this.#grid_navigation_wrapper.Grid.moveLeft.bind(this.#grid_navigation_wrapper.Grid);
                     break;
+                default:
+                    console.error("Invalid key pressed for wasd movement.");
+                    return;
             }
 
             let should_rollback = this.#cursor_position_callback(cursor_position);
@@ -370,8 +372,12 @@ export class CursorMovementWASD {
 
             let starting_cursor_position = this.#grid_navigation_wrapper.Grid.Cursor;
 
-            let requested_position = hotkey.MatchMetadata.MotionMatches[0];
-            console.log("requested_position", requested_position);
+            let requested_position = hotkey.MatchMetadata?.MotionMatches[0];
+
+            if (requested_position == null) {
+                console.error("Invalid requested position for goto item.");
+                return;
+            }
 
             requested_position = requested_position - 1; // 1-based index to 0-based index.
 
@@ -398,7 +404,12 @@ export class CursorMovementWASD {
 
             let starting_cursor_position = this.#grid_navigation_wrapper.Grid.CursorRow;
 
-            let requested_position = hotkey.MatchMetadata.MotionMatches[0];
+            let requested_position = hotkey.MatchMetadata?.MotionMatches[0];
+
+            if (requested_position == null) {
+                console.error("Invalid requested position for goto row.");
+                return;
+            }
 
             requested_position = requested_position - 1; // 1-based index to 0-based index.
             console.log("requested_position", requested_position);
