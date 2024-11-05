@@ -12,7 +12,7 @@ export const has_user_access = writable(false);
 
 /**
  * The user identity object.
- * @type {import('svelte/store').Writable<UserIdentity>}
+ * @type {import('svelte/store').Writable<UserIdentity | null>}
  */
 export const current_user_identity = writable(null);
 
@@ -81,6 +81,10 @@ export const userLogout = async () => {
  * @returns {Promise<void>}
  */
 export const banCurrentUser = async () => {
-    deleteUser(); // This is a forbidden action if the user is not a super admin. so calling it with a user account logged in will result in a permanent ban.
+    let user_identity = get(current_user_identity);
+
+    if (user_identity == null) return;
+
+    deleteUser(user_identity.UUID); // This is a forbidden action if the user is not a super admin. so calling it with a user account logged in will result in a permanent ban.
     await userLogout();
 }
