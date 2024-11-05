@@ -12,6 +12,7 @@
     import { renameTagTaxonomy } from "@models/DungeonTags";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import { LabeledError } from "@libs/LiberyFeedback/lf_models";
+    import generateTaxonomyTagsHotkeysContext from "@components/DungeonTags/TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_hotkeys";
     
     /*=============================================
     =            Properties            =
@@ -27,6 +28,12 @@
                 const global_hotkeys_manager = getHotkeysManager();
 
                 const hotkeys_context_name = "cluster_public_tags";
+
+                /**
+                 * Component hotkey context to pass down to the Tag taxonomy components.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+                 */
+                export let taxonomy_tags_hotkeys_context = generateTaxonomyTagsHotkeysContext();
                 
                 /*=============================================
                 =            Hotkeys state            =
@@ -492,6 +499,7 @@
                 taxonomy_tags={taxonomy_tags}
                 has_hotkey_control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
                 is_keyboard_focused={is_keyboard_focused}
+                component_hotkey_context={taxonomy_tags_hotkeys_context}
                 ui_entity_reference={ui_entity_reference}
                 ui_taxonomy_reference={ui_taxonomy_reference}
                 ui_tag_reference={ui_tag_reference}

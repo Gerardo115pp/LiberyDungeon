@@ -11,6 +11,7 @@
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+    import { last_keyboard_focused_tag } from "./taxonomy_tags_store";
 
     /*=============================================
     =            Properties            =
@@ -300,6 +301,25 @@
             const handleCursorUpdate = (cursor_wrapped_value) => {
                 focused_tag_index = cursor_wrapped_value.value;
 
+                /** @type {import('@models/DungeonTags').DungeonTag | undefined}*/
+                let focused_tag = getFocusedTag();
+
+                if (focused_tag == null) {
+                    let variable_environment = new VariableEnvironmentContextError("In TaxonomyTags.handleCursorUpdate");
+
+                    variable_environment.addVariable("cursor_wrapped_value", cursor_wrapped_value);
+                    variable_environment.addVariable("focused_tag_index", focused_tag_index);
+
+                    const user_message = `Failed to get focused ${ui_tag_reference.EntityName} from index '${focused_tag_index}', This is a programming error. Am very sorry for the inconvenience.`;
+
+                    let labeled_err = new LabeledError(variable_environment, user_message, lf_errors.PROGRAMMING_ERROR__BROKEN_STATE);
+
+                    labeled_err.alert();
+                    return;
+                }
+
+                last_keyboard_focused_tag.set(focused_tag);
+
                 return false;
             }
 
@@ -468,6 +488,14 @@
             }
 
             return tag_name;
+        }
+
+        /**
+         * Returns the current focused tag.
+         * @returns {import('@models/DungeonTags').DungeonTag | undefined}
+         */
+        const getFocusedTag = () => {
+            return taxonomy_tags.Tags[focused_tag_index];
         }
 
         /**

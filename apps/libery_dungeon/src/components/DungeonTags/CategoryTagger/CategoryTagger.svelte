@@ -2,7 +2,7 @@
     /*=============================================
     =            Imports            =
     =============================================*/
-        import { deleteTagTaxonomy, getEntityTaggings, getTaxonomyTagsByUUID, tagCategory, tagEntity, untagEntity } from "@models/DungeonTags";
+        import { deleteTagTaxonomy, getEntityTaggings, getTaxonomyTagsByUUID, tagCategory, tagMedia, untagEntity } from "@models/DungeonTags";
         import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
         import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
         import { createEventDispatcher, onDestroy, onMount } from "svelte";
@@ -13,9 +13,13 @@
         import ClusterPublicTags from "./sub-components/ClusterPublicTags.svelte";
         import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
         import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
-        import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
+        import HotkeysContext, { ComponentHotkeyContext } from "@libs/LiberyHotkeys/hotkeys_context";
+        import generateTaxonomyTagsHotkeysContext, { taxonomy_tags_actions } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_hotkeys";
+        import { last_keyboard_focused_tag } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_store";
         import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
-        import { toggleHotkeysSheet } from "@stores/layout";   
+        import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
+        import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
+    import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -32,6 +36,14 @@
             const global_hotkeys_manager = getHotkeysManager();
 
             const hotkeys_context_name = "category-tagger-tool";
+
+            /* -------------------------- sub-component context -------------------------- */
+
+                /**
+                 * The component hotkeys context for the child taxonomy tags components.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
+                 */
+                let taxonomy_tags_hotkeys_context = null;
         
         /*=====  End of Hotkeys  ======*/
     
@@ -120,6 +132,8 @@
 
         current_category_unsubscriber = current_category.subscribe(handleCurrentCategoryChange)
 
+        defineSubComponentsHotkeysContext();
+
         defineDesktopKeybinds();
     });
 
@@ -165,9 +179,7 @@
                     await_execution: false
                 });
 
-                hotkeys_context.register(["?"], toggleHotkeysSheet, {
-                    description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
-                });
+                wrapShowHotkeysTable(hotkeys_context);
 
                 global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
 
@@ -235,6 +247,74 @@
 
                 global_hotkeys_manager.loadPreviousContext();
             }
+
+            /* --------------------- sub-components hotkeys context --------------------- */
+
+                /**
+                 * Defines the hotkeys context for sub-components.
+                 */
+                const defineSubComponentsHotkeysContext = () => {   
+                    taxonomy_tags_hotkeys_context = defineTaxonomyTagsHotkeysContext();
+                }
+
+                /**
+                 * defines the hotkeys context for the taxonomy tags components.
+                 * @requires generateTaxonomyTagsHotkeysContext
+                 * @returns {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+                 */
+                const defineTaxonomyTagsHotkeysContext = () => {
+                    const taxonomy_tags_context = generateTaxonomyTagsHotkeysContext();
+
+                    const alt_select_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_SELECT_FOCUSED_TAG);
+
+                    if (alt_select_focused_tag_action != null && alt_select_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
+                        alt_select_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Applies the focused ${ui_tag_reference.EntityName} to the current ${ui_entity_reference.EntityName}.`);
+
+                        alt_select_focused_tag_action.Callback = handleApplyFocusedTagToContent;
+                    }
+
+                    return taxonomy_tags_context;
+                }
+
+                /**
+                 * Applies the focused tag on the category content.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
+                 */
+                const handleApplyFocusedTagToContent = async (event, hotkey) => {
+                    console.log("Applying focused tag.");
+
+                    const dungeon_tag = $last_keyboard_focused_tag;
+
+                    if (dungeon_tag == null) {
+                        console.error("In CategoryTagger.handleApplyFocusedTagToContent: No focused tag available while trying to apply it to the content.");
+                        return;
+                    }
+
+                    console.log("Focused tag: ", dungeon_tag);
+
+                    const content_count = $current_category.content.length;
+                    let failed_taggings = 0;
+
+                    console.log(`Will tag ${content_count} medias`);
+
+                    for (let media of $current_category.content) {
+                        let tagging_number = await tagMedia(media.uuid, dungeon_tag?.Id);
+
+                        if (tagging_number == null) {
+                            failed_taggings++;
+                            console.error(`Failed to tag media '${media.uuid}' with tag '${dungeon_tag?.Id}'.`);
+                            continue;
+                        }
+                    }
+
+                    let feedback_message =`Applied the ${ui_tag_reference.EntityName} '${dungeon_tag.Name}' to ${content_count - failed_taggings}.`
+
+                    if (failed_taggings > 0) {
+                        feedback_message +=  `Failed with ${failed_taggings}.`;
+                    }
+
+                    emitPlatformMessage(feedback_message);
+                }
         
         /*=====  End of Keybinds  ======*/
 
@@ -499,12 +579,13 @@
         class="dctt-section"
         class:focused-section={ct_focused_section === 2}
     >
-        {#if cluster_tags_checked}
+        {#if cluster_tags_checked && taxonomy_tags_hotkeys_context != null}
             <ClusterPublicTags 
                 has_hotkey_control={ct_focused_section === 2 && ct_section_active}
                 ui_entity_reference={ui_entity_reference}
                 ui_taxonomy_reference={ui_taxonomy_reference}
                 ui_tag_reference={ui_tag_reference}
+                taxonomy_tags_hotkeys_context={taxonomy_tags_hotkeys_context}
                 on:tag-selected={handleTagSelection}
                 on:delete-taxonomy={handleTagTaxonomyDeleted}
                 on:taxonomy-content-change={handleTaxonomyContentChanged}
