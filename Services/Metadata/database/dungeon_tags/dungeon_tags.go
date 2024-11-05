@@ -9,6 +9,7 @@ import (
 	"libery-dungeon-libs/libs/dungeon_sqlite_opener"
 	app_config "libery-metadata-service/Config"
 	service_models "libery-metadata-service/models"
+	"strings"
 )
 
 type DungeonTagsDB struct {
@@ -460,6 +461,7 @@ func (dt_db *DungeonTagsDB) TagEntityCTX(ctx context.Context, tag_id int, entity
 	if err != nil {
 		return 0, err
 	}
+	defer stmt.Close()
 
 	result, err := stmt.ExecContext(ctx, tag_id, entity_uuid, entity_type)
 	if err != nil {
@@ -475,6 +477,43 @@ func (dt_db *DungeonTagsDB) TagEntityCTX(ctx context.Context, tag_id int, entity
 
 func (dt_db *DungeonTagsDB) TagEntity(tag_id int, entity_uuid, entity_type string) (int64, error) {
 	return dt_db.TagEntityCTX(context.Background(), tag_id, entity_uuid, entity_type)
+}
+
+func (dt_db *DungeonTagsDB) TagEntitiesCTX(ctx context.Context, tag_id int, entities_uuids []string, entity_type string) error {
+	sql_stmt_builder := strings.Builder{}
+	sql_stmt_builder.WriteString("INSERT INTO `taggings`(`tag`, `taggable_id`, `entity_type`) VALUES ")
+	values := make([]interface{}, 0, len(entities_uuids)*3)
+
+	for h := 0; h < len(entities_uuids); h++ {
+		sql_stmt_builder.WriteString("(?, ?, ?)")
+
+		if h < len(entities_uuids)-1 {
+			sql_stmt_builder.WriteString(", ")
+		}
+
+		values = append(values, tag_id, entities_uuids[h], entity_type)
+	}
+
+	sql_stmt_builder.WriteString("ON CONFLICT DO NOTHING")
+
+	sql_stmt := sql_stmt_builder.String()
+
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, sql_stmt)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, values...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (dt_db *DungeonTagsDB) TagEntities(tag_id int, entities_uuids []string, entity_type string) error {
+	return dt_db.TagEntitiesCTX(context.Background(), tag_id, entities_uuids, entity_type)
 }
 
 func (dt_db *DungeonTagsDB) UpdateTaxonomyNameCTX(ctx context.Context, taxonomy_uuid, new_name string) error {
