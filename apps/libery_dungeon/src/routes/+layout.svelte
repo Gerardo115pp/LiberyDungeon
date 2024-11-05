@@ -21,6 +21,9 @@
     =            Properties            =
     =============================================*/
     
+        /**
+         * @type {import("@libs/LiberyHotkeys/libery_hotkeys").HotkeyContextManager | null}
+         */
         let global_hotkeys_manager = null;
     
     /*=====  End of Properties  ======*/
