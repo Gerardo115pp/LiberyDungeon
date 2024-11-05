@@ -41,8 +41,8 @@
     
     /*=====  End of Properties  ======*/
 
-    onMount(() => {
-        can_clipboard_paste = hasClipboardWritePermission();
+    onMount(async () => {
+        can_clipboard_paste = await hasClipboardWritePermission();
     });
 
 </script>
@@ -73,7 +73,7 @@
                 />
                 <InformationEntry 
                     information_entry_label="Media Path"
-                    information_entry_value="{current_category_information.FullPath}{current_media_information.name}"
+                    information_entry_value="{current_cluster_information.FSPath}/{current_category_information.FullPath}{current_media_information.name}"
                     paste_on_click={can_clipboard_paste}
                 />
             </ul>
