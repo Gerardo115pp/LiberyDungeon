@@ -210,7 +210,7 @@
                     });
 
                     search_results_context.register("\`", exitSearchResultsHotkeysContext, {
-                        mode: "keypress",
+                        mode: "keydown",
                         description: "<navigation>Exit the search results tool",
                     });
 
