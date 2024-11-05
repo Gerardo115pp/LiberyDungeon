@@ -10,6 +10,12 @@ message IsClusterPrivate {
     string cluster_uuid = 1;
 }
 
+message TaggableEntities {
+    repeated string entities_uuids = 1;
+    int32 tag_id = 2;
+    string entity_type = 3;
+}
+
 message BooleanResponse {
     bool response = 1;
 }
@@ -21,4 +27,6 @@ message AllPrivateClustersResponse {
 service MetadataService {
     rpc CheckClusterPrivate(IsClusterPrivate) returns (BooleanResponse);
     rpc GetAllPrivateClusters(google.protobuf.Empty) returns (AllPrivateClustersResponse);
+    rpc TagEntities(TaggableEntities) returns (BooleanResponse);
+    rpc UntagEntities(TaggableEntities) returns (BooleanResponse);
 }
