@@ -449,7 +449,7 @@
     <aside class="cpt-taxonomy-tags-minimap">
         <header class="cpt-ttm-header">
             <h4>
-                Attributes
+                {ui_taxonomy_reference.EntityNamePlural}
             </h4>
         </header>
         <ol class="cpt-ttm-tag-taxonomies">
@@ -533,6 +533,12 @@
             & h4 {
                 font-family: var(--font-read);
                 color: var(--grey-6);
+                font-weight: 600;
+            }
+
+            & h4::first-letter {
+                font-family: var(--font-read);
+                text-transform: uppercase;
                 font-weight: 600;
             }
         }
