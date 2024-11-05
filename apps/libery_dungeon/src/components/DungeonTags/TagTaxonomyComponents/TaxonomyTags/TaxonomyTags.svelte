@@ -609,6 +609,8 @@
         enable_keyboard_selection={has_hotkey_control}
         rename_focused_tag={renaming_focused_tag}
         focused_tag_index={focused_tag_index}
+        ui_taxonomy_reference={ui_taxonomy_reference}
+        ui_tag_reference={ui_tag_reference}
         on:tag-selected
         on:tag-created={handleTagCreated}
         on:tag-deleted={handleTagDeleted}

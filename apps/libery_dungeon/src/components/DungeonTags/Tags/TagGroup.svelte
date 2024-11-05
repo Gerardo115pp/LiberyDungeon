@@ -20,6 +20,21 @@
          */
         export let tag_group_id;
 
+        /*----------  User feedback  ----------*/
+        
+            /**
+             * A UIReference object, to create ui messages about the tag taxonomy.
+             * @type {import('@libs/LiberyFeedback/lf_models').UIReference}
+             */
+            export let ui_taxonomy_reference;
+
+            /**
+             * A UIReference object, to create ui messages about the dungeons tags. used to pass down to general purpose components.
+             * @type {import('@libs/LiberyFeedback/lf_models').UIReference}
+             */
+            export let ui_tag_reference;
+        
+
         
         /*----------  State  ----------*/
 
@@ -180,7 +195,7 @@
                 let tag_name_available = !checkTagExists(new_tag_name);
 
                 if (!tag_name_available) {
-                    let labeled_error = new LabeledError("In TagGroup.handleTagCreatorKeyDown", `The value '${new_tag_name}' already exists for this attribute`, lf_errors.ERR_FORBIDDEN_DUPLICATE);
+                    let labeled_error = new LabeledError("In TagGroup.handleTagCreatorKeyDown", `The ${ui_tag_reference.EntityName} '${new_tag_name}' already exists for this ${ui_taxonomy_reference.EntityName}`, lf_errors.ERR_FORBIDDEN_DUPLICATE);
 
                     labeled_error.alert();
                     return;
@@ -244,7 +259,7 @@
                 let tag_name_available = !checkTagExists(new_tag_name);
 
                 if (!tag_name_available) {
-                    let labeled_error = new LabeledError("In TagGroup.handleTagRenamerKeyDown", `The value '${new_tag_name}' already exists for this attribute`, lf_errors.ERR_FORBIDDEN_DUPLICATE);
+                    let labeled_error = new LabeledError("In TagGroup.handleTagRenamerKeyDown", `The ${ui_tag_reference.EntityName} '${new_tag_name}' already exists for this ${ui_taxonomy_reference.EntityName}`, lf_errors.ERR_FORBIDDEN_DUPLICATE);
 
                     labeled_error.alert();
                     return;
