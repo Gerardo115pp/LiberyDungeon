@@ -6,3 +6,9 @@
 export const DROP_HOTKEY_CONTEXT = Symbol("DROP_HOTKEY_CONTEXT");
 export const WASD_NAVIGATION = Symbol("WASD_NAVIGATION");
 export const SHOW_HOTKEYS_TABLE = Symbol("SHOW_HOTKEYS_TABLE");
+
+export const common_action_groups = {
+    NAVIGATION: "<navigation>",
+    CONTENT: "<content>",
+    VIDEO: "<video>",
+}
