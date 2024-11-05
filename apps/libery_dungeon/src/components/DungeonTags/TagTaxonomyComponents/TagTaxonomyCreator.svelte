@@ -2,7 +2,7 @@
     import { current_cluster } from "@stores/clusters";
     import { cluster_tags } from "@stores/dungeons_tags";
     import { createTagTaxonomy } from "@models/DungeonTags";
-    import { LabeledError } from "@libs/LiberyFeedback/lf_models";
+    import { LabeledError, UIReference } from "@libs/LiberyFeedback/lf_models";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import { createEventDispatcher, onDestroy, onMount } from "svelte";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
@@ -10,6 +10,7 @@
     import { toggleHotkeysSheet } from "@stores/layout";
     import { browser } from "$app/environment";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+    import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
     
     /*=============================================
     =            Properties            =
@@ -21,7 +22,7 @@
         =============================================*/
         
             /**
-             * @type {import("@libs/LiberyHotkeys/libery_hotkeys").HotkeyContextManager}
+             * @type {import("@libs/LiberyHotkeys/libery_hotkeys").HotkeyContextManager | null}
              */ 
             const global_hotkeys_manager = getHotkeysManager();
 
@@ -76,6 +77,20 @@
         
         /*=====  End of Hotkeys state  ======*/
 
+        /*----------  UI references  ----------*/
+        
+            /**
+             * A UiReference object, to create ui messages about the taggable entity. used to pass down to general purpose components
+             * @type {UIReference}
+             */
+            export let ui_entity_reference;
+
+            /**
+             * A UiReference object, to create ui messages about the tag taxonomy. used to pass down to general purpose components.
+             * @type {UIReference}
+             */
+            export let ui_taxonomy_reference;
+
         const dispatch = createEventDispatcher();
     
     /*=====  End of Properties  ======*/
@@ -102,17 +117,17 @@
              * Defines the tools hotkeys.
              */ 
             const defineDesktopKeybinds = () => {
+                if (!global_hotkeys_manager) return;
+
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
     
                     hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
-                        description: `<${HOTKEYS_GENERAL_GROUP}>Closes the category tagger tool.`,
+                        description: `<${HOTKEYS_GENERAL_GROUP}>Deselect the ${ui_entity_reference.EntityNamePlural} ${ui_taxonomy_reference.EntityName} creator.`,
                         await_execution: false
                     });
     
-                    hotkeys_context.register(["?"], toggleHotkeysSheet, {
-                        description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
-                    });
+                    wrapShowHotkeysTable(hotkeys_context);
                     
                     global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
                 }
@@ -124,6 +139,8 @@
              * Drops the component hotkey context
              */
             const dropHotkeyContext = () => {
+                if (!global_hotkeys_manager) return;
+
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
 
                 global_hotkeys_manager.dropContext(hotkeys_context_name);
@@ -150,6 +167,8 @@
              * Drops the tools hotkey contexts and loads the previous context.
              */
             const resetHotkeyContext = () => {
+                if (!global_hotkeys_manager) return;
+
                 if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
@@ -172,7 +191,7 @@
             let new_taxonomy = await createTagTaxonomy(new_attribute_name, $current_cluster.UUID, false);
 
             if (new_taxonomy === null) {
-                let labeled_err = new LabeledError("In TagTaxonomyCreator.createTagTaxonomyIfValid", "The was an error creating the new tag taxonomy.", lf_errors.ERR_PROCESSING_ERROR);
+                let labeled_err = new LabeledError("In TagTaxonomyCreator.createTagTaxonomyIfValid", `The was an error creating the new ${ui_taxonomy_reference.EntityName}.`, lf_errors.ERR_PROCESSING_ERROR);
 
                 labeled_err.alert();
             }
@@ -194,7 +213,7 @@
             is_valid = !taxonomyNameExistsInCluster(new_attribute_name);
 
             if (!is_valid) {
-                the_tag_taxonomy_name_input.setCustomValidity("The attribute name already exists.");
+                the_tag_taxonomy_name_input.setCustomValidity(`The ${ui_taxonomy_reference.EntityName} already exists.`);
                 the_tag_taxonomy_name_input.reportValidity();
             }
 
@@ -273,13 +292,13 @@
 >
     <header id="ttc-header">
         <p class="dungeon-instructions">
-            Here you can create new category attributes. These will be available in all the categories within <strong>{$current_cluster?.Name ?? ""}</strong>
+            Here you can create new {ui_entity_reference.EntityName} {ui_taxonomy_reference.EntityNamePlural}. These will be available in all the {ui_entity_reference.EntityNamePlural} within <strong>{$current_cluster?.Name ?? ""}</strong>
         </p>
     </header>
     <fieldset class="ttc-fields">
         <label class="dungeon-input">
             <span class="dungeon-label">
-                Attribute
+                {ui_taxonomy_reference.EntityName}
             </span>
             <input 
                 bind:this={the_tag_taxonomy_name_input}

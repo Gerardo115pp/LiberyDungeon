@@ -61,19 +61,19 @@
              * A UiReference object, to create ui messages about the taggable entity. used to pass down to general purpose components
              * @type {UIReference}
              */
-            const entity_ui_reference = new UIReference("category", "categories");
+            const ui_entity_reference = new UIReference("category", "categories");
 
             /**
              * A UiReference object, to create ui messages about the tag taxonomy. used to pass down to general purpose components.
              * @type {UIReference}
              */
-            const taxonomy_ui_reference = new UIReference("attribute", "attributes");
+            const ui_taxonomy_reference = new UIReference("attribute", "attributes");
 
             /**
              * A UiReference object, to create ui messages about the dungeon-tag. used to pass down to general purpose components.
              * @type {UIReference}
              */
-            const tag_ui_reference = new UIReference("value", "values");
+            const ui_tag_reference = new UIReference("value", "values");
         
         /*----------  Component metadata  ----------*/
         
@@ -477,6 +477,8 @@
         class:focused-section={ct_focused_section === 0}
     >
         <TagTaxonomyCreator
+            ui_entity_reference={ui_entity_reference}
+            ui_taxonomy_reference={ui_taxonomy_reference}
             has_hotkey_control={ct_focused_section === 0 && ct_section_active}
             on:tag-taxonomy-created={handleTagTaxonomyCreated}
             on:drop-hotkeys-control={handleRecoverHotkeysControl}
