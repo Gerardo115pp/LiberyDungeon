@@ -37,7 +37,7 @@ export class PostCreateInitialUserRequest {
     toJson = attributesToJson.bind(this);
 
     /**
-     * @returns {Promise<HttpResponse<SingleStringResponse>}
+     * @returns {Promise<HttpResponse<import('../base').SingleStringResponse>>}
      */
     do = async () => {
         const response = await fetch(`${PostCreateInitialUserRequest.endpoint}?initial-setup-secret=${this._initial_setup_secret}`, {
@@ -109,15 +109,21 @@ export class GetUserSignAccessRequest {
     toJson = attributesToJson.bind(this);
 
     /**
-     * @returns {Promise<HttpResponse<UserSignAccessResponse>}
+     * @returns {Promise<HttpResponse<UserSignAccessResponse>>}
      * @typedef {Object} UserSignAccessResponse
      * @property {boolean} granted
      * @property {import('@models/Users').UserIdentityParams} user_data
      */
     do = async () => {
+        /** @type {UserSignAccessResponse} */
         let data = {
             granted: false,
-            user_data: {}
+            user_data: {
+                uuid: "",
+                username: "",
+                role_hierarchy: 0,
+                grants: []
+            }
         };
 
         const response = await fetch(`${GetUserSignAccessRequest.endpoint}?username=${this.username}&secret=${this.secret}`);
@@ -348,7 +354,7 @@ export class GetRoleTaxonomyRequest {
     toJson = attributesToJson.bind(this);
 
     /**
-     * @returns {import('@models/Users').RoleTaxonomyParams}
+     * @returns {Promise<HttpResponse<import('@models/Users').RoleTaxonomyParams>>}
      */
     do = async () => {
         const request_url = `${GetRoleTaxonomyRequest.endpoint}?role_label=${this.role_label}`;
