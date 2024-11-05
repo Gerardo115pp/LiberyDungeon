@@ -502,6 +502,9 @@
         {#if cluster_tags_checked}
             <ClusterPublicTags 
                 has_hotkey_control={ct_focused_section === 2 && ct_section_active}
+                ui_entity_reference={ui_entity_reference}
+                ui_taxonomy_reference={ui_taxonomy_reference}
+                ui_tag_reference={ui_tag_reference}
                 on:tag-selected={handleTagSelection}
                 on:delete-taxonomy={handleTagTaxonomyDeleted}
                 on:taxonomy-content-change={handleTaxonomyContentChanged}

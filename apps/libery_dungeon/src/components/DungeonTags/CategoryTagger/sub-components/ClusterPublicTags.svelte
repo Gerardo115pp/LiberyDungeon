@@ -91,7 +91,28 @@
              */
             let taxonomy_renamer_is_ready = false;
 
-            const dispatch = createEventDispatcher();
+
+        /*----------  User feedback  ----------*/
+        
+            /**
+             * A UIReference object, to create ui messages about the taggable entity.
+             * @type {import('@libs/LiberyFeedback/lf_models').UIReference}
+             */
+            export let ui_entity_reference;
+
+            /**
+             * A UIReference object, to create ui messages about the tag taxonomy.
+             * @type {import('@libs/LiberyFeedback/lf_models').UIReference}
+             */
+            export let ui_taxonomy_reference;
+
+            /**
+             * A UIReference object, to create ui messages about the dungeons tags. used to pass down to general purpose components.
+             * @type {import('@libs/LiberyFeedback/lf_models').UIReference}
+             */
+            export let ui_tag_reference;
+        
+        const dispatch = createEventDispatcher();
     
     /*=====  End of Properties  ======*/
 
@@ -471,6 +492,9 @@
                 taxonomy_tags={taxonomy_tags}
                 has_hotkey_control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
                 is_keyboard_focused={is_keyboard_focused}
+                ui_entity_reference={ui_entity_reference}
+                ui_taxonomy_reference={ui_taxonomy_reference}
+                ui_tag_reference={ui_tag_reference}
                 enable_tag_creation
                 on:tag-selected
                 on:taxonomy-content-change

@@ -1,11 +1,10 @@
 <script>
     import { createDungeonTag, deleteDungeonTag, renameDungeonTag } from "@models/DungeonTags";
     import TagGroup from "../../Tags/TagGroup.svelte";
-    import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
+    import { LabeledError,  VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
     import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
     import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
-    import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import generateTaxonomyTagsHotkeysContext, { taxonomy_tags_actions } from "./taxonomy_tags_hotkeys";
     import { browser } from "$app/environment";
     import { CursorMovementWASD } from "@common/keybinds/CursorMovement";
@@ -118,46 +117,22 @@
         /*----------  User feedback  ----------*/
         
             /**
-             * A name to use for the entity that would be tagged by the tags in the tag taxonomy.
-             * @type {string}
-             * @default "entity"
+             * A UIReference object, to create ui messages about the taggable entity.
+             * @type {import('@libs/LiberyFeedback/lf_models').UIReference}
              */
-            export let ui_entity_name = "entity";
+            export let ui_entity_reference;
 
             /**
-             * A plural name to use for the entity that would be tagged by the tags in the tag taxonomy.
-             * @type {string}
+             * A UIReference object, to create ui messages about the tag taxonomy.
+             * @type {import('@libs/LiberyFeedback/lf_models').UIReference}
              */
-            export let ui_entity_plural_name = "entities";
+            export let ui_taxonomy_reference;
 
             /**
-             * A name to use for the tags in the tag taxonomy.
-             * @type {string}
-             * @default "value"
+             * A UIReference object, to create ui messages about the dungeons tags. used to pass down to general purpose components.
+             * @type {import('@libs/LiberyFeedback/lf_models').UIReference}
              */
-            export let ui_tag_name = "value";
-
-            /**
-             * A plural name to use for the tags in the tag taxonomy.
-             * @type {string}
-             */
-            export let ui_tag_plural_name = "values";
-
-            /**
-             * A UI name for the tag taxonomy. Not for the specific tag taxonomy but a general name for tag taxonomies used in the current
-             * UI context.
-             * @type {string}
-             * @default "attribute"
-             */
-            export let ui_taxonomy_name = "attribute";
-
-
-            /**
-             * A plural name for the tag taxonomy. Not for the specific tag taxonomy but a general name for tag taxonomies used in the current
-             * UI context.
-             * @type {string}
-             */
-            export let ui_taxonomy_plural_name = "attributes";
+            export let ui_tag_reference;
         
 
         const dispatch = createEventDispatcher();
@@ -227,7 +202,7 @@
 
                             let drop_hotkey_context_action = new_component_hotkey_context.getHotkeyActionOrPanic(taxonomy_tags_actions.DROP_HOTKEY_CONTEXT);
 
-                            let drop_hotkey_context_description = `<${HOTKEYS_GENERAL_GROUP}> Deselects the active ${ui_taxonomy_name}`;
+                            let drop_hotkey_context_description = `<${HOTKEYS_GENERAL_GROUP}> Deselects the active ${ui_taxonomy_reference.EntityName}`;
 
                             if (drop_hotkey_context_action.HasNullishCallback()) {
                                 drop_hotkey_context_action.Callback = handleHotkeyControlDrop;
@@ -244,7 +219,7 @@
                             focus_tag_creator_action.Callback = handleFocusTagCreator;
 
                             if (focus_tag_creator_action.HasNullishDescription()) {
-                                focus_tag_creator_action.overwriteDescription(`<content>Focuses the ${ui_tag_name} creator input.`);
+                                focus_tag_creator_action.overwriteDescription(`<content>Focuses the ${ui_tag_reference.EntityNamePlural} creator input.`);
                             }
 
                             if (focus_tag_creator_action.OverwrittenOptions) {
@@ -258,7 +233,7 @@
                             rename_focused_tag_action.Callback = handlesTagRenamerHotkey;
 
                             if (rename_focused_tag_action.HasNullishDescription()) {
-                                rename_focused_tag_action.overwriteDescription(`<content>Renames the focused ${ui_tag_name}.`);
+                                rename_focused_tag_action.overwriteDescription(`<content>Renames the focused ${ui_tag_reference.EntityName}.`);
                             }
 
                             rename_focused_tag_action.panicIfOptionsOverwritten();
@@ -270,7 +245,7 @@
                             select_focused_tag_action.Callback = handleSelectFocusedTag;
 
                             if (select_focused_tag_action.HasNullishDescription()) {
-                                select_focused_tag_action.overwriteDescription(`<content>Selects the focused ${ui_tag_name}.`);
+                                select_focused_tag_action.overwriteDescription(`<content>Selects the focused ${ui_tag_reference.EntityName}.`);
                             }
 
                             select_focused_tag_action.panicIfOptionsOverwritten();
@@ -282,7 +257,7 @@
                             delete_focused_tag_action.Callback = handleDeleteFocusedTag;
 
                             if (delete_focused_tag_action.HasNullishDescription()) {
-                                delete_focused_tag_action.overwriteDescription(`<content>Deletes the focused ${ui_tag_name}.`);
+                                delete_focused_tag_action.overwriteDescription(`<content>Deletes the focused ${ui_tag_reference.EntityName}.`);
                             }
 
                             delete_focused_tag_action.panicIfOptionsOverwritten();
@@ -436,8 +411,8 @@
 
                 the_grid_navigation_wrapper = new CursorMovementWASD(tags_parent_selector, handleCursorUpdate, {
                     initial_cursor_position: focused_tag_index,
-                    sequence_item_name: ui_tag_name,
-                    sequence_item_name_plural: ui_tag_plural_name,
+                    sequence_item_name: ui_tag_reference.EntityName,
+                    sequence_item_name_plural: ui_tag_reference.EntityNamePlural,
                     grid_member_selector: 'li:not(:has(input))',
                 });
                 the_grid_navigation_wrapper.setup(hotkeys_context);
@@ -510,7 +485,7 @@
                 variable_environment.addVariable("triggering_event", event);
                 variable_environment.addVariable("taxonomy_tags.Taxonomy.UUID", taxonomy_tags.Taxonomy.UUID);
 
-                const labeled_err = new LabeledError(variable_environment, `Failed to create ${ui_tag_name} '${event?.detail?.tag_name}'`, lf_errors.ERR_PROCESSING_ERROR);
+                const labeled_err = new LabeledError(variable_environment, `Failed to create ${ui_tag_reference.EntityName} '${event?.detail?.tag_name}'`, lf_errors.ERR_PROCESSING_ERROR);
 
                 labeled_err.alert();
                 return;
@@ -537,8 +512,8 @@
             }
 
             const user_choice = await confirmPlatformMessage({
-                message_title: `Delete ${ui_tag_name} '${tag_name}'`,
-                question_message: `Are you sure you want to delete the ${ui_entity_name} '${tag_name}'? it will be disassociated from all ${ui_entity_plural_name} and any other entity it is related to.`,
+                message_title: `Delete ${ui_tag_reference.EntityName} '${tag_name}'`,
+                question_message: `Are you sure you want to delete the ${ui_tag_reference.EntityName} '${tag_name}'? it will be disassociated from all ${ui_entity_reference.EntityNamePlural} and any other entity it is related to.`,
                 danger_level: 1,
                 cancel_label: "cancel",
                 confirm_label: "Delete it",
@@ -550,7 +525,7 @@
             let tag_deleted = await deleteDungeonTag(tag_id);
 
             if (!tag_deleted) {
-                const labeled_err = new LabeledError("In TaxonomyTags.handleTagDeleted", `Failed to delete ${ui_tag_name} with id '${tag_id}'`, lf_errors.ERR_PROCESSING_ERROR);
+                const labeled_err = new LabeledError("In TaxonomyTags.handleTagDeleted", `Failed to delete ${ui_tag_reference.EntityName} with id '${tag_id}'`, lf_errors.ERR_PROCESSING_ERROR);
                 labeled_err.alert();
                 return;
             }
@@ -588,7 +563,7 @@
             if (tag_renamed) {
                 emitPlatformMessage(`Renamed '${tag_name}' to '${new_name}'`);
             } if (!tag_renamed) {
-                const labeled_err = new LabeledError("In TaxonomyTags.handleTagRenamed", `Failed to rename ${ui_tag_name} with id '${tag_id}'`, lf_errors.ERR_PROCESSING_ERROR);
+                const labeled_err = new LabeledError("In TaxonomyTags.handleTagRenamed", `Failed to rename ${ui_tag_reference.EntityName} with id '${tag_id}'`, lf_errors.ERR_PROCESSING_ERROR);
                 labeled_err.alert();
                 return;
             }
