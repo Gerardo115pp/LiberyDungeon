@@ -12,6 +12,16 @@ class IsClusterPrivate(_message.Message):
     cluster_uuid: str
     def __init__(self, cluster_uuid: _Optional[str] = ...) -> None: ...
 
+class TaggableEntities(_message.Message):
+    __slots__ = ("entities_uuids", "tag_id", "entity_type")
+    ENTITIES_UUIDS_FIELD_NUMBER: _ClassVar[int]
+    TAG_ID_FIELD_NUMBER: _ClassVar[int]
+    ENTITY_TYPE_FIELD_NUMBER: _ClassVar[int]
+    entities_uuids: _containers.RepeatedScalarFieldContainer[str]
+    tag_id: int
+    entity_type: str
+    def __init__(self, entities_uuids: _Optional[_Iterable[str]] = ..., tag_id: _Optional[int] = ..., entity_type: _Optional[str] = ...) -> None: ...
+
 class BooleanResponse(_message.Message):
     __slots__ = ("response",)
     RESPONSE_FIELD_NUMBER: _ClassVar[int]
