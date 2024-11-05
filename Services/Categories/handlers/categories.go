@@ -10,12 +10,27 @@ import (
 	"libery_categories_service/repository"
 	"libery_categories_service/workflows"
 	"net/http"
+	"strings"
 
+	"github.com/Gerardo115pp/patriot_router"
 	"github.com/Gerardo115pp/patriots_lib/echo"
 )
 
+var categories_resource_path = "/dungeon-tags(/.+)?"
+
+var CATEGORY_ROUTE *patriot_router.Route = patriot_router.NewRoute(categories_resource_path, false)
+
 func CategoriesHandler(service_instance libery_networking.Server) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
+		var category_tags_prefix string = "/categories/tags"
+
+		var resource_path string = request.URL.Path
+
+		if strings.HasPrefix(resource_path, category_tags_prefix) {
+			categoryTagsHandler(response, request)
+			return
+		}
+
 		switch request.Method {
 		case http.MethodGet:
 			getCategoriesHandler(response, request)
