@@ -34,6 +34,7 @@ const GRANT_OPTION = "grant_privileges";
  * it will first check if the user has the ALL_PRIVILEGES grant, if it does, it will return 
  * true(the returned function, not this function). The UserIdentity must be binded, is expected to be
  * the function's 'this' context.
+ * @this UserIdentity
  * @param {string} grant_label
  * @param {boolean} included_in_all_privileges
  * @returns {function(): boolean}
@@ -41,7 +42,6 @@ const GRANT_OPTION = "grant_privileges";
 function factory_UserCanChecker (grant_label, included_in_all_privileges) {
 
     /**
-     * @this UserIdentity
      * @memberof UserIdentity
      * @returns {boolean}
      */
@@ -69,7 +69,7 @@ function factory_UserCanChecker (grant_label, included_in_all_privileges) {
 * @typedef {Object} UserIdentityParams
  * @property {string} uuid
  * @property {string} username
- * @property {int} role_hierarchy
+ * @property {number} role_hierarchy
  * @property {string[]} grants
 */
 
@@ -82,7 +82,7 @@ function factory_UserCanChecker (grant_label, included_in_all_privileges) {
 /**
 * @typedef {Object} RoleTaxonomyParams
  * @property {string} role_label
- * @property {int} role_hierarchy
+ * @property {number} role_hierarchy
  * @property {string[]} role_grants
 */
 
@@ -107,7 +107,7 @@ export class UserIdentity {
 
     /**
      * The role hierarchy of the user. the smaller the number, the higher the role. 0 been the highest privilege role.
-     * @type {int}
+     * @type {number}
      */
     #the_role_hierarchy;
 
@@ -146,7 +146,7 @@ export class UserIdentity {
 
     /**
      * The role hierarchy of the user. the smaller the number, the higher the role. 0 been the highest privilege role.
-     * @type {int}
+     * @type {number}
      */
     get RoleHierarchy() {
         return this.#the_role_hierarchy;
@@ -378,7 +378,7 @@ export class RoleTaxonomy {
     /** @type {string} */
     #the_role_label;
 
-    /** @type {int} */
+    /** @type {number} */
     #the_role_hierarchy;
 
     /** @type {string[]} */
@@ -403,7 +403,7 @@ export class RoleTaxonomy {
 
     /**
      * The role hierarchy of the role. the smaller the number, the higher the role. 0 being the highest privilege role.
-     * @type {int}
+     * @type {number}
      */
     get RoleHierarchy() {
         return this.#the_role_hierarchy;
@@ -434,6 +434,7 @@ export const isSystemGrant = (grant) => {
  * @returns {string[]}
  */
 export const compileGrants = (role_taxonomies) => {
+    /** @type {string[]} */
     let grants = [];
 
     role_taxonomies.forEach((taxonomy) => {
@@ -502,7 +503,7 @@ export const isUsersInInitialSetupMode = async () => {
  * the server will set a cookie with a signed jwt token that only it can read. this is how the services will determine what can and cannot be done by the user.
  * @param {string} username
  * @param {string} secret
- * @returns {Promise<UserIdentity>}
+ * @returns {Promise<UserIdentity | null>}
  */
 export const loginPlatformUser = async (username, secret) => {
     let user_identity = null;
@@ -546,7 +547,7 @@ export const validateUserAccessToken = async () => {
 
 /**
  * Fetches the user identity of the currently logged in user. this is used to get the user's metadata and capabilities.
- * @returns {Promise<UserIdentity>}
+ * @returns {Promise<UserIdentity | null>}
  */
 export const getCurrentUserIdentity = async () => {
     let user_identity = null;
@@ -567,6 +568,9 @@ export const getCurrentUserIdentity = async () => {
  * @returns {Promise<UserEntry[]>}
  */
 export const getAllUsers = async () => {
+    /**
+     * @type {UserEntry[]}
+     */
     let users = [];
     let request = new GetAllUsersRequest();
 
@@ -585,6 +589,9 @@ export const getAllUsers = async () => {
  * @returns {Promise<string[]>} 
  */
 export const getAllRoleLabels = async () => {
+    /**
+     * @type {string[]}
+     */
     let role_labels = [];
     let request = new GetAllRoleLabelsRequest();
 
@@ -602,6 +609,7 @@ export const getAllRoleLabels = async () => {
  * @returns {Promise<string[]>}
  */
 export const getAllGrants = async () => {
+    /** @type {string[]} */
     let grants = [];
     let request = new GetAllGrantsRequest();
 
@@ -652,7 +660,7 @@ export const addGrantToRole = async (role_label, grant) => {
 /**
  * Requests the role taxonomy of a given role label. requires the 'grant_option' grant.
  * @param {string} role_label
- * @returns {Promise<RoleTaxonomy>}
+ * @returns {Promise<RoleTaxonomy | null>}
  */
 export const getRoleTaxonomy = async (role_label) => {
     let role_taxonomy = null;
@@ -672,10 +680,11 @@ export const getRoleTaxonomy = async (role_label) => {
  * for example, assume the system has roles with the following hierarchy: [0, 2, 3, 7, 8, 8 , 10]. If 4 is passed then it will return 2 taxonomies, with hierarchies 8. 
  * if 9 is passed then it will return 1 taxonomy with hierarchy 10. you can use the grants in these taxonomies to know what grants a role will inherit.
  * as you could've guessed, this request requires the 'grant_option' grant.
- * @param {int} role_hierarchy
+ * @param {number} role_hierarchy
  * @returns {Promise<RoleTaxonomy[]>}
  */
 export const getRoleTaxonomiesBelowHierarchy = async (role_hierarchy) => {
+    /** @type {RoleTaxonomy[]} */
     let role_taxonomies = [];
     let request = new GetRoleTaxonomiesBelowHierarchyRequest(role_hierarchy);
 
@@ -692,7 +701,7 @@ export const getRoleTaxonomiesBelowHierarchy = async (role_hierarchy) => {
  * Creates a new role with the given role label, hierarchy and grants. the grants must exist before the role is created otherwise the request will fail.
  * requires the 'grant_option' grant.
  * @param {string} role_label
- * @param {int} role_hierarchy
+ * @param {number} role_hierarchy
  * @param {string[]} role_grants
  * @returns {Promise<boolean>}
  */
@@ -766,6 +775,7 @@ export const removeGrantFromRole = async (role_label, grant) => {
  * @returns {Promise<string[]>}
  */
 export const getUserRoles = async (username) => {
+    /** @type {string[]} */
     let roles = [];
     let request = new GetUserRolesRequest(username);
 
