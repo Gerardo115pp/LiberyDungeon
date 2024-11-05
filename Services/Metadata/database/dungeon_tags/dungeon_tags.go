@@ -456,6 +456,31 @@ func (dt_db *DungeonTagsDB) RemoveTagFromEntity(tag_id int, entity_uuid string) 
 	return dt_db.RemoveTagFromEntityCTX(context.Background(), tag_id, entity_uuid)
 }
 
+func (dt_db *DungeonTagsDB) RemoveTagFromEntitiesCTX(ctx context.Context, tag_id int, entities_uuids []string) error {
+	placeholders := dungeon_helpers.GetPreparedListPlaceholders(len(entities_uuids))
+	values := make([]interface{}, 0, len(entities_uuids)+1)
+
+	values = append(values, tag_id)
+
+	for _, entity_uuid := range entities_uuids {
+		values = append(values, entity_uuid)
+	}
+
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, fmt.Sprintf("DELETE FROM `taggings` WHERE `tag`=? AND `taggable_id` IN (%s)", placeholders))
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, values...)
+
+	return err
+}
+
+func (dt_db *DungeonTagsDB) RemoveTagFromEntities(tag_id int, entities_uuids []string) error {
+	return dt_db.RemoveTagFromEntitiesCTX(context.Background(), tag_id, entities_uuids)
+}
+
 func (dt_db *DungeonTagsDB) TagEntityCTX(ctx context.Context, tag_id int, entity_uuid, entity_type string) (int64, error) {
 	stmt, err := dt_db.db_conn.PrepareContext(ctx, "INSERT INTO `taggings`(`tag`, `taggable_id`, `entity_type`) VALUES (?, ?, ?)")
 	if err != nil {
