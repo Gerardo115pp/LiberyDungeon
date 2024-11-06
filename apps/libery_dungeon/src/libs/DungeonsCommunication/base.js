@@ -65,18 +65,27 @@ export class HttpResponse {
  * @property {number} response
 */
 
+/**
+ * @this {any}
+ */
 export function attributesToJson() {
+    /** @type {Object<string, any>} */
     const json_data = {};
-    console.log("AttributestoJson:" + this);
+
     Object.entries(this).forEach(([key, value]) => {
         if (!(this[key] instanceof Function) && key[0] !== '_') {
             json_data[key] = value;
         }
     });
+
     return JSON.stringify(json_data);
 }
 
+/**
+ * @this {any}
+ */
 export function attributesToJsonExclusive() {
+    /** @type {Object<string, any>} */
     const json_data = {};
     Object.entries(this).forEach(([key, value]) => {
         if (!(this[key] instanceof Function) && key[0] !== '_' && value !== null) {
