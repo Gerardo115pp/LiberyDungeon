@@ -49,7 +49,6 @@ func (ms *MetadataGrpcServer) GetAllPrivateClusters(ctx context.Context, duh *em
 
 func (ms *MetadataGrpcServer) TagEntities(ctx context.Context, request *metadata_service_pb.TaggableEntities) (*metadata_service_pb.BooleanResponse, error) {
 	var response *metadata_service_pb.BooleanResponse = new(metadata_service_pb.BooleanResponse)
-	echo.Echo(echo.BlueFG, fmt.Sprintf("Tagging entities: %v", request))
 
 	var tag_id int = int(request.TagId)
 	var entities_uuids []string = request.EntitiesUuids
@@ -67,7 +66,6 @@ func (ms *MetadataGrpcServer) TagEntities(ctx context.Context, request *metadata
 
 func (ms *MetadataGrpcServer) UntagEntities(ctx context.Context, request *metadata_service_pb.TaggableEntities) (*metadata_service_pb.BooleanResponse, error) {
 	var response *metadata_service_pb.BooleanResponse = new(metadata_service_pb.BooleanResponse)
-	echo.Echo(echo.BlueFG, fmt.Sprintf("Untagging entities: %v", request))
 
 	var tag_id int = int(request.TagId)
 	var entities_uuids []string = request.EntitiesUuids
