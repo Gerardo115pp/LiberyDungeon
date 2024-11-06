@@ -1,5 +1,5 @@
 import { HttpResponse, attributesToJson } from "../../base";
-import { metadata_server } from "../../services"
+import { metadata_server, categories_server } from "../../services"
 
 /**
  * Returns all of the TagTaxonomies associated with a cluster
@@ -833,5 +833,107 @@ export class PatchRenameDungeonTagRequest {
         renamed = response?.status === 204;
 
         return new HttpResponse(response, renamed);
+    }
+}
+
+/**
+ * Tags a the medias inside a category with a given tag.
+ */
+export class PostTagCategoryContentRequest {
+
+    static endpoint = `${categories_server}/categories/tags/content`;
+
+    /**
+     * @param {string} category_uuid
+     * @param {number} tag_id
+     */
+    constructor(category_uuid, tag_id) {
+        this.category_uuid = category_uuid;
+        this.tag_id = tag_id;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<boolean>>}
+     */
+    do = async () => {
+        const url = `${PostTagCategoryContentRequest.endpoint}?category_uuid=${this.category_uuid}&tag_id=${this.tag_id}`;
+
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        /**
+         * @type {boolean}
+         */
+        let tagged = false;
+
+        try {
+            response = await fetch(url, {
+                method: "POST",
+            });
+
+        } catch (error) {
+            console.error("Error tagging category content: ", error);
+
+            throw error;
+        }
+
+        tagged = response?.status === 200;
+
+        return new HttpResponse(response, tagged);
+    }
+}
+
+/**
+ * Untags a the medias inside a category with a given tag.
+ */
+export class DeleteUntagCategoryContentRequest {
+
+    static endpoint = `${categories_server}/categories/tags/content`;
+
+    /**
+     * @param {string} category_uuid
+     * @param {number} tag_id
+     */
+    constructor(category_uuid, tag_id) {
+        this.category_uuid = category_uuid;
+        this.tag_id = tag_id;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<boolean>>}
+     */
+    do = async () => {
+        const url = `${DeleteUntagCategoryContentRequest.endpoint}?category_uuid=${this.category_uuid}&tag_id=${this.tag_id}`;
+
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        /**
+         * @type {boolean}
+         */
+        let untagged = false;
+
+        try {
+            response = await fetch(url, {
+                method: "DELETE",
+            });
+
+        } catch (error) {
+            console.error("Error untagging category content: ", error);
+
+            throw error;
+        }
+
+        untagged = response?.status === 200;
+
+        return new HttpResponse(response, untagged);
     }
 }
