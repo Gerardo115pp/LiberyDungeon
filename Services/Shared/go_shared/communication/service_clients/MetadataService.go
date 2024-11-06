@@ -88,3 +88,48 @@ func (metadata_client MetadataServiceClient) GetAllPrivateClusters() ([]string, 
 
 	return private_clusters, nil
 }
+
+func (metadata_client MetadataServiceClient) TagEntities(tag_id int, entities_uuids []string, entity_type string) (bool, error) {
+	conn, err := grpc.Dial(metadata_client.GrpcAddress, grpc.WithTransportCredentials(metadata_client.GrpcTransport))
+	if err != nil {
+		return false, err
+	}
+	defer conn.Close()
+
+	metadata_grpc_client := metadata_service_pb.NewMetadataServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	message := metadata_service_pb.TaggableEntities{
+		TagId:         int32(tag_id),
+		EntitiesUuids: entities_uuids,
+		EntityType:    entity_type,
+	}
+
+	boolean_response, err := metadata_grpc_client.TagEntities(ctx, &message)
+
+	return boolean_response.Response, err
+}
+
+func (metadata_client MetadataServiceClient) UntagEntities(tag_id int, entities_uuids []string) (bool, error) {
+	conn, err := grpc.Dial(metadata_client.GrpcAddress, grpc.WithTransportCredentials(metadata_client.GrpcTransport))
+	if err != nil {
+		return false, err
+	}
+	defer conn.Close()
+
+	metadata_grpc_client := metadata_service_pb.NewMetadataServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	message := metadata_service_pb.TaggableEntities{
+		TagId:         int32(tag_id),
+		EntitiesUuids: entities_uuids,
+	}
+
+	boolean_response, err := metadata_grpc_client.UntagEntities(ctx, &message)
+
+	return boolean_response.Response, err
+}
