@@ -47,6 +47,41 @@ func (ms *MetadataGrpcServer) GetAllPrivateClusters(ctx context.Context, duh *em
 	return response, nil
 }
 
+func (ms *MetadataGrpcServer) TagEntities(ctx context.Context, request *metadata_service_pb.TaggableEntities) (*metadata_service_pb.BooleanResponse, error) {
+	var response *metadata_service_pb.BooleanResponse = new(metadata_service_pb.BooleanResponse)
+	echo.Echo(echo.BlueFG, fmt.Sprintf("Tagging entities: %v", request))
+
+	var tag_id int = int(request.TagId)
+	var entities_uuids []string = request.EntitiesUuids
+	var entity_type string = request.EntityType
+
+	err := repository.DungeonTagsRepo.TagEntitiesCTX(ctx, tag_id, entities_uuids, entity_type)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("Error while tagging entities: %s", err))
+	}
+
+	response.Response = err == nil
+
+	return response, nil
+}
+
+func (ms *MetadataGrpcServer) UntagEntities(ctx context.Context, request *metadata_service_pb.TaggableEntities) (*metadata_service_pb.BooleanResponse, error) {
+	var response *metadata_service_pb.BooleanResponse = new(metadata_service_pb.BooleanResponse)
+	echo.Echo(echo.BlueFG, fmt.Sprintf("Untagging entities: %v", request))
+
+	var tag_id int = int(request.TagId)
+	var entities_uuids []string = request.EntitiesUuids
+
+	err := repository.DungeonTagsRepo.RemoveTagFromEntitiesCTX(ctx, tag_id, entities_uuids)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("Error while untagging entities: %s", err))
+	}
+
+	response.Response = err == nil
+
+	return response, nil
+}
+
 func (ms *MetadataGrpcServer) Connect() error {
 	listener, err := net.Listen("tcp", ms.port)
 	if err != nil {
