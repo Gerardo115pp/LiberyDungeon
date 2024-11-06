@@ -15,7 +15,9 @@ import {
     DeleteTagTaxonomyRequest, 
     DeleteDungeonTagRequest,
     PatchRenameTagTaxonomyRequest,
-    PatchRenameDungeonTagRequest 
+    PatchRenameDungeonTagRequest,
+    PostTagCategoryContentRequest,
+    DeleteUntagCategoryContentRequest,
 } from '@libs/DungeonsCommunication/services_requests/metadata_requests/dungeon_tags_requests'
 import { lf_errors } from '@libs/LiberyFeedback/lf_errors'
 import { LabeledError, VariableEnvironmentContextError } from '@libs/LiberyFeedback/lf_models'
@@ -677,7 +679,7 @@ export class DungeonTagging {
 
 
 /*=============================================
-=            Known entities wrappers            =
+=            Known entities                 =
 =============================================*/
 
 /**
@@ -700,5 +702,47 @@ export const tagMedia = async (media_uuid, tag_id) => {
     return tagEntity(media_uuid, tag_id, MEDIA_ENTITY_TYPE);
 }
 
-/*=====  End of Known entities wrappers  ======*/
+/**
+ * Tags all the content of a category with a tag by the tag id. Returns whether it was successful or not.
+ * @param {string} category_uuid
+ * @param {number} tag_id
+ * @returns {Promise<boolean>}
+ */
+export const tagCategoryContent = async (category_uuid, tag_id) => {
+    /** @type {boolean} */
+    let success = false;
+
+    const request = new PostTagCategoryContentRequest(category_uuid, tag_id);
+
+    const response = await request.do();
+
+    if (response.Ok) {
+        success = response.data;
+    }
+
+    return success;
+}
+
+/**
+ * Removes a given tag from all medias inside the category.
+ * @param {string} category_uuid
+ * @param {number} tag_id
+ * @returns {Promise<boolean>}
+ */
+export const untagCategoryContent = async (category_uuid, tag_id) => {
+    /** @type {boolean} */
+    let success = false;
+
+    const request = new DeleteUntagCategoryContentRequest(category_uuid, tag_id);
+
+    const response = await request.do();
+
+    if (response.Ok) {
+        success = response.data;
+    }
+
+    return success;
+}
+
+/*=====  End of Known entities ======*/
 
