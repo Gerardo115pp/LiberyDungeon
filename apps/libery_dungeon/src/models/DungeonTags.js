@@ -25,7 +25,7 @@ import { LabeledError, VariableEnvironmentContextError } from '@libs/LiberyFeedb
  * @property {string} uuid - The identifier of the taxonomy.
  * @property {string} name - The name of the taxonomy.
  * @property {string} cluster_domain - The cluster where this taxonomy is present. If it's '' then it's a global taxonomy. Otherwise the vaule should be a CategoryCluster.uuid
- * @property {string} is_internal - If the taxonomy is internal, then the user should not modify it directly.
+ * @property {boolean} is_internal - If the taxonomy is internal, then the user should not modify it directly.
 */
 
 /**
@@ -146,7 +146,7 @@ export class TagTaxonomy {
 
     /**
      * If the taxonomy is internal, then the user should not modify it directly.
-     * @type {string}
+     * @type {boolean}
      */
     #is_internal
 
@@ -186,7 +186,7 @@ export class TagTaxonomy {
 
     /**
      * If the taxonomy is internal, then the user should not modify it directly.
-     * @type {string}
+     * @type {boolean}
      */
     get IsInternal() {
         return this.#is_internal;
@@ -344,7 +344,7 @@ export class DungeonTagging {
 
         const response = await request.do();
 
-        if (response.Ok) {
+        if (response.Ok && response.data !== null) {
             dungeon_tag = new DungeonTag(response.data);        
         }
 
@@ -365,7 +365,7 @@ export class DungeonTagging {
 
         const response = await request.do();
 
-        if (response.Ok) {
+        if (response.Ok && response.data !== null) {
             dungeon_tag = new DungeonTag(response.data);        
         }
 
@@ -468,7 +468,7 @@ export class DungeonTagging {
 
         const response = await request.do();
 
-        if (response.Ok) {
+        if (response.Ok && response.data !== null) {
             taxonomy_tags = new TaxonomyTags(response.data);
         }
 
@@ -521,7 +521,7 @@ export class DungeonTagging {
 
         const response = await request.do();
 
-        if (response.Ok) {
+        if (response.Ok && response.data !== null) {
             new_dungeon_tag = new DungeonTag(response.data);
         }
 

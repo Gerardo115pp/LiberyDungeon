@@ -70,13 +70,8 @@ export class GetDungeonTagByIDRequest {
     do = async () => {
         const url = `${GetDungeonTagByIDRequest.endpoint}?id=${this.id}`;
 
-        /** @type {import("@models/DungeonTags").DungeonTagParams} */
-        let dungeon_tag = {
-            id: 0,
-            name: "",
-            taxonomy: "",
-            name_taxonomy: ""
-        };
+        /** @type {import("@models/DungeonTags").DungeonTagParams | null} */
+        let dungeon_tag = null;
 
         /**
          * @type {Response}
@@ -124,13 +119,8 @@ export class GetDungeonTagByNameRequest {
     do = async () => {
         const url = `${GetDungeonTagByNameRequest.endpoint}?name=${this.name}&taxonomy=${this.taxonomy}`;
 
-        /** @type {import("@models/DungeonTags").DungeonTagParams} */
-        let dungeon_tag = {
-            id: 0,
-            name: "",
-            taxonomy: "",
-            name_taxonomy: ""
-        };
+        /** @type {import("@models/DungeonTags").DungeonTagParams | null} */
+        let dungeon_tag = null;
 
         /**
          * @type {Response}
@@ -376,16 +366,8 @@ export class GetTaxonomyTagsRequest {
     do = async () => {
         const url = `${GetTaxonomyTagsRequest.endpoint}?taxonomy=${this.taxonomy}`;
 
-        /** @type {import("@models/DungeonTags").TaxonomyTagsParams} */
-        let taxonomy_tags = {
-            taxonomy: {
-                uuid: "",
-                name: "",
-                cluster_domain: "",
-                is_internal: ""
-            },
-            tags: []
-        };
+        /** @type {import("@models/DungeonTags").TaxonomyTagsParams | null} */
+        let taxonomy_tags = null;
 
         /**
          * @type {Response}
