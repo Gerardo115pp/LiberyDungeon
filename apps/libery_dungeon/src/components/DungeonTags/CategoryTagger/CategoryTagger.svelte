@@ -2,7 +2,7 @@
     /*=============================================
     =            Imports            =
     =============================================*/
-        import { deleteTagTaxonomy, getEntityTaggings, getTaxonomyTagsByUUID, tagCategory, tagMedia, untagEntity } from "@models/DungeonTags";
+        import { deleteTagTaxonomy, getEntityTaggings, getTaxonomyTagsByUUID, tagCategory, tagCategoryContent, tagMedia, untagCategoryContent, untagEntity } from "@models/DungeonTags";
         import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
         import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
         import { createEventDispatcher, onDestroy, onMount } from "svelte";
@@ -268,16 +268,24 @@
                     const alt_select_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_SELECT_FOCUSED_TAG);
 
                     if (alt_select_focused_tag_action != null && alt_select_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
-                        alt_select_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Applies the focused ${ui_tag_reference.EntityName} to the current ${ui_entity_reference.EntityName}.`);
+                        alt_select_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Applies the focused ${ui_tag_reference.EntityName} to the current ${ui_entity_reference.EntityName} media content.`);
 
                         alt_select_focused_tag_action.Callback = handleApplyFocusedTagToContent;
+                    }
+
+                    const alt_delete_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_DELETE_FOCUSED_TAG);
+
+                    if (alt_delete_focused_tag_action != null && alt_delete_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
+                        alt_delete_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Removes the focused ${ui_tag_reference.EntityName} from the current ${ui_entity_reference.EntityName} media content.`);
+
+                        alt_delete_focused_tag_action.Callback = handleRemoveFocusedTagFromContent;
                     }
 
                     return taxonomy_tags_context;
                 }
 
                 /**
-                 * Applies the focused tag on the category content.
+                 * Applies the focused tag on the category content medias.
                  * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
                  */
                 const handleApplyFocusedTagToContent = async (event, hotkey) => {
@@ -293,25 +301,63 @@
                     console.log("Focused tag: ", dungeon_tag);
 
                     const content_count = $current_category.content.length;
-                    let failed_taggings = 0;
 
-                    console.log(`Will tag ${content_count} medias`);
+                    let successfully_applied = await tagCategoryContent($current_category.uuid, dungeon_tag.Id);
 
-                    for (let media of $current_category.content) {
-                        let tagging_number = await tagMedia(media.uuid, dungeon_tag?.Id);
+                    if (!successfully_applied) {
+                        const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.handleApplyFocusedTagToContent");
 
-                        if (tagging_number == null) {
-                            failed_taggings++;
-                            console.error(`Failed to tag media '${media.uuid}' with tag '${dungeon_tag?.Id}'.`);
-                            continue;
-                        }
+                        variable_environment.addVariable("dungeon_tag.Name", dungeon_tag.Name);
+                        variable_environment.addVariable("current_category.uuid", $current_category.uuid);
+                        variable_environment.addVariable("content_count", content_count);
+                        variable_environment.addVariable("dungeon_tag.Id", dungeon_tag.Id);
+
+                        const labeled_error = new LabeledError(variable_environment, "Failed to apply the focused tag to the content.", lf_errors.ERR_PROCESSING_ERROR);
+
+                        labeled_error.alert();
+                        return;
                     }
 
-                    let feedback_message =`Applied the ${ui_tag_reference.EntityName} '${dungeon_tag.Name}' to ${content_count - failed_taggings}.`
+                    let feedback_message =`Applied the ${ui_tag_reference.EntityName} '${dungeon_tag.Name}' to ${content_count} medias.`
 
-                    if (failed_taggings > 0) {
-                        feedback_message +=  `Failed with ${failed_taggings}.`;
+                    emitPlatformMessage(feedback_message);
+                }
+
+                /**
+                 * Removes the focused tag from the category content medias.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
+                 */
+                const handleRemoveFocusedTagFromContent = async (event, hotkey) => {
+                    console.log("Removing focused tag.");
+
+                    const dungeon_tag = $last_keyboard_focused_tag;
+
+                    if (dungeon_tag == null) {
+                        console.error("In CategoryTagger.handleRemoveFocusedTagFromContent: No focused tag available while trying to remove it from the content.");
+                        return;
                     }
+
+                    console.log("Focused tag: ", dungeon_tag);
+
+                    const content_count = $current_category.content.length;
+
+                    let successfully_removed = await untagCategoryContent($current_category.uuid, dungeon_tag.Id);
+
+                    if (!successfully_removed) {
+                        const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.handleRemoveFocusedTagFromContent");
+
+                        variable_environment.addVariable("dungeon_tag.Name", dungeon_tag.Name);
+                        variable_environment.addVariable("current_category.uuid", $current_category.uuid);
+                        variable_environment.addVariable("content_count", content_count);
+                        variable_environment.addVariable("dungeon_tag.Id", dungeon_tag.Id);
+
+                        const labeled_error = new LabeledError(variable_environment, "Failed to remove the focused tag from the content.", lf_errors.ERR_PROCESSING_ERROR);
+
+                        labeled_error.alert();
+                        return;
+                    }
+
+                    let feedback_message =`Removed the ${ui_tag_reference.EntityName} '${dungeon_tag.Name}' from ${content_count} medias.`
 
                     emitPlatformMessage(feedback_message);
                 }
