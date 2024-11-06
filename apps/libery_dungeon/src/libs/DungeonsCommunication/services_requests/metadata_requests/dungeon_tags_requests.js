@@ -40,6 +40,8 @@ export class GetClusterTaxonomiesRequest {
 
         } catch (error) {
             console.error("Error getting cluster taxonomies: ", error);
+
+            throw error;
         }
 
         return new HttpResponse(response, cluster_taxonomies);
@@ -69,7 +71,12 @@ export class GetDungeonTagByIDRequest {
         const url = `${GetDungeonTagByIDRequest.endpoint}?id=${this.id}`;
 
         /** @type {import("@models/DungeonTags").DungeonTagParams} */
-        let dungeon_tag = null;
+        let dungeon_tag = {
+            id: 0,
+            name: "",
+            taxonomy: "",
+            name_taxonomy: ""
+        };
 
         /**
          * @type {Response}
@@ -85,6 +92,8 @@ export class GetDungeonTagByIDRequest {
 
         } catch (error) {
             console.error("Error getting dungeon tag: ", error);
+
+            throw error;
         }
 
         return new HttpResponse(response, dungeon_tag);
@@ -116,7 +125,12 @@ export class GetDungeonTagByNameRequest {
         const url = `${GetDungeonTagByNameRequest.endpoint}?name=${this.name}&taxonomy=${this.taxonomy}`;
 
         /** @type {import("@models/DungeonTags").DungeonTagParams} */
-        let dungeon_tag = null;
+        let dungeon_tag = {
+            id: 0,
+            name: "",
+            taxonomy: "",
+            name_taxonomy: ""
+        };
 
         /**
          * @type {Response}
@@ -132,6 +146,8 @@ export class GetDungeonTagByNameRequest {
 
         } catch (error) {
             console.error("Error getting dungeon tag: ", error);
+
+            throw error;
         }
 
         return new HttpResponse(response, dungeon_tag);
@@ -179,6 +195,8 @@ export class GetEntityTaggingsRequest {
 
         } catch (error) {
             console.error("Error getting entity taggings: ", error);
+
+            throw error;    
         }
 
         return new HttpResponse(response, entity_taggings);
@@ -234,6 +252,8 @@ export class GetEntitiesWithTagsRequest {
 
         } catch (error) {
             console.error("Error getting entities with tags: ", error);
+
+            throw error;
         }
 
         return new HttpResponse(response, entities);
@@ -279,6 +299,8 @@ export class GetClusterTagsRequest {
 
         } catch (error) {
             console.error("Error getting cluster tags: ", error);
+
+            throw error;
         }
 
         return new HttpResponse(response, cluster_tags);
@@ -324,6 +346,8 @@ export class GetClusterUserTagsRequest {
 
         } catch (error) {
             console.error("Error getting cluster tags: ", error);
+
+            throw error;
         }
 
         return new HttpResponse(response, cluster_tags);
@@ -353,7 +377,15 @@ export class GetTaxonomyTagsRequest {
         const url = `${GetTaxonomyTagsRequest.endpoint}?taxonomy=${this.taxonomy}`;
 
         /** @type {import("@models/DungeonTags").TaxonomyTagsParams} */
-        let taxonomy_tags = null;
+        let taxonomy_tags = {
+            taxonomy: {
+                uuid: "",
+                name: "",
+                cluster_domain: "",
+                is_internal: ""
+            },
+            tags: []
+        };
 
         /**
          * @type {Response}
@@ -369,6 +401,8 @@ export class GetTaxonomyTagsRequest {
 
         } catch (error) {
             console.error("Error getting taxonomy tags: ", error);
+
+            throw error;
         }
 
         return new HttpResponse(response, taxonomy_tags);
@@ -421,6 +455,8 @@ export class PostTagTaxonomyRequest {
 
         } catch (error) {
             console.error("Error posting tag taxonomy: ", error);
+
+            throw error;
         }
 
         created = response?.status === 201;
@@ -472,6 +508,8 @@ export class PostDungeonTagRequest {
 
         } catch (error) {
             console.error("Error posting dungeon tag: ", error);
+
+            throw error;
         }
 
         if (response?.status === 201) {
@@ -528,7 +566,7 @@ export class PostTagEntityRequest {
         /**
          * @type {import("../../base").SingleNumberResponse}
          */
-        let single_number_response = { response: null };
+        let single_number_response = { response: -1 };
 
         try {
             response = await fetch(url, {
@@ -537,6 +575,8 @@ export class PostTagEntityRequest {
 
         } catch (error) {
             console.error("Error tagging entity: ", error);
+
+            throw error;
         }
 
         if (response?.status === 201) {
@@ -588,6 +628,8 @@ export class DeleteUntagEntityRequest {
 
             } catch (error) {
                 console.error("Error untagging entity: ", error);
+
+                throw error;
             }
 
             untagged = response?.status === 204;
@@ -635,6 +677,8 @@ export class DeleteTagTaxonomyRequest {
 
         } catch (error) {
             console.error("Error deleting tag taxonomy: ", error);
+
+            throw error;
         }
 
         deleted = response?.status === 204;
@@ -682,6 +726,8 @@ export class DeleteDungeonTagRequest {
 
         } catch (error) {
             console.error("Error deleting dungeon tag: ", error);
+
+            throw error;
         }
 
         deleted = response?.status === 204;
@@ -730,6 +776,8 @@ export class PatchRenameTagTaxonomyRequest {
             });
         } catch (error) {
             console.error("Error renaming tag taxonomy: ", error);
+
+            throw error;
         }
 
         renamed = response?.status === 204;
@@ -778,6 +826,8 @@ export class PatchRenameDungeonTagRequest {
             });
         } catch (error) {
             console.error("Error renaming dungeon tag: ", error);
+
+            throw error;
         }
 
         renamed = response?.status === 204;
