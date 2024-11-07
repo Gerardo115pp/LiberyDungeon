@@ -2,6 +2,8 @@
 =            KEY MAPS            =
 =============================================*/
 
+    import { DEFAULT_CAPTURE_ACCEPT_TERMINATOR, DEFAULT_CAPTURE_CANCEL_TERMINATOR } from "./hotkeys_consts";
+
     /*----------  Key values for keyboard events  ----------*/
     // See: https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values
 
@@ -116,6 +118,7 @@
         // Multi match keys
         const NUMERIC_METAKEY = "\\d";
         const LETTER_KEY = "\\l";
+        const STRING_KEY = "\\s";
 
         const valid_fragment_identities = new Set([
             ESCAPE_KEY, ENTER_KEY, SPACE_KEY, TAB_KEY, BACKSPACE_KEY, DELETE_KEY, INSERT_KEY,
@@ -130,6 +133,11 @@
             ["a", "A"], ["b", "B"], ["c", "C"], ["d", "D"], ["e", "E"], ["f", "F"], ["g", "G"], ["h", "H"], ["i", "I"], ["j", "J"],
             ["k", "K"], ["l", "L"], ["m", "M"], ["n", "N"], ["o", "O"], ["p", "P"], ["q", "Q"], ["r", "R"], ["s", "S"], ["t", "T"],
             ["u", "U"], ["v", "V"], ["w", "W"], ["x", "X"], ["y", "Y"], ["z", "Z"]
+        ]);
+
+        const capture_metakeys = new Set([
+            LETTER_KEY,
+            STRING_KEY,
         ]);
 
 /*=====  End of KEY MAPS  ======*/
@@ -164,6 +172,119 @@
         return is_letter || is_number || is_special_character || is_other_valid_identity;
     }
 
+    /**
+     * Returns whether a passed identity is an alias.
+     * @param {string} identity
+     * @returns {boolean}
+     */
+    const isAliasIdentity = (identity) => {
+        let is_alias = false;
+
+        switch (identity) {
+            case SPACE_KEY:
+                is_alias = true;
+                break;
+            case ARROW_UP_KEY:
+            case ARROW_DOWN_KEY:
+            case ARROW_LEFT_KEY:
+            case ARROW_RIGHT_KEY:
+                is_alias = true;
+                break;
+        }
+
+        return is_alias;
+    }
+
+    /**
+     * Returns whether a passed key is a metakey. a metakey is a key that matches more then one key
+     * for example \s(which would have to be written as "\\l" in a string) would match any letter key. and \d would match any number key.
+     * @param {string} key
+     * @returns {boolean}
+     */
+    const isMetaKey = (key) => {
+        let is_meta = false;
+
+        switch (key) {
+            case NUMERIC_METAKEY:
+            case LETTER_KEY:
+                is_meta = true;
+                break;
+        }
+
+        return is_meta;
+    }
+
+    /**
+     * Parses a meta key into the keys it represents.
+     * @param {string} key
+     * @returns {string[]}
+     */
+    const parseMetaKey = (key) => {
+        /**
+         * @type {string[]}
+         */
+        let keys = [];
+
+        switch (key) {
+            case NUMERIC_METAKEY:
+                keys = Array.from(number_hotkeys);
+                break;
+            case LETTER_KEY:
+                keys = [
+                    ...Array.from(letter_keys), 
+                    ...Array.from(upper_letter_hotkeys)
+                ];
+                break;
+        }
+
+        return keys;
+    }
+
+    /**
+     * Whether the passed key is a modifier key. The matching is case sensitive. Pass
+     * the key as it appears in a KeyboardEvent.key property.
+     * @param {string} key
+     * @returns {boolean}
+     */
+    export const IsModifier = key => {
+        return modifier_keys.has(key);
+    }
+
+    /**
+     * Whether the passed key is a numeric key.
+     * @param {string} key
+     * @returns {boolean}
+     */
+    export const IsNumeric = key => {
+        return number_hotkeys.has(key);
+    }
+
+    /**
+     * Whether the passed key is a letter key.
+     * @param {string} key
+     * @returns {boolean}
+     */
+    export const IsLetter = key => {
+        return letter_keys.has(key);
+    }
+
+    /**
+     * Whether a given key combo includes a capture metakey.
+     * @param {string} key_combo
+     * @returns {boolean}
+     */
+    export const IncludesCaptureMetakey = key_combo => {
+        let includes_metakey = false;
+
+        for (let capture_metakey of capture_metakeys[Symbol.iterator]()) {
+            if (key_combo.includes(capture_metakey)) {
+                includes_metakey = true;
+            }
+        }
+
+        return includes_metakey;
+    }
+
 /*=====  End of Matchers  ======*/
 
 
@@ -194,102 +315,6 @@ const transformAliasIdentity = (identity) => {
     }
 
     return transformed_identity;
-}
-
-/**
- * Returns whether a passed identity is an alias.
- * @param {string} identity
- * @returns {boolean}
- */
-const isAliasIdentity = (identity) => {
-    let is_alias = false;
-
-    switch (identity) {
-        case SPACE_KEY:
-            is_alias = true;
-            break;
-        case ARROW_UP_KEY:
-        case ARROW_DOWN_KEY:
-        case ARROW_LEFT_KEY:
-        case ARROW_RIGHT_KEY:
-            is_alias = true;
-            break;
-    }
-
-    return is_alias;
-}
-
-/**
- * Returns whether a passed key is a metakey. a metakey is a key that matches more then one key
- * for example \s(which would have to be written as "\\l" in a string) would match any letter key. and \d would match any number key.
- * @param {string} key
- * @returns {boolean}
- */
-const isMetaKey = (key) => {
-    let is_meta = false;
-
-    switch (key) {
-        case NUMERIC_METAKEY:
-        case LETTER_KEY:
-            is_meta = true;
-            break;
-    }
-
-    return is_meta;
-}
-
-/**
- * Parses a meta key into the keys it represents.
- * @param {string} key
- * @returns {string[]}
- */
-const parseMetaKey = (key) => {
-    /**
-     * @type {string[]}
-     */
-    let keys = [];
-
-    switch (key) {
-        case NUMERIC_METAKEY:
-            keys = Array.from(number_hotkeys);
-            break;
-        case LETTER_KEY:
-            keys = [
-                ...Array.from(letter_keys), 
-                ...Array.from(upper_letter_hotkeys)
-            ];
-            break;
-    }
-
-    return keys;
-}
-
-/**
- * Whether the passed key is a modifier key. The matching is case sensitive. Pass
- * the key as it appears in a KeyboardEvent.key property.
- * @param {string} key
- * @returns {boolean}
- */
-export const IsModifier = key => {
-    return modifier_keys.has(key);
-}
-
-/**
- * Whether the passed key is a numeric key.
- * @param {string} key
- * @returns {boolean}
- */
-export const IsNumeric = key => {
-    return number_hotkeys.has(key);
-}
-
-/**
- * Whether the passed key is a letter key.
- * @param {string} key
- * @returns {boolean}
- */
-export const IsLetter = key => {
-    return letter_keys.has(key);
 }
 
 /**
@@ -694,4 +719,188 @@ export class HotkeyFragment {
     get UppercaseExplicit() {
         return this.#uppercase_explicit;
     }
+}
+
+/**
+ * Hotkey matcher for a capture hotkey type. This is a hotkey with up to three fragments. The first fragment is the capture initializer which has to be a specified key(not a metakey). The second fragment is the capture metakey
+ * which can be '\\l' for one letter key. '\\s' for any amount of character producing keys. The third fragment is the capture terminator which also has to be a specified key. The terminator can be omitted only for '\\l'
+ * as it is implied that the capture ends when a letter key is pressed. For '\\s' the terminator can be omitted but a default one is used. The default terminator is defined in the hotkeys_consts.js file.
+ */
+export class HotkeyCaptureMatcher {
+
+    static CAPTURE_STATE_UNACTIVE = Symbol("CAPTURE_STATE_UNACTIVE");
+
+    static CAPTURE_STATE_ACTIVE = Symbol("CAPTURE_STATE_ACTIVE");
+
+    static CAPTURE_STATE_COMPLETE = Symbol("CAPTURE_STATE_COMPLETE");
+
+    static CAPTURE_STATE_CANCELLED = Symbol("CAPTURE_STATE_CANCELLED");
+
+    /**
+     * The capture initializer fragment.
+     * @type {HotkeyFragment}
+     */
+    #initializer_fragment
+
+    /**
+     * The captured string.
+     * @type {string[]}
+     */
+    #captured_string
+
+    /**
+     * The hotkey fragment that ends the capture.
+     * @type {HotkeyFragment}
+     */
+    #accept_terminator_fragment
+
+    /**
+     * The hotkey fragment that cancels the capture.
+     * @type {HotkeyFragment}
+     */
+    #cancel_terminator_fragment
+
+    /**
+     * The max capture length.
+     * @type {number}
+     * @default -1
+     */
+    #max_capture_length
+
+    /**
+     * The capture state.
+     * @type {Symbol}
+     */
+    #capture_state
+
+    /**
+     * @param {string} key_combo
+     */
+    constructor(key_combo) {
+        const combo_fragments = key_combo.split(" ");
+        this.#captured_string = [];
+        this.#capture_state = HotkeyCaptureMatcher.CAPTURE_STATE_UNACTIVE;
+        this.#max_capture_length = -1;
+
+
+        if (combo_fragments.length < 2 || combo_fragments.length > 3) {
+            throw new Error(`Invalid capture hotkey combo: ${key_combo}`);
+        }
+
+        this.#initializer_fragment = new HotkeyFragment(combo_fragments[0]);
+
+        if (combo_fragments[1] !== LETTER_KEY && combo_fragments[1] !== STRING_KEY) {
+            throw new Error(`Invalid capture hotkey combo: '${key_combo}'. Unknown capture metakey: '${combo_fragments[1]}'`);
+        }
+
+        if (combo_fragments[1] === LETTER_KEY) {
+            this.#max_capture_length = 1;
+        }
+
+        if (combo_fragments.length === 3) {
+            this.#accept_terminator_fragment = new HotkeyFragment(combo_fragments[2]);
+        } else {
+            this.#accept_terminator_fragment = new HotkeyFragment(DEFAULT_CAPTURE_ACCEPT_TERMINATOR);
+        }
+
+        this.#cancel_terminator_fragment = new HotkeyFragment(DEFAULT_CAPTURE_CANCEL_TERMINATOR);
+    }
+
+    /**
+     * The fragment that ends the capture with a successful state.
+     * @type {HotkeyFragment}
+     */
+    get AcceptTerminatorFragment() {
+        return this.#accept_terminator_fragment;
+    }
+
+    /**
+     * The captured string.
+     * @type {string}
+     */
+    get CapturedString() {
+        let captured_string = "";
+
+        if (this.#capture_state === HotkeyCaptureMatcher.CAPTURE_STATE_COMPLETE) {
+            captured_string = this.#captured_string.join("");
+        }
+
+        return captured_string;
+    }
+
+    /**
+     * The fragment that ends the capture with a cancelled state.
+     * @type {HotkeyFragment}
+     */
+    get CancelTerminatorFragment() {
+        return this.#cancel_terminator_fragment;
+    }
+
+    /**
+     * Captures the key of a given KeyboardEvent. Panics if the capture is not active. Returns whether the capture has ended.
+     * @param {KeyboardEvent} event
+     */
+    capture(event) {
+        if (this.#capture_state !== HotkeyCaptureMatcher.CAPTURE_STATE_ACTIVE) {
+            throw new Error("In LiberyHotkeys/hotkeys_matchers.js HotkeyCaptureMatcher.capture: Attempted to capture a key stroke when the capture has not been triggered.");
+        }
+
+        let capture_accepted = this.#accept_terminator_fragment.match(event);
+        let capture_cancelled = !capture_accepted && this.#cancel_terminator_fragment.match(event);
+
+        if (!capture_accepted && !capture_cancelled) {
+            this.#captured_string.push(event.key);
+
+            if (this.#max_capture_length > 0 && this.#captured_string.length >= this.#max_capture_length) {
+                capture_accepted = true;
+                capture_cancelled = false;
+            }
+        }
+
+        this.#capture_state = capture_accepted ? HotkeyCaptureMatcher.CAPTURE_STATE_COMPLETE : this.#capture_state;
+
+        this.#capture_state = capture_cancelled ? HotkeyCaptureMatcher.CAPTURE_STATE_CANCELLED : this.#capture_state;
+
+        return capture_accepted || capture_cancelled;
+    }
+
+    /**
+     * The fragment that triggers the capture.
+     * @type {HotkeyFragment}
+     */
+    get InitializerFragment() {
+        return this.#initializer_fragment;
+    }
+
+    /**
+     * Resets the capture state.
+     * @returns {void}
+     */
+    reset() {
+        this.#capture_state = HotkeyCaptureMatcher.CAPTURE_STATE_UNACTIVE;
+        this.#captured_string = [];
+    }
+
+    /**
+     * The state of the capture.
+     * @type {Symbol}
+     */
+    get State() {
+        return this.#capture_state;
+    }
+
+    /**
+     * Matches agains the HotkeyCapture trigger. returns whether the capture has started. if so the state is implicitly activated.
+     * @param {KeyboardEvent} event
+     * @returns {boolean} 
+     */
+    tryTrigger(event) {
+        let triggered = this.#initializer_fragment.match(event);
+
+        if (triggered) {
+            this.#capture_state = HotkeyCaptureMatcher.CAPTURE_STATE_ACTIVE;
+        }
+
+        return triggered;
+    } 
 }

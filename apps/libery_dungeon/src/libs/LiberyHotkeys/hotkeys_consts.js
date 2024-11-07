@@ -77,6 +77,23 @@ export const HOTKEY_NULLISH_HANDLER = (event, hotkey) => console.error("Called a
 /*=====  End of Hotkey Matching Config  ======*/
 
 
+/*=============================================
+=            Hotkey capture            =
+=============================================*/
 
+    /**
+     * The default accept terminator for capture hotkeys that don't specify one.
+     * Typing the accept terminator will mark the captured string as complete.
+     * @type {string}
+     */
+    export const DEFAULT_CAPTURE_ACCEPT_TERMINATOR = "enter";
 
+    /**
+     * The default cancel terminator for capture hotkeys that don't specify one.
+     * Typing the cancel terminator will cancel the capture.
+     * @type {string}
+     */
+    export const DEFAULT_CAPTURE_CANCEL_TERMINATOR = "esc";
+
+/*=====  End of Hotkey capture  ======*/
 
