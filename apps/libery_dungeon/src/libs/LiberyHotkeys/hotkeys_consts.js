@@ -71,8 +71,11 @@ export const HOTKEY_NULLISH_HANDLER = (event, hotkey) => console.error("Called a
     export const MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES = 1200; // Milliseconds
     export const MIN_TIME_BETWEEN_HOTKEY_REPEATS = 20; // Milliseconds
     // Whether to check all hotkeys with the same trigger and pick the longest one(true) or just the first one that matches(false)
-    export const HOTKEY_SPECIFICITY_PRECEDENCE = true; 
     export const DISABLE_KEYPRESS_EVENTS = true;
+    
+    export const HOTKEY_SPECIFICITY_PRECEDENCE = true; 
+    export const HOTKEY_CAPTURE_BASE_SPECIFICITY = 10;
+
 
 /*=====  End of Hotkey Matching Config  ======*/
 
