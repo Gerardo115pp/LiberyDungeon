@@ -6,7 +6,8 @@ import {
     MIN_TIME_BETWEEN_HOTKEY_REPEATS,
     DISABLE_KEYPRESS_EVENTS,
 } from "./hotkeys_consts";
-import { IsNumeric } from "./hotkeys_matchers";
+import { HotkeyCaptureMatcher, IsNumeric } from "./hotkeys_matchers";
+import { HotkeyData } from "./hotkeys";
 
 class HotkeyTriggeredEvent {
     /**
@@ -104,6 +105,18 @@ export class HotkeysController {
     #keyup_hotkey_triggers;
 
     /**
+     * capture hotkey triggers. They can only be triggered in a keydown event.
+     * @type {Map<string, import('./hotkeys').HotkeyData>}
+     */
+    #capture_hotkey_triggers;
+
+    /**
+     * The hotkey currently capturing all keydown events. If any.
+     * @type {import('./hotkeys').HotkeyData | null}
+     */
+    #capturing_hotkey;
+
+    /**
      * The current hotkey context.
      * @type {import('./hotkeys_context').default | null}
      * @default null
@@ -145,6 +158,9 @@ export class HotkeysController {
         this.#locked_on_execution = false;
         this.#paused = false;
 
+        this.#capture_hotkey_triggers = new Map();
+        this.#capturing_hotkey = null;
+
         this.#setup()
     }
 
@@ -183,6 +199,7 @@ export class HotkeysController {
             console.error(`Error executing hotkey ${hotkey.KeyCombo}`, error);
         } finally {
             this.#locked_on_execution = false;
+            this.#capturing_hotkey = null;
         }
     }
 
@@ -341,11 +358,25 @@ export class HotkeysController {
      */
     #handleKeyDown(event) {
         if (this.#shouldIgnoreEvent(event)) return;
-        // console.log("keydown: ", event);
+        console.log("keydown: ", event);
+
+        if (this.#capturing_hotkey != null) {
+            this.#handleCaptureHotkey(event);
+            return;
+        }
+
 
         this.#keyboard_past_keydowns.Add(event);
         
         if (this.ExecutionsForbidden) return;
+        
+        const capture_hotkey = this.#matchCaptureHotkey(event);
+
+        if (capture_hotkey != null && capture_hotkey.CaptureState === HotkeyCaptureMatcher.CAPTURE_STATE_ACTIVE) {
+            console.log("Capture hotkey is active");
+            this.#capturing_hotkey = capture_hotkey;
+            return;
+        }
 
         let matching_hotkey = this.#matchHotkey(event);
 
@@ -386,6 +417,22 @@ export class HotkeysController {
     }
 
     /**
+     * Handles a KeyboardEvent emitted while a capture hotkey is active.
+     * @param {KeyboardEvent} event
+     */
+    #handleCaptureHotkey(event) {
+        if (this.#capturing_hotkey == null) return;
+
+        const capture_ended = this.#capturing_hotkey.capture(event);
+
+        if (capture_ended) {
+            console.log("Capture ended");
+            this.#activateHotkey(this.#capturing_hotkey, event);
+        }
+    }
+    
+
+    /**
      * Matches a Keyboard event with registered hotkeys. The matching behavior is based on HOTKEY_LENGTH_PRECEDENCE value. If true
      * it checks all candidates, meaning all hotkeys that have the same trigger as the event's key, and picks the longest hotkey. if
      * false, it checks all candidates until it finds one that matches and immediately returns it without checking the rest.
@@ -419,6 +466,35 @@ export class HotkeysController {
         }
 
         return matching_hotkey;
+    }
+
+    /**
+     * Matches a capture hotkey against an event.
+     * @param {KeyboardEvent} event
+     * @returns {import('./hotkeys').HotkeyData | null}
+     */
+    #matchCaptureHotkey(event) {
+        let candidate_key = event.key.toLowerCase();
+
+        let capture_hotkey = this.#capture_hotkey_triggers.get(candidate_key) ?? null;
+
+        if (capture_hotkey == null) return null;
+
+        console.log("Matching candidate capture hotkey: ", capture_hotkey);
+
+        if (capture_hotkey.HotkeyType !== HotkeyData.HOTKEY_TYPE__CAPTURE || capture_hotkey.CaptureState !== HotkeyCaptureMatcher.CAPTURE_STATE_UNACTIVE) {
+            throw new Error(`Hotkey ${capture_hotkey.KeyCombo} is not a capture hotkey or is not in the unactive state`);
+        }
+
+        const triggered = capture_hotkey.triggerCapture(event);
+
+        if (!triggered) {
+            capture_hotkey = null;
+        }
+
+        console.log("Capture hotkey: ", capture_hotkey);
+
+        return capture_hotkey;
     }
 
     /**
@@ -493,6 +569,12 @@ export class HotkeysController {
                 continue;
             }
 
+            if (hotkey.HotkeyType === HotkeyData.HOTKEY_TYPE__CAPTURE) {
+                this.#capture_hotkey_triggers.set(hotkey.Face.toLowerCase(), hotkey);
+
+                continue;
+            }
+
             let all_triggers = hotkey.Mode === "keydown" ? this.#keydown_hotkey_triggers : this.#keyup_hotkey_triggers;
 
             const hotkey_triggers = hotkey.Triggers;
@@ -529,7 +611,6 @@ export class HotkeysController {
     resume() {
         this.#paused = false;
     }
-
 
     /**
      * Registers a triggered hotkey 'event'(not as in dom event but as something that happened) on the appropriate history stack.
@@ -583,8 +664,13 @@ export class HotkeysController {
      * Whether a given KeyboardEvent was originated from a Input like element or not. In which case, the
      * event should not trigger any hotkeys.
      * @param {KeyboardEvent} event
+     * @returns {boolean}
      */
     #shouldIgnoreEvent(event) {
+        if (this.#capturing_hotkey != null && event.type === "keyup") {
+            return true;
+        }
+
         let origin_element = event.target;
 
         if (origin_element == null) return false;

@@ -841,6 +841,8 @@ export class HotkeyCaptureMatcher {
      * @param {KeyboardEvent} event
      */
     capture(event) {
+        console.log(`Capturing: ${event.key}`);
+
         if (this.#capture_state !== HotkeyCaptureMatcher.CAPTURE_STATE_ACTIVE) {
             throw new Error("In LiberyHotkeys/hotkeys_matchers.js HotkeyCaptureMatcher.capture: Attempted to capture a key stroke when the capture has not been triggered.");
         }
@@ -896,8 +898,10 @@ export class HotkeyCaptureMatcher {
      */
     tryTrigger(event) {
         let triggered = this.#initializer_fragment.match(event);
+        console.log(`Capture trigger: ${triggered}`);
 
         if (triggered) {
+            console.log("Capture triggered");
             this.#capture_state = HotkeyCaptureMatcher.CAPTURE_STATE_ACTIVE;
         }
 

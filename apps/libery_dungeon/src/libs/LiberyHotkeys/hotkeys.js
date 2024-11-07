@@ -1,9 +1,11 @@
 import { 
     HotkeyFragment, 
     IsNumeric,
-    IsModifier
+    IsModifier,
+    IncludesCaptureMetakey,
+    HotkeyCaptureMatcher
 } from "./hotkeys_matchers";
-import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP, DEFAULT_KEYBOARD_EVENT_MODE, DEFAULT_AWAIT_EXECUTION, DEFAULT_CONSIDER_TIME_IN_SEQUENCE, DEFAULT_CAN_REPEAT } from "./hotkeys_consts";
+import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP, DEFAULT_KEYBOARD_EVENT_MODE, DEFAULT_AWAIT_EXECUTION, DEFAULT_CONSIDER_TIME_IN_SEQUENCE, DEFAULT_CAN_REPEAT, HOTKEY_CAPTURE_BASE_SPECIFICITY } from "./hotkeys_consts";
 import { 
     MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES,
     HOTKEY_SPECIFICITY_PRECEDENCE
@@ -16,6 +18,7 @@ import {
  * @property {boolean} [await_execution] - Whether the execution of a callback should end before another hotkey can be triggered. Default is true
  * @property {boolean} [consider_time_in_sequence] - Whether the hotkey sequence should expire if they are to far apart in time. Default is false
  * @property {boolean} [can_repeat] - Whether the hotkey should be triggered if the trigger is repeating(holding down the key). Default is false
+ * @property {boolean} [capture_hotkey] - Whether the hotkeys should operate in capture mode. If the hotkey has a member '\\s' is automatically enabled. if it has a member '\\l' is has to be manually enabled. it has neither, it and capture_hotkey is true, it panics.
 */
 
 /**
@@ -29,12 +32,12 @@ import {
 * The default hotkey register options
  */
 export const default_hotkey_register_options = {
-    bind: false,
     description: `<${HOTKEYS_GENERAL_GROUP}>No information available`,
     mode: DEFAULT_KEYBOARD_EVENT_MODE,
     await_execution: DEFAULT_AWAIT_EXECUTION,
     consider_time_in_sequence: DEFAULT_CONSIDER_TIME_IN_SEQUENCE,
     can_repeat: DEFAULT_CAN_REPEAT,
+    capture_hotkey: false
 }
 
 /**
@@ -53,6 +56,12 @@ class HotkeyMatch {
     #motion_matches;
 
     /**
+     * A string resulting from the match of a capture hotkey. 
+     * @type {string}
+     */
+    #capture_match;
+
+    /**
      * Whether the match is has been determined as successful.
      * @type {boolean}
      */
@@ -61,6 +70,7 @@ class HotkeyMatch {
     constructor() {
         this.#motion_matches = [];
         this.#is_successful = false;
+        this.#capture_match = "";
     }
 
     /**
@@ -80,6 +90,16 @@ class HotkeyMatch {
         this.#motion_matches.push(number);
 
         return true;
+    }
+
+    /**
+     * Adds a string as a capture match. Returns true if the string was correctly parsed and added.
+     * @param {string} capture_string
+     */
+    addCaptureMatch(capture_string) {
+        this.#panicIfSuccessful();
+
+        this.#capture_match = capture_string;
     }
 
     /**
@@ -105,6 +125,14 @@ class HotkeyMatch {
         let reversed_string = numeric_string.split("").reverse().join("");
 
         return this.addMotionMatch(reversed_string);
+    }
+
+    /**
+     * Returns the capture match string.
+     * @returns {string}
+     */
+    get CaptureMatch() {
+        return this.#capture_match;
     }
 
     /**
@@ -164,6 +192,20 @@ class HotkeyMatch {
 
 export class HotkeyData {
     /**
+    * NOTE: We are adding the hotkey capture behavior in the same hotkey data class because after careful consideration, it seems that the capture behavior is the only additional behavior that will be needed as of the current 
+    * design of the hotkey system. If more behaviors are needed, we will have to refactor this class to be more modular. as it stands this class has too many responsibilities, but the refactor that would make it more modular
+    * would be too much work for to have only one additional behavior. If we end up being wrong about 'am not gonna require more behaviors', AVOID EXTENDING THIS CLASS EVEN FURTHER.
+     * 
+     * One possible refactor(possibly the simplest) would be removing most of the behavior of this class and putting the 'combo' behavior in a separate class as well as the 'capture' behavior and whatever other behavior we
+     * ended up needing. The adding one property for each hotkey type that references an instance of the respective class or null, effectively making this into more of a 'hotkey hub'. That would still require changing all of the
+     * HotkeyCallback signatures, which would completely break user contract. That why we really need a good reason to do this refactor.
+    */
+
+    static HOTKEY_TYPE__COMBO = Symbol("HOTKEY_TYPE_COMBO");
+
+    static HOTKEY_TYPE__CAPTURE = Symbol("HOTKEY_TYPE__CAPTURE");
+
+    /**
      * @type {string} the key's name e.g: 'a', 'esc', '-', etc
      */
     #key_combo
@@ -203,6 +245,14 @@ export class HotkeyData {
     #is_valid;
 
     /**
+     * The hotkey type. This changes how the hotkey matching works. Combo hotkeys have to match in order the fragments they have against the event history. Capture hotkeys match the first fragment and then capture every
+     * key pressed until the the terminator key is pressed.
+     * @type {Symbol}
+     * @default {HotkeyData.HOTKEY_TYPE__COMBO}
+     */
+    #hotkey_type;
+
+    /**
      * Whether the hotkey can be prepended by a Vim motion. This is, it has a numeric metakey as the first fragment.
      * A hotkey with vim motion can have some sort of numeric metadata associated with it, which can be useful for some commands like 'move nth times to the right' for example.
      * @type {boolean}
@@ -214,6 +264,12 @@ export class HotkeyData {
      * @type {HotkeyMatch | null}
      */
     #match_metadata;
+
+    /**
+     * A hotkey capture matcher for hotkeys of type capture.
+     * @type {import('./hotkeys_matchers').HotkeyCaptureMatcher | null}
+     */
+    #capture_matcher;
 
     /**
      * Whether the hotkey callback is currently running.
@@ -237,12 +293,15 @@ export class HotkeyData {
         /** @type {string} the key's name e.g: 'a', 'esc', '-', etc */
         this.#key_combo = name
         /** @type {function} the callback to be called when the key is pressed */   
-        this.#callback = callback
+        this.#callback = callback;
+
+        this.#hotkey_type = HotkeyData.HOTKEY_TYPE__COMBO;
+
+        this.#capture_matcher = null;
 
         this.#the_options = {
             ...default_hotkey_register_options,
             ...options,
-            await_execution: options?.await_execution ?? default_hotkey_register_options.await_execution,
         };
 
         this.#description = this.#the_options.description;
@@ -268,6 +327,67 @@ export class HotkeyData {
             this.#calculateSpecificity()
         }
     }
+
+    /* ----------------------------- Capture methods ---------------------------- */
+
+        /**
+         * Captures a KeyboardEvent. This is only valid for hotkeys of type capture. Also the capture matcher state has to be active.
+         * Returns whether the capture has been completed.
+         * @param {KeyboardEvent} event
+         * @returns {boolean}
+         */
+        capture(event) {
+            console.log(`Capturing event in HotkeyData: ${this.#key_combo}`, event);
+
+            if (this.#hotkey_type !== HotkeyData.HOTKEY_TYPE__CAPTURE || this.#capture_matcher == null) {
+                throw new Error("Hotkey is not a capture hotkey.");   
+            }
+
+            if (this.#capture_matcher.State !== HotkeyCaptureMatcher.CAPTURE_STATE_ACTIVE) {
+                throw new Error("Capture matcher state is not active.");
+            }
+
+            let capture_ended = this.#capture_matcher.capture(event);
+
+            if (capture_ended && this.#match_metadata != null) {
+                this.#match_metadata.addCaptureMatch(this.#capture_matcher.CapturedString);
+            }
+
+            return capture_ended;
+        }
+
+        /**
+         * The capture state. This is only valid for hotkeys of type capture.
+         * @type {Symbol}
+         */
+        get CaptureState() {
+            if (this.#hotkey_type !== HotkeyData.HOTKEY_TYPE__CAPTURE || this.#capture_matcher == null) {
+                throw new Error("Hotkey is not a capture hotkey.");
+            }
+
+            return this.#capture_matcher.State;
+        }
+
+        /**
+         * Matches a KeyboardEvent against the capture initializer. And returns whether the capture matcher has started capturing.
+         * @param {KeyboardEvent} event
+         * @returns {boolean}
+         */
+        triggerCapture(event) {
+            if (this.#hotkey_type !== HotkeyData.HOTKEY_TYPE__CAPTURE || this.#capture_matcher == null) {
+                throw new Error("Hotkey is not a capture hotkey.");
+            }
+
+            let triggered = this.#capture_matcher.tryTrigger(event);
+
+            if (triggered) {
+                this.#match_metadata = this.#createMatchMetadata();
+            }
+
+            return triggered;
+        }
+
+    /* -------------------------------------------------------------------------- */
 
     /**
      * Whether a caller to `run` should await the callback's execution
@@ -311,6 +431,10 @@ export class HotkeyData {
      */
     #calculateSpecificity() {
         this.#key_combo_specificity = 0;
+
+        if (this.#hotkey_type === HotkeyData.HOTKEY_TYPE__CAPTURE) {
+            this.#key_combo_specificity += HOTKEY_CAPTURE_BASE_SPECIFICITY;
+        }
 
         for (let fragment of this.#key_combo_fragments) {
             let fragment_specificity = fragment.NumericMetakey ? 5 : 1;
@@ -397,6 +521,14 @@ export class HotkeyData {
      */
     get HasMatch() {
         return this.#match_metadata != null;
+    }
+
+    /**
+     * The type of hotkey. 
+     * @type {Symbol}
+     */
+    get HotkeyType() {
+        return this.#hotkey_type;
     }
 
     /**
@@ -626,6 +758,10 @@ export class HotkeyData {
         this.#hotkey_execution_mutex = false;
 
         this.#destroyMatchMetadata();
+
+        if (this.#hotkey_type === HotkeyData.HOTKEY_TYPE__CAPTURE) {
+            this.#capture_matcher?.reset();
+        }
     }
 
     /**
@@ -643,10 +779,19 @@ export class HotkeyData {
      * @returns {void}
      */
     #splitFragments() {
-        let fragments = this.#key_combo.split(" ")
-
         try {
-            this.#key_combo_fragments = fragments.map((fragment) => new HotkeyFragment(fragment)); // If the fragment parsing finds invalid members, this will panic.
+            if (this.#hotkey_type === HotkeyData.HOTKEY_TYPE__COMBO) {
+                let fragments = this.#key_combo.split(" ")
+    
+                this.#key_combo_fragments = fragments.map((fragment) => new HotkeyFragment(fragment)); // If the fragment parsing finds invalid members, this will panic.
+    
+            } else if (this.#hotkey_type === HotkeyData.HOTKEY_TYPE__CAPTURE) {
+                this.#capture_matcher = new HotkeyCaptureMatcher(this.#key_combo);
+    
+                this.#key_combo_fragments = [
+                    this.#capture_matcher.InitializerFragment,
+                ];
+            }
         } catch (error) {
             console.error(`Error parsing hotkey: ${this.#key_combo}. Error: ${error}`);
             this.#is_valid = false;
@@ -685,7 +830,10 @@ export class HotkeyData {
             throw new Error(`Invalid hotkey mode: ${this.#mode}`);
         }
 
-
+        if (IncludesCaptureMetakey(this.#key_combo)) {
+            this.#hotkey_type = HotkeyData.HOTKEY_TYPE__CAPTURE;
+            this.#the_options.capture_hotkey = true;
+        }
     }
 
     /**
