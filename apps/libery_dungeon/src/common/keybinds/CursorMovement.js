@@ -17,7 +17,7 @@ const GRID_MOVEMENT_ITEM_CLASS_SELECTOR = `.${GRID_MOVEMENT_ITEM_CLASS}`;
 /**
 * A callback function that is called when the cursor position index is updated. If the callback returns true(and only true, not any other truthy value), the cursor position will be rolled back to the previous position.
 * @callback CursorPositionCallback
- * @param {import("@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils").GridWrappedValue}
+ * @param {import("@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils").GridWrappedValue} cursor_position
  * @returns {boolean | void}
 */
 
@@ -311,6 +311,29 @@ export class CursorMovementWASD {
         }
 
         this.#defineWASDMovementHotkeys(hotkeys_context);
+    }
+
+    /**
+     * Updates the cursor position and notifies the callback.
+     * @param {number} new_cursor_position - The new cursor position.
+     * @returns {void}
+     */
+    updateCursorPosition(new_cursor_position) {
+        if (typeof new_cursor_position !== "number") {
+            console.error("Invalid cursor position update.");
+            return;
+        }
+
+        let cursor_set = this.#grid_navigation_wrapper.Grid.setCursor(new_cursor_position);
+
+        if (!cursor_set) {
+            console.error("The cursor position is out of bounds or there was a problem setting it.");
+            return;
+        }
+
+        let wrapped_cursor_position = this.#grid_navigation_wrapper.Grid.CursorWrapped;
+
+        this.#cursor_position_callback(wrapped_cursor_position);
     }
     
     /*=============================================
