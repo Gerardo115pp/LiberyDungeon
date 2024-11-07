@@ -119,6 +119,7 @@
         const NUMERIC_METAKEY = "\\d";
         const LETTER_KEY = "\\l";
         const STRING_KEY = "\\s";
+        const CHARACTER_KEY = "\\c";
 
         const valid_fragment_identities = new Set([
             ESCAPE_KEY, ENTER_KEY, SPACE_KEY, TAB_KEY, BACKSPACE_KEY, DELETE_KEY, INSERT_KEY,
@@ -136,8 +137,8 @@
         ]);
 
         const capture_metakeys = new Set([
-            LETTER_KEY,
             STRING_KEY,
+            CHARACTER_KEY,
         ]);
 
 /*=====  End of KEY MAPS  ======*/
@@ -723,7 +724,7 @@ export class HotkeyFragment {
 
 /**
  * Hotkey matcher for a capture hotkey type. This is a hotkey with up to three fragments. The first fragment is the capture initializer which has to be a specified key(not a metakey). The second fragment is the capture metakey
- * which can be '\\l' for one letter key. '\\s' for any amount of character producing keys. The third fragment is the capture terminator which also has to be a specified key. The terminator can be omitted only for '\\l'
+ * which can be '\\c' for one letter key. '\\s' for any amount of character producing keys. The third fragment is the capture terminator which also has to be a specified key. The terminator can be omitted only for '\\c'
  * as it is implied that the capture ends when a letter key is pressed. For '\\s' the terminator can be omitted but a default one is used. The default terminator is defined in the hotkeys_consts.js file.
  */
 export class HotkeyCaptureMatcher {
@@ -789,11 +790,11 @@ export class HotkeyCaptureMatcher {
 
         this.#initializer_fragment = new HotkeyFragment(combo_fragments[0]);
 
-        if (combo_fragments[1] !== LETTER_KEY && combo_fragments[1] !== STRING_KEY) {
+        if (combo_fragments[1] !== CHARACTER_KEY && combo_fragments[1] !== STRING_KEY) {
             throw new Error(`Invalid capture hotkey combo: '${key_combo}'. Unknown capture metakey: '${combo_fragments[1]}'`);
         }
 
-        if (combo_fragments[1] === LETTER_KEY) {
+        if (combo_fragments[1] === CHARACTER_KEY) {
             this.#max_capture_length = 1;
         }
 
