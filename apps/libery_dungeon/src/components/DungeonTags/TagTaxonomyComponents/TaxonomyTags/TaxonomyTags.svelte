@@ -12,6 +12,7 @@
     import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import { last_keyboard_focused_tag } from "./taxonomy_tags_store";
+    import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
 
     /*=============================================
     =            Properties            =
@@ -181,6 +182,12 @@
                     const hotkeys_context = preparePublicHotkeyActions(component_hotkey_context);
 
 
+                    hotkeys_context.register(["f \\s"], handleFocuseSearchMatch, {
+                        description: `${common_action_groups.NAVIGATION}select a hotkey matching the typed search query`,
+                        await_execution: false,
+                    });
+
+
                     setGridNavigationWrapper(hotkeys_context);
 
                     wrapShowHotkeysTable(hotkeys_context);
@@ -343,6 +350,27 @@
                 if (!has_hotkey_control) return;
 
                 the_tag_group_component.focusTagCreator();
+            }
+
+            /**
+             * Handles the focus search match hotkey.
+             * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+             */
+            const handleFocuseSearchMatch = (event, hotkey) => {
+                if (!hotkey.HasMatch) return;
+
+                const search_term = hotkey.MatchMetadata?.CaptureMatch;
+
+                if (search_term === undefined) return;
+
+                for (let tag_index = 0; tag_index < taxonomy_tags.Tags.length; tag_index++) {
+                    const tag = taxonomy_tags.Tags[tag_index];
+
+                    if (tag.Name.toLowerCase().includes(search_term.toLowerCase())) {
+                        the_grid_navigation_wrapper?.updateCursorPosition(tag_index);
+                        break;
+                    }
+                }
             }
 
             /**
