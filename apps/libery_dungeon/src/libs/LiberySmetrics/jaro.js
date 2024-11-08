@@ -6,57 +6,58 @@
  * @returns {number}
  */
 export function jaro(s1, s2) {
-	if (s1 == s2) return 1.0;
-
-	let s1_length = s1.length;
+    let s1_length = s1.length;
 	let s2_length = s2.length;
 
-	const max_matching_character_distance = Math.floor(Math.max(s1_length, s2_length) / 2) - 1;
+    if (s1_length == 0 && s2_length == 0) return 1; // If both strings are zero-length, they are completely equal.
 
-	let match_count = 0;
+    if (s1_length == 0 || s2_length == 0) return 0; // If one of the strings is zero-length, they are completely unequal.
 
-	const matches_s1 = Array(s1.length).fill(0);
-	const matches_s2 = Array(s1.length).fill(0);
+    let match_distance = Math.max(0, Math.floor(Math.max(s1_length, s2_length) / 2) - 1);
 
-	for (let h = 0; h < s1_length; h++) {
+    const matches_s1 = new Array(s1_length).fill(false);
+    const matches_s2 = new Array(s2_length).fill(false);
 
-		for (let k = Math.max(0, h - max_matching_character_distance); k < Math.min(s2_length, h + max_matching_character_distance + 1); k++) {
-            
-            if (s1[h] == s2[k] && matches_s2[k] == 0) {
-                matches_s1[h] = 1;
-                matches_s2[k] = 1;
-                match_count++;
+    let matching_characters = 0;
+
+    // Step 1: Matching characters - Find all characters in the first string that match a character in the second string.
+    for (let h = 0; h < s1_length; h++) {
+        let start = Math.max(0, h - match_distance);
+        let end = Math.min(s2_length - 1, h + match_distance);
+
+        for (let k = start; k <= end; k++) {
+            if (matches_s2[k]) continue;
+
+            if (s1[h] == s2[k]) {
+                matches_s1[h] = true;
+                matches_s2[k] = true;
+                matching_characters++;
                 break;
             }
         }
-
-	}
-
-	if (match_count == 0) return 0.0;
-
-	let transpositions = 0;
-
-	let s2_iterator = 0;
-
-	// Count number of occurrences where two characters match but there is a third matched character in between the indices
-	for (let h = 0; h < s1_length; h++) {
-		if (matches_s1[h]) {
-
-			// Find the next matched character
-			// in second string
-			while (matches_s2[s2_iterator] == 0) {
-				s2_iterator++;
-            }
-
-			if (s1[h] != s2[s2_iterator++]) {
-				transpositions++;
-            }
-		}
     }
 
-	transpositions = transpositions / 2;
+    if (matching_characters == 0) return 0; // If there are no matching characters, the strings are completely unequal.
 
-	return (1/3) * ((match_count / s1_length) + (match_count / s2_length) + ((match_count - transpositions) / (match_count)));
+    // Step 2: Transpositions - count the number of unaligned matches.
+    let unaligned_matches = 0;
+    let matches_s2_iterator = 0;
+
+    for (let h = 0; h < s1_length; h++) {
+        if (!matches_s1[h]) continue;
+
+        while (!matches_s2[matches_s2_iterator]) matches_s2_iterator++;
+
+        if (s1[h] != s2[matches_s2_iterator]) {
+            unaligned_matches++;
+        }
+
+        matches_s2_iterator++;
+    }
+
+    const transpositions = Math.floor(unaligned_matches / 2);
+
+    return (1 / 3) * ((matching_characters / s1_length) + (matching_characters / s2_length) + ((matching_characters - transpositions) / matching_characters));
 }
 
 /**
