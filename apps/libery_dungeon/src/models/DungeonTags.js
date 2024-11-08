@@ -120,6 +120,23 @@ export class DungeonTag {
     get NameTaxonomy() {
         return this.#name_taxonomy;
     }
+
+    /**
+     * Handles type coercion for DungeonTag instances.
+     * @param {string} hint
+     * @returns {string | number}
+     * @throws {TypeError}
+     */
+    [Symbol.toPrimitive](hint) {
+        switch (hint) {
+            case "string":
+                return this.#name;
+            case "number":
+                return this.#id;
+            default:
+                throw new TypeError(`Cannot convert DungeonTag to ${hint}`);
+        }
+    }
 }
 
 /**
