@@ -8,6 +8,7 @@
     import generateTaxonomyTagsHotkeysContext, { taxonomy_tags_actions } from "./taxonomy_tags_hotkeys";
     import { browser } from "$app/environment";
     import { CursorMovementWASD } from "@common/keybinds/CursorMovement";
+    import { SearchResultsWrapper } from "@app/common/keybinds/CommonActionWrappers";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
@@ -30,7 +31,7 @@
             /**
              * The taxonomy tags component hotkey context.
              * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
-            */
+             */
             export let component_hotkey_context = generateTaxonomyTagsHotkeysContext();
 
             /*=============================================
@@ -115,6 +116,14 @@
          */
         let the_grid_navigation_wrapper = null;
 
+        /**
+         * The dungeon tag search results hotkey wrapper.
+         * @type {SearchResultsWrapper<import('@models/DungeonTags').DungeonTag> | null}
+         */
+        let the_dungeon_tag_search_results_wrapper = null;
+        $: if (the_dungeon_tag_search_results_wrapper != null && (taxonomy_tags?.Tags.length ?? 0) > 0) {
+            the_dungeon_tag_search_results_wrapper.updateSearchPool(taxonomy_tags.Tags);
+        }
         
         /*----------  User feedback  ----------*/
         
@@ -181,17 +190,11 @@
 
                     const hotkeys_context = preparePublicHotkeyActions(component_hotkey_context);
 
-
-                    hotkeys_context.register(["f \\s"], handleFocuseSearchMatch, {
-                        description: `${common_action_groups.NAVIGATION}select a hotkey matching the typed search query`,
-                        await_execution: false,
-                    });
-
-
                     setGridNavigationWrapper(hotkeys_context);
 
-                    wrapShowHotkeysTable(hotkeys_context);
+                    setSearchResultsWrapper(hotkeys_context);
 
+                    wrapShowHotkeysTable(hotkeys_context);
 
                     global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
                     
@@ -354,20 +357,14 @@
 
             /**
              * Handles the focus search match hotkey.
-             * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+             * @type {import("@common/keybinds/CommonActionWrappers").SearchResultsUpdateCallback<import('@models/DungeonTags').DungeonTag>}
              */
-            const handleFocuseSearchMatch = (event, hotkey) => {
-                if (!hotkey.HasMatch) return;
+            const handleFocusSearchMatch = (search_result) => {
+                let tag_id = search_result.Id;
 
-                const search_term = hotkey.MatchMetadata?.CaptureMatch;
-
-                if (search_term === undefined) return;
-
-                for (let tag_index = 0; tag_index < taxonomy_tags.Tags.length; tag_index++) {
-                    const tag = taxonomy_tags.Tags[tag_index];
-
-                    if (tag.Name.toLowerCase().includes(search_term.toLowerCase())) {
-                        the_grid_navigation_wrapper?.updateCursorPosition(tag_index);
+                for (let h = 0; h < taxonomy_tags.Tags.length; h++) { 
+                    if (taxonomy_tags.Tags[h].Id === tag_id) {
+                        the_grid_navigation_wrapper?.updateCursorPosition(h);
                         break;
                     }
                 }
@@ -468,6 +465,17 @@
 
                 // @ts-ignore
                 globalThis.the_grid_navigation_wrapper = the_grid_navigation_wrapper; 
+            }
+
+            /**
+             * Sets the search results wrapper required data.
+             * @param {import("@libs/LiberyHotkeys/hotkeys_context").default} hotkeys_context
+             */
+            const setSearchResultsWrapper = (hotkeys_context) => {
+                the_dungeon_tag_search_results_wrapper = new SearchResultsWrapper(hotkeys_context, taxonomy_tags.Tags, handleFocusSearchMatch, {
+                    search_hotkey: ["f"],
+                    ui_search_result_reference: ui_tag_reference,
+                });
             }
 
         /*=====  End of Keybinds  ======*/
