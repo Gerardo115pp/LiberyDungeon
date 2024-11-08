@@ -23,5 +23,11 @@
         ...global_hotkey_action_triggers.NAVIGATION_RIGHT,
     ]
 
+    export const global_search_hotkeys = {
+        SEARCH: ["/"],
+        SEARCH_NEXT: ["n"],
+        SEARCH_PREVIOUS: ["N"],
+    }
+
 /*=====  End of GLOBAL  ======*/
 
