@@ -225,7 +225,7 @@
 
         filtered_category_selected_unsubscriber = current_category.subscribe(resetCategoryFiltersOnCategoryChange);
 
-        if (!layout_properties.IS_MOBILE) {
+        if (!$layout_properties.IS_MOBILE) {
             defineDesktopKeybinds();
         }
 
@@ -692,7 +692,7 @@
          * @param {number} [media_index]
          */
         const enterMediaViewer = (media_index) => {
-            let href = `/${layout_properties.IS_MOBILE ? 'media-viewer-mobile' : 'media-viewer'}/${$current_category.uuid}`;
+            let href = `/${$layout_properties.IS_MOBILE ? 'media-viewer-mobile' : 'media-viewer'}/${$current_category.uuid}`;
 
             if (media_index != null) {
                 href += `/${media_index}`;
@@ -1284,7 +1284,7 @@
                 <LiberyHeadline 
                     headline_tag="Cell"
                     headline_color="var(--grey-1)"
-                    forced_font_size="calc(var(--font-size-{layout_properties.IS_MOBILE ? '4' : 'h3'}) * 1.6)"
+                    forced_font_size="calc(var(--font-size-{$layout_properties.IS_MOBILE ? '4' : 'h3'}) * 1.6)"
                     extra_props="style='awesome!'"
                     headline_text={$category_search_term === "" ? $current_category.name : `Search: ${$category_search_term}`}
                     force_bottom_lines
