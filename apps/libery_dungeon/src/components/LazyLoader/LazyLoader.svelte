@@ -6,20 +6,43 @@
     =            Properties            =
     =============================================*/
     
-        export let id;
-        export let className;
+        /**
+         * The element id for the lazy wrapper
+         * @type {string | null}
+         */
+        export let id=null;
+
+        /**
+         * The class name(s) to be added to the lazy wrapper
+         * @type {string}
+         */
+        export let className = "";
+
+        /**
+         * The image url to be loaded
+         * @type {string}
+         */
         export let image_url;
 
         /**
          * @type {HTMLImageElement}
          */
         let image_element;
+
+        /**
+         * The image src to be loaded
+         * @type {string}
+         */
         let image_src = "";
 
-        /** @type {boolean} whether or not the image src has been loaded */
+        /**
+         * @type  {boolean} whether or not the image src has been loaded
+         */
         let is_loaded = false;
 
-        /** @type {boolean} whether or not the image src has entered the viewport */
+        /**
+         * @type  {boolean} whether or not the image src has entered the viewport
+         */
         let entered_viewport = false;
 
         $: if(image_src !== image_url && entered_viewport && browser) {
@@ -34,7 +57,10 @@
     =            Methods            =
     =============================================*/
     
-        const handleViewportEnter = e => {
+        /**
+         * @type {import("@components/viewport_actions/useViewportActions").ViewportEventHandler}
+         */
+        const handleViewportEnter = event => {
             if (entered_viewport && is_loaded) return;
 
             entered_viewport = true;
