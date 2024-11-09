@@ -208,6 +208,14 @@ export class SearchResultsWrapper {
     }
 
     /**
+     * a list of search results.
+     * @type {T[]}
+     */
+    get SearchResults() {
+        return this.#search_results;
+    }
+
+    /**
      * Searches a given array for a given search string. utilizes the Jaro-Winkler to get a similarity score 
      * and sorts the results by that similarity omits results that are below the minimum similarity threshold.
      * @param {T[]} search_array
