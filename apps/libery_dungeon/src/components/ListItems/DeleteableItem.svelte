@@ -13,10 +13,24 @@
         export let item_color = "var(--grey-5)";
 
         /**
+         * The item highlight color.
+         * @type {string}
+         * @default "var(--accent-6)"
+         */
+        export let item_highlight_color = "var(--accent-6)";
+       
+
+        /**
          * Whether the element is currently protected from deletion.
          * @type {boolean}
          */
         export let is_protected = false;
+
+        /**
+         * Whether the element is highlighted.
+         * @type {boolean}
+         */
+        export let is_highlighted = false;
 
         /**
          * If passed, it will be present on any event triggered by this component on the event.detail.item_id property.
@@ -98,7 +112,9 @@
     id={id_selector}
     class:item-selectable={item_id !== null}
     class:squared-style={squared_style}
+    class:item-is-highlighted={is_highlighted}
     style:--item-color={item_color}
+    style:--item-highlight-color={item_highlight_color}
     on:click={handleSelectClick}
 >
     <div class="deletable-item-content">
@@ -144,6 +160,10 @@
             background: hsl(from var(--item-color) h s calc(l * 1.2));
             transition: background .2s ease-out;
         }
+    }
+
+    li.deletable-item.item-is-highlighted {
+        background: var(--item-highlight-color);
     }
 
     button.delete-item {
