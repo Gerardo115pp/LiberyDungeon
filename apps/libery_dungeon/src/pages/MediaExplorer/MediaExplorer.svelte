@@ -1103,7 +1103,7 @@
                     media_changes_manager.stageMediaMove(media, $current_category.asInnerCategory());
                 });
 
-                await media_changes_manager.commitChanges(source_category_uuid, $current_cluster.UUID);
+                await media_changes_manager.commitChanges(source_category_uuid);
                 await $categories_tree.updateCategory(source_category_uuid);
                 media_changes_manager.clearAllChanges();
             }
