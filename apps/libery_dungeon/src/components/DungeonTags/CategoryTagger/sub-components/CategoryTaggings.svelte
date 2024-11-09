@@ -355,10 +355,7 @@
         /**
          * Returns the focused Taggings list pair of selectors on a 2 sized array with index 0 being the grid-parent selector and the index 1 being the grid-member selector.
          * This is used for the parameters of the CursorMovementWASD either on creation or afterwards for it's changeGridContainer method.
-         * @returns {GridSelectors | null}
-         * @typedef {Object} GridSelectors
-         * @property {string} grid_parent_selector
-         * @property {string} grid_member_selector
+         * @returns {import('@common/interfaces/common_actions').GridSelectors | null}
          */
         const getFocusedTaggingsGridSelectors = () => {
             if (tag_taxonomy_map == null) return null;
