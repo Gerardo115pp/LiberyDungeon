@@ -14,17 +14,28 @@
         /** @type {CategoriesTree} the categories tree for the gallery explorer */
         let local_categories_tree;
 
-        /** @type {import('svelte/store').Writable<CategoryLeaf>} the local current category */
-        let local_current_category = writable(null);
+        /** @type {import('svelte/store').Writable<CategoryLeaf> | undefined} the local current category */
+        let local_current_category;
 
         const dispatch = createEventDispatcher();
     
     /*=====  End of Properties  ======*/
 
     onMount(async () => {
-        local_current_category.set($current_category);
+        if ($current_category === null) return;
 
-        local_categories_tree = await getCategoryTree($current_category.uuid, local_current_category);
+        if (local_current_category === undefined) {
+            local_current_category = writable($current_category);
+        } else {
+            local_current_category.set($current_category);
+        }
+
+
+        let new_categories_tree = await getCategoryTree($current_category.uuid, local_current_category);
+
+        if (new_categories_tree === null) return;
+
+        local_categories_tree = new_categories_tree;
     });    
 
     
@@ -33,9 +44,15 @@
     =============================================*/
     
         const handleGoToParent = () => {
+            if (local_categories_tree === undefined) return;
+
             local_categories_tree.navigateToParent();
         }
 
+        /**
+         * Handles the category-selected event emitted by the CategoryFolder component.
+         * @param {CustomEvent<{ category: import('@models/Categories').InnerCategory | null, inner_category: import('@models/Categories').InnerCategory | null }>} e
+         */
         const handleCategorySelected = e => {
             let leaf_uuid = e.detail?.category?.uuid;
 
@@ -43,32 +60,27 @@
 
             local_categories_tree.navigateToLeaf(leaf_uuid);
         }
-
-        const handleContentSelected = e => {
-            dispatch("open-remote-gallery", {
-                content: $local_current_category?.content ?? [],
-                fullpath: $local_current_category?.FullPath ?? "",
-                category_id: $local_current_category?.uuid ?? "",
-                name: $local_current_category?.name ?? ""
-            });
-        }
-    
+   
     /*=====  End of Methods  ======*/
    
     
 </script>
 
 <aside id="medias-gallery-explorer">
-    {#if $local_current_category !== null}
+    {#if $local_current_category != null}
         <div id="mge-headline-wrapper" on:click={handleGoToParent}>
-            <LiberyHeadline headline_text="{$local_current_category.name}"  headline_tag="h3" forced_font_size="var(--font-size-4)"/>
+            <LiberyHeadline 
+                headline_text="{$local_current_category.name}"  
+                headline_tag="h3" 
+                forced_font_size="var(--font-size-4)"
+            />
         </div>
         <ul id="mge-category-content" class="libery-scroll">
             {#each $local_current_category.InnerCategories as category}
-                <CategoryFolder category_leaf={category} change_category_on_select={false} on:category-selected={handleCategorySelected} />
+                <CategoryFolder category_leaf={category} on:category-selected={handleCategorySelected} />
             {/each}
             {#if $local_current_category.hasContent()}
-                <MediasIcon category_id={$local_current_category.uuid} images_count={$local_current_category.content.length} enter_media_viewer={false} on:content-selected={handleContentSelected}/>
+                <MediasIcon images_count={$local_current_category.content.length} />
             {/if}
         </ul>    
     {/if}
