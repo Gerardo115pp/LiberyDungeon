@@ -25,7 +25,7 @@
         /**
          * @type {string} - the color of the headline
          */
-        export let headline_color;
+        export let headline_color = "var(--main)";
         export let vspacing = "var(--vspacing-1)";
         export let forced_font_size;
 
