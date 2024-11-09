@@ -16,8 +16,6 @@
 
         /** @type {import('svelte/store').Writable<CategoryLeaf> | undefined} the local current category */
         let local_current_category;
-
-        const dispatch = createEventDispatcher();
     
     /*=====  End of Properties  ======*/
 

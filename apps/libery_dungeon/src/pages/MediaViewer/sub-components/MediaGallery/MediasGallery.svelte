@@ -54,7 +54,7 @@
 
         /** 
          * when a remote gallery is opened, this object holds the state of the current gallery, when no remote gallery is opened, this object is null 
-         * @type {MediaGalleryStateHolder}
+         * @type {MediaGalleryStateHolder | null}
          * @default null
         */
         let gallery_state = null;
@@ -106,9 +106,17 @@
             upper_index_loaded = slice_upper_limit;
         }
 
+        /**
+         * Handles image-selected event from the MediaGalleryThumbnail component.
+         * @param {CustomEvent<ImageSelectedDetail>} e
+         * @typedef {Object} ImageSelectedDetail
+         * @property {Media} media
+         */
         const handleThumbnailClick = e => {
-            /**@type{Media}*/
-            let media = e.detail;
+            /** 
+             * @type {Media}
+             */
+            let media = e.detail.media;
 
             gallery_dispatcher("thumbnail-click", media);
         }
@@ -140,6 +148,9 @@
             show_micro_categories_explorer = true;
         }
 
+        /**
+         * @param {CustomEvent<{content: Media[], fullpath: string}>} e
+         */
         const handleOpenRemoteGallery = e => {
             saveCurrentGalleryState();
 
@@ -149,6 +160,10 @@
             show_micro_categories_explorer = false;
         }
 
+        /**
+         * @param {Media[]} available_medias
+         * @param {string} new_path
+         */
         const resetComponentState = (available_medias, new_path) => {
             all_available_medias = available_medias;
             category_path = new_path;
@@ -244,7 +259,7 @@
             {/each}
         </ul>
     {:else}
-        <MediasGalleryExplorer on:open-remote-gallery={handleOpenRemoteGallery} />
+        <MediasGalleryExplorer />
     {/if}
 </div>
 
