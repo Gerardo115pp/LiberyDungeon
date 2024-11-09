@@ -23,7 +23,7 @@
         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
     ]);
 
-    const character_producing_hotkeys = new Set([
+    const non_letter_character_producing_keys = new Set([
         "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/", ":", ";", "<", "=", ">", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~"
     ]);
 
@@ -166,7 +166,7 @@
 
         let is_number = number_hotkeys.has(key);
 
-        let is_special_character = character_producing_hotkeys.has(key);
+        let is_special_character = non_letter_character_producing_keys.has(key);
 
         let is_other_valid_identity = valid_fragment_identities.has(key);
 
@@ -213,6 +213,27 @@
         }
 
         return is_meta;
+    }
+
+    /**
+     * Whether the passed key produces a character.
+     * @param {string} key
+     * @returns {boolean}
+     */
+    const IsCharacterProducingKey = (key) => {
+        let is_character_producing = IsLetter(key);
+
+        if (!is_character_producing && number_hotkeys.has(key)) {
+            is_character_producing = true;
+        }
+
+        if (!is_character_producing && non_letter_character_producing_keys.has(key)) {
+            is_character_producing = true;
+        }
+
+        is_character_producing = is_character_producing || key === " ";
+
+        return is_character_producing;        
     }
 
     /**
@@ -266,7 +287,7 @@
      * @returns {boolean}
      */
     export const IsLetter = key => {
-        return letter_keys.has(key);
+        return letter_keys.has(key) || upper_letter_hotkeys.has(key);
     }
 
     /**
@@ -830,6 +851,14 @@ export class HotkeyCaptureMatcher {
     }
 
     /**
+     * Incomplete capture string. Call this when the capture is still to get the current string.
+     * @type {string}
+     */
+    get IncompleteCapturedString() {
+        return this.#captured_string.join("");
+    }
+
+    /**
      * The fragment that ends the capture with a cancelled state.
      * @type {HotkeyFragment}
      */
@@ -842,8 +871,6 @@ export class HotkeyCaptureMatcher {
      * @param {KeyboardEvent} event
      */
     capture(event) {
-        console.log(`Capturing: ${event.key}`);
-
         if (this.#capture_state !== HotkeyCaptureMatcher.CAPTURE_STATE_ACTIVE) {
             throw new Error("In LiberyHotkeys/hotkeys_matchers.js HotkeyCaptureMatcher.capture: Attempted to capture a key stroke when the capture has not been triggered.");
         }
@@ -852,7 +879,12 @@ export class HotkeyCaptureMatcher {
         let capture_cancelled = !capture_accepted && this.#cancel_terminator_fragment.match(event);
 
         if (!capture_accepted && !capture_cancelled) {
-            this.#captured_string.push(event.key);
+
+            if (event.key === "Backspace") {
+                this.#captured_string.pop();
+            } else if (IsCharacterProducingKey(event.key)) {
+                this.#captured_string.push(event.key);
+            }
 
             if (this.#max_capture_length > 0 && this.#captured_string.length >= this.#max_capture_length) {
                 capture_accepted = true;

@@ -5,7 +5,7 @@ import {
     IncludesCaptureMetakey,
     HotkeyCaptureMatcher
 } from "./hotkeys_matchers";
-import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP, DEFAULT_KEYBOARD_EVENT_MODE, DEFAULT_AWAIT_EXECUTION, DEFAULT_CONSIDER_TIME_IN_SEQUENCE, DEFAULT_CAN_REPEAT, HOTKEY_CAPTURE_BASE_SPECIFICITY } from "./hotkeys_consts";
+import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP, DEFAULT_KEYBOARD_EVENT_MODE, DEFAULT_AWAIT_EXECUTION, DEFAULT_CONSIDER_TIME_IN_SEQUENCE, DEFAULT_CAN_REPEAT, HOTKEY_CAPTURE_BASE_SPECIFICITY, HOTKEY_NULLISH_CAPTURE_HANDLER } from "./hotkeys_consts";
 import { 
     MAX_TIME_BETWEEN_SEQUENCE_KEYSTROKES,
     HOTKEY_SPECIFICITY_PRECEDENCE
@@ -19,6 +19,7 @@ import {
  * @property {boolean} [consider_time_in_sequence] - Whether the hotkey sequence should expire if they are to far apart in time. Default is false
  * @property {boolean} [can_repeat] - Whether the hotkey should be triggered if the trigger is repeating(holding down the key). Default is false
  * @property {boolean} [capture_hotkey] - Whether the hotkeys should operate in capture mode. If the hotkey has a member '\\s' is automatically enabled. if it has a member '\\l' is has to be manually enabled. it has neither, it and capture_hotkey is true, it panics.
+ * @property {HotkeyCaptureCallback} [capture_hotkey_callback] - The callback to be called when the hotkey captures a key press.
 */
 
 /**
@@ -37,7 +38,7 @@ export const default_hotkey_register_options = {
     await_execution: DEFAULT_AWAIT_EXECUTION,
     consider_time_in_sequence: DEFAULT_CONSIDER_TIME_IN_SEQUENCE,
     can_repeat: DEFAULT_CAN_REPEAT,
-    capture_hotkey: false
+    capture_hotkey: false,
 }
 
 /**
@@ -45,6 +46,14 @@ export const default_hotkey_register_options = {
 * @callback HotkeyCallback
  * @param {KeyboardEvent} event
  * @param {HotkeyData} hotkey
+ * @returns {void}
+*/
+
+/**
+ * A hotkey callback for hotkey capture events.
+* @callback HotkeyCaptureCallback
+ * @param {KeyboardEvent} event
+ * @param {string} captured_string
  * @returns {void}
 */
 
@@ -310,9 +319,12 @@ export class HotkeyData {
         if (this.#the_options.await_execution === undefined) {
             this.#the_options.await_execution = default_hotkey_register_options.await_execution;
         }
+
+        if (this.#the_options.capture_hotkey_callback == null) {
+            this.#the_options.capture_hotkey_callback = HOTKEY_NULLISH_CAPTURE_HANDLER;
+        }
         
         this.#verifyOptions();
-
         
         this.#is_valid = true;
         this.#has_vim_motion = false;
@@ -351,6 +363,12 @@ export class HotkeyData {
 
             if (capture_ended && this.#match_metadata != null) {
                 this.#match_metadata.addCaptureMatch(this.#capture_matcher.CapturedString);
+            }
+
+            if (this.#the_options.capture_hotkey_callback != null) {
+                const incomplete_capture = this.#capture_matcher.IncompleteCapturedString;
+
+                this.#the_options.capture_hotkey_callback(event, incomplete_capture);
             }
 
             return capture_ended;

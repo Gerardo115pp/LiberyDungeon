@@ -5,6 +5,13 @@
  */
 export const HOTKEY_NULLISH_HANDLER = (event, hotkey) => console.error("Called a nullish hotkey handler");
 
+/**
+ * A null handler for hotkey capture events.
+* @type {import('./hotkeys').HotkeyCaptureCallback}
+*/
+export const HOTKEY_NULLISH_CAPTURE_HANDLER = (event, captured_string) => {};
+
+
 
 /*=============================================
 =            Defaults            =

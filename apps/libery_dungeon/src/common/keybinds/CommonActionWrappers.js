@@ -1,4 +1,4 @@
-import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+import { HOTKEY_NULLISH_CAPTURE_HANDLER, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
 import { toggleHotkeysSheet } from "@stores/layout";
 import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
 import { global_hotkey_action_triggers, global_search_hotkeys } from "@app/config/hotkeys_config";
@@ -61,6 +61,7 @@ export class SearchResultsWrapper {
      * @property {string[] | string} search_next_hotkey The hotkey to go to the next search result.
      * @property {string[] | string} search_previous_hotkey The hotkey to go to the previous search result.
      * @property {number} minimum_similarity The minimum similarity score for a search result to be considered a match. Default is 0.5.
+     * @property {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback} [search_hotkey_handler] A callback that receives a search query as is been typed.
      */
     #search_options;
 
@@ -87,6 +88,7 @@ export class SearchResultsWrapper {
      * @property {string[] | string} [search_next_hotkey] The hotkey to go to the next search result.
      * @property {string[] | string} [search_previous_hotkey] The hotkey to go to the previous search result
      * @property {number} [minimum_similarity] The minimum similarity score for a search result to be considered a match. Default is 0.5.
+     * @property {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback} [search_hotkey_handler] A callback that receives a search query as is been typed.
      */
     constructor(hotkeys_context, search_pool, search_results_update_callback, search_options) {
         if (search_options === undefined) {
@@ -111,34 +113,35 @@ export class SearchResultsWrapper {
     }
 
     /**
-     * wraps the search functionality around a given hotkeys context.
-     * @param {HotkeysContext} hotkeys_context
+     * Creates a match array out of a given search string and a given search array.
+     * @param {T[]} search_array
+     * @param {string} search_string
+     * @returns {MatchScore[]}
+     * @typedef {Object} MatchScore
+     * @property {number} similarity The similarity score. 0 is not a match at all, 1 is a perfect match.
+     * @property {T} item The item that was matched.
+     * @property {string} item_string The string representation of the item.
+     */
+    #createMatchArray(search_array, search_string) {
+        /** @type {MatchScore[]} */
+        let match_array = search_array.map((item) => {
+            const item_string = this.#item_to_string(item);
+            const similarity = jaroWinkler(item_string, search_string);
+            return { similarity, item, item_string };
+        });
+
+        match_array = match_array.filter((match) => match.similarity >= this.#search_options.minimum_similarity);
+
+        return match_array;
+    }
+
+    /**
+     * Drops the current search results, current search index.
      * @returns {void}
      */
-    wrapSearchHotkeys(hotkeys_context) {
-        if (this.#search_options.search_hotkey != undefined || this.#search_options.search_hotkey !== "") {
-            let search_hotkey_combo = Array.isArray(this.#search_options.search_hotkey) ? this.#search_options.search_hotkey[0] : this.#search_options.search_hotkey;
-
-            search_hotkey_combo = `${search_hotkey_combo} \\s`; // creates a string capture hotkey.
-
-            console.log("search_hotkey_combo: ", search_hotkey_combo);
-
-            hotkeys_context.register(search_hotkey_combo, this.#searchHotkeyHandler.bind(this), {
-                description: `${common_action_groups.NAVIGATION}Search for ${this.#search_options.ui_search_result_reference.EntityName}.`
-            });
-        }
-
-        if (this.#search_options.search_next_hotkey != undefined || this.#search_options.search_next_hotkey !== "") {
-            hotkeys_context.register(this.#search_options.search_next_hotkey, this.#searchNextHotkeyHandler.bind(this), {
-                description: `${common_action_groups.NAVIGATION}Go to the next ${this.#search_options.ui_search_result_reference.EntityName}.`
-            });
-        }
-
-        if (this.#search_options.search_previous_hotkey != undefined || this.#search_options.search_previous_hotkey !== "") {
-            hotkeys_context.register(this.#search_options.search_previous_hotkey, this.#searchPreviousHotkeyHandler.bind(this), {
-                description: `${common_action_groups.NAVIGATION}Go to the previous ${this.#search_options.ui_search_result_reference.EntityName}.`
-            });
-        }
+    dropSearchState() {
+        this.#search_results = [];
+        this.#current_search_index = 0;
     }
 
     /**
@@ -193,29 +196,6 @@ export class SearchResultsWrapper {
         this.#current_search_index = wrapped_value.value;
 
         this.#search_results_update_callback(this.#search_results[this.#current_search_index]);
-    }
-
-    /**
-     * Creates a match array out of a given search string and a given search array.
-     * @param {T[]} search_array
-     * @param {string} search_string
-     * @returns {MatchScore[]}
-     * @typedef {Object} MatchScore
-     * @property {number} similarity The similarity score. 0 is not a match at all, 1 is a perfect match.
-     * @property {T} item The item that was matched.
-     * @property {string} item_string The string representation of the item.
-     */
-    #createMatchArray(search_array, search_string) {
-        /** @type {MatchScore[]} */
-        let match_array = search_array.map((item) => {
-            const item_string = this.#item_to_string(item);
-            const similarity = jaroWinkler(item_string, search_string);
-            return { similarity, item, item_string };
-        });
-
-        match_array = match_array.filter((match) => match.similarity >= this.#search_options.minimum_similarity);
-
-        return match_array;
     }
      
     /**
@@ -304,6 +284,38 @@ export class SearchResultsWrapper {
     updateSearchPool(search_pool) {
         this.#search_pool = search_pool;
     }
+
+    /**
+     * wraps the search functionality around a given hotkeys context.
+     * @param {HotkeysContext} hotkeys_context
+     * @returns {void}
+     */
+    wrapSearchHotkeys(hotkeys_context) {
+        if (this.#search_options.search_hotkey != undefined || this.#search_options.search_hotkey !== "") {
+            let search_hotkey_combo = Array.isArray(this.#search_options.search_hotkey) ? this.#search_options.search_hotkey[0] : this.#search_options.search_hotkey;
+
+            search_hotkey_combo = `${search_hotkey_combo} \\s`; // creates a string capture hotkey.
+
+            console.log("search_hotkey_combo: ", search_hotkey_combo);
+
+            hotkeys_context.register(search_hotkey_combo, this.#searchHotkeyHandler.bind(this), {
+                description: `${common_action_groups.NAVIGATION}Search for ${this.#search_options.ui_search_result_reference.EntityName}.`,
+                capture_hotkey_callback: this.#search_options.search_hotkey_handler,
+            });
+        }
+
+        if (this.#search_options.search_next_hotkey != undefined || this.#search_options.search_next_hotkey !== "") {
+            hotkeys_context.register(this.#search_options.search_next_hotkey, this.#searchNextHotkeyHandler.bind(this), {
+                description: `${common_action_groups.NAVIGATION}Go to the next ${this.#search_options.ui_search_result_reference.EntityName}.`
+            });
+        }
+
+        if (this.#search_options.search_previous_hotkey != undefined || this.#search_options.search_previous_hotkey !== "") {
+            hotkeys_context.register(this.#search_options.search_previous_hotkey, this.#searchPreviousHotkeyHandler.bind(this), {
+                description: `${common_action_groups.NAVIGATION}Go to the previous ${this.#search_options.ui_search_result_reference.EntityName}.`
+            });
+        }
+    }
 }
 
 /**
@@ -315,5 +327,6 @@ const DEFAULT_SEARCH_OPTIONS = {
     search_hotkey: global_search_hotkeys.SEARCH,
     search_next_hotkey: global_search_hotkeys.SEARCH_NEXT,
     search_previous_hotkey: global_search_hotkeys.SEARCH_PREVIOUS,
-    minimum_similarity: 0.5
+    minimum_similarity: 0.5,
+    search_hotkey_handler: HOTKEY_NULLISH_CAPTURE_HANDLER
 }
