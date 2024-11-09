@@ -26,6 +26,7 @@
         import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { browser } from "$app/environment";
         import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+    import { current_cluster } from "@stores/clusters";
     
     /*=====  End of Imports  ======*/
     
@@ -74,7 +75,7 @@
     onMount(async () => {
         console.log("MediaMovementsTool mounted");
 
-        root_short_categories = await getShortCategoryTree(null, $current_category.ClusterUUID);
+        root_short_categories = await getShortCategoryTree($current_cluster.RootCategoryID, $current_category.ClusterUUID);
 
         if ($media_viewer_hotkeys_context_name !== undefined) {
             registerExtraHotkeys();
@@ -92,8 +93,10 @@
     onDestroy(() => {
         if (!browser) return;
 
-        global_hotkeys_manager.dropContext(quick_move_context_name);
-        global_hotkeys_manager.dropContext(search_results_context_name);
+        if (global_hotkeys_manager !== null) {
+            global_hotkeys_manager.dropContext(quick_move_context_name);
+            global_hotkeys_manager.dropContext(search_results_context_name);
+        }
     });
     
     /*=============================================
@@ -110,6 +113,8 @@
              * Registers the component extra hotkeys, if any of them are already registered then they are ignored and a warning is logged
              */
             const registerExtraHotkeys = () => {
+                if (global_hotkeys_manager === null) return;
+
                 console.log(`MediaMovementsTool hotkeys context name: ${$media_viewer_hotkeys_context_name}`);
                 if ($media_viewer_hotkeys_context_name === undefined) return; // means that probably another sub-component is been used
 
@@ -126,6 +131,8 @@
             =============================================*/
             
                 const defineQuickMoveHotkeys = () => {
+                    if (global_hotkeys_manager == null) return;
+
                     const quick_move_tool_context = new HotkeysContext();
 
                     quick_move_tool_context.register(["a", "d"], handleQuickMoveToolNavigation, {
@@ -164,6 +171,8 @@
             =============================================*/
             
                 const defineSearchResultsHotkeys = () => {
+                    if (global_hotkeys_manager == null) return;
+
                     const search_results_context = new HotkeysContext();
 
                     if (global_hotkeys_manager.hasContext(search_results_context_name)) return;
@@ -236,6 +245,8 @@
 
 
             const exitSearchResultsHotkeysContext = () => {
+                if (global_hotkeys_manager == null) return;
+
                 let max_iterations = 100;
                 let iterations = 0;
 
@@ -254,21 +265,26 @@
         let focusSearchBarComponent = () => {}
 
 
-        const handleCategoryItemSelected = async e => {
-            e.stopPropagation();
+        /**
+         * @param {CustomEvent<CategorySelectedDetails>} event
+         * @typedef {Object} CategorySelectedDetails
+         * @property {import('@models/Categories').InnerCategory} category
+         * @property {boolean} shift_key
+         */
+        const handleCategoryItemSelected = async event => {
+            event.stopPropagation();
 
-            /** @type {InnerCategory} */
-            let moved_to_category = e.detail.category;
+            let moved_to_category = event.detail.category;
 
-            if (moved_to_category === undefined) {
-                console.error(`Event detail: ${JSON.stringify(e.detail)}`);
+            if (moved_to_category == null) {
+                console.error(`Event detail: ${JSON.stringify(event.detail)}`);
                 return;
             }
 
             let current_media = $current_category.content[$active_media_index];
 
             if ($active_media_change === media_change_types.MOVED) {
-                $media_changes_manager.unstageMediaMove(current_media);
+                $media_changes_manager.unstageMediaMove(current_media.uuid);
                 active_media_change.set(media_change_types.NORMAL);
                 
                 await tick();
@@ -289,15 +305,14 @@
             is_component_visible = false;   
 
             // Return to the media viewer hotkeys context
-            if (global_hotkeys_manager.ContextName === search_results_context_name) {
+            if (global_hotkeys_manager?.ContextName === search_results_context_name) {
                 exitSearchResultsHotkeysContext();
             }
             
             // check if the category should be set to auto move
-            if (e.detail.shift_key) {
+            if (event.detail.shift_key) {
                 handleAutomoveCategorySelected(moved_to_category);
             }
-
         }
 
         /**
@@ -350,6 +365,9 @@
             search_results = [inner_category];
         }
 
+        /**
+         * @param {number} steps
+         */
         const moveSearchResultFocus = steps => {
             focused_search_result_index = linearCycleNavigationWrap(focused_search_result_index, search_results.length - 1, steps).value;
 
@@ -372,7 +390,7 @@
             let current_media = $current_category.content[$active_media_index];
 
             if ($active_media_change === media_change_types.MOVED) {
-                $media_changes_manager.unstageMediaMove(current_media);
+                $media_changes_manager.unstageMediaMove(current_media.uuid);
                 active_media_change.set(media_change_types.NORMAL);
                 
                 await tick();
@@ -398,6 +416,8 @@
          * @param {boolean} state the new state of the quick move tool
         */
         const setQuickMoveToolState = state => {
+            if (global_hotkeys_manager == null) return;
+
             if (state === show_quick_move_tool) return;
 
             if (state) {
@@ -416,18 +436,28 @@
             show_quick_move_tool = state;
         }
 
+        /**
+         * @param {number} index
+         */
         const selectSearchResult = index => {
             if (index < 0 || index >= search_results.length) return;
 
-            handleCategoryItemSelected({
+            /**
+             * @type {CustomEvent<CategorySelectedDetails>}
+             */
+            const category_item_selected_event = new CustomEvent("category-item-selected", {
                 detail: {
                     category: search_results[index],
                     shift_key: false
-                },
-                stopPropagation: () => {} // we pretend to be a mouse event 
+                }
             });
+
+            handleCategoryItemSelected(category_item_selected_event);
         }
 
+        /**
+         * @param {boolean | null} force_state
+         */
         const toggleAutoMoveState = (force_state=null) => {
             let new_state = force_state === null ? !$auto_move_on : force_state;
 
