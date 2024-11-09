@@ -294,7 +294,7 @@ export class GetCategorySearchResultsRequest {
     toJson = attributesToJson.bind(this);
 
     /**
-     * @returns {Promise<HttpResponse<import("@models/Categories").CategoryParams> | null>}
+     * @returns {Promise<HttpResponse<import("@models/Categories").CategoryParams[] | null>>}
      */
     do = async () => {
 

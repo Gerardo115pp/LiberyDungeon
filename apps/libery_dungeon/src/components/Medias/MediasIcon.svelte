@@ -1,6 +1,4 @@
 <script>
-    import { layout_properties } from "@stores/layout";
-    
     /*=============================================
     =            Properties            =
     =============================================*/

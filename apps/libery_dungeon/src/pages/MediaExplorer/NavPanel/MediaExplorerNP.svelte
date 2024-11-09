@@ -34,25 +34,19 @@
 
         /**
          * Handle the search results from the category search bar
-         * @param {CustomEvent} event
+         * @param {CustomEvent<{ results: import('@models/Categories').Category[], search_query: string }>} event
          * @returns {void}
          */
         const handleCategoriesResults = (event) => {
-            /**
-             * @type {import('@models/Categories').Category[]}
-             */
-            const search_results = event.detail?.results;
-            /**
-             * @type {string}
-             */
-            const search_query = event.detail?.search_query;
+            const search_results = event.detail.results;
+            const search_query = event.detail.search_query;
+
+            console.log("Search results: ", search_results);
 
             if (search_results == null || search_results.length === 0) return;
 
-            const inner_categories = search_results.map(category => new InnerCategory(category));
-                
             category_search_focused.set(false);
-            category_search_results.set(inner_categories);
+            category_search_results.set(search_results);
             category_search_term.set(search_query);
         }
     /*=====  End of Methods  ======*/

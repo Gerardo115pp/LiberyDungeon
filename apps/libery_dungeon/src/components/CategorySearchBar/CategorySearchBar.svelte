@@ -62,9 +62,7 @@
                 return;
             }
 
-            const response = await searchCategories(search_query, $current_category.ClusterUUID, $current_cluster.DownloadCategoryID);
-
-            const search_results = response.data;
+            const search_results = await searchCategories(search_query, $current_category.ClusterUUID, $current_cluster.DownloadCategoryID);
 
             search_event_dispatcher("search-results", {
                 results: search_results,

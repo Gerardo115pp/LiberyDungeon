@@ -4,7 +4,7 @@ import {
 } from "@libs/DungeonsCommunication/services_requests/categories_requests";
 import { PutResyncClusterBranchRequest } from "@libs/DungeonsCommunication/services_requests/categories_cluster_requests";
 import { Media } from "./Medias";
-import { InnerCategory } from "./Categories";
+import { Category, InnerCategory } from "./Categories";
 
 /*=============================================
 =            Media Changes            =
@@ -26,7 +26,7 @@ import { InnerCategory } from "./Categories";
         /**
          * A map of the categories uuids that medias will be moved to, the key is the category uuid and the value is an array of medias that will be moved to that category, this
          * is the information that is sent to the server, not the #moved_medias map.
-         * @type {Object<string, []Media>} 
+         * @type {Object<string, Media[]>} 
          * 
          */
         #moved_medias_data
@@ -111,7 +111,8 @@ import { InnerCategory } from "./Categories";
         /**
          * Commits the changes made to the medias
          * @param {string} category_id the uuid of the category
-         * @returns {Promise<HttpResponse>} the response of the request
+         * @param {string} cluster_id the uuid of the cluster
+         * @returns {Promise<import('@libs/DungeonsCommunication/base').HttpResponse<Object> | null>} the response of the request
          * @see CommitCategoryTreeChangesRequest
          * @see HttpResponse
         */
@@ -491,12 +492,24 @@ import { InnerCategory } from "./Categories";
  * Searches for categories based on the query
  * @param {string} query the query to search for
  * @param {string} cluster_id the cluster id to search in
- * @param {string} ignore an optional parameter to ignore a category by its uuid
- * @returns {Promise<HttpResponse>} the response of the request
+ * @param {string} [ignore] an optional parameter to ignore a category by its uuid
+ * @returns {Promise<import('@models/Categories').Category[]>} the response of the request
  */
 export const searchCategories = async (query, cluster_id, ignore="") => {
-    const request = new GetCategorySearchResultsRequest(query, cluster_id);
-    return await request.do();
+    /**
+     * @type {import('@models/Categories').Category[]}
+     */
+    let category_search_results = [];
+
+    const request = new GetCategorySearchResultsRequest(query, cluster_id, ignore);
+
+    let response = await request.do();
+
+    if (response.Ok && response.data !== null) {
+        category_search_results = response.data.map(category_params => new Category(category_params))
+    }
+
+    return category_search_results;
 }
 
 /*=====  End of Category Search  ======*/

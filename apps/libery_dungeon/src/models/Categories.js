@@ -20,6 +20,16 @@ import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedb
 
 const ROOT_CATEGORY_PROXY_UUID = "main";
 
+/**
+ * Category data structure params.
+* @typedef {Object} CategoryParams
+ * @property {string} uuid the 40 character identifier of the category
+ * @property {string} name the name of the category
+ * @property {string} fullpath the full path of the category in the virtual file system
+ * @property {string} parent the 40 character identifier of the parent category
+ * @property {string} cluster the 40 character identifier of the cluster
+*/
+
 export class Category {
     /** @type {string} the 40 character identifier of the category */
     #uuid;
@@ -31,6 +41,10 @@ export class Category {
     #fullpath;
     /** @type {string} the id of the cluster the category belongs to */
     #cluster;
+
+    /**
+     * @param {CategoryParams} param0 
+     */
     constructor({uuid, name, parent, fullpath, cluster}) {
         this.#uuid = uuid;
         this.#name = name;
@@ -64,7 +78,7 @@ export class Category {
      * @returns {InnerCategory}
      */
     toInnerCategory = () => {
-        return new InnerCategory({name: this.#name, uuid: this.#uuid});
+        return new InnerCategory({name: this.#name, uuid: this.#uuid, fullpath: this.#fullpath});
     }
 
     /**
@@ -280,7 +294,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
      * @property {string} type the type of the media resource
      * @property {string} last_seen DEPRECATED. Do not use.
      * @property {string} main_category the 40 character identifier of the main category
-     * @property {int} downloaded_from an identifier of the source of the media resource
+     * @property {number} downloaded_from an identifier of the source of the media resource
     */
 
     /**
@@ -876,9 +890,9 @@ export const moveCategory = async (moved_category, new_parent_category) => {
      * @date 10/20/2023 - 11:06:22 PM
      * @param {string} category_id
      * @param {import('svelte/store').Writable<CategoryLeaf>} category_store
-     * @param {string} cluster_id the uuid of the cluster. If category_id is set and not equal to the root category proxy id, cluster_id can be omitted. otherwise, cluster_id must be set.
+     * @param {string} [cluster_id] the uuid of the cluster. If category_id is set and not equal to the root category proxy id, cluster_id can be omitted. otherwise, cluster_id must be set.
      * @export
-     * @returns {Promise<CategoriesTree>}
+     * @returns {Promise<CategoriesTree | null>}
      */
     export const getCategoryTree = async (category_id, category_store, cluster_id) => {
         if ((category_id == null || category_id === ROOT_CATEGORY_PROXY_UUID) && cluster_id === undefined) {
@@ -886,7 +900,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
         }
 
         /**
-         * @type {CategoriesTree}
+         * @type {CategoriesTree | null}
          */
         let tree = null;
 

@@ -315,16 +315,16 @@
 
         /**
          * Handles the event of a new search result being received
-         * @param {CustomEvent<SearchResultsEventDetail>} e
-         * @typedef {Object} SearchResultsEventDetail
-         * @property {import('@models/Categories').InnerCategoryParams[]} results
+         * @param {CustomEvent<{ results: import('@models/Categories').Category[], search_query: string }>} event
          */
-        const handleSearchResults = e => {
-            let new_search_results = e.detail.results;
+        const handleSearchResults = event => {
+            if (global_hotkeys_manager == null) return;
+
+            let new_search_results = event.detail.results;
 
             if (new_search_results.length === 0) return;
 
-            search_results = new_search_results.map(result => new InnerCategory(result));
+            search_results = new_search_results.map(result => result.toInnerCategory());
 
             focused_search_result_index = 0;
 

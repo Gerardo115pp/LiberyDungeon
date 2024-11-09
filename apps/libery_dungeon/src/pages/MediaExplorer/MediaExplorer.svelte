@@ -73,8 +73,14 @@
 
         let global_hotkeys_manager = getHotkeysManager();
 
+        /**
+         * @type {string}
+         */
         export let category_id;
     
+        /**
+         * @type {import('svelte/store').Unsubscriber}
+         */
         let empty_categories_subscriber;
 
         const hotkey_context_name = "categories_explorer";
@@ -104,6 +110,9 @@
              */
             let media_display_as_gallery = false;
 
+            /**
+             * @type {boolean}
+             */
             export let was_media_display_as_gallery;
             $: console.log("MediaExplorer.was_media_display_as_gallery:", was_media_display_as_gallery);
 
@@ -161,8 +170,14 @@
              */
             const category_name_filter_interval = 800;
 
-            let category_name_filter_interval_id;
+            /**
+             * @type {number | null}
+             */
+            let category_name_filter_interval_id = null;
 
+            /**
+             * @type {import('svelte/store').Unsubscriber}
+             */
             let filtered_category_selected_unsubscriber;
     
     
@@ -175,11 +190,34 @@
 
         if ($categories_tree === null) {
             if (category_id === undefined) {
-                category_id = $page.url.pathname.match(/[a-zA-Z\d]{40}/g) ?? $current_cluster.RootCategoryID;
+
+                const url_match_array = $page.url.pathname.match(/[a-zA-Z\d]{40}/g);
+
+                category_id = $current_cluster.RootCategoryID;
+
+                if (url_match_array != null) {
+                    category_id = url_match_array[0];
+                }
+
                 console.debug("Attempted to infer category_id from URL or current cluster. category_id:", category_id);
             }
 
             let new_category_tree = await getCategoryTree(category_id, current_category);
+
+            if (new_category_tree === null) {
+                let variable_enviroment = new VariableEnvironmentContextError("In MediaExplorer.onMount while getting category tree");
+
+                variable_enviroment.addVariable("category_id", category_id);
+                variable_enviroment.addVariable("current_category", current_category);
+                variable_enviroment.addVariable("current_cluster", current_cluster);
+
+                let labeled_err = new LabeledError(variable_enviroment, "Failed to get the category tree", lf_errors.ERR_PROCESSING_ERROR);
+
+                labeled_err.alert();
+
+                return;
+            }
+
             categories_tree.set(new_category_tree);
         }
 
@@ -201,7 +239,9 @@
     onDestroy(() => {
         if (!browser) return;
 
-        global_hotkeys_manager.dropContext(hotkey_context_name);
+        if (global_hotkeys_manager != null) {
+            global_hotkeys_manager.dropContext(hotkey_context_name);
+        }
 
         if (empty_categories_subscriber != null) {
             empty_categories_subscriber();  
@@ -223,6 +263,11 @@
         =============================================*/
         
             const defineDesktopKeybinds = () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("Global hotkeys manager is null");
+                    return;
+                }
+
                 if (!global_hotkeys_manager.hasContext(hotkey_context_name)) {
 
                     const hotkeys_context = new HotkeysContext();
@@ -239,13 +284,13 @@
                         description: "<navigation>Enter/Select category",
                     });
 
-                    if ($current_user_identity.canSyncClusters()) {
+                    if ($current_user_identity?.canSyncClusters()) {
                         hotkeys_context.register(["alt+r"], handleSyncCurrentCategory, {
                             description: "<content>Syncs the state of the current category in the database with the real state of the file system. Useful when the file system is modified externally(like if you add a file to a category or delete folders or any other change).",    
                         });
                     }
                           
-                    if ($current_user_identity.canUploadFiles()) {
+                    if ($current_user_identity?.canUploadFiles()) {
                         hotkeys_context.register(["u"], () => {
                                 media_upload_tool_mounted.set(!$media_upload_tool_mounted);
                             }, {
@@ -253,7 +298,7 @@
                         });
                     }
 
-                    if ($current_user_identity.canPublicContentAlter()) {
+                    if ($current_user_identity?.canPublicContentAlter()) {
                         hotkeys_context.register(["y y"], yankSelectedCategory, {
                             description: "<content>Copy the selected category",
                         });
@@ -286,7 +331,7 @@
                         consider_time_in_sequence: true,
                     });
 
-                    if ($current_user_identity.canViewTrashcan()) {
+                    if ($current_user_identity?.canViewTrashcan()) {
                         hotkeys_context.register(["="], handleEnableTransactionManagementToolState, {
                             description: "<tools>Open the transaction management tool. This tool allows you manage your trashcan"
                         });
@@ -482,6 +527,7 @@
              * we load the previous hotkey context and remove the interval
              */
             const handleCategoryNameFilter = () => {
+                if (global_hotkeys_manager == null) return;
 
                 resetCategoryFiltersState(true);
 
@@ -587,12 +633,21 @@
 
             /**
              * Reloads the current category when the platform event FS_CHANGED is received.
-             * @param {import("@libs/DungeonsCommunication/transmissors/platform_events_transmisor").PlatformEventMessage} event
+             * @param {import("@libs/DungeonsCommunication/transmissors/platform_events_transmisor").PlatformEventMessage<import('@libs/LiberyEvents/well_known_events').ClusterFsChangeEvent>} event
              */
             const handleFsChangedPlatformEvent = async (event) => {
                 console.log("FS_CHANGED event received", event);
 
-                await $categories_tree.updateCurrentCategory();
+                const fs_change_message = event?.EventPayload.payload;
+
+                if (fs_change_message == null) {
+                    console.error("FS_CHANGED event received with no payload");
+                    return;
+                }
+
+                if (fs_change_message.cluster_uuid === $current_cluster.UUID && (fs_change_message.medias_added + fs_change_message.medias_deleted + fs_change_message.medias_updated) !== 0) {
+                    await $categories_tree.updateCurrentCategory();
+                } 
             }
                 
         
@@ -603,6 +658,8 @@
          * @returns {void}
          */
         const disableGalleryHotkeys = () => {
+            if (global_hotkeys_manager == null) return;
+
             keyboard_focused_category = keyboard_focused_category_holder;
             enable_gallery_hotkeys = false; 
 
@@ -632,7 +689,7 @@
 
         /**
          * Navigates to the media viewer for the current category
-         * @param {number} media_index
+         * @param {number} [media_index]
          */
         const enterMediaViewer = (media_index) => {
             let href = `/${layout_properties.IS_MOBILE ? 'media-viewer-mobile' : 'media-viewer'}/${$current_category.uuid}`;
@@ -737,12 +794,15 @@
             const displaying_search_results = $category_search_results.length > 0 && filtered_categories.length === 0;
             const displaying_filtered_categories = filtered_categories.length > 0;
 
-            let displayed_categories = null;
+            /**
+             * @type {import('@models/Categories').InnerCategory[]}
+             */
+            let displayed_categories = [];
 
             if (displaying_filtered_categories) {
                 displayed_categories = filtered_categories;
             } else if (displaying_search_results) {
-                displayed_categories = $category_search_results;
+                displayed_categories = $category_search_results.map(category => category.toInnerCategory());
             } else {
                 displayed_categories = $current_category.InnerCategories;
             }
@@ -800,7 +860,10 @@
                 e.preventDefault();
                 e.stopPropagation();
                 category_over_parent_label = true;
-                e.dataTransfer.dropEffect = "move";
+
+                if (e.dataTransfer != null) {
+                    e.dataTransfer.dropEffect = "move";
+                }
             }
         }
 
@@ -832,13 +895,16 @@
          * @param {DragEvent} e
          */
         const handleDropCategoryOnParent = async e => {
-            const dragged_category_uuid = e.dataTransfer.getData("text/plain");
+            const dragged_category_uuid = e.dataTransfer?.getData("text/plain");
             category_over_parent_label = false;
 
             if ($current_category.parent != null && dragged_category_uuid != null) {
                 e.preventDefault();
                 e.stopPropagation();
-                e.dataTransfer.dropEffect = "move";
+
+                if (e.dataTransfer != null) {
+                    e.dataTransfer.dropEffect = "move";
+                }
 
                 console.debug(`Dropped category '${dragged_category_uuid}' on parent category '${$current_category.parent}'`);
 
@@ -940,7 +1006,7 @@
          * @param {string} category_uuid
          */
         const navigateToChildCategory = async (category_uuid) => {
-            replaceState(`/dungeon-explorer/${category_uuid}`);
+            replaceState(`/dungeon-explorer/${category_uuid}`, $page.state);
             $categories_tree.navigateToLeaf(category_uuid);
         }
 
@@ -1055,6 +1121,8 @@
          * @returns {void}
          */
         const resetCategoryFiltersState = reset_results => {
+            if (global_hotkeys_manager == null) return;
+
             category_name_filter = "";
             category_filter_changed = false;
 
@@ -1141,7 +1209,7 @@
             yanked_category.set(selected_inner_category.uuid);
 
             /**
-             * @type {Promise<void>
+             * @type {Promise<void>}
              */
             let written_promise;
 
@@ -1229,7 +1297,7 @@
             <!-- Search results -->
             {#each $category_search_results as result_category, h}
                 <CategoryFolder 
-                    inner_category={result_category} 
+                    inner_category={result_category.toInnerCategory()} 
                     category_keyboard_focused={keyboard_focused_category === h}
                 />
             {/each}
@@ -1245,7 +1313,7 @@
                 {/each}
             {/if}
             {#if $current_category.content.length > 0}
-                <MediasIcon category_id={$current_category.uuid} images_count={$current_category.content.length} keyboard_focused={keyboard_focused_category === $current_category.InnerCategories.length}/>
+                <MediasIcon images_count={$current_category.content.length} keyboard_focused={keyboard_focused_category === $current_category.InnerCategories.length}/>
             {/if}
         {/if}
     </ul>

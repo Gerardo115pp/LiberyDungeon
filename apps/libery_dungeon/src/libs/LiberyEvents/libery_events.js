@@ -207,6 +207,7 @@ export class PlatformEventsContextManager {
 const global_platform_events_manager = new PlatformEventsContextManager();
 
 if (hasWindowContext()) {
+    // @ts-ignore
     window.global_platform_events_manager = global_platform_events_manager;
 }
 
