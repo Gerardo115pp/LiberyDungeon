@@ -14,6 +14,7 @@
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import { last_keyboard_focused_tag } from "./taxonomy_tags_store";
     import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
+    import { writable } from "svelte/store";
 
     /*=============================================
     =            Properties            =
@@ -84,6 +85,12 @@
             }
 
         /*=====  End of Hotkeys  ======*/
+
+        /**
+         * A string used to filter dungeon tags search results.
+         * @type {import('svelte/store').Writable<string>})}
+         */
+        let search_query = writable("");
     
         /**
          * The Taxonomy tags composition class.
@@ -279,7 +286,6 @@
 
                     return hotkeys_context;
                 }
-                
 
             /* -------------------------------------------------------------------------- */
 
@@ -371,6 +377,16 @@
             }
 
             /**
+             * Handles the update of the search query label.
+             * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback}
+             */
+            const handleSearchQueryUpdate = (event, captured_string) => {
+                if (!has_hotkey_control) return;
+
+                search_query.set(captured_string);
+            }
+
+            /**
              * Handles the select focused tag hotkey.
              * @param {KeyboardEvent} event
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
@@ -414,10 +430,11 @@
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
             const handleHotkeyControlDrop = (event, hotkey) => {
+                dropSearchResultsState();
+                dropGridNavigationWrapper();
+
                 resetHotkeyContext();
                 emitDropHotkeyContext();
-
-                dropGridNavigationWrapper();
             }
 
             /**
@@ -475,6 +492,8 @@
                 the_dungeon_tag_search_results_wrapper = new SearchResultsWrapper(hotkeys_context, taxonomy_tags.Tags, handleFocusSearchMatch, {
                     search_hotkey: ["f"],
                     ui_search_result_reference: ui_tag_reference,
+                    search_hotkey_handler: handleSearchQueryUpdate,
+                    minimum_similarity: 0.8,
                 });
             }
 
@@ -487,6 +506,19 @@
             if (the_grid_navigation_wrapper != null) {
                 the_grid_navigation_wrapper.destroy();
             }
+        }
+
+        /**
+         * Drops the search results state.
+         */
+        const dropSearchResultsState = () => {
+            if (the_dungeon_tag_search_results_wrapper != null) {
+                the_dungeon_tag_search_results_wrapper.dropSearchState();
+            }
+
+            console.log("Dropped search results state");
+            search_query.set("");
+            console.log("Search query: ", search_query);
         }
 
         /**
@@ -660,10 +692,13 @@
     class:is-keyboard-focused={is_keyboard_focused}
     class:hotkey-control={has_hotkey_control}
 >
-    <header class="taxonomy-header">
+    <header class="taxonomy-header dungeon-properties">
         <h4>
             {taxonomy_tags.Taxonomy.Name}
         </h4>
+        {#if $search_query !== "" && has_hotkey_control}
+            <p class="dtc-search-query html-tag">/{$search_query}</p>
+        {/if}
     </header>
     <TagGroup 
         bind:this={the_tag_group_component}
