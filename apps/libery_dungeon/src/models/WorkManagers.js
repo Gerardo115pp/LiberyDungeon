@@ -10,6 +10,13 @@ import { Category, InnerCategory } from "./Categories";
 =            Media Changes            =
 =============================================*/
 
+    /**
+    * @typedef {"Moved" | "Deleted" | "Normal" | null} MediaChangeType
+    */
+
+    /**
+     * @type {Object<string, MediaChangeType>} the types of changes that can be made to a media
+     */
     export const media_change_types = {
         MOVED: "Moved",
         DELETED: "Deleted",
@@ -78,6 +85,9 @@ import { Category, InnerCategory } from "./Categories";
          * @returns {Media[]}
          */
         get MovedMedias() {
+            /**
+             * @type {Media[]}
+             */
             let moved_medias = [];
 
             for (let cu of Object.keys(this.#moved_medias_data)) {
@@ -111,12 +121,11 @@ import { Category, InnerCategory } from "./Categories";
         /**
          * Commits the changes made to the medias
          * @param {string} category_id the uuid of the category
-         * @param {string} cluster_id the uuid of the cluster
          * @returns {Promise<import('@libs/DungeonsCommunication/base').HttpResponse<Object> | null>} the response of the request
          * @see CommitCategoryTreeChangesRequest
          * @see HttpResponse
-        */
-        async commitChanges(category_id, cluster_id) {
+         */
+        async commitChanges(category_id) {
             if (this.#deleted_medias.size === 0 && this.MovedMediasMap.size === 0) {
                 return null;
             }
@@ -181,8 +190,8 @@ import { Category, InnerCategory } from "./Categories";
         /**
          * Get the new category of a media by its uuid
          * @param {string} media_uuid the uuid of the media
-         * @returns {InnerCategory} the new category of the media
-        */
+         * @returns {InnerCategory | null} the new category of the media
+         */
         getMediaNewCategory = media_uuid => {
             if (!this.#moved_medias.has(media_uuid)) {
                 return null;
@@ -192,7 +201,7 @@ import { Category, InnerCategory } from "./Categories";
 
             const new_category = this.#used_categories.find(category => category.uuid === new_category_uuid);
 
-            return new_category;
+            return new_category ?? null;
         }
 
         /**
@@ -255,7 +264,11 @@ import { Category, InnerCategory } from "./Categories";
             }
 
             const new_category_uuid = this.#moved_medias.get(media_uuid);
+
+            if (new_category_uuid === undefined) return;
+
             this.#moved_medias.delete(media_uuid);
+
             this.#moved_medias_data[new_category_uuid] = this.#moved_medias_data[new_category_uuid].filter(media => media.uuid !== media_uuid);
 
             if (this.#moved_medias_data[new_category_uuid].length === 0) {
@@ -282,7 +295,7 @@ import { Category, InnerCategory } from "./Categories";
        
         /**
          * A map of string ids associated with a callback function. The callback function is called when a change is made to a media.
-         * @type {Object<string, onChangesCallback>} 
+         * @type {Object<MediaChangeType, onChangesCallback>} 
          */
         #on_changes_callbacks
 
@@ -322,11 +335,11 @@ import { Category, InnerCategory } from "./Categories";
         /**
          * Commits the changes made to the medias. also removes all the callbacks.
          * @param {string} category_id the uuid of the category
-         * @returns {Promise<HttpResponse>} the response of the request
+         * @returns {Promise<import('@libs/DungeonsCommunication/base').HttpResponse<Object> | null>} the response of the request
          * @see CommitCategoryTreeChangesRequest
          * @see HttpResponse
-        */
-        async commitChanges(category_id, cluster_id) {
+         */
+        async commitChanges(category_id) {
             if (typeof this.#before_commit_callback === "function") {
                 try {
                     if (this.#before_commit_callback.constructor.name === "AsyncFunction") {
@@ -344,7 +357,7 @@ import { Category, InnerCategory } from "./Categories";
                 }   
             }
             
-            let response = await super.commitChanges(category_id, cluster_id);
+            let response = await super.commitChanges(category_id);
             
             for (let id in this.#on_changes_callbacks) {
                 this.unsubscribeToChanges(id);
@@ -405,7 +418,7 @@ import { Category, InnerCategory } from "./Categories";
 
         /**
          * Broadcasts a given change type and media uuid to all the callbacks
-         * @param {string} change_type the type of change
+         * @param {MediaChangeType} change_type the type of change
          * @param {string} media_uuid the uuid of the media
          * @returns {void}
          */
