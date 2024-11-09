@@ -54,18 +54,6 @@
         }
     
         /**
-         * Handles the secret-selected event from the InitialUserSetup component.
-         * @param {CustomEvent<InitialUserSetupSecretSelectedEvent>} event
-         * @typedef {Object} InitialUserSetupSecretSelectedEvent
-         * @property {string} secret 
-         */ 
-        const handleInitialUserSetupSecretSelected = (event) => {
-            console.log("Secret selected: ", event.detail.secret);
-
-            initial_setup_secret = event.detail.secret;
-        }
-
-        /**
          * Handles the keypress event on the username input field. It will check if the user login data is ready.
          * @param {KeyboardEvent} event
          */
@@ -116,6 +104,8 @@
             setUserLoggedIn(fresh_user_identity); 
 
             goto("/");
+
+            return true;
         }
     
     /*=====  End of Methods  ======*/
