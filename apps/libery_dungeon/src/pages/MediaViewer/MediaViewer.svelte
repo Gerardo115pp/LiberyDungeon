@@ -39,6 +39,8 @@
         import { current_user_identity } from "@stores/user";
         import DiscreteFeedbackLog from "@libs/LiberyFeedback/FeedbackUI/DiscreteFeedbackLog.svelte";
         import { setDiscreteFeedbackMessage } from "@libs/LiberyFeedback/lf_utils";
+    import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
+    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     
     /*=====  End of Imports  ======*/
      
@@ -74,7 +76,7 @@
 
         /**
          * The index of the media to display
-         * @type {number}
+         * @type {string}
          */
         export let url_media_index;
 
@@ -162,12 +164,26 @@
 
         toggleDarkMode(true);
 
-        if (!layout_properties.IS_MOBILE) {
+        if (!$layout_properties.IS_MOBILE) {
             defineDesktopKeybinds();
         }
 
         if ($current_category === null) {
             let new_categories_tree = await getCategoryTree(url_category_id, current_category);
+            
+            if (new_categories_tree === null) {
+                let variable_environment = new VariableEnvironmentContextError("In MediaViewer.onMount while trying to set a new category tree");
+
+                variable_environment.addVariable("url_category_id", url_category_id);
+
+                const labeled_err = new LabeledError(variable_environment, "Could not load dungeon explorer data. CategoryTree is missing.", lf_errors.PROGRAMMING_ERROR__BROKEN_STATE);
+
+                labeled_err.alert();
+
+                goto("/");
+                return;
+            }
+            
             categories_tree.set(new_categories_tree);
         }
 
@@ -209,6 +225,11 @@
         =============================================*/
         
             const defineDesktopKeybinds = () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("The global hotkeys manager is null");
+                    return;
+                }
+
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
 
@@ -269,7 +290,7 @@
                         description: "<media_modification>Toggle the media information panel."
                     });
                     
-                    if ($current_user_identity.canPublicContentAlter()) {
+                    if ($current_user_identity?.canPublicContentAlter()) {
                         hotkeys_context.register(["f2"], handleMediaMovementToggle, {
                             description: "<media_modification>Toggle the media movement manager.",
                             mode: "keyup"
@@ -324,7 +345,7 @@
                 }
 
                 active_media_index.set(new_index);
-                replaceState(`/media-viewer/${$current_category.uuid}/${$active_media_index}`);
+                replaceState(`/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
             }
 
             /**
@@ -479,6 +500,11 @@
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
             const handleMediaMovementToggle = (event, hotkey) => {
+                if (global_hotkeys_manager == null) {
+                    console.error("The global hotkeys manager is null");
+                    return;
+                }
+
                 event.preventDefault();
                 show_media_movement_manager = !show_media_movement_manager;
 
@@ -511,7 +537,7 @@
                 previous_media_index.set($active_media_index);
 
                 active_media_index.set(new_index);
-                replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`);
+                replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
 
                 await tick();
                 
@@ -577,7 +603,13 @@
             }
 
             const handleGoBack = async () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("The global hotkeys manager is null");
+                    return;
+                }
+
                 if (media_viewer_closing) return;
+
                 media_viewer_closing = true;
 
                 global_hotkeys_manager.unregisterCurrentContext(); // Prevents users from using hotkeys while the page is closing
@@ -585,7 +617,7 @@
                 // change the active media index so that onComponentExit will save the correct updated index(saves the current value of active_media_index)
                 let new_active_media_index = resolveNewMediaIndex($media_changes_manager, $active_media_index, $current_category.content);
                 
-                await $media_changes_manager.commitChanges($current_category.uuid, $current_category.ClusterUUID);
+                await $media_changes_manager.commitChanges($current_category.uuid);
                 await $categories_tree.updateCurrentCategory();
                 media_changes_manager.set(new MediaChangesManager());
 
@@ -624,7 +656,7 @@
                 
                 if (not_deleted_media_index !== $active_media_index) {
                     active_media_index.set(not_deleted_media_index);
-                    replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`);
+                    replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
                 } else {
                     active_media_change.set($media_changes_manager.getMediaChangeType(current_media.uuid));
                 }
@@ -716,7 +748,7 @@
              * Applies the media modifiers configuration to the media element. 
              * If the force_reset parameter is set to true, then the media will be reset to its default position
              * and zoom despite the configuration.
-             * @param {boolean} force_reset - whether to force the reset despite config
+             * @param {boolean} [force_reset] - whether to force the reset despite config
              * @returns {void} 
              */
             const applyMediaModifiersConfig = force_reset => {
@@ -797,7 +829,7 @@
         /*=====  End of Media modifiers  ======*/
 
         const automoveMedia = () => {
-            if ($auto_move_on === false) return;
+            if ($auto_move_on === false || $auto_move_category == null) return;
 
             let current_media = $current_category.content[$active_media_index];
 
@@ -814,7 +846,7 @@
          * @requires url_media_index - if this is valid, then the cached index will be ignored
          * @requires $current_category
          * @requires category_cache
-         * @returns {number}
+         * @returns {Promise<number>} - the determined index
          */
         const determineActiveMediaIndexInitialValue = async () => {
             let determined_index = 0;
@@ -828,13 +860,31 @@
             if (!url_holds_index) {
                 // Attempts to get a cached media index for the current_category, and if the result is different from the current active media index, then it sets the active media index to the cached one
                 // the url media_index params has priority over the cached index, so if params.media_index is not null, then no cached index will be used
+
+                if (category_cache === null) {
+                    let variable_environment = new VariableEnvironmentContextError("In MediaViewer.determineActiveMediaIndexInitialValue while trying to get a cached media index");
+
+                    variable_environment.addVariable("category_cache", category_cache);
+                    variable_environment.addVariable("url_category_id", url_category_id);
+                    variable_environment.addVariable("url_media_index", url_media_index);
+                    variable_environment.addVariable("detemined_index", determined_index);
+                    variable_environment.addVariable("url_holds_index", url_holds_index);
+
+                    const labeled_err = new LabeledError(variable_environment, "Could not load dungeon explorer data. CategoryCache is missing.", lf_errors.PROGRAMMING_ERROR__BROKEN_STATE);
+
+                    labeled_err.alert();
+
+                    goto("/");
+                    return NaN;
+                }
+
                 let cached_category_index = await category_cache.getCategoryIndex(url_category_id);
+
                 if (cached_category_index !== determined_index) {
                     cached_category_index = Math.max(0, Math.min(cached_category_index, $current_category.content.length - 1));
                     determined_index = cached_category_index;
                 }
             }
-        
 
             return determined_index;
         }
@@ -855,7 +905,7 @@
 
         /**
          * Returns the display item for medias regardless of the type of media.
-         * @returns {HTMLMediaElement}
+         * @returns {HTMLMediaElement | null}
          */
         const getHTMLMediaElement = () => {
             return document.querySelector(".mw-media-element-display");
@@ -870,8 +920,11 @@
         }
 
 
-        const handleThumbnailClick = e => {
-            const media_selected = e.detail;
+        /**
+         * @param {CustomEvent<import('@models/Medias').Media>} event
+         */
+        const handleThumbnailClick = event => {
+            const media_selected = event.detail;
             
             if (media_selected === undefined || media_selected === null) return;
 
@@ -886,13 +939,17 @@
         }
 
         function onComponentExit() {        
-            category_cache.addCategoryIndex(url_category_id, $active_media_index);
+            if (category_cache != null) {
+                category_cache.addCategoryIndex(url_category_id, $active_media_index);
+            }
 
             resetComponentSettings();
 
             active_media_index_unsubscriber();
 
-            global_hotkeys_manager.dropContext(hotkeys_context_name);
+            if (global_hotkeys_manager != null) {
+                global_hotkeys_manager.dropContext(hotkeys_context_name);
+            }
 
             resetMediaViewerPageStore();
         }
@@ -941,7 +998,7 @@
         }
 
         const saveActiveMediaToRoute = () => {
-            replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`);
+            replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
         }
 
         /**
@@ -958,6 +1015,20 @@
             canvas.height = video_element.videoHeight;
 
             let ctx = canvas.getContext("2d");
+
+            if (ctx === null) {
+                const variable_enviroment = new VariableEnvironmentContextError("In MediaViewer.captureVideoFrame while trying to get the 2d context of the canvas element");
+
+                variable_enviroment.addVariable("canvas is HTMLCanvasElement", canvas instanceof HTMLCanvasElement);
+                variable_enviroment.addVariable("canvas is null", canvas === null);
+                variable_enviroment.addVariable("video_element is null", video_element === null);
+                variable_enviroment.addVariable("video_element is HTMLVideoElement", video_element instanceof HTMLVideoElement);
+
+                const labeled_err = new LabeledError(variable_enviroment, "Could not capture the video frame. Are you using an old browser?", lf_errors.ERR_UNSUPPORTED_BROWSER_FEATURE);
+
+                labeled_err.alert();
+                return;
+            }
 
             ctx.drawImage(video_element, 0, 0, canvas.width, canvas.height);
 
@@ -1048,7 +1119,7 @@
             </div>
         {/if}
         <div id="ldmv-category-changes-manager">
-            {#if $current_user_identity.canPublicContentAlter()}
+            {#if $current_user_identity?.canPublicContentAlter()}
                 <MediaMovementsTool bind:is_component_visible={show_media_movement_manager}/>
             {/if}
         </div>
