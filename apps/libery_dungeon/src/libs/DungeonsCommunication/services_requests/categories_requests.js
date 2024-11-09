@@ -7,9 +7,13 @@ import { categories_server } from "../services";
  *
  * @export
  * @class GetCategoryDataRequest
- * @typedef {GetCategoryTreeLeafRequest}
  */
 export class GetCategoryTreeLeafRequest {
+    
+    /**
+     * @param {string} category_id
+     * @param {string} cluster_id
+     */
     constructor(category_id, cluster_id) {
         this.category_id = category_id;
         this.cluster_id = cluster_id;   
@@ -20,7 +24,7 @@ export class GetCategoryTreeLeafRequest {
     
     /**
      * Sends the http request to the server and returns the response.
-     * @returns {Promise<HttpResponse>}
+     * @returns {Promise<HttpResponse<import("@models/Categories").CategoryLeafParams>>}
      */
     do = async () => {
         let request_url = `${categories_server}/categories-tree?category_id=${this.category_id}`;
@@ -45,6 +49,11 @@ export class GetCategoryTreeLeafRequest {
  * @date 10/20/2023 - 10:38:16 PM
  */
 export class getShortCategoryTreeRequest {
+    
+    /**
+     * @param {string} category_id 
+     * @param {string} cluster_id 
+     */
     constructor(category_id, cluster_id) {
         this.category_id = category_id;
         this.cluster_id = cluster_id;
@@ -52,6 +61,9 @@ export class getShortCategoryTreeRequest {
 
     toJson = attributesToJson.bind(this);
 
+    /**
+     * @returns {Promise<HttpResponse<import("@models/Categories").InnerCategoryParams[]>>}
+     */
     do = async () => {
         let request_url = `${categories_server}/categories-tree/short?category_id=${this.category_id}`;
 
@@ -75,12 +87,19 @@ export class getShortCategoryTreeRequest {
  * Requests the only the data of a category, no content or children categories  
  */
 export class GetCategoryRequest {
+    
+    /**
+     * @param {string} category_id 
+     */
     constructor(category_id) {
         this.category_id = category_id;
     }
 
     toJson = attributesToJson.bind(this);
 
+    /**
+     * @returns {Promise<HttpResponse<import("@models/Categories").CategoryParams>>}
+     */
     do = async () => {
         const response = await fetch(`${categories_server}/categories/data?category_id=${this.category_id}`);
 
@@ -98,6 +117,11 @@ export class GetCategoryRequest {
  * Returns a category from a given fullpath and cluster id
  */
 export class GetCategoryByFullpathRequest {
+
+    /**
+     * @param {string} category_path
+     * @param {string} category_cluster
+     */
     constructor(category_path, category_cluster) {
         this.category_path = encodeURI(category_path);
         this.category_cluster = category_cluster;
@@ -105,6 +129,9 @@ export class GetCategoryByFullpathRequest {
 
     toJson = attributesToJson.bind(this);
 
+    /**
+     * @returns {Promise<HttpResponse<import("@models/Categories").CategoryParams>>}
+     */
     do = async () => {
         const response = await fetch(`${categories_server}/categories/by-fullpath?category_path=${this.category_path}&category_cluster=${this.category_cluster}`);
 
@@ -122,6 +149,12 @@ export class GetCategoryByFullpathRequest {
  * Applies the changes made to the categories tree
  */
 export class CommitCategoryTreeChangesRequest {
+
+    /**
+     * @param {string} category_id 
+     * @param {import('@models/Medias').Media[]} rejected_medias 
+     * @param {Object<string, import('@models/Medias').Media[]>} moved_medias 
+     */
     constructor(category_id, rejected_medias, moved_medias) {
         this._category_id = category_id;
         this.rejected_medias = rejected_medias;
@@ -130,6 +163,9 @@ export class CommitCategoryTreeChangesRequest {
 
     toJson = attributesToJson.bind(this);
 
+    /**
+     * @returns {Promise<HttpResponse<Object>>}
+     */
     do = async () => {
         const response = await fetch(`${categories_server}/categories?category_id=${this._category_id}`, {
             method: "PATCH",
@@ -147,6 +183,11 @@ export class CommitCategoryTreeChangesRequest {
  * Renames a category, changes the full path of the category based on the new name and does the same for all subcategories full paths
  */
 export class PatchRenameCategoryRequest {
+    /**
+     * 
+     * @param {string} category_id 
+     * @param {string} new_name 
+     */
     constructor(category_id, new_name) {
         this.category_id = category_id;
         this.new_name = new_name;
@@ -190,6 +231,11 @@ export class PatchRenameCategoryRequest {
  * Moves a category to another parent category
  */
 export class PatchMoveCategoryRequest {
+
+    /**
+     * @param {string} new_parent_category 
+     * @param {string} moved_category 
+     */
     constructor(new_parent_category, moved_category) {
         this.new_parent_category = new_parent_category;
         this.moved_category = moved_category;
@@ -233,6 +279,12 @@ export class PatchMoveCategoryRequest {
  * Gets all the categories that match a search query
  */
 export class GetCategorySearchResultsRequest {
+
+    /**
+     * @param {string} query 
+     * @param {string} cluster_id 
+     * @param {string} ignore 
+     */
     constructor(query, cluster_id, ignore) {
         this.query = query;
         this.cluster_id = cluster_id;
@@ -241,6 +293,9 @@ export class GetCategorySearchResultsRequest {
 
     toJson = attributesToJson.bind(this);
 
+    /**
+     * @returns {Promise<HttpResponse<import("@models/Categories").CategoryParams> | null>}
+     */
     do = async () => {
 
         let request_url = `${categories_server}/search?query=${this.query}&ignore=${this.ignore}`;
@@ -265,6 +320,11 @@ export class GetCategorySearchResultsRequest {
  * Sends a request to delete a category, it has an optional parameter `force` which if set to true, will delete the category even if it has medias inside or subcategories.
  */ 
 export class DeleteCategoryRequest {
+    
+    /**
+     * @param {string} category_id 
+     * @param {boolean} force 
+     */
     constructor(category_id, force=false) {
         this.category_id = category_id;
         this.force = force;
@@ -289,6 +349,11 @@ export class DeleteCategoryRequest {
  * Asks the server if a category name is available on a specific parent category
  */
 export class GetCategoryNameAvailabilityRequest {
+
+    /**
+     * @param {string} category_name 
+     * @param {string} parent_category_id 
+     */
     constructor(category_name, parent_category_id) {
         this.category_name = category_name;
         this.parent_category_id = parent_category_id;
@@ -315,6 +380,13 @@ export class GetCategoryNameAvailabilityRequest {
  * Sends a request to create a new category
  */
 export class PostCreateCategoryRequest {
+
+    /**
+     * @param {string} category_name 
+     * @param {string} parent_category_id 
+     * @param {string} parent_path 
+     * @param {string} cluster 
+     */
     constructor(category_name, parent_category_id, parent_path, cluster) {
         this.name = category_name;
         this.parent = parent_category_id;
@@ -324,6 +396,9 @@ export class PostCreateCategoryRequest {
 
     toJson = attributesToJson.bind(this);
 
+    /**
+     * @returns {Promise<HttpResponse<import("@models/Categories").CategoryParams>>}
+     */
     do = async () => {
         let response;
         try {
