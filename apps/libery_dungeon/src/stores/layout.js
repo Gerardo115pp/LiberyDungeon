@@ -50,7 +50,7 @@ if (browser) {
 }
 
 /**
- * @type {Writable<typeof LAYOUT_PROPERTIES>}
+ * @type {import('svelte/store').Writable<typeof LAYOUT_PROPERTIES>}
  * @description the layout properties of the website
  */
 export const layout_properties = writable(LAYOUT_PROPERTIES);
@@ -66,15 +66,15 @@ export const defineLayout = () => {
     };
 
     new_layout_properties.SPACING = {
-        VSPACING_1: root_styles.getPropertyValue("--vspacing-1"),
-        VSPACING_2: root_styles.getPropertyValue("--vspacing-2"),
-        VSPACING_3: root_styles.getPropertyValue("--vspacing-3"),
-        VSPACING_4: root_styles.getPropertyValue("--vspacing-4"),
-        VSPACING_5: root_styles.getPropertyValue("--vspacing-5"),
-        VSPACING_6: root_styles.getPropertyValue("--vspacing-6"),
-        VSPACING_7: root_styles.getPropertyValue("--vspacing-7"),
-        VSPACING_8: root_styles.getPropertyValue("--vspacing-8"),
-        VSPACING_9: root_styles.getPropertyValue("--vspacing-9")
+        SPACING_1: parseInt(root_styles.getPropertyValue("--spacing-1")),
+        SPACING_2: parseInt(root_styles.getPropertyValue("--spacing-2")),
+        SPACING_3: parseInt(root_styles.getPropertyValue("--spacing-3")),
+        SPACING_4: parseInt(root_styles.getPropertyValue("--spacing-4")),
+        SPACING_5: parseInt(root_styles.getPropertyValue("--spacing-5")),
+        SPACING_6: parseInt(root_styles.getPropertyValue("--spacing-6")),
+        SPACING_7: parseInt(root_styles.getPropertyValue("--spacing-7")),
+        SPACING_8: parseInt(root_styles.getPropertyValue("--spacing-8")),
+        SPACING_9: parseInt(root_styles.getPropertyValue("--spacing-9")),
     }
 
     new_layout_properties.IS_MOBILE = isMobile();
@@ -108,6 +108,9 @@ export function isMobile() {
     return is_mobile;
 }
 
+/**
+ * @param {boolean} is_mobile 
+ */
 export function setVirtualMobile(is_mobile) {
 
     LAYOUT_PROPERTIES.IS_MOBILE = is_mobile;
@@ -182,7 +185,7 @@ export const inDarkMode = () => {
 
 /**
  * Cinema mode is a hint to all components that they should remove any non-essential elements from the ui, like the navbar and prioritize the media content visibility.
- * @param {boolean} force_enable
+ * @param {boolean} [force_enable]
  */
 export const toggleCinemaMode = force_enable => {
     if (!browser) return;
