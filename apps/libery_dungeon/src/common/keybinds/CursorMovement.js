@@ -22,6 +22,14 @@ const GRID_MOVEMENT_ITEM_CLASS_SELECTOR = `.${GRID_MOVEMENT_ITEM_CLASS}`;
 */
 
 /**
+ * Sets the grid navigation wrapper required data. this is just a common pattern for setting up the grid navigation wrapper, 
+ * using it is not mandatory.
+* @callback GridNavigationWrapperSetup
+ * @param {import("@libs/LiberyHotkeys/hotkeys_context").default} hotkeys_context
+ * @returns {void | Promise<void>}
+*/
+
+/**
  * Optional parameters for the CursorMovementWASD wrapper. Setting any triggers to an empty string will disable the hotkey.
 * @typedef {Object} MovementModelOptions
  * @property {string} grid_member_selector - The selector for the grid members. Defaults to `GRID_MOVEMENT_ITEM_CLASS`
