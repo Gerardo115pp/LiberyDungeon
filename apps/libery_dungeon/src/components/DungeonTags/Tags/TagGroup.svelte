@@ -33,6 +33,12 @@
              * @type {import('@libs/LiberyFeedback/lf_models').UIReference}
              */
             export let ui_tag_reference;
+
+            /**
+             * A set of tag ids to highlight.
+             * @type {Set<number> | null}
+             */
+            export let highlighted_tag_ids = null; 
         
 
         
@@ -339,6 +345,8 @@
             <DeleteableItem 
                 item_color={!is_keyboard_selected ? tag_group_color : "var(--main-dark-transparent)"}
                 item_id={tag.Id}
+                item_highlight_color="var(--accent-t)"
+                is_highlighted={!is_keyboard_selected && highlighted_tag_ids != null && highlighted_tag_ids.has(tag.Id)}
                 on:item-selected={handleTagSelection}
                 on:item-deleted={handleTagDeletion}
             >

@@ -91,6 +91,12 @@
          * @type {import('svelte/store').Writable<string>})}
          */
         let search_query = writable("");
+
+        /**
+         * All the ids of the dungeon tags that matched the search query.
+         * @type {Set<number> | null}
+         */
+        let search_results_ids = null;
     
         /**
          * The Taxonomy tags composition class.
@@ -366,6 +372,8 @@
              * @type {import("@common/keybinds/CommonActionWrappers").SearchResultsUpdateCallback<import('@models/DungeonTags').DungeonTag>}
              */
             const handleFocusSearchMatch = (search_result) => {
+                if (the_dungeon_tag_search_results_wrapper == null) return;
+
                 let tag_id = search_result.Id;
 
                 for (let h = 0; h < taxonomy_tags.Tags.length; h++) { 
@@ -373,6 +381,10 @@
                         the_grid_navigation_wrapper?.updateCursorPosition(h);
                         break;
                     }
+                }
+
+                if ((the_dungeon_tag_search_results_wrapper.SearchResults.length ?? 0) > 0) {
+                    search_results_ids = new Set(the_dungeon_tag_search_results_wrapper.SearchResults.map(tag => tag.Id));
                 }
             }
 
@@ -708,6 +720,7 @@
         enable_keyboard_selection={has_hotkey_control}
         rename_focused_tag={renaming_focused_tag}
         focused_tag_index={focused_tag_index}
+        highlighted_tag_ids={search_results_ids}
         ui_taxonomy_reference={ui_taxonomy_reference}
         ui_tag_reference={ui_tag_reference}
         on:tag-selected
