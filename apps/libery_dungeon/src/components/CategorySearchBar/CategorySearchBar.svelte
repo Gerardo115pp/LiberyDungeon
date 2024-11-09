@@ -107,7 +107,7 @@
 
                 if (!search_query_valid) {
                     search_bar.reportValidity();
-                    return;
+                    return event_handled;
                 }
 
                 e.preventDefault();
