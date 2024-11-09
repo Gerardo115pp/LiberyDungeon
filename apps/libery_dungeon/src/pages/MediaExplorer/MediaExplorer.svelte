@@ -84,8 +84,12 @@
         let empty_categories_subscriber;
 
         const hotkey_context_name = "categories_explorer";
+        
+        /**
+         * The category that is currently been focused by the user through keyboard navigation.
+         * @type {number}
+         */
         let keyboard_focused_category = 0;
-
 
         /**
          * Used to hold the category position when the user changes hotkeys context.
@@ -460,7 +464,7 @@
                     new_focus_index = new_focus_index < 0 ? new_focus_index + categories_per_row_ratio : new_focus_index;
                 }
 
-                keyboard_focused_category = new_focus_index;
+                setKeyboardFocusedCategory(new_focus_index);
             }
              
             const handleCategoryItemSelected = async () => {
@@ -474,7 +478,10 @@
                 } else if (!keyboard_index_in_displayed_categories) {
                     throw new Error("Keyboard focused category index is out of bounds");
                 }
-                const item_selected = displayed_categories[keyboard_focused_category];
+
+                const item_selected = getFocusedCategory();
+
+                if (item_selected == null) return;
 
                 navigateToSelectedCategory(item_selected.uuid);
             }
@@ -607,7 +614,7 @@
                     let lower_case_name = $current_category.InnerCategories[h].name.toLowerCase();
 
                     if (lower_case_name.startsWith(initial_character)) {
-                        keyboard_focused_category = h;
+                        setKeyboardFocusedCategory(h);
                         return;
                     }
                 }
@@ -660,7 +667,7 @@
         const disableGalleryHotkeys = () => {
             if (global_hotkeys_manager == null) return;
 
-            keyboard_focused_category = keyboard_focused_category_holder;
+            loadKeyboardFocusedCategory();
             enable_gallery_hotkeys = false; 
 
             if (global_hotkeys_manager.ContextName !== hotkey_context_name) {
@@ -707,8 +714,8 @@
          * @returns {void}
          */
         const enableGalleryHotkeys = () => {
-            keyboard_focused_category_holder = keyboard_focused_category;
-            keyboard_focused_category = -1;
+            saveKeyboardFocusedCategory();
+            setKeyboardFocusedCategory(-1);
 
             enable_gallery_hotkeys = true;
         }
@@ -762,7 +769,7 @@
                 return false;
             }
 
-            keyboard_focused_category = category_index;
+            setKeyboardFocusedCategory(category_index);
             return true
         }
 
@@ -808,6 +815,16 @@
             }
 
             return displayed_categories;
+        }
+
+        /**
+         * Returns the category focused by the user through keyboard navigation.
+         * @returns {import('@models/Categories').InnerCategory | undefined}
+         */
+        const getFocusedCategory = () => {
+            const displayed_categories = getDisplayCategories();
+
+            return displayed_categories[keyboard_focused_category];
         }
 
         /**
@@ -1158,7 +1175,7 @@
          * @returns {void}
          */
         const resetNavigationSuseptibleState = () => {
-            keyboard_focused_category = 0;
+            setKeyboardFocusedCategory(0);
             keyboard_focused_category_holder = 0; 
             
             resetCategoryFiltersState(true);
@@ -1189,6 +1206,34 @@
 
             return false;
         }
+
+        /**
+         * Sets the keyboard_focused_category to the given index.
+         * @param {number} index
+         */
+        const setKeyboardFocusedCategory = index => {
+            keyboard_focused_category = index;
+        }
+
+        /* ------------------------ Keyboard focuse save/load ----------------------- */
+
+            /**
+             * Saves the current keyboard focused category index.
+             * @returns {void}
+             */
+            const saveKeyboardFocusedCategory = () => {
+                keyboard_focused_category_holder = keyboard_focused_category;
+            }
+
+            /**
+             * Loads the saved keyboard focused category index.
+             * @returns {void}
+             */
+            const loadKeyboardFocusedCategory = () => {
+                setKeyboardFocusedCategory(keyboard_focused_category_holder);
+            }
+
+        /* -------------------------------------------------------------------------- */
 
         /**
          * Yanks the selected category
