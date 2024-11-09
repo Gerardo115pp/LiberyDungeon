@@ -70,7 +70,7 @@
                 return deleteMedia();
             }
 
-            event_dispatcher("image-selected", media);
+            event_dispatcher("image-selected", {media});
         }
     
     
