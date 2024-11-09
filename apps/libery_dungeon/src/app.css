@@ -39,6 +39,7 @@
             --accent-3: hsla(211, 58.7%, 51.6%, 1);
             --accent-2: hsla(211, 100%, 71.6%, 1);
             --accent-1: hsla(211, 100%, 81%, 1);
+            --accent-t: hsla(211, 100%, 52.5%, .5);
             /* Grey */
             --grey: hsla(0, 0%, 5.9%, 1);
             --grey-9: hsla(0, 0%, 7.5%, 1);
@@ -315,6 +316,7 @@
             --accent-3: hsl(from var(--accent) h 58.7% 51.6% / 1);
             --accent-2: hsl(from var(--accent) h s 71.6% / 1);
             --accent-1: hsl(from var(--accent) h s 81% / 1);
+            --accent-t: hsl(from var(--accent) h s l / 0.2);
             /* Grey */
             --grey: hsl(0, 0%, 5.9%);
             --grey-9: hsl(from var(--grey) h s calc(l * 1.27119) / 1);
