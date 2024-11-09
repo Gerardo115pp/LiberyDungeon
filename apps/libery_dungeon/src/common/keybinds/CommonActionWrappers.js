@@ -163,10 +163,12 @@ export class SearchResultsWrapper {
             return;
         }
 
-        if (search_string.length >= 3) {
+        if (search_string.length > 3) {
             this.search(this.#search_pool, search_string);
-        } else {
+        } else if (search_string.length === 1) {
             this.searchPrefix(this.#search_pool, search_string);
+        } else {
+            this.searchInclude(this.#search_pool, search_string);
         }
 
         console.log("search_results: ", this.#search_results);
@@ -271,6 +273,42 @@ export class SearchResultsWrapper {
             const item_string = this.#item_to_string(item);
 
             if (item_string.startsWith(search_string)) {
+                new_search_results.push(item);
+            }
+        }
+
+        if (new_search_results.length == 0) {
+            console.warn(`No search results found for ${search_string}`);
+            return;
+        }
+
+        this.#search_results = new_search_results;
+        this.#current_search_index = 0;
+    }
+
+    /**
+     * Searches a given array for a given search string. Checks if the items include the search string and adding perfect matches at the top of the search result. Ideal for short-medium search strings(2-4 characters).
+     * @param {T[]} search_array
+     * @param {string} search_string
+     * @returns {void}
+     */
+    searchInclude(search_array, search_string) {
+        if (search_array.length == 0) {
+            console.warn("Search array is empty.");
+            return;
+        }
+
+        /**
+         * @type {T[]}
+         */
+        const new_search_results = [];
+
+        for (const item of search_array) {
+            const item_string = this.#item_to_string(item);
+
+            if (item_string === search_string) {
+                new_search_results.unshift(item);
+            } else if (item_string.includes(search_string)) {
                 new_search_results.push(item);
             }
         }
