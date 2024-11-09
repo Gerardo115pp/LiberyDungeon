@@ -1,7 +1,7 @@
 <script>
+
     import { categories_tree, yanked_category } from "@stores/categories_tree";
-    import { CategoryLeaf, CategoriesTree, moveCategory, renameCategory } from "@models/Categories";
-    import { layout_properties } from "@stores/layout";
+    import { moveCategory, renameCategory } from "@models/Categories";
     import { createEventDispatcher } from "svelte";
     import { browser } from "$app/environment";
 
@@ -10,11 +10,11 @@
     =            Properties            =
     =============================================*/
     
-        /** @type {CategoryLeaf | null} */
+        /** @type {import('@models/Categories').InnerCategory | null} */
         export let category_leaf = null;
 
-        /** @type {import('@models/Categories').InnerCategory | import('@models/Categories').Category} */
-        export let inner_category;
+        /** @type {import('@models/Categories').InnerCategory | null} */
+        export let inner_category = null;
 
         /**
          * Whether the category is currently focused by the keyboard selection
@@ -100,13 +100,12 @@
             const handleCategoryDragStart = e => {
                 if (category_leaf == null) return;
 
-                console.debug(`${category_leaf.name}: drag start`);
                 category_dragging = true;
 
                 if (e.dataTransfer == null) return;
 
                 e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/plain", category_leaf.uuid);
+                e.dataTransfer.setData("text/plain", category_leaf?.uuid);
             }
 
             /**
@@ -124,7 +123,6 @@
             const handleCategoryDragEnter = e => {
                 if (category_leaf == null) return;
 
-                console.debug(`${category_leaf.name}: drag enter`);
                 const dragged_category_uuid = e.dataTransfer?.getData("text/plain");
 
                 if (!category_dragging && category_leaf.uuid !== dragged_category_uuid && category_leaf != null) {
@@ -139,8 +137,6 @@
              */
             const handleCategoryDragLeave = e => {
                 if (category_leaf == null) return;
-
-                console.debug(`${category_leaf.name}: drag leave`);
                 
                 dragged_category_hovering = false;
             }
@@ -150,22 +146,18 @@
              * @param {DragEvent} e
              */
             const handleCategoryDragOver = e => {
-                if (category_leaf == null) return;
-
                 // Calling the preventDefault() method during both the dragenter and dragover event will indicate that a drop is allowed at that location.
                 // See: https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Drag_operations#specifying_drop_targets
+                if (category_leaf == null || !e.dataTransfer) return;
 
-                const dragged_category_uuid = e.dataTransfer?.getData("text/plain");
+
+                const dragged_category_uuid = e.dataTransfer.getData("text/plain");
                 
                 if (dragged_category_uuid !== category_leaf.uuid && !category_dragging && category_leaf != null) {
                     e.preventDefault(); // Accept the drop
                 }
 
-                
-                if (e.dataTransfer != null) {
-                    e.dataTransfer.dropEffect = "move";
-                }
-
+                e.dataTransfer.dropEffect = "move";
                 return true;
             }
 
@@ -174,26 +166,21 @@
              * @param {DragEvent} e
              */
             const handleCategoryDrop = async e => {
-                if (category_leaf == null) return;
-
+                if (category_leaf == null || !e.dataTransfer) return;
+                
                 e.stopPropagation();
                 e.preventDefault();
 
                 dragged_category_hovering = false;
                 category_dragging = false;
 
-                const dragged_category_uuid = e.dataTransfer?.getData("text/plain"); 
-
-                if (dragged_category_uuid == null) {
-                    console.error("No dragged category UUID found");
-                    return;
-                }
+                const dragged_category_uuid = e.dataTransfer.getData("text/plain"); 
                 
+                console.debug(`${category_leaf.uuid} <- '${dragged_category_uuid}'`);
 
                 if (dragged_category_uuid === category_leaf.uuid) {
                     throw new Error("Cannot drop a category on itself");
                 }
-
 
                 let updated_category = await moveCategory(dragged_category_uuid, category_leaf.uuid);
 
@@ -203,6 +190,8 @@
                     alert("Failed to move category");
                 }
             }
+        
+        
         
         /*=====  End of Drag Handlers  ======*/
         
@@ -243,9 +232,6 @@
     
 </script>
 
-<!-- 
-    @ts-ignore
--->
 <li class="ce-inner-category"
     bind:this={category_element} 
     class:keyboard-focused={category_keyboard_focused} 
@@ -271,9 +257,9 @@
     </svg>
     <div class="ce-ic-label">
         {#if !category_renaming}
-            <h3>{category_leaf?.name ?? /** @type {import('@models/Categories').InnerCategory} */ (inner_category).name ?? /** @type {import('@models/Categories').Category} */ (inner_category).Name}</h3>
+            <h3>{category_leaf?.name ?? inner_category?.name}</h3>
         {:else}
-            <input type="text" id="ce-ic-rename-input" on:keyup={handleRenameInput} autofocus value="{category_leaf?.name ?? /** @type {import('@models/Categories').InnerCategory} */ (inner_category).name ?? /** @type {import('@models/Categories').Category} */ (inner_category).Name}"/>
+            <input type="text" id="ce-ic-rename-input" on:keyup={handleRenameInput} autofocus value="{category_leaf?.name ?? inner_category?.name}"/>
         {/if}
     </div>
 </li>
