@@ -736,4 +736,14 @@
             color: var(--main-dark);
         }
     }
+
+    .taxonomy-header.dungeon-properties {
+        gap: var(--spacing-1);
+
+        & p.dtc-search-query {
+            font-size: var(--font-size-1);
+            color: var(--grey-1);
+            line-height: 1;
+        }
+    }
 </style>
