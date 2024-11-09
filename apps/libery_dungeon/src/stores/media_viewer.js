@@ -29,13 +29,11 @@ export let skip_deleted_medias = writable(true);
 */
 export const previous_media_index = writable(0);
 
-/**
- * @typedef {"Moved" | "Deleted" | "Normal"} MediaChangeType
-*/
+
 
 /**
  * The change made to the active media
- * @type {import('svelte/store').Writable<MediaChangeType>}
+ * @type {import('svelte/store').Writable<import("@models/WorkManagers").MediaChangeType>}
  * @default "Normal"
  * @see media_change_types
 */
@@ -44,14 +42,14 @@ export const active_media_change = writable(media_change_types.NORMAL);
 /** @type {import('svelte/store').Writable<MediaChangesManager>} */
 export let media_changes_manager = writable(new MediaChangesManager());
 
-/** @type {import('svelte/store').Writable<InnerCategory>} the category that medias will be moved to on auto move mode */
+/** @type {import('svelte/store').Writable<InnerCategory | null>} the category that medias will be moved to on auto move mode */
 export let auto_move_category = writable(null);
 
 
 /** @type {import('svelte/store').Writable<boolean>} whether or not the auto move mode is enabled */
 export let auto_move_on = writable(false);
 
-/** @type {import('svelte/store').Writable<string>} a store containing the name of the media viewer hotkeys context */
+/** @type {import('svelte/store').Writable<string | undefined>} a store containing the name of the media viewer hotkeys context */
 export let media_viewer_hotkeys_context_name = writable(undefined);
 
 
