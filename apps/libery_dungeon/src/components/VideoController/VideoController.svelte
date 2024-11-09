@@ -174,7 +174,7 @@
             /** @type {boolean} whether the mouse is over the component or not*/
             let mouse_over_controller = false;
 
-            /** @type {number} the timeout id for the controller visibility timeout */
+            /** @type {number | null} the timeout id for the controller visibility timeout */
             let controller_visibility_interval_id = null;
 
             /** @type {number} the opacity of the controller, managed by the controller visibility timeout */
@@ -183,7 +183,7 @@
             /** @type {boolean} whether the video is currently paused */
             let video_paused = false;
 
-            /** @type {number} whether the video is muted */
+            /** @type {boolean} whether the video is muted */
             let video_muted = true;
 
             /** @type {number} video progress percentage */    
@@ -262,7 +262,13 @@
         =============================================*/
         
             const defineVideoControllerKeybinds = () => {
-                if (layout_properties.IS_MOBILE || !browser || !global_hotkeys_manager.hasLoadedContext()) return;
+                if (global_hotkeys_manager == null) {
+                    console.error("The global hotkeys manager is null");
+                    return;
+                }
+
+                
+                if ($layout_properties.IS_MOBILE || !browser || !global_hotkeys_manager.hasLoadedContext()) return;
 
                 const video_controls_description_group = "<video_controls>";
 
@@ -273,7 +279,12 @@
             }
 
             const removeVideoControllerKeybinds = () => {
-                if (layout_properties.IS_MOBILE || !global_hotkeys_manager.hasLoadedContext()) return;
+                if (global_hotkeys_manager == null) {
+                    console.error("The global hotkeys manager is null");
+                    return;
+                }
+
+                if ($layout_properties.IS_MOBILE || !global_hotkeys_manager.hasLoadedContext()) return;
 
                 Object.values(keybinds).forEach(keybind => {
                     global_hotkeys_manager.unregisterHotkeyFromContext(keybind.key_combo, "keydown");
@@ -460,8 +471,8 @@
 
         /**
          * Fetches the watch progress of the video.
-         * @this video_element
-         * @returns {void}
+         * @this the_video_element
+         * @returns {Promise<void>}
          */
         async function getWatchProgress() {
             if (media_uuid == null || this.duration * 1000 < SAVE_WATCH_PROGRESS_THRESHOLD) return;
@@ -480,7 +491,7 @@
             return videoDurationToString(the_video_element.currentTime);
         }
 
-        const handleActiveMediaIndexChange = (new_active_media_index) => {
+        const handleActiveMediaIndexChange = () => {
             video_metadata_loaded = false;
 
             saveVideoWatchProgress();
@@ -493,12 +504,14 @@
          * @returns {void}
          */
         function handleSeekMinute(event, hotkey) {
-            if (!hotkey.WithVimMotion) return;
+            if (!hotkey.WithVimMotion && hotkey.HasMatch) return;
 
             let minutes_in_video = Math.trunc(the_video_element.duration / 60);
             if (isNaN(minutes_in_video)) return;
 
-            let minute_to_seek = hotkey.MatchMetadata.MotionMatches[0];
+            let minute_to_seek = hotkey.MatchMetadata?.MotionMatches[0];
+
+            if (minute_to_seek == null) return;
 
             minute_to_seek = Math.min(minutes_in_video, Math.max(0, minute_to_seek));
 
@@ -507,7 +520,7 @@
         
         /**
          * Handles the video element DurationChange event
-         * @this video_element
+         * @this the_video_element
          * @returns {void}
          */
         function handleVideoDurationChange() {
@@ -516,7 +529,7 @@
 
         /**
          * Handles the video element timeupdate event   
-         * @this video_element
+         * @this the_video_element
          * @returns {void}
          */
         function handleVideoTimeUpdate() {
@@ -527,13 +540,14 @@
 
         /**
          * Handles the video element loadedmetadata event
-         * @this video_element
+         * @this the_video_element
          * @returns {void}
          */
         function handleVideoMetadataLoaded() {
             video_metadata_loaded = true;
             video_duration_string = videoDurationToString(this.duration);
 
+            // @ts-ignore
             getWatchProgress.call(this);
         }
 
@@ -544,7 +558,12 @@
          */
         const handleProgressClick = (event) => {
             event.stopPropagation();
-            const rect = event.currentTarget.getBoundingClientRect();
+
+            const current_target = event.currentTarget;
+
+            if (!(current_target instanceof Element)) return;
+            
+            const rect = current_target.getBoundingClientRect();
             const clickX = event.clientX - rect.left;
             const new_progress = (clickX / rect.width);
             let new_video_time =  new_progress * the_video_element.duration;
@@ -565,19 +584,22 @@
             controller_opacity = Math.max(0, controller_opacity - 0.5);
             controller_visible = controller_opacity > 0;
 
-            if (!controller_visible) {
+            if (!controller_visible && controller_visibility_interval_id !== null) {
                 window.clearInterval(controller_visibility_interval_id);
                 controller_visibility_interval_id = null;
             }
         }
 
         // Hotfix to the controller not disappearing on mobile. we check if the mouse(the finger) touches the controller but not a button, if so we hide the controller
+        /**
+         * Handles the touch event on the controller
+         * @param {TouchEvent} event
+         */
         const handleControllerTouch = (event) => {
             if (event.target === event.currentTarget)
 
             mouse_over_controller = false;
         }
-
 
         function emitCaptureVideoFrame() {
             dispatch("capture-frame");            
@@ -633,9 +655,9 @@
 
         /**
          * Sets save_watch_progress based on the video duration.
-         * @this video_element
+         * @this the_video_element
          * @returns {void}
-        */
+         */
         function setSaveWatchProgress() {
             let video_duration_ms = this.duration * 1000;
             save_watch_progress = video_duration_ms >= SAVE_WATCH_PROGRESS_THRESHOLD;
@@ -644,7 +666,7 @@
         /**
          * Saves the video watch progress
          * @returns {void}
-        */
+         */
         const saveVideoWatchProgress = () => {
             if (!save_watch_progress || media_uuid == null) return;
 
