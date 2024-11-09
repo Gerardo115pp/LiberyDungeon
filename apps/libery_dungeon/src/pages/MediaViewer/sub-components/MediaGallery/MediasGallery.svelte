@@ -208,7 +208,7 @@
 
 <div id="medias-gallery">
     <menu id="mg-medias-controls">
-        {#if layout_properties.IS_MOBILE}
+        {#if $layout_properties.IS_MOBILE}
             <div class="mg-mc-control-item">
                 <button id="mg-mc-gallery-close-btn" on:click={handleGalleryClose}>
                     Close
