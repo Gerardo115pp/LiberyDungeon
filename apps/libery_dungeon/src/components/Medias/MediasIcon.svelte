@@ -3,18 +3,28 @@
     =            Properties            =
     =============================================*/
     
-        /** @type {number} to display the number of medias contained in this category*/
+        /** 
+         * @type {number} to display the number of medias contained in this category
+         */
         export let images_count;
-        /** @type {boolean} whether the category is currently focused by the keyboard selection */
+
+        /** 
+         * @type {boolean} whether the category-medias icon is currently focused by the keyboard selection
+         */
         export let keyboard_focused = false;
-        /** @type {boolean} whether to enter the media viewer on content click or emit an event*/
+
+        /**
+         * Extra html class(es) to be added to the media-icon component instance.
+         * @type {string}
+         */
+        export let extra_class = "";
     
     
     /*=====  End of Properties  ======*/
 
 </script>
 
-<li class="ce-inner-medias">
+<li class="ce-inner-medias {extra_class}">
     <button id="medias-link-wrapper" class:keyboard-focused={keyboard_focused}>
         <svg class="ce-im-icon" viewBox="0 0 110 110">
             <path class="ce-im-icon-hand" transform="translate(8, 0)" d="M30 80L32 47Q35 37 38 45L38 48L39.5 44Q42.5 34 45.5 45L45.5 47L46.7 42.5Q51 32 52.6 46L54.4 28q3 -8 5.2 0L60 80"/>

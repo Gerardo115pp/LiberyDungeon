@@ -18,6 +18,7 @@
         import CategoryFolder from "@components/Categories/CategoryFolder.svelte";
         import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+        import { CursorMovementWASD } from "@app/common/keybinds/CursorMovement";
         import { CategoryLeaf, getCategory, getCategoryTree, moveCategory } from "@models/Categories";
         import LiberyHeadline from "@components/UI/LiberyHeadline.svelte";
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
@@ -49,6 +50,7 @@
         import { platform_well_known_events } from "@libs/LiberyEvents/well_known_events";
         import TransactionsManagementTool from "@components/TransactionsManagementTool/TransactionsManagementTool.svelte";
         import { current_user_identity } from "@stores/user";
+    import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
 
     /*=====  End of Imports  ======*/
   
@@ -97,6 +99,21 @@
          */
         let keyboard_focused_category_holder = 0;
 
+        /**
+         * The WASD grid navigator.
+         * @type {CursorMovementWASD | null}
+         */
+        let the_wasd_dungeon_explorer_navigator = null;
+        
+
+        
+        /*----------  Child component properties  ----------*/
+        
+            /**
+             * Extra classes to be added to the category folder component.
+             * @type {string}
+             */
+            const category_content_member_html_class = "dme-content-item";
         
         /*----------  State  ----------*/
 
@@ -133,8 +150,8 @@
             let enable_gallery_hotkeys = false;
 
             /**
-             * Whether the a category is resyncing with the file system. right now we can't know when the resync is done
-             * so we just use this flag to prevent the user from spammig the resync button. In the future when we implement jobs.
+             * Whether the a category is syncing with the file system. right now we can't know when the resync is done
+             * so we just use this flag to prevent the user from spamming the resync button. In the future when we implement jobs.
              * we can use this flag to show a loading spinner or something.
              * @type {boolean}
              */
@@ -255,6 +272,8 @@
             filtered_category_selected_unsubscriber();
         }
 
+        dropGridNavigationWrapper();
+
         global_platform_events_manager.dropContext(app_page_name);
     });
     
@@ -279,10 +298,8 @@
                     hotkeys_context.register(["q", "esc"], handleGoToParentCategory, {
                         description: "<navigation>Go to parent category",
                     });
-            
-                    hotkeys_context.register(["a", "d", "w", "s"], handleCategoryMove, {
-                        description: "<navigation>Move category selection cursor",
-                    });
+
+                    setGridNavigationWrapper(hotkeys_context);
             
                     hotkeys_context.register(["enter", "e"], handleCategoryItemSelected, {
                         description: "<navigation>Enter/Select category",
@@ -341,9 +358,7 @@
                         });
                     }
 
-                    hotkeys_context.register(["?"], e => hotkeys_sheet_visible.set(!$hotkeys_sheet_visible), {
-                        description: `<${HOTKEYS_GENERAL_GROUP}>Toggle the hotkeys cheatsheet`,
-                    });
+                    wrapShowHotkeysTable(hotkeys_context);
 
                     hotkeys_context.register(["g", "shift+g"], enableMediaGalleryMode, {
                         description: "<content>Opens the category content as a gallery. the Shift key will automatically focus on the last viewed media.",
@@ -358,6 +373,16 @@
                 }
 
                 global_hotkeys_manager.loadContext(hotkey_context_name);
+            }
+
+            /**
+             * Destroys the WASD grid navigation wrapper. Is required because the grid navigation wrapper sets a MutationObserver on the grid parent element
+             * to handle the addition/removal of new elements.
+             */
+            const dropGridNavigationWrapper = () => {
+                if (the_wasd_dungeon_explorer_navigator != null) {
+                    the_wasd_dungeon_explorer_navigator.destroy();
+                }
             }
 
             /**
@@ -411,60 +436,21 @@
             }
 
             /**
-             * Handles the movement of the category selection cursor.
-             * @param {KeyboardEvent} key_event
-             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             * The handler for cursor update bounded to the CursorMovementWASD.
+             * @type {import('@common/keybinds/CursorMovement').CursorPositionCallback}
              */
-            const handleCategoryMove = (key_event, hotkey) => {
+            const handleCategoryContentCursorUpdate = (cursor_position) => {
 
-                let key_combo = hotkey.KeyCombo.toLowerCase();
+                const should_move_to_another_hotkeys_context = shouldMoveToAnotherHotkeysContext( 
+                    cursor_position.overflowed_top, 
+                    cursor_position.overflowed_right, 
+                    cursor_position.overflowed_bottom, 
+                    cursor_position.overflowed_left
+                );
 
-                const displayed_categories = getDisplayCategories();
-                
-                const categories_per_row_ratio = Math.floor(getCategoryPerRowRatio());
-                const categories_count = displayed_categories.length + ($current_category.content.length > 0 && ($category_search_results.length === 0) ? 1 : 0);
-                const row_count = Math.ceil(categories_count / categories_per_row_ratio);
-                
+                if (should_move_to_another_hotkeys_context) return;
 
-                let new_focus_index = keyboard_focused_category;
-
-                if (key_combo === "a") { // left
-                    new_focus_index -= 1;
-
-                    if (new_focus_index < 0) { // overflow
-                        if (shouldMoveToAnotherHotkeysContext(false, false, false, true)) return;
-                    }
-
-                    new_focus_index = new_focus_index < 0 ? categories_count - 1 : new_focus_index;
-                } else if (key_combo === "d") { // right
-                    new_focus_index += 1;
-
-                    if (new_focus_index >= categories_count) { // overflow
-                        if (shouldMoveToAnotherHotkeysContext(false, true, false, false)) return;
-                    }
-
-                    new_focus_index = new_focus_index >= categories_count ? 0 : new_focus_index;
-                } else if (key_combo === "w") { // up
-                    new_focus_index -= categories_per_row_ratio;
-
-                    if (new_focus_index < 0) { // overflow
-                        if (shouldMoveToAnotherHotkeysContext(true, false, false, false)) return;
-                    }
-
-                    new_focus_index = new_focus_index < 0 ? (((row_count-1) * categories_per_row_ratio) + keyboard_focused_category) : new_focus_index;
-                    new_focus_index = new_focus_index >= categories_count ? new_focus_index - categories_per_row_ratio : new_focus_index;
-                } else if (key_combo === "s") { // down
-                    new_focus_index += categories_per_row_ratio;
-
-                    if (new_focus_index >= categories_count) { // overflow
-                        if (shouldMoveToAnotherHotkeysContext(false, false, true, false)) return;
-                    }
-
-                    new_focus_index = new_focus_index >= categories_count ? keyboard_focused_category - ((row_count-1) * categories_per_row_ratio) : new_focus_index;
-                    new_focus_index = new_focus_index < 0 ? new_focus_index + categories_per_row_ratio : new_focus_index;
-                }
-
-                setKeyboardFocusedCategory(new_focus_index);
+                keyboard_focused_category = cursor_position.value;
             }
              
             const handleCategoryItemSelected = async () => {
@@ -541,17 +527,6 @@
                 if (!global_hotkeys_manager.hasContext(filter_hotkeys_context_name)) {
                     const filter_hotkeys_context = new HotkeysContext();
 
-                    // const letter_keys = [
-                    //     "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
-                    //     "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
-                    //     "u", "v", "w", "x", "y", "z"
-                    // ];
-
-                    // const upper_case_letter_keys = letter_keys.map(key => key.toUpperCase());
-
-                    // const all_letter_keys = letter_keys.concat(upper_case_letter_keys);
-                    // TODO: When we implement metacharacter hotkeys, we should use \w instead of this.
-
                     /**
                      * @param {KeyboardEvent} e
                      * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
@@ -618,6 +593,36 @@
                         return;
                     }
                 }
+            }
+
+            /**
+             * @type {import('@common/keybinds/CursorMovement').GridNavigationWrapperSetup}
+             */
+            const setGridNavigationWrapper = (hotkey_context) => {
+                if (!browser) return;
+
+                if (the_wasd_dungeon_explorer_navigator != null) {
+                    the_wasd_dungeon_explorer_navigator.destroy();
+                }
+
+                const grid_selectors = getCategoriesGridSelectors();
+
+                // The grid parent selector should only match one element, never more.
+                const matching_grid_parent_count = document.querySelectorAll(grid_selectors.grid_parent_selector).length;
+                if (matching_grid_parent_count !== 1) {
+                    throw new Error(`The grid parent selector<${grid_selectors.grid_parent_selector}> should match only one element, but it matched ${matching_grid_parent_count}`); 
+                }
+
+                the_wasd_dungeon_explorer_navigator = new CursorMovementWASD(grid_selectors.grid_parent_selector, handleCategoryContentCursorUpdate, {
+                    grid_member_selector: grid_selectors.grid_member_selector,
+                    sequence_item_name: "content item",
+                    sequence_item_name_plural: "content items",
+                    initial_cursor_position: keyboard_focused_category,
+                });
+                the_wasd_dungeon_explorer_navigator.setup(hotkey_context);
+
+                // @ts-ignore
+                globalThis.the_wasd_dungeon_explorer_navigator = the_wasd_dungeon_explorer_navigator;
             }
 
         /*=====  End of Keybinding  ======*/
@@ -774,26 +779,6 @@
         }
 
         /**
-         * Get the ratio of categories per row that is been displayed in the user's viewport
-         * @returns {number}
-         */
-        const getCategoryPerRowRatio = () => {
-            const category_container = document.getElementById("category-content");
-            const category_element = document.querySelector(".ce-inner-category");
-
-            if (category_container === null || category_element === null) {
-                return 1;
-            }
-
-            const container_style = window.getComputedStyle(category_container);
-
-            let padding_left = parseInt(container_style.paddingLeft);
-            let padding_right = parseInt(container_style.paddingRight);
-
-            return (category_container.clientWidth - (padding_left + padding_right)) / category_element.clientWidth;
-        }
-
-        /**
          * Returns the categories that must be displayed in the current viewport. 
          * @returns {import('@models/Categories').InnerCategory[]}
          */
@@ -825,6 +810,24 @@
             const displayed_categories = getDisplayCategories();
 
             return displayed_categories[keyboard_focused_category];
+        }
+
+        /**
+         * Returns the categories grid list pair of selectors on a 2 sized array with index 0 being the grid-parent selector and the index 1 being the grid-member selector. 
+         * This is used for the parameters of the CursorMovementWASD either on creation or afterwards for it's changeGridContainer method.
+         * @returns {import('@common/interfaces/common_actions').GridSelectors}
+         */
+        const getCategoriesGridSelectors = () => {
+            /**
+             * @type {import('@common/interfaces/common_actions').GridSelectors}
+             */
+            const grid_selectors = {
+                grid_parent_selector: "#libery-categories-explorer #category-content",
+                grid_member_selector: `.${category_content_member_html_class}`,
+            }
+
+
+            return grid_selectors;
         }
 
         /**
@@ -1212,7 +1215,11 @@
          * @param {number} index
          */
         const setKeyboardFocusedCategory = index => {
-            keyboard_focused_category = index;
+            if (the_wasd_dungeon_explorer_navigator !== null) {
+                the_wasd_dungeon_explorer_navigator.updateCursorPosition(index);
+            } else {
+                keyboard_focused_category = index;
+            }
         }
 
         /* ------------------------ Keyboard focuse save/load ----------------------- */
@@ -1342,6 +1349,7 @@
             <!-- Search results -->
             {#each $category_search_results as result_category, h}
                 <CategoryFolder 
+                    category_item_class={category_content_member_html_class}
                     inner_category={result_category.toInnerCategory()} 
                     category_keyboard_focused={keyboard_focused_category === h}
                 />
@@ -1350,15 +1358,27 @@
             <!-- Category content -->
             {#if filtered_categories.length === 0}
                 {#each $current_category?.InnerCategories as ic, h}
-                    <CategoryFolder category_leaf={ic} category_keyboard_focused={keyboard_focused_category === h}/>
+                    <CategoryFolder 
+                        category_item_class={category_content_member_html_class}
+                        category_leaf={ic}
+                        category_keyboard_focused={keyboard_focused_category === h}
+                    />
                 {/each}
             {:else}
                 {#each filtered_categories as ic, h}
-                    <CategoryFolder category_leaf={ic} category_keyboard_focused={keyboard_focused_category === h}/>
+                    <CategoryFolder 
+                        category_item_class={category_content_member_html_class}
+                        category_leaf={ic}
+                        category_keyboard_focused={keyboard_focused_category === h}
+                    />
                 {/each}
             {/if}
             {#if $current_category.content.length > 0}
-                <MediasIcon images_count={$current_category.content.length} keyboard_focused={keyboard_focused_category === $current_category.InnerCategories.length}/>
+                <MediasIcon 
+                    extra_class={category_content_member_html_class}
+                    images_count={$current_category.content.length} 
+                    keyboard_focused={keyboard_focused_category === $current_category.InnerCategories.length}
+                />
             {/if}
         {/if}
     </ul>

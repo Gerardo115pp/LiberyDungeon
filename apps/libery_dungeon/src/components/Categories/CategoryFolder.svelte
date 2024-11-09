@@ -39,11 +39,17 @@
             /**
              * Whether another category is been dragged over this category.
              * @type {boolean}
-            */
+             */
             let dragged_category_hovering = false;
 
             /** @type {HTMLLIElement} */
             let category_element;
+
+            /**
+             * An additional html class(es) to add to the category element
+             * @type {string}
+             */
+            export let category_item_class = "";
 
             const dispatch = createEventDispatcher();
 
@@ -232,7 +238,7 @@
     
 </script>
 
-<li class="ce-inner-category"
+<li class="ce-inner-category {category_item_class}"
     bind:this={category_element} 
     class:keyboard-focused={category_keyboard_focused} 
     class:debug={false} 
