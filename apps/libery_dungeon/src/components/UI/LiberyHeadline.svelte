@@ -8,10 +8,23 @@
     =            Properties            =
     =============================================*/
     
+        /**
+         * @type {string} - the tag name for the headline
+         */
         export let headline_tag = "h1";
+
+        /**
+         * @type {string} - the text to be displayed in the headline
+         */
         export let headline_text;
-        // @type {string} - extra props to be added to the headline tag as html
-        export let extra_props;
+        /**
+         * @type {string} - extra props to be added to the headline tag as html
+         */
+        export let extra_props="";
+
+        /**
+         * @type {string} - the color of the headline
+         */
         export let headline_color;
         export let vspacing = "var(--vspacing-1)";
         export let forced_font_size;
@@ -47,7 +60,9 @@
         },
     }
 
+    // @ts-ignore
     $: headline_color = headline_color || headline_settings[headline_tag]?.color;
+    // @ts-ignore
     const headline_font_size = headline_settings[headline_tag]?.font_size || "var(--font-size-h1)";
 
     
@@ -58,8 +73,20 @@
     export let animation_delay = 0;
 
 
+    /**
+     * @param {Element} node
+     * @param {fallingTransitionConfig} param1
+     * @typedef {Object} fallingTransitionConfig
+     * @property {number} [delay]
+     * @property {number} [duration=800]
+     * @property {number} [rotation_start_at=.8]
+     * @property {number} [rotation=90]
+     * @property {number} [fall_height=2000]
+     * @property {boolean} [invert=false]
+     * @property {(t: number) => number} easing
+     * @returns {import('svelte/animate').AnimationConfig}
+     */
     const fallingTransition = (node, {delay, duration=800, rotation_start_at=.8, rotation=90, fall_height=2000, invert=false, easing=t => t}) => {
-        
         
         // const rotation_start_at = .7;
         const rotation_offset = 1 - rotation_start_at; // defined for readability
@@ -82,8 +109,6 @@
             }
         }
     }
-    
-    
 
 </script>
 
