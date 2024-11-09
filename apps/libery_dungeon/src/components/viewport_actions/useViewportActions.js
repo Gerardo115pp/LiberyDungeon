@@ -3,6 +3,12 @@
  */
 let intersection_observer;
 
+/**
+* @callback ViewportEventHandler
+ * @param {CustomEvent<ViewportEventDetail>} event
+ * @returns {void | Promise<void>}
+*/
+
 function ensureIntersectionObserver() {
     if (intersection_observer != null) {
         return;
@@ -69,7 +75,7 @@ export const cleanViewportObserver = () => {
 /**
  * a svelte action that triggers the 'viewportEnter' event when the node enters the viewport and 'viewportLeave' when it leaves
  * @param {HTMLElement} node 
- * @param {ViewportActionParams} params
+ * @param {ViewportActionParams} [params]
  * @returns 
  */
 const viewport = (node, params) => {
