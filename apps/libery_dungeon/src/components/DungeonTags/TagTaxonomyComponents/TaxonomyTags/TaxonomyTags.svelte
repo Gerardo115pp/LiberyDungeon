@@ -372,7 +372,7 @@
              * @type {import("@common/keybinds/CommonActionWrappers").SearchResultsUpdateCallback<import('@models/DungeonTags').DungeonTag>}
              */
             const handleFocusSearchMatch = (search_result) => {
-                if (the_dungeon_tag_search_results_wrapper == null) return;
+                if (the_dungeon_tag_search_results_wrapper == null || search_result == null) return;
 
                 let tag_id = search_result.Id;
 
@@ -528,9 +528,8 @@
                 the_dungeon_tag_search_results_wrapper.dropSearchState();
             }
 
-            console.log("Dropped search results state");
             search_query.set("");
-            console.log("Search query: ", search_query);
+            search_results_ids = null;
         }
 
         /**
@@ -720,7 +719,7 @@
         enable_keyboard_selection={has_hotkey_control}
         rename_focused_tag={renaming_focused_tag}
         focused_tag_index={focused_tag_index}
-        highlighted_tag_ids={search_results_ids}
+        highlighted_tag_ids={has_hotkey_control ? search_results_ids : null}
         ui_taxonomy_reference={ui_taxonomy_reference}
         ui_tag_reference={ui_tag_reference}
         on:tag-selected
