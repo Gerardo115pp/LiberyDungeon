@@ -1,20 +1,25 @@
 <script>
-
+    import { use_category_folder_thumbnails } from "@config/ui_design";
     import { categories_tree, yanked_category } from "@stores/categories_tree";
     import { moveCategory, renameCategory } from "@models/Categories";
     import { createEventDispatcher } from "svelte";
     import { browser } from "$app/environment";
+    import { current_cluster } from "@stores/clusters";
 
     
     /*=============================================
     =            Properties            =
     =============================================*/
-    
-        /** @type {import('@models/Categories').InnerCategory | null} */
-        export let category_leaf = null;
 
-        /** @type {import('@models/Categories').InnerCategory | null} */
-        export let inner_category = null;
+        /** @type {import('@models/Categories').InnerCategory} */
+        export let inner_category;
+
+
+        /**
+         * Whether the category icon is ephemeral. for example if it's part for a category search results that are not in the current category
+         * @type {boolean}
+         */
+        export let is_ephemeral = false;
 
         /**
          * Whether the category folder should be highlighted
@@ -29,6 +34,15 @@
          */
         export let category_keyboard_focused = false;
       
+        
+        /*----------  State  ----------*/
+        
+                /**
+                 * If use_category_folder_thumbnails is enabled, this defines whether the category thumbnail url has been correctly loaded.
+                 * @type {boolean}
+                 */
+                let category_thumbnail_loaded = false;
+
         /*----------  Category Editing  ----------*/
         
             /**
@@ -76,16 +90,16 @@
          * @param {string} new_name
          */
         const applyCategoryRename = async new_name => {
-            if (category_leaf == null) return; // Refuse to rename a category with out a leaf. Because we can't cause a reactivity update.
+            if (is_ephemeral) return; // Refuse to rename a category with out a leaf. Because we can't cause a reactivity update.
             
-            let renamed_successfully = await renameCategory(category_leaf.uuid, new_name);
+            let renamed_successfully = await renameCategory(inner_category.uuid, new_name);
             if (!renamed_successfully) {
                 alert("Failed to rename category. Repeated name?");
                 return;
             } else {
                 $categories_tree.updateCurrentCategory();
     
-                category_leaf.name = new_name;            
+                inner_category.name = new_name;            
             }
 
             category_renaming = false;
@@ -96,7 +110,7 @@
         }
 
         const handleCategoryRenameRequested = () => {
-            category_renaming = (category_leaf != null); // Refuse to rename a category with out a leaf. Because we can't cause a reactivity update.
+            category_renaming = (inner_category != null); // Refuse to rename a category with out a leaf. Because we can't cause a reactivity update.
         }
 
         
@@ -111,14 +125,14 @@
              * @param {DragEvent} e
              */
             const handleCategoryDragStart = e => {
-                if (category_leaf == null) return;
+                if (is_ephemeral) return;
 
                 category_dragging = true;
 
                 if (e.dataTransfer == null) return;
 
                 e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/plain", category_leaf?.uuid);
+                e.dataTransfer.setData("text/plain", inner_category.uuid);
             }
 
             /**
@@ -134,11 +148,11 @@
              * @param {DragEvent} e
              */
             const handleCategoryDragEnter = e => {
-                if (category_leaf == null) return;
+                if (is_ephemeral) return;
 
                 const dragged_category_uuid = e.dataTransfer?.getData("text/plain");
 
-                if (!category_dragging && category_leaf.uuid !== dragged_category_uuid && category_leaf != null) {
+                if (!category_dragging && inner_category.uuid !== dragged_category_uuid) {
                     e.preventDefault();
                     dragged_category_hovering = true;
                 }
@@ -149,7 +163,7 @@
              * @param {DragEvent} e
              */
             const handleCategoryDragLeave = e => {
-                if (category_leaf == null) return;
+                if (is_ephemeral) return;
                 
                 dragged_category_hovering = false;
             }
@@ -161,12 +175,12 @@
             const handleCategoryDragOver = e => {
                 // Calling the preventDefault() method during both the dragenter and dragover event will indicate that a drop is allowed at that location.
                 // See: https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Drag_operations#specifying_drop_targets
-                if (category_leaf == null || !e.dataTransfer) return;
+                if (is_ephemeral || !e.dataTransfer) return;
 
 
                 const dragged_category_uuid = e.dataTransfer.getData("text/plain");
                 
-                if (dragged_category_uuid !== category_leaf.uuid && !category_dragging && category_leaf != null) {
+                if (dragged_category_uuid !== inner_category.uuid && !category_dragging) {
                     e.preventDefault(); // Accept the drop
                 }
 
@@ -179,7 +193,7 @@
              * @param {DragEvent} e
              */
             const handleCategoryDrop = async e => {
-                if (category_leaf == null || !e.dataTransfer) return;
+                if (is_ephemeral || !e.dataTransfer) return;
                 
                 e.stopPropagation();
                 e.preventDefault();
@@ -189,13 +203,13 @@
 
                 const dragged_category_uuid = e.dataTransfer.getData("text/plain"); 
                 
-                console.debug(`${category_leaf.uuid} <- '${dragged_category_uuid}'`);
+                console.debug(`${inner_category.uuid} <- '${dragged_category_uuid}'`);
 
-                if (dragged_category_uuid === category_leaf.uuid) {
+                if (dragged_category_uuid === inner_category.uuid) {
                     throw new Error("Cannot drop a category on itself");
                 }
 
-                let updated_category = await moveCategory(dragged_category_uuid, category_leaf.uuid);
+                let updated_category = await moveCategory(dragged_category_uuid, inner_category.uuid);
 
                 if (updated_category != null && updated_category.UUID === dragged_category_uuid) {
                     $categories_tree.updateCurrentCategory();
@@ -222,9 +236,18 @@
             }
         }
 
+        /**
+         * Handles the load event from the category thumbnail
+         * @param {Event} event
+         */
+        const handleCategoryThumbnailLoaded = event => {
+            category_thumbnail_loaded = true;
+        }
+
         const emitCategorySelectedEvent = () => {
+            // TODO: Update subscribers to not expect 'inner_category'
             dispatch("category-selected", {
-                category: category_leaf,
+                category: inner_category,
                 inner_category,
             });
         }
@@ -252,8 +275,10 @@
     draggable="true"
     class:dragging={category_dragging}
     class:catergory-drop-target={dragged_category_hovering}
-    class:yanked-category={$yanked_category === category_leaf?.uuid && $yanked_category !== ""}
+    class:yanked-category={$yanked_category === inner_category?.uuid && $yanked_category !== ""}
     class:category-highlighted={highlight_category}
+    class:category-with-thumbnail={use_category_folder_thumbnails && inner_category}
+    class:category-thumbnail-loaded={category_thumbnail_loaded}
     on:click={handleCategoryClick}
     on:dragstart={handleCategoryDragStart}
     on:dragend={handleCategoryDragEnd}
@@ -263,6 +288,11 @@
     on:drop={handleCategoryDrop}
     on:rename-requested={handleCategoryRenameRequested}
 >
+    {#if use_category_folder_thumbnails && inner_category != null}
+        <div class="category-thumbnail-wrapper">
+            <img on:loadedmetadata={handleCategoryThumbnailLoaded} loading="lazy" src="{inner_category.getRandomMediaURL($current_cluster.UUID, 10600)}" alt="" aria-hidden="true">
+        </div>
+    {/if}
     <svg class="ce-ic-icon" viewBox="0 0 110 80">
         <path class="category-vector-top" d="M55 10L95 30L55 50L15 30Z" />
         <path class="category-vector-layer" d="M15 40L55 60L95 40" />
@@ -271,9 +301,9 @@
     </svg>
     <div class="ce-ic-label">
         {#if !category_renaming}
-            <h3>{category_leaf?.name ?? inner_category?.name}</h3>
+            <h3>{inner_category?.name}</h3>
         {:else}
-            <input type="text" id="ce-ic-rename-input" on:keyup={handleRenameInput} autofocus value="{category_leaf?.name ?? inner_category?.name}"/>
+            <input type="text" id="ce-ic-rename-input" on:keyup={handleRenameInput} autofocus value="{inner_category.name}"/>
         {/if}
     </div>
 </li>

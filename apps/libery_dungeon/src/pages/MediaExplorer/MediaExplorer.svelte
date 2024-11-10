@@ -1363,6 +1363,7 @@
                     category_item_class={category_content_member_html_class}
                     inner_category={result_category.toInnerCategory()} 
                     category_keyboard_focused={keyboard_focused_category === h}
+                    is_ephemeral
                 />
             {/each}
         {:else if $current_category !== null}
@@ -1371,7 +1372,7 @@
                 <CategoryFolder 
                     highlight_category={category_local_search_results_lookup != null && category_local_search_results_lookup.has(ic.uuid)}
                     category_item_class={category_content_member_html_class}
-                    category_leaf={ic}
+                    inner_category={ic}
                     category_keyboard_focused={keyboard_focused_category === h}
                 />
             {/each}
