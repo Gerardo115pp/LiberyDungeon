@@ -11,4 +11,5 @@ export const common_action_groups = {
     NAVIGATION: "<navigation>",
     CONTENT: "<content>",
     VIDEO: "<video>",
+    EXPERIMENTAL: "<experimental>",
 }
