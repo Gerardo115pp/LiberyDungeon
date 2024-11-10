@@ -51,6 +51,8 @@
         import TransactionsManagementTool from "@components/TransactionsManagementTool/TransactionsManagementTool.svelte";
         import { current_user_identity } from "@stores/user";
         import { SearchResultsWrapper, wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
+        import { use_category_folder_thumbnails } from "@app/config/ui_design";
+    import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
 
     /*=====  End of Imports  ======*/
   
@@ -342,6 +344,10 @@
                         mode: "keyup",
                     });
 
+                    hotkeys_context.register(["; m"],  handleEnableCategoryFolderThumbnails, {
+                        description: `${common_action_groups.EXPERIMENTAL}Enable ${ui_category_reference.EntityNamePlural} thumbnails. This feature is experimental and is not optimized.`,
+                    });
+
                     // hotkeys_context.register(["/"], handleCategoryNameFilter, {
                     //     description: "<navigation>Filter subcategories in the current category by name",
                     // });
@@ -475,6 +481,15 @@
 
             const handleCreateNewCategory = () => {
                 category_creation_tool_mounted.set(!$category_creation_tool_mounted);
+            }
+
+            /**
+             * Enables the experimental feature use_category_folder_thumbnails. The thumbnails used for categories are fullsized images, heavliy deteriorates performance.
+             * Once this feature is optimized and tested, it will be enabled by default.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleEnableCategoryFolderThumbnails = (event, hotkey) => {
+                use_category_folder_thumbnails.set(!$use_category_folder_thumbnails);
             }
 
             const handleSyncCurrentCategory = async () => {
@@ -1471,11 +1486,15 @@
         z-index: var(--z-index-t-1);
     }
 
-    #category-content {
+    ul#category-content {
+        --category-folder-size: 220px;
+
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(var(--category-folder-size), 1fr));
+        grid-auto-rows: var(--category-folder-size);
         list-style: none;
         padding: 0;
+        gap: var(--spacing-1);
         /* padding: 0 var(--spacing-3); */
     }
 
