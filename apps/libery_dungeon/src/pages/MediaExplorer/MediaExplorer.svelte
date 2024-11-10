@@ -19,7 +19,7 @@
         import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { CursorMovementWASD } from "@app/common/keybinds/CursorMovement";
-        import { CategoryLeaf, getCategory, getCategoryTree, moveCategory } from "@models/Categories";
+        import { CategoryLeaf, getCategory, getCategoryTree, InnerCategory, moveCategory } from "@models/Categories";
         import LiberyHeadline from "@components/UI/LiberyHeadline.svelte";
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
         import MediasIcon from "@components/Medias/MediasIcon.svelte";
@@ -41,7 +41,7 @@
         import { page } from "$app/stores";
         import { goto, replaceState } from "$app/navigation";
         import { browser } from "$app/environment";
-        import { confirm_question_responses, LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
+        import { confirm_question_responses, LabeledError, UIReference, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
         import { MediaChangesManager, resyncClusterBranch } from "@models/WorkManagers";  
         import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
@@ -50,7 +50,7 @@
         import { platform_well_known_events } from "@libs/LiberyEvents/well_known_events";
         import TransactionsManagementTool from "@components/TransactionsManagementTool/TransactionsManagementTool.svelte";
         import { current_user_identity } from "@stores/user";
-    import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
+        import { SearchResultsWrapper, wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
 
     /*=====  End of Imports  ======*/
   
@@ -105,8 +105,6 @@
          */
         let the_wasd_dungeon_explorer_navigator = null;
         
-
-        
         /*----------  Child component properties  ----------*/
         
             /**
@@ -158,49 +156,50 @@
             let is_category_resyncing = false;
         
         /*----------  Category name filter  ----------*/
-        
-            let last_typing_time = 0;
-
-            /**
-             * Whether the user is typing a category name filter
-             * @type {boolean}
-             */
-            let category_filter_changed = false;
 
             /**
              * The category name filter
              * @type {string}
              */
-            let category_name_filter = "";
+            let category_name_search_query = "";
 
             /**
-             * The categories that match the category name filter
-             * @type {import ('@models/Categories').InnerCategory[]}
+             * Whether the search hotkey has been triggered
+             * @type {boolean}
              */
-            let filtered_categories = [];
-
-            /**
-             * The hotkey context name for the category name filter
-             * @type {string}
-             */
-            const filter_hotkeys_context_name = "category_name_filter";
-
-            /**
-             * The category name filter interval
-             * @type {number}
-             */
-            const category_name_filter_interval = 800;
-
-            /**
-             * @type {number | null}
-             */
-            let category_name_filter_interval_id = null;
+            let capturing_category_name_search = false;
 
             /**
              * @type {import('svelte/store').Unsubscriber}
              */
             let filtered_category_selected_unsubscriber;
-    
+
+            /**
+             * The inner category search results hotkey wrapper.
+             * @type {SearchResultsWrapper<import('@models/Categories').InnerCategory> | null}
+             */
+            let the_category_search_results_wrapper = null;
+
+            /**
+             * A lookup set for the search result from the_category_search_results_wrapper.SearchResults
+             * @type {Set<string> | null}
+             */
+            let category_local_search_results_lookup = null;
+
+        
+        /*----------  UI references  ----------*/
+
+            /**
+             * A UI reference for the categories.
+             * @type {UIReference}
+             */
+            const ui_category_reference = new UIReference("cell", "cells");
+
+            /**
+             * A UI reference for the media in the category.
+             * @type {UIReference}
+             */
+            const ui_media_reference = new UIReference("media", "medias");
     
     /*=====  End of Properties  ======*/
 
@@ -343,20 +342,22 @@
                         mode: "keyup",
                     });
 
-                    hotkeys_context.register(["/"], handleCategoryNameFilter, {
-                        description: "<navigation>Filter subcategories in the current category by name",
-                    });
+                    // hotkeys_context.register(["/"], handleCategoryNameFilter, {
+                    //     description: "<navigation>Filter subcategories in the current category by name",
+                    // });
 
-                    hotkeys_context.register(["f \\l"], handleFindStartsWith, {
-                        description: "<navigation>Filter subcategories in the current category by name",
-                        consider_time_in_sequence: true,
-                    });
+                    // hotkeys_context.register(["f \\l"], handleFindStartsWith, {
+                    //     description: "<navigation>Filter subcategories in the current category by name",
+                    //     consider_time_in_sequence: true,
+                    // });
 
                     if ($current_user_identity?.canViewTrashcan()) {
                         hotkeys_context.register(["="], handleEnableTransactionManagementToolState, {
                             description: "<tools>Open the transaction management tool. This tool allows you manage your trashcan"
                         });
                     }
+
+                    setSearchResultsWrapper(hotkeys_context);
 
                     wrapShowHotkeysTable(hotkeys_context);
 
@@ -519,62 +520,62 @@
              * and appends it to the category search term. Also at the end we register an interval that checks if the user has stopped typing for an amount of time, if so
              * we load the previous hotkey context and remove the interval
              */
-            const handleCategoryNameFilter = () => {
-                if (global_hotkeys_manager == null) return;
+            // const handleCategoryNameFilter = () => {
+            //     if (global_hotkeys_manager == null) return;
 
-                resetCategoryFiltersState(true);
+            //     resetCategoryFiltersState(true);
 
-                if (!global_hotkeys_manager.hasContext(filter_hotkeys_context_name)) {
-                    const filter_hotkeys_context = new HotkeysContext();
+            //     if (!global_hotkeys_manager.hasContext(filter_hotkeys_context_name)) {
+            //         const filter_hotkeys_context = new HotkeysContext();
 
-                    /**
-                     * @param {KeyboardEvent} e
-                     * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
-                     */
-                    const handleAllLetters = (e, hotkey) => {
-                        category_name_filter += e.key.toLowerCase();
+            //         /**
+            //          * @param {KeyboardEvent} e
+            //          * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+            //          */
+            //         const handleAllLetters = (e, hotkey) => {
+            //             category_name_filter += e.key.toLowerCase();
                         
-                        last_typing_time = Date.now();
-                        category_filter_changed = true;
-                    }
+            //             last_typing_time = Date.now();
+            //             category_filter_changed = true;
+            //         }
 
-                    filter_hotkeys_context.register(["\\l"], handleAllLetters, {
-                            description: `<${HOTKEYS_HIDDEN_GROUP}>used for typing category name filter`,
-                    });
+            //         filter_hotkeys_context.register(["\\l"], handleAllLetters, {
+            //                 description: `<${HOTKEYS_HIDDEN_GROUP}>used for typing category name filter`,
+            //         });
 
-                    filter_hotkeys_context.register(["backspace"], () => {
-                            category_name_filter = category_name_filter.slice(0, -1);
+            //         filter_hotkeys_context.register(["backspace"], () => {
+            //                 category_name_filter = category_name_filter.slice(0, -1);
 
-                            last_typing_time = Date.now();
-                            category_filter_changed = true;
-                        }, {
-                            description: `<${HOTKEYS_HIDDEN_GROUP}>used for deleting category name filter`,
-                    });
+            //                 last_typing_time = Date.now();
+            //                 category_filter_changed = true;
+            //             }, {
+            //                 description: `<${HOTKEYS_HIDDEN_GROUP}>used for deleting category name filter`,
+            //         });
 
-                    filter_hotkeys_context.register(["enter"], () => {
-                            filterCategoriesByName();
-                            resetCategoryFiltersState(false);
-                        }, {
-                            description: `<media_movements>Apply category name filter`,
-                    });
+            //         filter_hotkeys_context.register(["enter"], () => {
+            //                 filterCategoriesByName();
+            //                 resetCategoryFiltersState(false);
+            //             }, {
+            //                 description: `<media_movements>Apply category name filter`,
+            //         });
 
-                    global_hotkeys_manager.declareContext(filter_hotkeys_context_name, filter_hotkeys_context);
-                    global_hotkeys_manager.loadContext(filter_hotkeys_context_name);
+            //         global_hotkeys_manager.declareContext(filter_hotkeys_context_name, filter_hotkeys_context);
+            //         global_hotkeys_manager.loadContext(filter_hotkeys_context_name);
 
-                    category_name_filter_interval_id = setInterval(() => {
+            //         category_name_filter_interval_id = setInterval(() => {
 
-                        let current_time = Date.now();
+            //             let current_time = Date.now();
 
-                        filterCategoriesByName();
+            //             filterCategoriesByName();
 
-                        if (category_name_filter !== "" && (current_time - last_typing_time) > category_name_filter_interval) {
-                            resetCategoryFiltersState(false);
-                        }
+            //             if (category_name_filter !== "" && (current_time - last_typing_time) > category_name_filter_interval) {
+            //                 resetCategoryFiltersState(false);
+            //             }
 
-                        category_filter_changed = false;
-                    }, Math.max(category_name_filter_interval/3, 300));
-                }
-            }
+            //             category_filter_changed = false;
+            //         }, Math.max(category_name_filter_interval/3, 300));
+            //     }
+            // }
 
             /**
              * Set keyboard_focused_category to the first category that starts with the entered character.
@@ -593,6 +594,49 @@
                         return;
                     }
                 }
+            }
+
+            /**
+             * The search result handler bound to the_category_search_results_wrapper
+             * @type {import('@common/keybinds/CommonActionWrappers').SearchResultsUpdateCallback<import('@models/Categories').InnerCategory>}
+             */
+            const handleFocuseSearchMatch = search_match => {
+                if (the_category_search_results_wrapper == null || search_match == null) return;
+
+                capturing_category_name_search = false;
+
+                let inner_category_uuid = search_match.uuid;
+
+                let displayed_categories = getDisplayCategories();
+
+                for (let h = 0; h <= displayed_categories.length; h++) {
+                    let iteration_category = displayed_categories[h];
+
+                    if (!(iteration_category instanceof InnerCategory)) {
+                        console.error("iteration_category is not an InnerCategory:", iteration_category);
+                        throw new Error("The displayed categories should only contain InnerCategory instances")
+                    }
+
+                    if (iteration_category.uuid === inner_category_uuid) {
+                        setKeyboardFocusedCategory(h);
+                        break;
+                    }
+                }
+
+                if (the_category_search_results_wrapper.SearchResults.length > 0) {
+                    category_local_search_results_lookup = new Set(the_category_search_results_wrapper.SearchResults.map((result => result.uuid)));
+                }
+            }
+
+            /**
+             * Handles the update of the search query label
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCaptureCallback}
+             */
+            const handleCategorySearchQueryUpdate = (event, captured_string) => {
+                if (the_category_search_results_wrapper == null) return;
+
+                capturing_category_name_search = true;
+                category_name_search_query = captured_string;
             }
 
             /**
@@ -623,6 +667,23 @@
 
                 // @ts-ignore
                 globalThis.the_wasd_dungeon_explorer_navigator = the_wasd_dungeon_explorer_navigator;
+            }
+
+            /**
+             * @type {import('@common/keybinds/CommonActionWrappers').SearchResultsWrapperSetup}
+             */
+            const setSearchResultsWrapper = hotkey_contenxt => {
+
+                the_category_search_results_wrapper = new SearchResultsWrapper(hotkey_contenxt, $current_category.InnerCategories, handleFocuseSearchMatch, {
+                    minimum_similarity: 0.7,
+                    search_hotkey: ["f"],
+                    ui_search_result_reference: ui_category_reference,
+                    search_typing_hotkey_handler: handleCategorySearchQueryUpdate,
+                    boost_exact_inclusion: true,
+                    no_results_callback: () => resetCategoryFiltersState()
+                });
+
+                the_category_search_results_wrapper.setItemToStringFunction(inner_category => inner_category.name.toLowerCase());
             }
 
         /*=====  End of Keybinding  ======*/
@@ -724,42 +785,6 @@
 
             enable_gallery_hotkeys = true;
         }
-        
-        /**
-         * Filters categories by the category name filter. first appends all the categories that match the filter exactly, then appends all the categories that start with the filter
-         * and then, only if the name filter is larger than 3 characters appends all the categories that contain the filter. 
-         * 
-         * @returns {void}
-         */
-        const filterCategoriesByName = () => {
-                if (!category_filter_changed) return;
-
-                const current_categories = $current_category.InnerCategories;
-                const lower_case_filter = category_name_filter.toLowerCase();
-
-                /** @type {import('@models/Categories').InnerCategory[]} */
-                const exact_match = [];
-
-                /** @type {import('@models/Categories').InnerCategory[]} */
-                const start_match = [];
-
-                /** @type {import('@models/Categories').InnerCategory[]} */
-                const contains_match = [];
-
-                current_categories.forEach(inner_category => {
-                    let inner_category_name = inner_category.name.toLowerCase();
-
-                    if (inner_category_name === lower_case_filter) {
-                        exact_match.push(inner_category);
-                    } else if (inner_category_name.startsWith(lower_case_filter)) {
-                        start_match.push(inner_category);
-                    } else if (lower_case_filter.length >= 3 && inner_category_name.includes(lower_case_filter)) {
-                        contains_match.push(inner_category);
-                    }
-                });
-
-                filtered_categories = exact_match.concat(start_match).concat(contains_match);
-        }        
 
         /**
          * Focuse a given category by its uuid. Returns true if the category was found and focused, false otherwise.
@@ -783,17 +808,14 @@
          * @returns {import('@models/Categories').InnerCategory[]}
          */
         const getDisplayCategories = () => {
-            const displaying_search_results = $category_search_results.length > 0 && filtered_categories.length === 0;
-            const displaying_filtered_categories = filtered_categories.length > 0;
+            const displaying_search_results = $category_search_results.length > 0;
 
             /**
              * @type {import('@models/Categories').InnerCategory[]}
              */
             let displayed_categories = [];
 
-            if (displaying_filtered_categories) {
-                displayed_categories = filtered_categories;
-            } else if (displaying_search_results) {
+            if (displaying_search_results) {
                 displayed_categories = $category_search_results.map(category => category.toInnerCategory());
             } else {
                 displayed_categories = $current_category.InnerCategories;
@@ -1137,30 +1159,14 @@
 
         /**
          * Resets the state of the category name filter
-         * @param {boolean} reset_results
          * @returns {void}
          */
-        const resetCategoryFiltersState = reset_results => {
+        const resetCategoryFiltersState = () => {
             if (global_hotkeys_manager == null) return;
 
-            category_name_filter = "";
-            category_filter_changed = false;
-
-            if (reset_results) {
-                filtered_categories = [];
-            }
-
-            last_typing_time = 0;
-
-            if (category_name_filter_interval_id != null) {
-                clearInterval(category_name_filter_interval_id);
-                category_name_filter_interval_id = null;
-            }
-
-            if (global_hotkeys_manager.ContextName === filter_hotkeys_context_name) {
-                global_hotkeys_manager.loadPreviousContext();
-                global_hotkeys_manager.dropContext(filter_hotkeys_context_name);
-            }
+            category_name_search_query = "";
+            capturing_category_name_search = false;
+            category_local_search_results_lookup = null;
         }
 
         /**
@@ -1168,9 +1174,13 @@
          * @returns {void}
          */
         const resetCategoryFiltersOnCategoryChange = () => {
-            if (category_name_filter !== "" || filtered_categories.length > 0) {
-                resetCategoryFiltersState(true);
+            if (the_category_search_results_wrapper == null) return;
+
+            if (category_name_search_query !== "") {
+                resetCategoryFiltersState();
             }
+
+            the_category_search_results_wrapper.updateSearchPool($current_category.InnerCategories);            
         }
 
         /**
@@ -1181,7 +1191,7 @@
             setKeyboardFocusedCategory(0);
             keyboard_focused_category_holder = 0; 
             
-            resetCategoryFiltersState(true);
+            resetCategoryFiltersState();
             resetCategorySearchState();
 
             if (media_display_as_gallery) {
@@ -1311,9 +1321,9 @@
         />
     {/if}
     <div id="lce-floating-controls-overlay">
-        {#if category_name_filter_interval_id != null}
+        {#if category_name_search_query || capturing_category_name_search}
              <p id="lce-fco-category-filter-string">
-                 /{category_name_filter}
+                /{category_name_search_query}
              </p>
         {/if}
     </div>
@@ -1356,23 +1366,14 @@
             {/each}
         {:else if $current_category !== null}
             <!-- Category content -->
-            {#if filtered_categories.length === 0}
-                {#each $current_category?.InnerCategories as ic, h}
-                    <CategoryFolder 
-                        category_item_class={category_content_member_html_class}
-                        category_leaf={ic}
-                        category_keyboard_focused={keyboard_focused_category === h}
-                    />
-                {/each}
-            {:else}
-                {#each filtered_categories as ic, h}
-                    <CategoryFolder 
-                        category_item_class={category_content_member_html_class}
-                        category_leaf={ic}
-                        category_keyboard_focused={keyboard_focused_category === h}
-                    />
-                {/each}
-            {/if}
+            {#each $current_category?.InnerCategories as ic, h}
+                <CategoryFolder 
+                    highlight_category={category_local_search_results_lookup != null && category_local_search_results_lookup.has(ic.uuid)}
+                    category_item_class={category_content_member_html_class}
+                    category_leaf={ic}
+                    category_keyboard_focused={keyboard_focused_category === h}
+                />
+            {/each}
             {#if $current_category.content.length > 0}
                 <MediasIcon 
                     extra_class={category_content_member_html_class}

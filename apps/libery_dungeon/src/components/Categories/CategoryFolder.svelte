@@ -17,6 +17,13 @@
         export let inner_category = null;
 
         /**
+         * Whether the category folder should be highlighted
+         * @type {boolean}
+         * @default false
+         */
+        export let highlight_category = false;
+
+        /**
          * Whether the category is currently focused by the keyboard selection
          * @type {boolean}
          */
@@ -246,6 +253,7 @@
     class:dragging={category_dragging}
     class:catergory-drop-target={dragged_category_hovering}
     class:yanked-category={$yanked_category === category_leaf?.uuid && $yanked_category !== ""}
+    class:category-highlighted={highlight_category}
     on:click={handleCategoryClick}
     on:dragstart={handleCategoryDragStart}
     on:dragend={handleCategoryDragEnd}
@@ -290,6 +298,10 @@
 
     li.keyboard-focused {
         border-color: var(--main);
+    }
+
+    li.ce-inner-category.category-highlighted:not(.keyboard-focused) {
+        background: hsl(from var(--main) h s l / 0.05);
     }
 
     @media(pointer: fine) {
