@@ -52,11 +52,12 @@ export const getTrashcanMediaUrl = (media_name, width=120) => {
  * @param {string} category_id
  * @param {string} cluster_id
  * @param {number} [cache_seconds]
+ * @returns {string}
  */
 export const getRandomMediaUrl = (category_id, cluster_id, cache_seconds) => {
     if (globalThis.self == null) {
         console.error("Cannot use getRandomMediaUrl outside of a windowed context");
-        return;
+        return '';
     };
 
     if (!category_id || !cluster_id) {
