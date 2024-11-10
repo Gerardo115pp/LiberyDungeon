@@ -295,56 +295,63 @@
     
 </script>
 
-<li class="ce-inner-category {category_item_class}"
-    bind:this={category_element} 
-    class:keyboard-focused={category_keyboard_focused} 
-    class:debug={false} 
-    draggable="true"
-    class:dragging={category_dragging}
-    class:catergory-drop-target={dragged_category_hovering}
-    class:yanked-category={$yanked_category === inner_category?.uuid && $yanked_category !== ""}
-    class:category-highlighted={highlight_category}
-    class:category-with-thumbnail={$use_category_folder_thumbnails && inner_category}
-    class:category-thumbnail-loaded={category_thumbnail_loaded}
-    on:click={handleCategoryClick}
-    on:dragstart={handleCategoryDragStart}
-    on:dragend={handleCategoryDragEnd}
-    on:dragenter={handleCategoryDragEnter}
-    on:dragover={handleCategoryDragOver}
-    on:dragleave={handleCategoryDragLeave}
-    on:drop={handleCategoryDrop}
-    on:rename-requested={handleCategoryRenameRequested}
->
-    {#key inner_category.uuid}
-        {#if $use_category_folder_thumbnails && inner_category != null}
-            <div class="category-thumbnail-wrapper" 
-                on:viewportEnter={handlerCategoryThumbnailViewportEnter} 
-                on:viewportLeave={handlerCategoryThumbnailViewportLeave} 
-                use:viewport
-            >
-                {#if category_thumbnail_visible}
-                    <img fetchpriority="low" decoding="async" loading="lazy" src="{inner_category.getRandomMediaURL($current_cluster.UUID, 10600)}" alt="" aria-hidden="true" on:load={handleCategoryThumbnailLoaded} >
-                {/if}
-            </div>
-            <div class="ce-ic-thumbnail-overlay"></div>
-        {/if}
-    {/key}
-    <svg class="ce-ic-icon" viewBox="0 0 110 80">
-        <path class="category-vector-top" d="M55 10L95 30L55 50L15 30Z" />
-        <path class="category-vector-layer" d="M15 40L55 60L95 40" />
-        <path class="category-vector-layer" d="M15 47L55 67L95 47" />
-        <path class="category-vector-layer" d="M15 54L55 74L95 54" />
-    </svg>
-    <div class="ce-ic-label">
-        {#if !category_renaming}
-            <h3>{inner_category?.name}</h3>
-        {:else}
-            <input type="text" id="ce-ic-rename-input" on:keyup={handleRenameInput} autofocus value="{inner_category.name}"/>
-        {/if}
-    </div>
-</li>
+<div class="ce-inner-wrapper">
+    <li class="ce-inner-category {category_item_class}"
+        bind:this={category_element} 
+        class:keyboard-focused={category_keyboard_focused} 
+        class:debug={false} 
+        draggable="true"
+        class:dragging={category_dragging}
+        class:catergory-drop-target={dragged_category_hovering}
+        class:yanked-category={$yanked_category === inner_category?.uuid && $yanked_category !== ""}
+        class:category-highlighted={highlight_category}
+        class:category-with-thumbnail={$use_category_folder_thumbnails && inner_category}
+        class:category-thumbnail-loaded={category_thumbnail_loaded}
+        on:click={handleCategoryClick}
+        on:dragstart={handleCategoryDragStart}
+        on:dragend={handleCategoryDragEnd}
+        on:dragenter={handleCategoryDragEnter}
+        on:dragover={handleCategoryDragOver}
+        on:dragleave={handleCategoryDragLeave}
+        on:drop={handleCategoryDrop}
+        on:rename-requested={handleCategoryRenameRequested}
+    >
+        {#key inner_category.uuid}
+            {#if $use_category_folder_thumbnails && inner_category != null}
+                <div class="category-thumbnail-wrapper" 
+                    on:viewportEnter={handlerCategoryThumbnailViewportEnter} 
+                    on:viewportLeave={handlerCategoryThumbnailViewportLeave} 
+                    use:viewport
+                >
+                    {#if category_thumbnail_visible}
+                        <img fetchpriority="low" decoding="async" loading="lazy" src="{inner_category.getRandomMediaURL($current_cluster.UUID, 10600)}" alt="" aria-hidden="true" on:load={handleCategoryThumbnailLoaded} >
+                    {/if}
+                </div>
+                <div class="ce-ic-thumbnail-overlay"></div>
+            {/if}
+        {/key}
+        <svg class="ce-ic-icon" viewBox="0 0 110 80">
+            <path class="category-vector-top" d="M55 10L95 30L55 50L15 30Z" />
+            <path class="category-vector-layer" d="M15 40L55 60L95 40" />
+            <path class="category-vector-layer" d="M15 47L55 67L95 47" />
+            <path class="category-vector-layer" d="M15 54L55 74L95 54" />
+        </svg>
+        <div class="ce-ic-label">
+            {#if !category_renaming}
+                <h3>{inner_category?.name}</h3>
+            {:else}
+                <input type="text" id="ce-ic-rename-input" on:keyup={handleRenameInput} autofocus value="{inner_category.name}"/>
+            {/if}
+        </div>
+    </li>
+</div>
 
 <style>
+    .ce-inner-wrapper {
+        --timing: 400ms;
+        --rotation: 20deg;
+    }
+
     li.ce-inner-category {
         width: 100%;
         display: flex;
@@ -371,13 +378,11 @@
         background: hsl(from var(--main) h s l / 0.05);
     }
 
-    @media(pointer: fine) {
+    /* @media(pointer: fine) {
         .ce-inner-category:not(.dragging):hover {
-            /* background: var(--grey-8); */
-            border-color: var(--grey-8);
-            backdrop-filter: brightness(1.3);
+            
         }
-    }
+    } */
 
     
     /*=============================================
@@ -389,6 +394,8 @@
             background: transparent;
             border-radius: var(--border-radius);
             box-shadow: var(--shadow-2);
+            transition: all var(--timing) ease-out, opacity .5s ease-out, border 900ms ease-out, transform var(--timing) linear, box-shadow var(--timing) ease-out;
+
 
             & .ce-ic-icon, & .ce-ic-label {
                 z-index: var(--z-index-1);
@@ -417,30 +424,56 @@
                 object-fit: cover;
                 object-position: center;
             }
+
+            &::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                z-index: 100;
+                background-image: radial-gradient(circle, transparent 50cqw, black);
+                opacity: 0;
+                transition: opacity var(--timing);
+            }
+
+            &::after {
+                content: "";
+                position: absolute;
+                inset: 80% 0.5rem 0.5rem;
+                translate: 0;
+                transform: translateZ(-100px);
+                background: black;
+                filter: blur(1rem);
+                opacity: 0;
+                z-index: 1;
+                transition: rotate var(--timing), translate var(--timing)
+            }
         }
 
         li.ce-inner-category.category-with-thumbnail.category-thumbnail-loaded {
             align-items: center;
             justify-content: flex-end;
             padding: 0;
+            border-top: 1px solid var(--grey-3);
             
             & .ce-ic-icon {
                 display: none;
             }
 
             & .ce-ic-label {
-                width: 100cqw;
-                padding: 0 0 20cqh 0;
+                position: absolute;
+                bottom: -0.4em;
+
             }
 
             & .ce-ic-label h3 {
                 font-family: var(--font-decorative);
                 width: 100%;
-                background: hsl(from var(--grey-1) h s l / 0.08);
-                font-size: var(--font-size-3);
+                background: hsl(from var(--grey-7) h s l / 0.95);
+                font-size: var(--font-size-1);
                 text-align: center;
-                line-height: 1.2;
-                padding: 0.4em;
+                line-height: 1;
+                padding: 0.5em 2ex;
+                border-radius: var(--rounded-box-border-radius);
                 color: var(--grey-2);
             }
 
@@ -449,6 +482,48 @@
                 opacity: 1;
             }
         }
+
+        .ce-inner-wrapper:has(> li.ce-inner-category.category-with-thumbnail) {
+            perspective: 1000px;
+        }
+
+        li.ce-inner-category.category-with-thumbnail.keyboard-focused {
+            border-top: 1px solid var(--grey-3);
+            border-left: none;
+            border-right: none;
+            border-bottom: none;
+            box-shadow: var(--shadow-2-perspective);
+            scale: 1.05;
+            transform-style: preserve-3d;
+            transform-origin: center;
+            rotate: x 15deg;
+            
+            /* & .category-thumbnail-wrapper img {
+            } */
+
+            & .ce-ic-label {
+                inset: auto 2em;
+                transform: translateY(-2em) translateZ(20px);
+                transition: 400ms;
+            }
+
+            & .ce-ic-label h3 {
+                color: var(--grey);
+                background: var(--main-dark);
+            }            
+
+            &::before {
+                opacity: 1;
+            }
+
+            &::after {
+                rotate: x calc(var(--rotation) * -1);
+                translate: 0 60px;
+                opacity: .8;
+            }
+        }
+
+
             
     
     /*=====  End of CategoryThumbnail  ======*/
