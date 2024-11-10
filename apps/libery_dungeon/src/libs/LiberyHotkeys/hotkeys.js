@@ -400,6 +400,10 @@ export class HotkeyData {
 
             if (triggered) {
                 this.#match_metadata = this.#createMatchMetadata();
+
+                if (this.#the_options.capture_hotkey_callback) {
+                    this.#the_options.capture_hotkey_callback(event, "");
+                }
             }
 
             return triggered;
