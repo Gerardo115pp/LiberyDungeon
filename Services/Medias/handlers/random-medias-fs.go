@@ -40,6 +40,7 @@ func RandomMediasFsHandler(service_instance libery_networking.Server) http.Handl
 func getRandomMediasFsHandler(response http.ResponseWriter, request *http.Request) {
 	var cluster_id string = request.URL.Query().Get("cluster_id")
 	var category_id string = request.URL.Query().Get("category_id")
+	var cache_seconds string = request.URL.Query().Get("cache_seconds")
 	var cluster dungeon_models.CategoryCluster
 	var media *dungeon_models.Media
 	var category *dungeon_models.Category
@@ -98,13 +99,26 @@ func getRandomMediasFsHandler(response http.ResponseWriter, request *http.Reques
 		return
 	}
 
+	var use_cache bool = false
+
+	if cache_seconds != "" {
+		_, err := strconv.Atoi(cache_seconds)
+
+		use_cache = err == nil
+	}
+
 	file_size_64 := file_stat.Size()
 	safe_filename := service_helpers.RemoveSpecialChars(media.Name)
 
 	response.Header().Set("Content-Type", content_type)
 	response.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", safe_filename))
-	response.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	response.Header().Set("Accept-Ranges", "bytes")
+
+	if !use_cache {
+		response.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	} else {
+		response.Header().Set("Cache-Control", fmt.Sprintf("max-age=%s", cache_seconds))
+	}
 
 	ranges, err := http_range.ParseRange(request.Header.Get("Range"), file_size_64)
 	if err != nil || len(ranges) == 0 {
