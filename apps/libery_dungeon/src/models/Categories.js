@@ -17,6 +17,7 @@ import {
 } from "@databases/category_cache";
 import { browser } from "$app/environment";
 import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
+import { getRandomMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
 
 const ROOT_CATEGORY_PROXY_UUID = "main";
 
@@ -278,6 +279,16 @@ export const moveCategory = async (moved_category, new_parent_category) => {
          */
         toCategoryLeaf = async () => {
             return getCategoryLeaf(this.uuid);
+        }
+
+        /**
+         * Returns a url for a random media inside this category. The actual random selection is performed by the server.
+         * @param {string} cluster_id - required by the api.
+         * @param {number} [cache_seconds] - If passed as a positive integer, the server will instruct the browser to cache the random media for the passed amount of seconds.
+         * @returns {string}
+         */
+        getRandomMediaURL = (cluster_id, cache_seconds) => {
+            return getRandomMediaUrl(this.uuid, cluster_id, cache_seconds);
         }
 
         /**
