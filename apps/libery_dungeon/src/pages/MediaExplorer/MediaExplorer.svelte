@@ -1312,7 +1312,10 @@
         {$current_category != null ? `${$current_category.name} - Dungeon Cell` : "Dungeon cells"}
     </title>
 </svelte:head>
-<main id="libery-categories-explorer" style:position="relative">
+<main id="libery-categories-explorer"
+    class:with-category-thumbnails={$use_category_folder_thumbnails}
+    style:position="relative"
+>
     {#if $category_creation_tool_mounted}
         <div class="fullwidth-modals" id="new-category-component-wrapper">
             <CreateNewCategoryTool />
@@ -1487,16 +1490,31 @@
     }
 
     ul#category-content {
-        --category-folder-size: 220px;
+        --category-folder-size: 230px;
 
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(var(--category-folder-size), 1fr));
         grid-auto-rows: var(--category-folder-size);
         list-style: none;
         padding: 0;
-        gap: var(--spacing-1);
+        gap: 2px;
         /* padding: 0 var(--spacing-3); */
     }
+
+    
+    /*=============================================
+    =            Category thumbnails            =
+    =============================================*/
+    
+    #libery-categories-explorer.with-category-thumbnails ul#category-content {
+        grid-auto-rows: calc(var(--category-folder-size) * 1.7);
+        gap: var(--spacing-2);
+    }
+    
+    /*=====  End of Category thumbnails  ======*/
+    
+    
+
 
     @media only screen and (max-width: 768px) {
         #category-content {

@@ -5,6 +5,7 @@
     import { createEventDispatcher } from "svelte";
     import { browser } from "$app/environment";
     import { current_cluster } from "@stores/clusters";
+    import viewport from "@components/viewport_actions/useViewportActions";
 
     
     /*=============================================
@@ -13,7 +14,6 @@
 
         /** @type {import('@models/Categories').InnerCategory} */
         export let inner_category;
-
 
         /**
          * Whether the category icon is ephemeral. for example if it's part for a category search results that are not in the current category
@@ -42,6 +42,16 @@
                  * @type {boolean}
                  */
                 let category_thumbnail_loaded = false;
+                $:if (inner_category.uuid) {
+                    category_thumbnail_loaded = false;
+                }
+
+                /**
+                 * Whether the category icon is currently visible.
+                 * @type {boolean}
+                 */
+                let category_thumbnail_visible = false;
+
 
         /*----------  Category Editing  ----------*/
         
@@ -241,7 +251,24 @@
          * @param {Event} event
          */
         const handleCategoryThumbnailLoaded = event => {
+            console.log("Category thumbnail loaded:", event.target);
             category_thumbnail_loaded = true;
+        }
+
+        /**
+         * Handles the viewportEnter event on the category thumbnail.
+         * @type {import('@components/viewport_actions/useViewportActions').ViewportEventHandler}
+         */
+        const handlerCategoryThumbnailViewportEnter = (event) => {
+            category_thumbnail_visible = true;
+        }
+
+        /**
+         * Handles the viewportLeave event on the category thumbnail.
+         * @type {import('@components/viewport_actions/useViewportActions').ViewportEventHandler}
+         */
+        const handlerCategoryThumbnailViewportLeave = (event) => {
+            category_thumbnail_visible = false;
         }
 
         const emitCategorySelectedEvent = () => {
@@ -277,7 +304,7 @@
     class:catergory-drop-target={dragged_category_hovering}
     class:yanked-category={$yanked_category === inner_category?.uuid && $yanked_category !== ""}
     class:category-highlighted={highlight_category}
-    class:category-with-thumbnail={use_category_folder_thumbnails && inner_category}
+    class:category-with-thumbnail={$use_category_folder_thumbnails && inner_category}
     class:category-thumbnail-loaded={category_thumbnail_loaded}
     on:click={handleCategoryClick}
     on:dragstart={handleCategoryDragStart}
@@ -288,11 +315,20 @@
     on:drop={handleCategoryDrop}
     on:rename-requested={handleCategoryRenameRequested}
 >
-    {#if use_category_folder_thumbnails && inner_category != null}
-        <div class="category-thumbnail-wrapper">
-            <img on:loadedmetadata={handleCategoryThumbnailLoaded} loading="lazy" src="{inner_category.getRandomMediaURL($current_cluster.UUID, 10600)}" alt="" aria-hidden="true">
-        </div>
-    {/if}
+    {#key inner_category.uuid}
+        {#if $use_category_folder_thumbnails && inner_category != null}
+            <div class="category-thumbnail-wrapper" 
+                on:viewportEnter={handlerCategoryThumbnailViewportEnter} 
+                on:viewportLeave={handlerCategoryThumbnailViewportLeave} 
+                use:viewport
+            >
+                {#if category_thumbnail_visible}
+                    <img fetchpriority="low" decoding="async" loading="lazy" src="{inner_category.getRandomMediaURL($current_cluster.UUID, 10600)}" alt="" aria-hidden="true" on:load={handleCategoryThumbnailLoaded} >
+                {/if}
+            </div>
+            <div class="ce-ic-thumbnail-overlay"></div>
+        {/if}
+    {/key}
     <svg class="ce-ic-icon" viewBox="0 0 110 80">
         <path class="category-vector-top" d="M55 10L95 30L55 50L15 30Z" />
         <path class="category-vector-layer" d="M15 40L55 60L95 40" />
@@ -312,14 +348,15 @@
     li.ce-inner-category {
         width: 100%;
         display: flex;
+        height: 100%;
+        background: var(--grey);
+        container-type: size;
         flex-direction: column;
         align-items: center;
-        transition: all .3s ease-in;
-        padding: var(--vspacing-1);
+        padding: var(--spacing-1);
         border: .5px solid var(--grey);
-        transition: opacity .5s ease-out, border .5s ease-out, transform .2s linear;
-        background: var(--grey);
         gap: var(--spacing-1);
+        transition: all .3s ease-in, opacity .5s ease-out, border .2s ease-out, transform .2s linear;
 
         &.yanked-category {
             opacity: 0.2 !important;
@@ -341,6 +378,82 @@
             backdrop-filter: brightness(1.3);
         }
     }
+
+    
+    /*=============================================
+    =            CategoryThumbnail            =
+    =============================================*/
+    
+        li.ce-inner-category.category-with-thumbnail {
+            position: relative;
+            background: transparent;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-2);
+
+            & .ce-ic-icon, & .ce-ic-label {
+                z-index: var(--z-index-1);
+            }
+
+            & .ce-ic-thumbnail-overlay {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                background-color: hsl(from var(--grey) h s l / 0.4);
+                z-index: var(--z-index-b-1);
+            }
+            
+            & .category-thumbnail-wrapper {
+                position: absolute;
+                width: 100cqw;
+                height: 100cqh;
+                z-index: var(--z-index-b-2);
+                overflow: hidden;
+            }
+
+            & .category-thumbnail-wrapper img {
+                opacity: 0;
+                width: 100cqw;
+                height: 100cqh;
+                object-fit: cover;
+                object-position: center;
+            }
+        }
+
+        li.ce-inner-category.category-with-thumbnail.category-thumbnail-loaded {
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0;
+            
+            & .ce-ic-icon {
+                display: none;
+            }
+
+            & .ce-ic-label {
+                width: 100cqw;
+                padding: 0 0 20cqh 0;
+            }
+
+            & .ce-ic-label h3 {
+                font-family: var(--font-decorative);
+                width: 100%;
+                background: hsl(from var(--grey-1) h s l / 0.08);
+                font-size: var(--font-size-3);
+                text-align: center;
+                line-height: 1.2;
+                padding: 0.4em;
+                color: var(--grey-2);
+            }
+
+            & .category-thumbnail-wrapper img {
+                
+                opacity: 1;
+            }
+        }
+            
+    
+    /*=====  End of CategoryThumbnail  ======*/
+    
+    
 
     svg.ce-ic-icon {
         width: 100%;
