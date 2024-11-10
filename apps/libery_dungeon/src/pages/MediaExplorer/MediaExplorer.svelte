@@ -679,7 +679,8 @@
                     search_hotkey: ["f"],
                     ui_search_result_reference: ui_category_reference,
                     search_typing_hotkey_handler: handleCategorySearchQueryUpdate,
-                    boost_exact_inclusion: true,
+                    boost_exact_inclusion: false,
+                    allow_member_similarity_checking: true,
                     no_results_callback: () => resetCategoryFiltersState()
                 });
 
