@@ -274,10 +274,25 @@ export const moveCategory = async (moved_category, new_parent_category) => {
         /**
          * Converts an InnerCategory to a Category Leaf. this requires fetch the category data 
          * from the server.
-         * @returns {Promise<CategoryLeaf>}
+         * @returns {Promise<CategoryLeaf | null>}
          */
         toCategoryLeaf = async () => {
             return getCategoryLeaf(this.uuid);
+        }
+
+        /**
+         * Handles type conversion from InnerCategory instances.
+         * @param {string} hint
+         * @returns {string}
+         * @throws {TypeError}
+         */
+        [Symbol.toPrimitive](hint) {
+            switch (hint) {
+                case "string":
+                    return this.name;
+                default:
+                    throw new TypeError(`Cannot convert InnerCategory to ${hint}`);
+            }
         }
     }
 
