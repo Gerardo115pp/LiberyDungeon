@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const pw_server = PW_SERVER;
 export const base_domain = BASE_DOMAIN;
 export const categories_server = CATEGORIES_SERVER;
