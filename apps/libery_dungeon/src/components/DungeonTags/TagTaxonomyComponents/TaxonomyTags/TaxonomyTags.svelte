@@ -504,7 +504,7 @@
                 the_dungeon_tag_search_results_wrapper = new SearchResultsWrapper(hotkeys_context, taxonomy_tags.Tags, handleFocusSearchMatch, {
                     search_hotkey: ["f"],
                     ui_search_result_reference: ui_tag_reference,
-                    search_hotkey_handler: handleSearchQueryUpdate,
+                    search_typing_hotkey_handler: handleSearchQueryUpdate,
                     minimum_similarity: 0.8,
                 });
             }

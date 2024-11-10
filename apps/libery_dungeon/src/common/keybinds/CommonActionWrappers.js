@@ -27,6 +27,12 @@ export const wrapShowHotkeysTable = (hotkeys_context) => {
 */
 
 /**
+ * Sets the search results wrapper required data.
+* @callback SearchResultsWrapperSetup
+ * @param {import("@libs/LiberyHotkeys/hotkeys_context").default} hotkeys_context
+*/
+
+/**
  * A class that abstracts search functionality using hotkeys. Inspired by the '/' search hotkey in Vim. Receives a HotkeysContext and a result update callback that takes T as a parameter and returns void.
  * By default converts T into searchable strings using the String object as a function(objects can override how String converts them into primitive string by implementing the [Symbol.toPrimitive] method).
  * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/toPrimitive
@@ -61,7 +67,7 @@ export class SearchResultsWrapper {
      * @property {string[] | string} search_next_hotkey The hotkey to go to the next search result.
      * @property {string[] | string} search_previous_hotkey The hotkey to go to the previous search result.
      * @property {number} minimum_similarity The minimum similarity score for a search result to be considered a match. Default is 0.5.
-     * @property {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback} [search_hotkey_handler] A callback that receives a search query as is been typed.
+     * @property {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback} [search_typing_hotkey_handler] A callback that receives a search query as is been typed.
      */
     #search_options;
 
@@ -88,7 +94,7 @@ export class SearchResultsWrapper {
      * @property {string[] | string} [search_next_hotkey] The hotkey to go to the next search result.
      * @property {string[] | string} [search_previous_hotkey] The hotkey to go to the previous search result
      * @property {number} [minimum_similarity] The minimum similarity score for a search result to be considered a match. Default is 0.5.
-     * @property {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback} [search_hotkey_handler] A callback that receives a search query as is been typed.
+     * @property {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback} [search_typing_hotkey_handler] A callback that receives a search query as is been typed.
      */
     constructor(hotkeys_context, search_pool, search_results_update_callback, search_options) {
         if (search_options === undefined) {
@@ -127,6 +133,7 @@ export class SearchResultsWrapper {
         let match_array = search_array.map((item) => {
             const item_string = this.#item_to_string(item);
             const similarity = jaroWinkler(item_string, search_string);
+            console.log(`item_string: ${item_string}::${similarity}`);
             return { similarity, item, item_string };
         });
 
@@ -346,7 +353,7 @@ export class SearchResultsWrapper {
 
             hotkeys_context.register(search_hotkey_combo, this.#searchHotkeyHandler.bind(this), {
                 description: `${common_action_groups.NAVIGATION}Search for ${this.#search_options.ui_search_result_reference.EntityName}.`,
-                capture_hotkey_callback: this.#search_options.search_hotkey_handler,
+                capture_hotkey_callback: this.#search_options.search_typing_hotkey_handler,
             });
         }
 
@@ -374,5 +381,5 @@ const DEFAULT_SEARCH_OPTIONS = {
     search_next_hotkey: global_search_hotkeys.SEARCH_NEXT,
     search_previous_hotkey: global_search_hotkeys.SEARCH_PREVIOUS,
     minimum_similarity: 0.5,
-    search_hotkey_handler: HOTKEY_NULLISH_CAPTURE_HANDLER
+    search_typing_hotkey_handler: HOTKEY_NULLISH_CAPTURE_HANDLER
 }
