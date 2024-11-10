@@ -48,6 +48,38 @@ export const getTrashcanMediaUrl = (media_name, width=120) => {
 }
 
 /**
+ * The server returns a random image from a category. optionally if cache_seconds is passed as a positive integer, the server instructs the browser to cache the retrieved resource of the requested amount of time.
+ * @param {string} category_id
+ * @param {string} cluster_id
+ * @param {number} [cache_seconds]
+ */
+export const getRandomMediaUrl = (category_id, cluster_id, cache_seconds) => {
+    if (globalThis.self == null) {
+        console.error("Cannot use getRandomMediaUrl outside of a windowed context");
+        return;
+    };
+
+    if (!category_id || !cluster_id) {
+        throw new Error("In getRandomMediaUrl: category_id and cluster_id are required.");
+    }
+
+    if (!URL.canParse(`${medias_server}/random-medias-fs`, location.origin)) {
+        throw new Error(`url<${medias_server}/random-medias-fs> has a syntax problem`);
+    }
+
+    const random_media_url = new URL(`${medias_server}/random-medias-fs`);
+
+    random_media_url.searchParams.set("category_id", category_id);
+    random_media_url.searchParams.set("cluster_id", cluster_id);
+
+    if (cache_seconds) {
+        random_media_url.searchParams.set("cache_seconds", cache_seconds.toString());
+    }
+
+    return random_media_url.toString();
+}
+
+/**
 * @param {string} media_url
  * @returns {string}
 */
@@ -90,6 +122,7 @@ export class PatchRenameMediasRequest {
             renamed = response.ok;
         } catch (error) {
             console.error("Error while renaming medias: ", error);
+            throw error;
         }
 
         return new HttpResponse(response, renamed);
