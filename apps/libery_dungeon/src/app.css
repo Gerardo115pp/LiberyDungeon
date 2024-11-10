@@ -275,6 +275,8 @@
             --page-lateral-spacing: calc(calc(100vw - var(--page-content-width)) / 2);
             --backdrop-filer-blur: blur(3px);
             --shadow-1: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+            --shadow-2: 0 0 var(--spacing-2) calc(var(--spacing-2) * 0.1) hsl(from var(--grey-4) h s l / 0.14);
+
 
             scrollbar-width: none;
     }
