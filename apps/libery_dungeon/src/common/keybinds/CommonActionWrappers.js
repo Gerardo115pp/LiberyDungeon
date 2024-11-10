@@ -67,6 +67,8 @@ export class SearchResultsWrapper {
      * @property {string[] | string} search_next_hotkey The hotkey to go to the next search result.
      * @property {string[] | string} search_previous_hotkey The hotkey to go to the previous search result.
      * @property {number} minimum_similarity The minimum similarity score for a search result to be considered a match. Default is 0.5.
+     * @property {boolean} boost_exact_inclusion If true, strings that contain the exact match are(even if the string is much larger than the search query) are boosted.
+     * @property {() => void} no_results_callback
      * @property {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback} [search_typing_hotkey_handler] A callback that receives a search query as is been typed.
      */
     #search_options;
@@ -94,6 +96,8 @@ export class SearchResultsWrapper {
      * @property {string[] | string} [search_next_hotkey] The hotkey to go to the next search result.
      * @property {string[] | string} [search_previous_hotkey] The hotkey to go to the previous search result
      * @property {number} [minimum_similarity] The minimum similarity score for a search result to be considered a match. Default is 0.5.
+     * @property {boolean} [boost_exact_inclusion=true]
+     * @property {() => void} [no_results_callback]
      * @property {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback} [search_typing_hotkey_handler] A callback that receives a search query as is been typed.
      */
     constructor(hotkeys_context, search_pool, search_results_update_callback, search_options) {
@@ -132,9 +136,24 @@ export class SearchResultsWrapper {
         /** @type {MatchScore[]} */
         let match_array = search_array.map((item) => {
             const item_string = this.#item_to_string(item);
-            const similarity = jaroWinkler(item_string, search_string);
-            console.log(`item_string: ${item_string}::${similarity}`);
-            return { similarity, item, item_string };
+            let similarity = jaroWinkler(item_string, search_string);
+            let similarity_boost = 0; 
+
+            if (this.#search_options.boost_exact_inclusion && search_string.length > 3) {
+                const includes_search_string = item_string.toLowerCase().includes(search_string.toLowerCase());
+
+                if (includes_search_string) {
+                    similarity_boost = search_string.length * 0.1;
+                }
+            }
+
+            similarity = Math.min(1, similarity + similarity_boost);
+
+            return { 
+                similarity: similarity,
+                item,
+                item_string
+            };
         });
 
         match_array = match_array.filter((match) => match.similarity >= this.#search_options.minimum_similarity);
@@ -167,20 +186,28 @@ export class SearchResultsWrapper {
 
         if (!search_string) {
             console.error("Search hotkey handler called without a valid search string: ", hotkey);
+            this.#search_options.no_results_callback();
             return;
         }
 
+        /**
+         * Whether the results update callback should be triggered
+         */
+        let found_new_results = false;
+
         if (search_string.length > 3) {
-            this.search(this.#search_pool, search_string);
+            found_new_results = this.search(this.#search_pool, search_string);
         } else if (search_string.length === 1) {
-            this.searchPrefix(this.#search_pool, search_string);
+            found_new_results = this.searchPrefix(this.#search_pool, search_string);
         } else {
-            this.searchInclude(this.#search_pool, search_string);
+            found_new_results = this.searchInclude(this.#search_pool, search_string);
         }
 
-        console.log("search_results: ", this.#search_results);
-
-        this.#search_results_update_callback(this.#search_results[this.#current_search_index]);
+        if (found_new_results) {
+            this.#search_results_update_callback(this.#search_results[this.#current_search_index]);
+        } else {
+            this.#search_options.no_results_callback();
+        }
     }
 
     /**
@@ -227,14 +254,15 @@ export class SearchResultsWrapper {
     /**
      * Searches a given array for a given search string. utilizes the Jaro-Winkler to get a similarity score 
      * and sorts the results by that similarity omits results that are below the minimum similarity threshold.
+     * returns whether the search yielded any new results.
      * @param {T[]} search_array
      * @param {string} search_string
-     * @returns {void}
+     * @returns {boolean}
      */
     search(search_array, search_string) {
         if (search_array.length == 0) {
             console.warn("Search array is empty.");
-            return;
+            return false;
         }
 
         /**
@@ -252,23 +280,26 @@ export class SearchResultsWrapper {
 
         if (new_search_results.length == 0) {
             console.warn(`No search results found for ${search_string}`);
-            return;
+            return false;
         }
 
         this.#search_results = new_search_results;
         this.#current_search_index = 0;
+
+        return true;
     }
 
     /**
      * Searches a given array for a given search string. Checking only if the items are prefixed with the search string. Ideal for short search_strings(1-2 characters).
+     * returns whether the search yielded any new results.
      * @param {T[]} search_array
      * @param {string} search_string
-     * @returns {void}
+     * @returns {boolean}
      */
     searchPrefix(search_array, search_string) {
         if (search_array.length == 0) {
             console.warn("Search array is empty.");
-            return;
+            return false;
         }
 
         /**
@@ -286,23 +317,25 @@ export class SearchResultsWrapper {
 
         if (new_search_results.length == 0) {
             console.warn(`No search results found for ${search_string}`);
-            return;
+            return false;
         }
 
         this.#search_results = new_search_results;
         this.#current_search_index = 0;
+
+        return true;
     }
 
     /**
      * Searches a given array for a given search string. Checks if the items include the search string and adding perfect matches at the top of the search result. Ideal for short-medium search strings(2-4 characters).
      * @param {T[]} search_array
      * @param {string} search_string
-     * @returns {void}
+     * @returns {boolean}
      */
     searchInclude(search_array, search_string) {
         if (search_array.length == 0) {
             console.warn("Search array is empty.");
-            return;
+            return false;
         }
 
         /**
@@ -322,11 +355,13 @@ export class SearchResultsWrapper {
 
         if (new_search_results.length == 0) {
             console.warn(`No search results found for ${search_string}`);
-            return;
+            return false;
         }
 
         this.#search_results = new_search_results;
         this.#current_search_index = 0;
+
+        return true;
     }
 
     /**
@@ -381,5 +416,7 @@ const DEFAULT_SEARCH_OPTIONS = {
     search_next_hotkey: global_search_hotkeys.SEARCH_NEXT,
     search_previous_hotkey: global_search_hotkeys.SEARCH_PREVIOUS,
     minimum_similarity: 0.5,
-    search_typing_hotkey_handler: HOTKEY_NULLISH_CAPTURE_HANDLER
+    boost_exact_inclusion: false,
+    search_typing_hotkey_handler: HOTKEY_NULLISH_CAPTURE_HANDLER,
+    no_results_callback: () => {}
 }
