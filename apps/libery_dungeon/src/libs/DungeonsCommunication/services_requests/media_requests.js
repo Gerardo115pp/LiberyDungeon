@@ -68,7 +68,7 @@ export const getRandomMediaUrl = (category_id, cluster_id, cache_seconds) => {
         throw new Error(`url<${medias_server}/random-medias-fs> has a syntax problem`);
     }
 
-    const random_media_url = new URL(`${medias_server}/random-medias-fs`);
+    const random_media_url = new URL(`${medias_server}/random-medias-fs`, location.origin);
 
     random_media_url.searchParams.set("category_id", category_id);
     random_media_url.searchParams.set("cluster_id", cluster_id);
