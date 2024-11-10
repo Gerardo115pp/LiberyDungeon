@@ -67,7 +67,9 @@ export class SearchResultsWrapper {
      * @property {string[] | string} search_next_hotkey The hotkey to go to the next search result.
      * @property {string[] | string} search_previous_hotkey The hotkey to go to the previous search result.
      * @property {number} minimum_similarity The minimum similarity score for a search result to be considered a match. Default is 0.5.
+     * @property {boolean} case_insensitive If true, the search string is converted to the same case as the search pool items.
      * @property {boolean} boost_exact_inclusion If true, strings that contain the exact match are(even if the string is much larger than the search query) are boosted.
+     * @property {boolean} allow_member_similarity_checking If true, when a search string is considerably smaller than a item in the search pool. the search query is compared against the members(substrings splitted by a space) and the highest similarity is used. This is obviously slightly slower.
      * @property {() => void} no_results_callback
      * @property {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback} [search_typing_hotkey_handler] A callback that receives a search query as is been typed.
      */
@@ -96,7 +98,9 @@ export class SearchResultsWrapper {
      * @property {string[] | string} [search_next_hotkey] The hotkey to go to the next search result.
      * @property {string[] | string} [search_previous_hotkey] The hotkey to go to the previous search result
      * @property {number} [minimum_similarity] The minimum similarity score for a search result to be considered a match. Default is 0.5.
-     * @property {boolean} [boost_exact_inclusion=true]
+     * @property {boolean} [force_same_case=true]
+     * @property {boolean} [boost_exact_inclusion=false]
+     * @property {boolean} [allow_member_similarity_checking=true]
      * @property {() => void} [no_results_callback]
      * @property {import("@libs/LiberyHotkeys/hotkeys").HotkeyCaptureCallback} [search_typing_hotkey_handler] A callback that receives a search query as is been typed.
      */
@@ -135,22 +139,12 @@ export class SearchResultsWrapper {
     #createMatchArray(search_array, search_string) {
         /** @type {MatchScore[]} */
         let match_array = search_array.map((item) => {
-            const item_string = this.#item_to_string(item);
-            let similarity = jaroWinkler(item_string, search_string);
-            let similarity_boost = 0; 
+            let item_string = this.getItemString(item);
 
-            if (this.#search_options.boost_exact_inclusion && search_string.length > 3) {
-                const includes_search_string = item_string.toLowerCase().includes(search_string.toLowerCase());
-
-                if (includes_search_string) {
-                    similarity_boost = search_string.length * 0.1;
-                }
-            }
-
-            similarity = Math.min(1, similarity + similarity_boost);
+            const similarity = this.#getStringSimilarity(item_string, search_string);
 
             return { 
-                similarity: similarity,
+                similarity,
                 item,
                 item_string
             };
@@ -171,6 +165,64 @@ export class SearchResultsWrapper {
     }
 
     /**
+     * Returns the similarity of a given string against a search string.
+     * @param {string} item_string
+     * @param {string} search_string
+     * @returns {number}
+     */
+    #getStringSimilarity = (item_string, search_string) => {
+        let similarity = 0;
+        let similarity_boost = 0; 
+
+        const use_member_similarity = this.#search_options.allow_member_similarity_checking && item_string.length > (1.5 * search_string.length);
+
+        if (use_member_similarity) {
+
+            for(const item_string_member of item_string.split(' ')) {
+                if (item_string_member.length < (search_string.length * 0.7)) continue;
+
+                const member_similarity = jaroWinkler(item_string_member, search_string)
+
+
+                if (member_similarity > similarity) {
+                    similarity = member_similarity;
+                }
+            }
+
+        } else {
+            similarity = jaroWinkler(item_string, search_string)
+        }
+
+        if (this.#search_options.boost_exact_inclusion && search_string.length > 3) {
+            const includes_search_string = item_string.toLowerCase().includes(search_string.toLowerCase());
+
+            if (includes_search_string) {
+                similarity_boost = search_string.length * 0.1;
+            }
+        }
+
+        similarity = Math.min(1, similarity + similarity_boost);
+
+
+        return similarity
+    }
+
+    /**
+     * Returns a string representation of the passed item.
+     * @param {T} item
+     * @returns {string}
+     */
+    getItemString = item => {
+        let item_string = this.#item_to_string(item);
+        
+        if (this.#search_options.case_insensitive) {
+            item_string = item_string.toLowerCase();
+        }
+
+        return item_string;
+    }
+
+    /**
      * handles a new search term captured by the search hotkey.
      * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
      */
@@ -182,12 +234,16 @@ export class SearchResultsWrapper {
             return;
         }
 
-        const search_string = hotkey.MatchMetadata?.CaptureMatch;
+        let search_string = hotkey.MatchMetadata?.CaptureMatch;
 
         if (!search_string) {
             console.error("Search hotkey handler called without a valid search string: ", hotkey);
             this.#search_options.no_results_callback();
             return;
+        }
+
+        if (this.#search_options.case_insensitive) {
+            search_string = search_string.toLowerCase();
         }
 
         /**
@@ -308,7 +364,11 @@ export class SearchResultsWrapper {
         const new_search_results = [];
 
         for (const item of search_array) {
-            const item_string = this.#item_to_string(item);
+            let item_string = this.getItemString(item);
+
+            if (this.#search_options.case_insensitive) {
+                item_string = item_string.toLowerCase();
+            }
 
             if (item_string.startsWith(search_string)) {
                 new_search_results.push(item);
@@ -344,7 +404,11 @@ export class SearchResultsWrapper {
         const new_search_results = [];
 
         for (const item of search_array) {
-            const item_string = this.#item_to_string(item);
+            let item_string = this.getItemString(item);
+
+            if (this.#search_options.case_insensitive) {
+                item_string = item_string.toLowerCase();
+            }
 
             if (item_string === search_string) {
                 new_search_results.unshift(item);
@@ -384,8 +448,6 @@ export class SearchResultsWrapper {
 
             search_hotkey_combo = `${search_hotkey_combo} \\s`; // creates a string capture hotkey.
 
-            console.log("search_hotkey_combo: ", search_hotkey_combo);
-
             hotkeys_context.register(search_hotkey_combo, this.#searchHotkeyHandler.bind(this), {
                 description: `${common_action_groups.NAVIGATION}Search for ${this.#search_options.ui_search_result_reference.EntityName}.`,
                 capture_hotkey_callback: this.#search_options.search_typing_hotkey_handler,
@@ -416,7 +478,9 @@ const DEFAULT_SEARCH_OPTIONS = {
     search_next_hotkey: global_search_hotkeys.SEARCH_NEXT,
     search_previous_hotkey: global_search_hotkeys.SEARCH_PREVIOUS,
     minimum_similarity: 0.5,
+    case_insensitive: true,
     boost_exact_inclusion: false,
+    allow_member_similarity_checking: true,
     search_typing_hotkey_handler: HOTKEY_NULLISH_CAPTURE_HANDLER,
     no_results_callback: () => {}
 }
