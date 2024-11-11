@@ -8,7 +8,7 @@ const DEFAULT_IMAGE_WIDTH = 307;
  * @property {string} name the name of the media resource
  * @property {string} last_seen the date the media resource was last seen
  * @property {string} main_category the main category of the media resource
- * @property {'IMAGE' | 'VIDEO'} type the type of the media resource, either IMAGE or VIDEO
+ * @property {string} type the type of the media resource, either IMAGE or VIDEO
  * @property {number} downloaded_from the id of the download batch that this media resource was downloaded from
 */
 
@@ -43,7 +43,7 @@ export class Media {
         this.name = name;
         /** @type {string} the date the media resource was last seen */
         this.last_seen = last_seen;
-        /** @type {'IMAGE' | 'VIDEO'} the type of the media resource, either IMAGE or V */
+        /** @type {string} the type of the media resource, either IMAGE or V */
         this.type = type;
         /** @type {string} the main category of the media resource */
         this.main_category = main_category

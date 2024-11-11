@@ -183,8 +183,8 @@ export class CommitCategoryTreeChangesRequest {
  * Renames a category, changes the full path of the category based on the new name and does the same for all subcategories full paths
  */
 export class PatchRenameCategoryRequest {
+
     /**
-     * 
      * @param {string} category_id 
      * @param {string} new_name 
      */
