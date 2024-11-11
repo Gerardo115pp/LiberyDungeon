@@ -20,6 +20,8 @@ export const emitLabeledError = labeled_error => {
     });
 
     globalThis.dispatchEvent(event);
+
+    return true;
 }
 
 /**
@@ -28,27 +30,32 @@ export const emitLabeledError = labeled_error => {
  * @returns {() => void} - unsubscribe function
  * @callback LabeledErrorHandler
  * @param {import('./lf_models').LabeledError} labeled_error
- * @returns {void}
  */
 export const subscribeToPlatformErrors = callback => {
     if (globalThis.addEventListener == null) {
         throw new Error("subscribeToPlatformErrors must be called in a window environment");
     }
 
-    const handler = event => {
+    const handler = (/** @type {{ detail: import("./lf_models").LabeledError; }} */ event) => {
         if (event.detail instanceof Error) {
             callback(event.detail);
         }
     }
 
     const unsubscribe = () => {
+        // @ts-ignore
         globalThis.removeEventListener(PLATFORM_ERROR_EVENT, handler);
     }
 
+    // @ts-ignore
     globalThis.addEventListener(PLATFORM_ERROR_EVENT, handler);
 
     return unsubscribe;
 }
+
+/**
+ * @typedef {CustomEvent<string>} PlatformMessageEvent
+ */
 
 /**
  * Emit a message if executed in a window environment.
@@ -60,6 +67,9 @@ export const emitPlatformMessage = message => {
         return;
     }
 
+    /**
+     * @type {PlatformMessageEvent}
+     */
     const event = new CustomEvent(PLATFORM_MESSAGE_EVENT, {
         detail: message
     });
@@ -80,6 +90,11 @@ export const subscribeToPlatformMessages = callback => {
         throw new Error("subscribeToPlatformMessages must be called in a window environment");
     }
 
+    /**
+     * @type {EventListener}
+     * @param {PlatformMessageEvent} event 
+     */
+    // @ts-ignore
     const handler = event => {
         if (typeof event.detail === "string") {
             callback(event.detail);
@@ -116,6 +131,7 @@ export const subscribeToPlatformMessages = callback => {
      * @type {import('svelte/store').Readable<number>}
      * @default null
      */
+    // @ts-ignore
     export let confirm_response = null;
 
     /**
@@ -149,9 +165,10 @@ export const subscribeToPlatformMessages = callback => {
     export const confirmPlatformMessage = message_params => {
         if (confirm_response === null) {
             console.warn("confirm response store is null. The confirmation message will not be displayed.");
-            return null;
+            return Promise.resolve(-1);
         }
 
+        // @ts-ignore
         return new Promise((resolve, reject) => {
 
             let response_unsubscriber = () => {
