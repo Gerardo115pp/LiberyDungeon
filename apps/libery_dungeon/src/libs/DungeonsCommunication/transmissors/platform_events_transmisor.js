@@ -5,13 +5,13 @@ export class PlatformEventsTransmisor {
 
     /**
      * The socket used for communication
-     * @type {WebSocket}
+     * @type {WebSocket | null}
      */
     #socket;
 
     /**
      * set by the caller, valid events received will be forwarded to this callback  
-     * @param {PlatformEventMessage} event_message
+     * @param {PlatformEventMessage<any>} event_message
      */
     #on_message_callback = event_message => console.log("Received event: ", event_message);
     
@@ -37,12 +37,12 @@ export class PlatformEventsTransmisor {
     /**
      * @param {MessageEvent} message 
      */
-    onMessage = message => {
+    onMessage = (message) => {
         console.debug("received message from server: ", message)
         const data = JSON.parse(message.data);
 
         /**
-         * @type {PlatformEventMessage}
+         * @type {PlatformEventMessage<any>}
          */
         let event_message;
 
@@ -50,6 +50,7 @@ export class PlatformEventsTransmisor {
             event_message = new PlatformEventMessage(data);
         } catch (error) {
             console.error(`Wrong event message format: ${error}`);
+            return;
         }
 
         this.#on_message_callback(event_message);
@@ -59,16 +60,19 @@ export class PlatformEventsTransmisor {
 
     onClose = () => {}
 
+    /**
+     * @type {((this: WebSocket, ev: Event) => any)}
+     */
     onError = error => {}
 
     /**
      * Sets the event that will handle new messages
-     * @param {(event_message: PlatformEventMessage) => void} callback
+     * @param {(event_message: PlatformEventMessage<any>) => void} callback
      */
     setOnMessageCallback = callback => {
         if (callback?.constructor.name !== "Function" && callback?.constructor.name !== "AsyncFunction") {
             console.log("The callback must be a function, got: ", callback);
-            throw new TypeError("The callback must be a function, got: ", callback);
+            throw new TypeError("The callback must be a function, got: "+callback?.constructor?.name);
         }
 
         this.#on_message_callback = callback;
