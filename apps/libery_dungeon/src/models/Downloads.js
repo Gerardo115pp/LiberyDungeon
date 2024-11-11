@@ -27,6 +27,15 @@ export class DownloadProgress {
      * @type {boolean} whether the download is completed or not
      */
     #completed;
+
+    /**
+     * @param {DownloadProgressParams} param0 
+     * @typedef {Object} DownloadProgressParams
+     * @property {string} download_uuid
+     * @property {number} total_files
+     * @property {number} downloaded_files
+     * @property {boolean} completed
+     */
     constructor({download_uuid, total_files, downloaded_files, completed}) {
         this.#download_uuid = download_uuid;
         this.#total_files = total_files;
