@@ -2,11 +2,12 @@ import { get, writable } from "svelte/store";
 import { CategoryLeaf, CategoriesTree } from "@models/Categories";
 import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
 import { replaceState } from "$app/navigation";
+import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
 
 
 /** 
  * Category currently selected by the user
- * @type {import('svelte/store').Writable<CategoryLeaf>} 
+ * @type {import('svelte/store').Writable<CategoryLeaf | null>} 
  */
 export const current_category = writable(null);
 
@@ -18,15 +19,10 @@ export const current_category = writable(null);
 export const yanked_category = writable("");
 
 /**
- * @type {import('svelte/store').Writable<CategoriesTree>} 
+ * @type {import('svelte/store').Writable<CategoriesTree | null>} 
  * the categories tree
-*/
+ */
 export const categories_tree = writable(null);
-// categories_tree.subscribe((value) => {
-//     if (value != null) {
-//         globalThis.categories_tree = value;
-//     }
-// });
 
 export const resetCategoriesTreeStore = () => {
     current_category.set(null);
@@ -39,10 +35,24 @@ export const resetCategoriesTreeStore = () => {
 export const navigateToParentCategory = async () => {
     let category = get(current_category);
 
+    if (category == null) {
+        throw new Error("Cannot use navigateToParentCategory if current_category is null");
+    }
+
     if (category.parent === "") return;
 
-    replaceState(`/dungeon-explorer/${category.parent}`)
-    return get(categories_tree).navigateToParent();
+    const the_tree = get(categories_tree);
+
+    if (the_tree == null) {
+        throw new Error("Cannot use navigateToParentCategory if categories_tree is null");
+    }
+
+    // @ts-ignore
+    replaceState(`/dungeon-explorer/${category.parent}`);
+
+    the_tree.navigateToParent();
+
+    return;
 }
 
 /**
@@ -53,11 +63,15 @@ export const navigateToParentCategory = async () => {
  */
 export const navigateToUnconnectedCategory = async (category_uuid) => {
     /**
-     * @type {LabeledError}
+     * @type {LabeledError | null}
      */
     let labeled_error = null;
 
     let tree = get(categories_tree);
+
+    if (tree == null) {
+        throw new Error("Cannot use navigateToUnconnectedCategory if categories_tree is null");
+    }
 
     try {
         await tree.changeRootCategory(category_uuid);
@@ -66,13 +80,15 @@ export const navigateToUnconnectedCategory = async (category_uuid) => {
         variable_context.addVariable("error", error)
         variable_context.addVariable("category_uuid", category_uuid)
 
-        labeled_error = new LabeledError(variable_context, "The server seems to think this category does not exist.")
+        labeled_error = new LabeledError(variable_context, "The server seems to think this category does not exist.", lf_errors.ERR_PROCESSING_ERROR);
 
         labeled_error.alert();
 
         return false;
     }
 
+    // @ts-ignore
     replaceState(`/dungeon-explorer/${category_uuid}`)
+
     return true;
 }
