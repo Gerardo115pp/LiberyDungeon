@@ -332,6 +332,7 @@
             --grey-2: hsl(from var(--grey) h s calc(l * 12.3559) / 1);
             --grey-1: hsl(from var(--grey) h s calc(l * 15.4237) / 1);
             --grey-t: hsl(from var(--grey) h s l / .6);
+            --grey-black: hsl(from var(--grey) h s calc(0.25 * l) / 1);
             /* Success */
             --success: hsl(104, 100%, 51.2%);
             --success-9: hsl(from var(--success) h s calc(l * 0.2441) / 1);
