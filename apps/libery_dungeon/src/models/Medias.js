@@ -52,6 +52,10 @@ export class Media {
         /** @type {string} the path of the category that the media resource belongs to */
         this.#category_path = category_path;
 
+        this.#media_name = "";
+        this.#file_extension = "";
+
+
         this.#setMediaName(name);
     }
 
@@ -99,7 +103,7 @@ export class Media {
 
     /**
      * Whether the media source is a video.
-     * @type {boolean}
+     * @returns {boolean}
      */
     isVideo = () => {
         return this.type === media_types.VIDEO
@@ -147,7 +151,11 @@ export class Media {
             return;
         }
         
-        this.#file_extension = name_fragments.pop();
+        const media_file_extension = name_fragments.pop();
+
+        if (media_file_extension != null) {
+            this.#file_extension = media_file_extension;
+        }
 
         this.#media_name = name_fragments.join(".");
     }
