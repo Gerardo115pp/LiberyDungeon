@@ -99,7 +99,12 @@
          * Renames the current category
          * @param {string} new_name
          */
-        const applyCategoryRename = async new_name => {
+        const applyCategoryRename = async (new_name) => {
+            if ($categories_tree == null) {
+                console.error("Categories tree store is not available");
+                return;
+            }
+            
             if (is_ephemeral) return; // Refuse to rename a category with out a leaf. Because we can't cause a reactivity update.
             
             let renamed_successfully = await renameCategory(inner_category.uuid, new_name);
@@ -200,18 +205,23 @@
 
             /**
              * Handles the drop event of the category
-             * @param {DragEvent} e
+             * @param {DragEvent} event
              */
-            const handleCategoryDrop = async e => {
-                if (is_ephemeral || !e.dataTransfer) return;
+            const handleCategoryDrop = async (event) => {
+                if ($categories_tree == null) {
+                    console.error("Categories tree store is not available");
+                    return;
+                }
                 
-                e.stopPropagation();
-                e.preventDefault();
+                if (is_ephemeral || !event.dataTransfer) return;
+                
+                event.stopPropagation();
+                event.preventDefault();
 
                 dragged_category_hovering = false;
                 category_dragging = false;
 
-                const dragged_category_uuid = e.dataTransfer.getData("text/plain"); 
+                const dragged_category_uuid = event.dataTransfer.getData("text/plain"); 
                 
                 console.debug(`${inner_category.uuid} <- '${dragged_category_uuid}'`);
 
@@ -227,8 +237,6 @@
                     alert("Failed to move category");
                 }
             }
-        
-        
         
         /*=====  End of Drag Handlers  ======*/
         
