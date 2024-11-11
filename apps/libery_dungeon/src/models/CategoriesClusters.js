@@ -41,6 +41,15 @@ export class CategoriesCluster {
          */
         #root_category;
 
+    /**
+     * @param {CategoriesClusterParams} param0 
+     * @typedef {Object} CategoriesClusterParams
+     * @property {string} uuid
+     * @property {string} name
+     * @property {string} fs_path
+     * @property {string} filter_category
+     * @property {string} root_category
+     */
     constructor({ uuid, name, fs_path, filter_category, root_category }) {
         if (uuid === undefined || name === undefined || fs_path === undefined || filter_category === undefined || root_category === undefined) {
             throw new Error('Missing required parameters.');
@@ -94,7 +103,7 @@ export class CategoriesCluster {
  * @param {string} name the name of the cluster
  * @param {string} fs_path the path to the cluster's file system root
  * @param {string} filter_category the uuid of the category where content is automatically downloaded for this cluster
- * @returns {Promise<CategoriesCluster>} the newly created cluster
+ * @returns {Promise<CategoriesCluster | null>} the newly created cluster
  */
 export const createCluster = async (uuid, name, fs_path, filter_category) => {
     let new_cluster = null;
@@ -169,9 +178,12 @@ export const updateCluster = async (cluster) => {
  * Gets the new cluster directory options. It takes a subdirectory, which if empty will default to the service's SERVICE_CLUSTERS_ROOT. If not empty
  * the subdirectory most be a path relative to the service's SERVICE_CLUSTERS_ROOT.
  * @param {string} subdirectory 
- * @returns {Promise<import("@libs/DungeonsCommunication/services_requests/categories_cluster_requests").NewClusterDirectoryOption>} 
+ * @returns {Promise<import("@libs/DungeonsCommunication/services_requests/categories_cluster_requests").NewClusterDirectoryOption[]>} 
  */
 export const getNewClusterDirectoryOptions = async (subdirectory) => {
+    /**
+     * @type {import("@libs/DungeonsCommunication/services_requests/categories_cluster_requests").NewClusterDirectoryOption[]}
+     */
     let directory_creation_options = [];
     const request = new GetNewClusterDirectoryOptionsRequest(subdirectory);
 
