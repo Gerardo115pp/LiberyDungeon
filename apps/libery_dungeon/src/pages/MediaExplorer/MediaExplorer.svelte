@@ -416,8 +416,12 @@
             }
 
             const handleGoToParentCategory = async () => {
+                if ($current_category == null) {
+                    console.error("");
+                    return;
+                }
 
-                if ($current_category.parent != "") {
+                if ($current_category?.parent != "") {
                     return navigateToSelectedCategory($current_category.parent);
                 }
 
@@ -461,6 +465,11 @@
             }
              
             const handleCategoryItemSelected = async () => {
+                if ($current_category == null) {
+                    console.error("In MediaExplorer.handleCategoryItemSelected , current_category is null");
+                    return;
+                }
+                
                 const can_keyboard_focus_be_medias = $category_search_results.length === 0 && $current_category.content.length > 0;
                 const displayed_categories = getDisplayCategories();
                 const keyboard_index_in_displayed_categories = (keyboard_focused_category >= 0 && keyboard_focused_category < displayed_categories.length);
@@ -492,7 +501,19 @@
                 use_category_folder_thumbnails.set(!$use_category_folder_thumbnails);
             }
 
+
             const handleSyncCurrentCategory = async () => {
+                if ($current_category == null) {
+                    console.error("In MediaExplorer.handleSyncCurrentCategory , current_category is null");
+                    return;
+                }
+
+                if ($categories_tree == null) {
+                    console.error("In MediaExplorer.handleSyncCurrentCategory , categories_tree is null");
+                    return;
+                }
+                
+                
                 console.log("Syncing current category");
                 if (is_category_resyncing) return;
                 is_category_resyncing = true;
@@ -599,6 +620,11 @@
              * @returns {void}
              */
             const handleFindStartsWith = (e, hotkey) => {
+                if ($current_category == null) {
+                    console.error("In MediaExplorer.handleFindStartsWith , current_category is null");
+                    return;
+                }
+                
                 const initial_character = e.key;
 
                 for (let h = 0; h < $current_category.InnerCategories.length; h++) {
@@ -658,6 +684,11 @@
              * @type {import('@common/keybinds/CursorMovement').GridNavigationWrapperSetup}
              */
             const setGridNavigationWrapper = (hotkey_context) => {
+                if ($current_category == null) {
+                    console.error("In MediaExplorer.setGridNavigationWrapper , current_category is null");
+                    return;
+                }
+                
                 if (!browser) return;
 
                 if (the_wasd_dungeon_explorer_navigator != null) {
@@ -688,6 +719,10 @@
              * @type {import('@common/keybinds/CommonActionWrappers').SearchResultsWrapperSetup}
              */
             const setSearchResultsWrapper = hotkey_contenxt => {
+                if ($current_category == null) {
+                    console.error("In MediaExplorer.setSearchResultsWrapper , current_category is null");
+                    return;
+                }
 
                 the_category_search_results_wrapper = new SearchResultsWrapper(hotkey_contenxt, $current_category.InnerCategories, handleFocuseSearchMatch, {
                     minimum_similarity: 0.7,
@@ -709,6 +744,11 @@
         =============================================*/
         
             const definePlatformEventHandlers = () => {
+                if ($current_category == null) {
+                    console.error("In MediaExplorer.definePlatformEventHandlers , current_category is null");
+                    return;
+                }
+                
                 const dungeon_explorer_handlers = new PlatformEventContext();
                 if (!global_platform_events_manager.hasContext(app_page_name)) {
                     dungeon_explorer_handlers.addEventHandler(platform_well_known_events.FS_CHANGED, handleFsChangedPlatformEvent);
@@ -725,6 +765,11 @@
              * @param {import("@libs/DungeonsCommunication/transmissors/platform_events_transmisor").PlatformEventMessage<import('@libs/LiberyEvents/well_known_events').ClusterFsChangeEvent>} event
              */
             const handleFsChangedPlatformEvent = async (event) => {
+                if ($categories_tree == null) {
+                    console.error("In MediaExplorer.handleFsChangedPlatformEvent , categories_tree is null");
+                    return;
+                }
+                
                 console.log("FS_CHANGED event received", event);
 
                 const fs_change_message = event?.EventPayload.payload;
@@ -781,6 +826,11 @@
          * @param {number} [media_index]
          */
         const enterMediaViewer = (media_index) => {
+            if ($current_category == null) {
+                console.error("In MediaExplorer.enterMediaViewer , current_category is null");
+                return;
+            }
+
             let href = `/${$layout_properties.IS_MOBILE ? 'media-viewer-mobile' : 'media-viewer'}/${$current_category.uuid}`;
 
             if (media_index != null) {
@@ -824,6 +874,11 @@
          * @returns {import('@models/Categories').InnerCategory[]}
          */
         const getDisplayCategories = () => {
+            if ($current_category == null) {
+                console.error("In MediaExplorer.getDisplayCategories , current_category is null");
+                return [];
+            }
+            
             const displaying_search_results = $category_search_results.length > 0;
 
             /**
@@ -856,6 +911,10 @@
          * @returns {import('@common/interfaces/common_actions').GridSelectors}
          */
         const getCategoriesGridSelectors = () => {
+            if ($categories_tree == null) {
+                throw new Error("In MediaExplorer.getCategoriesGridSelectors , categories_tree is null");
+            }
+             
             /**
              * @type {import('@common/interfaces/common_actions').GridSelectors}
              */
@@ -872,9 +931,16 @@
          * Checks if a category is empty, meaning it has no subcategories and no content. If it is empty, then notify
          * the user that the category is empty and ask if they want to delete it. If so, go back to the parent category
          * and send a request to the server to delete the category.
-         * @param {CategoryLeaf} category   
+         * @param {CategoryLeaf | null} category   
          */
         const handleEmptyCategories = async (category) => {
+            if ($categories_tree == null) {
+                console.error("In MediaExplorer.handleEmptyCategories , categories_tree is null");
+                return;
+            }
+
+            if (category === null) return;
+
             const category_param_valid = !(category === null && category === undefined)
             const category_protected = category.uuid === $current_cluster.RootCategoryID || category.uuid === $current_cluster.DownloadCategoryID;  
 
@@ -913,6 +979,11 @@
          * @param {DragEvent} e
          */
         const handleParentDragEnter = e => {
+            if ($current_category == null) {
+                console.error("In MediaExplorer.handleParentDragEnter , current_category is null");
+                return;
+            }
+            
             console.debug(`Drag enter on parent category label. parent: ${$current_category.parent}`);
             if ($current_category.parent != null) {
                 e.preventDefault();
@@ -930,6 +1001,11 @@
          * @param {DragEvent} e
          */
         const handleParentDragOver = e => {
+            if ($current_category == null) {
+                console.error("In MediaExplorer.handleParentDragOver , current_category is null");
+                return;
+            }
+            
             if ($current_category.parent != null) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -941,6 +1017,11 @@
          * @param {DragEvent} e
          */
         const handleParentDragLeave = e => {
+            if ($current_category == null) {
+                console.error("In MediaExplorer.handleParentDragLeave , current_category is null");
+                return;
+            }
+            
             if ($current_category.parent != null) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -950,18 +1031,28 @@
 
         /**
          * Handles the drop event on the category name label. Attempts to move the dropped category to the parent of the current category.
-         * @param {DragEvent} e
+         * @param {DragEvent} event
          */
-        const handleDropCategoryOnParent = async e => {
-            const dragged_category_uuid = e.dataTransfer?.getData("text/plain");
+        const handleDropCategoryOnParent = async (event) => {
+            if ($categories_tree == null) {
+                console.error("In MediaExplorer.handleDropCategoryOnParent , categories_tree is null");
+                return;
+            }
+            
+            if ($current_category == null) {
+                console.error("In MediaExplorer.handleDropCategoryOnParent , current_category is null");
+                return;
+            }
+            
+            const dragged_category_uuid = event.dataTransfer?.getData("text/plain");
             category_over_parent_label = false;
 
             if ($current_category.parent != null && dragged_category_uuid != null) {
-                e.preventDefault();
-                e.stopPropagation();
+                event.preventDefault();
+                event.stopPropagation();
 
-                if (e.dataTransfer != null) {
-                    e.dataTransfer.dropEffect = "move";
+                if (event.dataTransfer != null) {
+                    event.dataTransfer.dropEffect = "move";
                 }
 
                 console.debug(`Dropped category '${dragged_category_uuid}' on parent category '${$current_category.parent}'`);
@@ -986,6 +1077,11 @@
          * @param {CustomEvent<import('@models/Categories').Category>} event
          */
         const handleBreadcrumbSelected = async event => {
+            if ($current_category == null) {
+                console.error("In MediaExplorer.handleBreadcrumbSelected , current_category is null");
+                return;
+            }
+            
             let selected_category = event.detail;
             
             if (selected_category.UUID === $current_category.uuid || selected_category.UUID === "") {
@@ -1039,7 +1135,12 @@
          * If the category is not a child category or parent, it will navigate it using the browser's navigation.
          * @param {string} category_uuid
          */
-        const navigateToSelectedCategory = async category_uuid => {
+        const navigateToSelectedCategory = async (category_uuid) => {
+            if ($current_category == null) {
+                console.error("In MediaExplorer.navigateToSelectedCategory , current_category is null");
+                return;
+            }
+
             resetNavigationSuseptibleState();
 
             switch (true) {
@@ -1064,6 +1165,11 @@
          * @param {string} category_uuid
          */
         const navigateToChildCategory = async (category_uuid) => {
+            if ($categories_tree == null) {
+                console.error("In MediaExplorer.navigateToChildCategory , categories_tree is null");
+                return;
+            }
+            
             replaceState(`/dungeon-explorer/${category_uuid}`, $page.state);
             $categories_tree.navigateToLeaf(category_uuid);
         }
@@ -1074,6 +1180,17 @@
          * @returns {Promise<void>} 
          */
         const pasteYankedCategory = async () => {
+            if ($current_category == null) {
+                console.error("In MediaExplorer.pasteYankedCategory , current_category is null");
+                return;
+            }
+
+            if ($categories_tree == null) {
+                console.error("In MediaExplorer.pasteYankedCategory , categories_tree is null");
+                return;
+            }
+            
+            
             if (!navigator.userActivation?.isActive) {
                 console.warn("Transient user activation required to paste the copied category");
                 return;
@@ -1122,6 +1239,17 @@
          * and pass the current category uuid as the destination category.
          */
         const pasteYankedMedia = async () => {
+            if ($current_category == null) {
+                console.error("In MediaExplorerGallery.handleYankPaste , current_category is null");
+                return;
+            }
+
+            if ($categories_tree == null) {
+                console.error("In MediaExplorerGallery.handleYankPaste , categories_tree is null");
+                return;
+            }
+            
+            
             if ($me_gallery_yanked_medias.length === 0) {
                 let labeled_err = new LabeledError("In MediaExplorerGallery.handleYankPaste", "No medias to paste.", lf_errors.ERR_PROCESSING_ERROR);
                 labeled_err.alert();
@@ -1190,6 +1318,11 @@
          * @returns {void}
          */
         const resetCategoryFiltersOnCategoryChange = () => {
+            if ($current_category == null) {
+                console.error("In MediaExplorer.resetCategoryFiltersOnCategoryChange , current_category is null");
+                return;
+            }
+            
             if (the_category_search_results_wrapper == null) return;
 
             if (category_name_search_query !== "") {
@@ -1272,6 +1405,11 @@
          * Yanks the selected category
          */
         const yankSelectedCategory = async () => {
+            if ($current_category == null) {
+                console.error("In MediaExplorer.yankSelectedCategory , current_category is null");
+                return;
+            }
+            
             if (!navigator.userActivation?.isActive) {
                 console.warn("Transient user activation required to copy the selected category");
                 return;
@@ -1403,7 +1541,7 @@
             {/if}
         {/if}
     </ul>
-    {#if (media_display_as_gallery || was_media_display_as_gallery) && ($current_category?.content?.length ?? 0) > 0}
+    {#if $current_category != null && (media_display_as_gallery || was_media_display_as_gallery) && ($current_category?.content?.length ?? 0) > 0}
         <div id="media-gallery-wrapper">
             <MediaExplorerGallery 
                 media_items={$current_category.content}
