@@ -13,7 +13,7 @@
     
         /**
          * The default cluster root path.
-         * @type {string}
+         * @type {string | null}
          */    
         let default_cluster_root_path = null;
 
@@ -90,11 +90,13 @@
     
         /**
          * Handles the click event a directory option.
-         * @param {MouseEvent} e - The click event.
+         * @param {MouseEvent & {currentTarget?: HTMLElement}} e - The click event.
         */
         const handleDirectoryOptionClick = async (e) => {
-            /** @type {string} */
-            let directory_option_index_value = e.currentTarget.dataset.directoryOptionIndex;
+            /** @type {string | undefined} */
+            let directory_option_index_value = e.currentTarget?.dataset.directoryOptionIndex;
+
+            if (directory_option_index_value === undefined) return;
 
             let directory_option_index = parseInt(directory_option_index_value);
 
@@ -159,7 +161,7 @@
         /**
          * Calls getNewClusterDirectoryOptions to get a list of directory options from the `current_selected_path`.
          * @requires current_selected_path
-         * @returns {promise<void>}
+         * @returns {Promise<void>}
          */
         const retrieveDirectoryOptions = async () => {
             /** @type {DirectoryOption[]}*/
@@ -172,6 +174,7 @@
 
         /**
          * Validates the path to see if it is safe.
+         * @param {string} requested_path - The path to validate.
          * @returns {Promise<import('@models/CategoriesClusters').PathAvailability>}
          */
         const validatePath = async requested_path => await validateClusterDirectory(requested_path);
@@ -190,7 +193,7 @@
             These are the available directories provided by your deployed Categories services. Select one to create a new dungeon in. These are the directory <b on:mouseenter={handleEligibilityRulesLabelMouseEnter}>eligibility rules</b>
         </p>
         <CctPathEligibilityRules 
-            show_path_elegibility_rules={show_directory_eligibility_rules}
+            show_path_eligibility_rules={show_directory_eligibility_rules}
         />
     </header>
     <ul id="cct-directory-options-container">
