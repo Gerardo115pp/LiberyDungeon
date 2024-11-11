@@ -18,7 +18,7 @@
         /**
          * The new role hierarchy. Cannot be 0. lower numbers mean higher hierarchy, 0 is a super admin. Creating super admins is not currently considered in the system's 
          * design, but it will be in the future.
-         * @type {number}
+         * @type {number | undefined}
          */
         let new_role_hierarchy;
 
@@ -183,7 +183,9 @@
          * @param {MouseEvent} event 
          */
         const handleRoleCreationButtonClick = async (event) => {
-            let created = registerNewRole(new_role_label, new_role_hierarchy, new_role_grants);
+            if (new_role_hierarchy == null) return;
+
+            let created = await registerNewRole(new_role_label, new_role_hierarchy, new_role_grants);
             
             if (created) {
                 emitPlatformMessage(`Role ${new_role_label} created successfully.`);
@@ -197,6 +199,8 @@
          * @returns {Promise<void>}
          */
         const refreshInheritedGrants = async () => {
+            if (new_role_hierarchy == null) return;
+
             const roles_below_hierarchy = await getRoleTaxonomiesBelowHierarchy(new_role_hierarchy);
 
             const inherited_grants = compileGrants(roles_below_hierarchy);

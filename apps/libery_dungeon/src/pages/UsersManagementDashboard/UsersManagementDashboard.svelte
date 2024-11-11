@@ -77,7 +77,7 @@
 
         /**
          * The user account the user has selected for editing.
-         * @type {import("@models/Users").UserAccount}
+         * @type {import("@models/Users").UserAccount | null}
          */
         let selected_user_account;
     
@@ -85,10 +85,16 @@
    
     onMount(async () => {
         
-        if (!$access_state_confirmed) {
+        if (!$access_state_confirmed || !$current_user_identity) {
             let could_confirm = await confirmAccessState();
+
+            if (!could_confirm) {
+                informUnauthorizedUser();
+                return;
+            }
         }
 
+        // @ts-ignore
         super_admin_confirmed = $current_user_identity.canGrant();
 
         if (!super_admin_confirmed) {
@@ -103,6 +109,12 @@
     
     onDestroy(() => {
         if (!browser) return;
+
+        if (global_hotkeys_manager == null) {
+            console.error("In UsersManagementDashboard.onDestroy: global_hotkeys_manager is null.");
+            return;
+        }
+        
 
         global_hotkeys_manager.dropContext(hotkeys_context_name);
     });
@@ -120,6 +132,12 @@
              * Defines the hotkeys to interact with the users management dashboard.
              */
             const defineComponentHotkeys = () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("In UsersManagementDashboard.defineComponentHotkeys: global_hotkeys_manager is null.");
+                    return;
+                }
+                
+
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
 
@@ -188,6 +206,7 @@
              * @return {void}
              */
             const handleGoBack = () => {
+                // @ts-ignore
                 let can_go_back = window.navigation?.canGoBack ?? false // Navigation API doesn't work in Safari and Firefox(to the surprise of no one).
 
                 if (can_go_back) {
@@ -223,7 +242,7 @@
 
         /**
          * Loads all the initial data, should only be called from onMount.
-         * @return {void}
+         * @return {Promise<void>}
          */
         const defineInitialData = async () => {
             await refreshAllUsersList();
@@ -245,7 +264,7 @@
 
         /**
          * Handle the user-created event from the UserCreation component.
-         * @param {CustomEvent<UserCreatedEvent>} 
+         * @param {CustomEvent<UserCreatedEvent>} event
          * @typedef {Object} UserCreatedEvent
          * @property {string} username 
          */
@@ -314,7 +333,7 @@
         /**
          * Informes an unauthorized user that they don't have the necessary grants to access the page and their attempt 
          * will be reported.
-         * @return {void}
+         * @return {Promise<void>}
          */ 
         const informUnauthorizedUser = async () => {
             let user_choice =  await confirmPlatformMessage({
@@ -340,7 +359,7 @@
         /**
          * Fetches the user's data by a given user entry
          * @param {import("@models/Users").UserEntry} user_entry
-         * @returns {Promise<import("@models/Users").UserAccount}
+         * @returns {Promise<import("@models/Users").UserAccount | null>}
          */
         const fetchUserData = async (user_entry) => {
             let user_account = await getUserAccountFromUserEntry(user_entry);
@@ -351,9 +370,10 @@
 
         /**
          * Loads in all the existing user accounts in the platform and stores them in the 'all_users' property.
-         * @return {void}
          */
         const refreshAllUsersList = async () => {
+            if ($current_user_identity == null) return;
+
             let fresh_all_users = await getAllUsers();
 
             fresh_all_users = fresh_all_users.filter(user => user.username !== $current_user_identity.Username);
@@ -449,11 +469,13 @@
                     subject_role_label={selected_role_label}
                     on:role-deleted={handleRoleDeleted}
                 />
-                <PlatformUsersEditor
-                    on:user-data-changed={handleUserDataChanged}
-                    on:user-deleted={handleUserDeleted}
-                    subject_user_account={selected_user_account}
-                />
+                {#if selected_user_account != null}
+                    <PlatformUsersEditor
+                        on:user-data-changed={handleUserDataChanged}
+                        on:user-deleted={handleUserDeleted}
+                        subject_user_account={selected_user_account}
+                    />
+                {/if}
             </section>
         </article>
         <aside id="existing-roles-wrapper" 

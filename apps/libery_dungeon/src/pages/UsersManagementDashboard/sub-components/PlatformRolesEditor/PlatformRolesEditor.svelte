@@ -11,7 +11,7 @@
 
         /** 
          * The given role's taxonomy.
-         * @type {import("@models/Users").RoleTaxonomy}
+         * @type {import("@models/Users").RoleTaxonomy | null}
          */
         let the_role_taxonomy;
 
@@ -44,6 +44,8 @@
          * Handles the role-grants-changed event emitted by the RoleGrantLinker component.
         */
         const handleRoleGrantsChanged = () => {
+            if (the_role_taxonomy == null) return;
+
             refreshRoleTaxonomy(the_role_taxonomy.RoleLabel);
         }
 
@@ -51,6 +53,8 @@
          * Handles the role-deletion-requested event emitted by the RolesEditorDangerZone component.
          */
         const handleRoleDeletionRequested = async () => {
+            if (the_role_taxonomy == null) return;
+
             let deleted = await deleteRole(the_role_taxonomy.RoleLabel);
 
             if (deleted) {

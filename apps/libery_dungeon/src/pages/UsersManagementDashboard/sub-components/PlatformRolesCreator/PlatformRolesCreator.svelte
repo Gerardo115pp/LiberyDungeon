@@ -1,7 +1,6 @@
 <script>
-    import { getAllGrants, createGrant } from "@models/Users";
     import { role_mode_enabled, all_grants, all_roles } from "../../app_page_store";
-    import { onMount, onDestroy, createEventDispatcher } from "svelte";
+    import { createEventDispatcher } from "svelte";
     import GrantCreation from "./sub-components/GrantCreation.svelte";
     import RoleCreator from "./sub-components/RoleCreator.svelte";
 
@@ -17,14 +16,6 @@
     /*=============================================
     =            Methods            =
     =============================================*/
-
-        /**
-         * Cleans the all_grants store.
-         * @returns {void}
-         */
-        const cleanAllGrants = () => {
-            all_grants.set([]);
-        }
 
         /**
          * Handles the role created event emitted by the RoleCreator component.

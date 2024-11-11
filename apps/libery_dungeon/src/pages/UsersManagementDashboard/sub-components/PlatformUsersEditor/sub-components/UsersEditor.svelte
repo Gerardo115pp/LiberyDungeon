@@ -106,7 +106,7 @@
         /**
          * Called when ever the user account gets a new role, if the new role has a higher role hierarchy than the
          * current highest role hierarchy will change.
-         * @param {string} new_role_hierarchy 
+         * @param {number} new_role_hierarchy 
          */
         const changeHighestRoleHierarchyIfHigher = (new_role_hierarchy) => {
             if (new_role_hierarchy < account_highest_hierarchy) {
@@ -162,6 +162,7 @@
                 console.log("LOCAL VARIABLES");
 
                 for(let lv of Object.keys(local_variables)) {
+                    // @ts-ignore
                     console.log(`${lv}`, local_variables[lv]);
                 }
             }
