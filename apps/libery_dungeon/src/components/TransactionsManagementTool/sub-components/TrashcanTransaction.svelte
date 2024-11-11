@@ -7,7 +7,7 @@
          * The transaction to display.
          * @type {import('@models/Trashcan').TrashcanTransaction}
          */ 
-        export let the_transaction = null;
+        export let the_transaction;
 
         /**
          * The keyboard focused media index.
@@ -29,20 +29,24 @@
     =            Methods            =
     =============================================*/
     
-    async function ensureFocusedMediaVisible(focused_media_index) {
-        if (!highlight_focused_media) return;
+        /**
+         * Ensures that the focused media is visible.
+         * @param {number} focused_media_index
+         */
+        async function ensureFocusedMediaVisible(focused_media_index) {
+            if (!highlight_focused_media) return;
 
-        let focused_media = document.querySelector(`.trashed-media.trashed-media-entry-${focused_media_index}`);
+            let focused_media = document.querySelector(`.trashed-media.trashed-media-entry-${focused_media_index}`);
 
-        if (focused_media === null) return;
+            if (focused_media === null) return;
 
-        console.log(focused_media);
+            console.log(focused_media);
 
-        focused_media.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-        });
-    } 
+            focused_media.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+            });
+        } 
     
     /*=====  End of Methods  ======*/
     
