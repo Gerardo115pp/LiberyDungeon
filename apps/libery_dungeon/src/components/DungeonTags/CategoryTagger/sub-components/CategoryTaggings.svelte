@@ -358,6 +358,11 @@
          * @returns {import('@common/interfaces/common_actions').GridSelectors | null}
          */
         const getFocusedTaggingsGridSelectors = () => {
+            if ($current_category == null) {
+                console.error("In CategoryTaggings.getFocusedTaggingsGridSelectors: $current_category is null.");
+                return null;
+            }
+            
             if (tag_taxonomy_map == null) return null;
 
             const grid_selectors = {
@@ -486,7 +491,7 @@
     
 </script>
 
-{#if tag_taxonomy_map != null && $cluster_tags.length > 0} 
+{#if $current_category != null && tag_taxonomy_map != null && $cluster_tags.length > 0} 
     <div id="cpt-current-category-tags"
         class:hotkey-control={has_hotkey_control}
     >
