@@ -12,7 +12,7 @@ export class GetCategoryTreeLeafRequest {
     
     /**
      * @param {string} category_id
-     * @param {string} cluster_id
+     * @param {string} [cluster_id]
      */
     constructor(category_id, cluster_id) {
         this.category_id = category_id;

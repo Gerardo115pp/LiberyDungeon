@@ -109,7 +109,7 @@ export class Category {
 /**
  * Requests the server for the category data of the provided category id
  * @param {string} category_id
- * @returns {Promise<Category>}
+ * @returns {Promise<Category | null>}
  */
 export const getCategory = async category_id => {
     let category = null;
@@ -129,7 +129,7 @@ export const getCategory = async category_id => {
  * Requests the server for the category data of the provided category fullpath and cluster id.
  * @param {string} category_fullpath    
  * @param {string} cluster_id
- * @returns {Promise<Category>}
+ * @returns {Promise<Category | null>}
  */
 export const getCategoryByPath = async (category_fullpath, cluster_id) => {
     if ((category_fullpath == null || category_fullpath === "") || (cluster_id == null || cluster_id === "")) {
@@ -156,20 +156,24 @@ export const getCategoryByPath = async (category_fullpath, cluster_id) => {
  * @async
  */
 export const renameCategory = async (category_id, new_name) => {
+    let renamed_successfully = false;
+
     let category_rename_request = new PatchRenameCategoryRequest(category_id, new_name);
 
     let response = await category_rename_request.do();
 
     if (response.Ok && response.data?.uuid === category_id) {
-        return response.data;
+        renamed_successfully = response.data != null;
     }
+
+    return renamed_successfully;
 }
 
 /** 
  * Moves a category and all of it's subcategories and children to a new parent category.
  * @param {string} moved_category the 40 character identifier of the category to move
  * @param {string} new_parent_category the 40 character identifier of the new parent category
- * @returns {Promise<Category>} If request fails, returns null
+ * @returns {Promise<Category | null>} If request fails, returns null
  * @async
  */
 export const moveCategory = async (moved_category, new_parent_category) => {
@@ -328,8 +332,8 @@ export const moveCategory = async (moved_category, new_parent_category) => {
      * @property {string} uuid the 40 character identifier of the category
      * @property {string} name the name of the category
      * @property {string} parent the 40 character identifier of the parent category
-     * @property {CategoryLeafInnerCategoryParam[]} inner_categories JSON data of the inner categories of this category
-     * @property {CategoryLeafMediaItemParam[]} content JSON data of the media resources of this category
+     * @property {InnerCategoryParams[]} inner_categories JSON data of the inner categories of this category
+     * @property {import('@models/Medias').MediaParams[]} content JSON data of the media resources of this category
      * @property {string} fullpath the full path of the category in the cluster virtual file system
      * @property {string} cluster the uuid4 identifier of the cluster
     */
@@ -349,7 +353,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
 
         /** 
          * References to the inner categories of this category, if the category hasn't been loaded yet, the value will be null
-         * @type {Object<string, CategoryLeaf>} 
+         * @type {Object<string, CategoryLeaf | null>} 
          */
         #inner_categories_map;
 
@@ -372,7 +376,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
             /** @type {string} the 40 character identifier of the parent category */
             this.parent = parent;
 
-            /** @type {CategoryLeaf} reference to the parent category */
+            /** @type {CategoryLeaf | null} reference to the parent category */
             this.parent_category = null;
 
             this.#inner_categories = inner_categories.map(inner_category => {
@@ -403,7 +407,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
         }
 
         /**
-         * @returns {CategoryLeaf} the parent category of this category
+         * @returns {CategoryLeaf | null} the parent category of this category
          */
         get ParentCategory() {
             return this.parent_category;
@@ -440,7 +444,11 @@ export const moveCategory = async (moved_category, new_parent_category) => {
          * @returns {InnerCategory}
          */
         asInnerCategory = () => {
-            return new InnerCategory({name: this.name, uuid: this.uuid});
+            return new InnerCategory({
+                name: this.name,
+                uuid: this.uuid,
+                fullpath: this.#fullpath
+            });
         }
 
         /**
@@ -457,15 +465,15 @@ export const moveCategory = async (moved_category, new_parent_category) => {
         /**
          * Returns the inner category data of the provided category id
          * @param {string} category_id
-         * @returns {InnerCategory} returns null if the category has not been loaded yet. undefined if the category is not a child category of this category
+         * @returns {CategoryLeaf | null} returns null if the category has not been loaded yet. undefined if the category is not a child category of this category
          */
         getInnerCategoryLeafData = category_id => {
             let is_child = false;
 
             /**
-             * @type {CategoryLeaf}
+             * @type {CategoryLeaf | null}
              */
-            let leaf_data;
+            let leaf_data = null;
 
             this.#inner_categories.forEach(inner_category => {
                 // if child is already true, than keep it as true. if not, is_child will be true if the inner category is the category we are looking for
@@ -507,6 +515,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
 
         /**
          * Whether a uuid is the parent of this category
+         * @param {string} category_uuid
          */
         isParentCategoryUUID = category_uuid => {
             return this.parent === category_uuid && this.parent !== "";
@@ -525,6 +534,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
 
         /**
          * Whether a uuid is a child of this category
+         * @param {string} category_uuid
          */
         isChildCategoryUUID = category_uuid => {
             console.debug("Checking if ", category_uuid, " is a child of ", this.uuid, ": ", this.#inner_categories_map[category_uuid] !== undefined);
@@ -560,6 +570,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
 
         /**
          * Removes a loaded leaf from the inner categories map
+         * @param {string} category_id
          */
         removeLoadedLeaf = category_id => {
             delete this.#inner_categories_map[category_id];
@@ -641,10 +652,10 @@ export const moveCategory = async (moved_category, new_parent_category) => {
          * Deletes a category that is a direct child of the current category
          * @param {string} category_id the uuid of the category to delete
          * @param {boolean} force if true, the category will be deleted even if it has content
-         * @returns {boolean} true if the category was deleted, false otherwise
+         * @returns {Promise<boolean>} true if the category was deleted, false otherwise
          * @async
          * @memberof CategoriesTree
-        */
+         */
         deleteChildCategory = async (category_id, force=false) => {
             let is_child = false;
 
@@ -728,7 +739,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
          * Creates a new category as a child of the current category.
          * @param {string} category_name the name of the new category
          * @param {string} cluster_id the uuid of the cluster the category belongs to
-         * @returns {Promise<Category>} the created category
+         * @returns {Promise<Category | null>} the created category
          */
         insertChildCategory = async (category_name, cluster_id) => {
             if (category_name === "" || cluster_id === "") {
@@ -750,7 +761,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
          * Description placeholder
          * @date 10/21/2023 - 12:01:05 AM
          * @param {CategoryLeaf} category_leaf
-        */
+         */
         setCurrentCategory = (category_leaf) => {
             this.current_category = category_leaf;
             this.current_category_store.set(category_leaf);
@@ -760,16 +771,22 @@ export const moveCategory = async (moved_category, new_parent_category) => {
          * Navigates to a category that is a child of the current category. Returns an error if 
          * the category is not a child of the current category.
          * @param {string} category_id the uuid of the category to navigate to
-         * @returns {Promise<Error>} an error if the category is not a child of the current category
+         * @returns {Promise<Error | null>} an error if the category is not a child of the current category
          */
         navigateToLeaf = async category_id => {
             let err = null;
+
             let category = this.current_category.getInnerCategoryLeafData(category_id);
 
             console.debug("Inner category data: \n", category);
 
             if (category === null) {
                 category = await getCategoryLeaf(category_id);
+
+                if (category === null) {
+                    err = new Error("The category couldn't be fetched, likely because it doesn't exist");
+                    return err;
+                }
                 
                 let added = this.current_category.setChildCategory(category);
         
@@ -782,13 +799,15 @@ export const moveCategory = async (moved_category, new_parent_category) => {
             }
 
             this.setCurrentCategory(category);
+
+            return err;
         }
 
         /**
          * Navigates to the parent category of the current category. If the parent category is not fetched
          * but the parent id is not ""(which would mean this is the root category of the current cluster),
          * it will fetch the parent category from the server.
-         * @returns {Promise<Error>} an error if the parent category is not fetched and the parent id is not ""
+         * @returns {Promise<Error | null>} an error if the parent category is not fetched and the parent id is not ""
          */
         navigateToParent = async () => {
             let err = null;
@@ -796,12 +815,15 @@ export const moveCategory = async (moved_category, new_parent_category) => {
             if (this.current_category.parent === "") {
                 return new Error("This is the root category of the cluster");
             }
-                
 
             let parent_category = this.current_category.parent_category;
 
             if (parent_category === null) {
                 parent_category = await getCategoryLeaf(this.current_category.parent);
+
+                if (parent_category === null) {
+                    return new Error("The parent category couldn't be fetched, likely because it doesn't exist");
+                }
                 
                 parent_category.setChildCategory(this.current_category);
 
@@ -814,7 +836,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
 
             this.setCurrentCategory(parent_category);
 
-            return null;
+            return err;
         }
 
         /**
@@ -824,18 +846,17 @@ export const moveCategory = async (moved_category, new_parent_category) => {
          * @returns {Promise<boolean>}
          */
         updateCategory = async category_id => {
+            let category_updated = false;
+
             let category_data = await getCategory(category_id);
             if (category_data === null) {
-                console.log("Category data was null");
+                console.error("Category data was null");
                 return false;
             }
-            console.log("tree: ", this);
-
-            console.log("Category data: ", category_data);
 
             let loaded_category = this.getLoadedCategory(category_data);
             if (loaded_category === null) {
-                console.log("Loaded category was null");
+                console.error("Loaded category was null");
                 return false;
             }
 
@@ -844,21 +865,18 @@ export const moveCategory = async (moved_category, new_parent_category) => {
             let new_category_leaf = await getCategoryLeaf(category_id);
             if (new_category_leaf === null) {
                 console.warn("The category couldn't be updated, likely because it doesn't exist");
-                return;
+                return category_updated;
             }
 
-            console.log("New category leaf: ", new_category_leaf);
-
-            let updated = loaded_category.updateCategory(new_category_leaf);
-            console.log(`Category ${category_id} updated: ${updated}, leaf:`, loaded_category);
+            category_updated = loaded_category.updateCategory(new_category_leaf);
             
-            return updated;
+            return category_updated;
         }
 
         /**
          * Fetches a fresh copy of the current category from the server. Then it updates the local
          * copy from the new data.
-         * @returns {Promise<Error>} an error if the fetched category was null.
+         * @returns {Promise<Error | null>} an error if the fetched category was null.
          */
         updateCurrentCategory = async () => {
             let category = await getCategoryLeaf(this.current_category.uuid);
@@ -871,10 +889,12 @@ export const moveCategory = async (moved_category, new_parent_category) => {
 
             if (!updated) {
                 console.warn("The category couldn't be updated, likely because both categories have no differences");
-                return;
+                return null;
             }
 
             this.setCurrentCategory(this.current_category);
+
+            return null;
         }
 
         /**
@@ -896,10 +916,12 @@ export const moveCategory = async (moved_category, new_parent_category) => {
 
     /**
      * Sends a category creation request to the server
-     * @param {CategoryLeaf} parent_category the parent category of the new category
+     * @param {string} parent_category_uuid the uuid of the parent category
+     * @param {string} parent_category_fullpath the full path of the parent category
+     * @param {string} cluster_id the uuid of the cluster
      * @param {string} category_name the name of the new category
-     * @returns {Promise<Category>} true if the category was created, false otherwise
-    */
+     * @returns {Promise<Category | null>} 
+     */
     export const createCategory = async (parent_category_uuid, parent_category_fullpath, category_name, cluster_id) => {
         const request = new PostCreateCategoryRequest(category_name, parent_category_uuid, parent_category_fullpath, cluster_id);
         const response = await request.do();
@@ -949,7 +971,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
      * Requests the server for the category data of the provided category id
      * @param {string} category_id
      * @returns {Promise<CategoryLeaf | null>}
-    */
+     */
     const getCategoryLeaf = async category_id => {
         const request = new GetCategoryTreeLeafRequest(category_id);
         const response = await request.do();
@@ -980,14 +1002,12 @@ export const moveCategory = async (moved_category, new_parent_category) => {
         return new Promise(async (resolve, reject) => {
             const request = new getShortCategoryTreeRequest(category_id, cluster_id);
             
-            /**
-             * @type {HttpResponse}
-            */
             const response = await request.do();
 
             if (response.status >= 200 && response.status < 300) {
                 const data = response.data;
-                /** @type {InnerCategory} */
+
+                /** @type {InnerCategory[]} */
                 const leafs = [];
 
                 data.forEach(leaf => {
@@ -1003,6 +1023,11 @@ export const moveCategory = async (moved_category, new_parent_category) => {
         });
     }
 
+    /**
+     * @param {string} category_id 
+     * @param {boolean} force 
+     * @returns 
+     */
     export const deleteCategory = async (category_id, force=false) => {
         return new Promise(async (resolve, reject) => {
             const request = new DeleteCategoryRequest(category_id, force);
@@ -1024,14 +1049,13 @@ export const moveCategory = async (moved_category, new_parent_category) => {
 =============================================*/
 
     class CategoryCache {
-        /** @type {Map<string, number>} a map of category uuids to the index of last viewed media on that category */
+        /** 
+         * @type {Map<string, number>} a map of category uuids to the index of last viewed media on that category 
+         */
         #cache
+
         constructor() {
-            
-
             this.#cache = new Map();
-
-            
 
             this.#loadCache();
         }
@@ -1041,7 +1065,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
          * @param {string} category_uuid the uuid of the category
          * @param {number} media_index the media index of the category
          * @async
-        */
+         */
         addCategoryIndex(category_uuid, media_index) {
             if (this.#cache.has(category_uuid)) {
                 updateCategoryIndex(category_uuid, media_index);
@@ -1055,9 +1079,9 @@ export const moveCategory = async (moved_category, new_parent_category) => {
         /**
          * Gets the media index of a category from the cache, if the category is not in the cache, it returns 0, which is useful to set the media index at the beginning of the category
          * @param {string} category_uuid the uuid of the category
-         * @returns {Promise<number>} the media index of the category
+         * @returns {Promise<number | undefined>} the media index of the category
          * @async   
-        */
+         */
         async getCategoryIndex(category_uuid) {
             if (this.#cache.has(category_uuid)) {
                 return this.#cache.get(category_uuid);
@@ -1089,29 +1113,6 @@ export const moveCategory = async (moved_category, new_parent_category) => {
                 this.#cache.set(category_uuid, 0);
                 updateCategoryIndex(category_uuid, 0);
             }
-        }
-
-        /**
-         * Gets the media index of a category from the cache
-         * @param {string} category_uuid the uuid of the category
-         * @returns {number} a promise that resolves to the media index of the category
-         * @async
-        */
-        async setCachedIndexAsActive(category_uuid) {
-            
-
-            if (this.#cache.has(category_uuid)) {
-                active_media_index.set(this.#cache.get(category_uuid));
-            }
-
-            let result = await getCategoryIndex(category_uuid);
-            if (result === -1) return; // category not in cache
-
-            this.#cache.set(category_uuid, result);
-
-            
-
-            active_media_index.set(result);
         }
     }
 
