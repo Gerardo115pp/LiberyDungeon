@@ -24,7 +24,7 @@ import {
 
 /**
 * @typedef {Object} HotkeyDataParams
- * @property {string} key_combo
+ * @property {string | string[]} key_combo
  * @property {function} handler 
  * @property {HotkeyRegisterOptions} options
 */
