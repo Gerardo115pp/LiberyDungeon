@@ -109,7 +109,6 @@
                 bind:value={initial_setup_secret}
                 on:keypress={handleSecretInputKeypress}
                 on:change={handleSecretInputChange}
-                type="text"
                 minlength="8"
                 spellcheck="false"
                 autocomplete="off"

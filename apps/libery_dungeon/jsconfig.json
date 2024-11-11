@@ -11,6 +11,5 @@
 		"strict": true,
 		"moduleResolution": "bundler",
 		"strictNullChecks": true,
-		
 	}
 }

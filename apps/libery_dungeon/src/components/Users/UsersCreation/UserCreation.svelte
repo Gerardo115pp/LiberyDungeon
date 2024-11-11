@@ -52,7 +52,7 @@
 
             /**
              * The secret used to authenticate the user on initial setup mode. 
-             * @type {string}
+             * @type {string | undefined}
              */
             let initial_setup_secret;
     
@@ -160,6 +160,7 @@
          * @returns {Promise<boolean>}
          */
         const registerNewUser = async () => {
+            if (new_user_username == "" || new_user_password == "" || initial_setup_secret === undefined) return false;
             let user_created = false;
 
             if (is_initial_setup) {
