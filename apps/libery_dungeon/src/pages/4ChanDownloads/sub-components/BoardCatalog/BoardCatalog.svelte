@@ -25,11 +25,13 @@
         let is_download_name_modal_visible = false;
 
         /**
-        * @type {HTMLUListElement} the catalog threads element
+        * @type {HTMLDivElement} the catalog threads element
         */
         let catalog_threads_element;
 
-        /** @type {ChanCatalogThread} the thread that is been downloaded */
+        /** 
+         * @type {ChanCatalogThread | undefined} the thread that is been downloaded 
+         */
         let downloading_thread;
 
         /**
@@ -67,30 +69,48 @@
 
         /**
          * @param {string} download_name the name of the category where content will be downloaded to
-         * @returns {Promise<string>} the uuid of the download, used to track the download progress
+         * @returns {Promise<string | null>} the uuid of the download, used to track the download progress
         */
         const downloadThread = async (download_name) => {
+            if (downloading_thread === undefined) {
+                console.error("downloading thread is undefined");
+                return null;
+            }
+
             last_enqueued_download.set(downloading_thread.uuid);
             await tick();
 
             let download_uuid = await downloading_thread.download(download_name, selected_categories_cluster.DownloadCategoryID, selected_categories_cluster.UUID);
 
-            console.debug(`download '${download_name}' started with uuid '${download_uuid}'`);
+            if (download_uuid === null) {
+                console.error("error downloading thread");
+                return null;
+            }
+
             last_started_download.set(download_uuid);
 
             downloading_thread = undefined;
+
+            return download_uuid;
         }
 
+        /**
+         * Handles the event of a thread being selected for download
+         * @param {CustomEvent<{thread: ChanCatalogThread}>} e
+         */
         const handleDownloadThread = e => {
-            console.log("download event", e.detail);
             is_download_name_modal_visible = true;
 
             downloading_thread = e.detail.thread;
         }
 
-        const handleDownloadNameReady = e => {
+        /**
+         * Handles the event of the download name being ready
+         * @param {CustomEvent<{download_name: string, cluster: import("@models/CategoriesClusters").CategoriesCluster}>} event
+         */
+        const handleDownloadNameReady = event => {
             is_download_name_modal_visible = false;
-            const { download_name, cluster} = e.detail;
+            const { download_name, cluster} = event.detail;
 
             selected_categories_cluster = cluster;
 
@@ -119,6 +139,10 @@
             last_started_download.set(new_download_uuid);
         }
 
+        /**
+         * Refreshes the catalog threads
+         * @param {string} board_name
+         */
         async function refreshCatalog (board_name) {
             if (!browser) return;
 
@@ -142,6 +166,10 @@
             catalog_threads_element.scrollTo({ top: 0, left: 0, behavior: "smooth" });
         }
 
+        /**
+         * Scrolls to the thread with the given id
+         * @param {string} thread_id
+         */
         const scrollToThread = async (thread_id) => {
             if (!browser) return;
 

@@ -1,4 +1,6 @@
 <script>
+// @ts-nocheck
+
     import FieldData from '../../libs/FieldData';
     import { FieldStates } from '../../libs/FieldData';
 

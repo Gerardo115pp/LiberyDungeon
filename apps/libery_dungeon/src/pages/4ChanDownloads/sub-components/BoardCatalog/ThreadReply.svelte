@@ -12,11 +12,6 @@
          * @type {ChanThreadReply} 
         */
         export let thread_reply;
-
-        // /**
-        //  * @type {string} the id of the op's post
-        //  */
-        // export let op_post_id;
     
         const dispatcher = createEventDispatcher();
     

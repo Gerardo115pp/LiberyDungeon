@@ -2,7 +2,6 @@
     import { getProxyMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
     import { isUrlMediaFile, isUrlVideo, getMediaFilename } from "@libs/utils";
 
-    
     /*=============================================
     =            Properties            =
     =============================================*/
@@ -17,8 +16,6 @@
 
     /*=====  End of Properties  ======*/
     
-    
-    
     /*=============================================
     =            Methods            =
     =============================================*/
@@ -31,6 +28,8 @@
             const media_filename = getMediaFilename(media_file_url);
             const media_url = getProxyMediaUrl(media_file_url);
 
+            if (!media_url || !media_filename) return;
+
             const download_element = document.createElement("a");
 
             download_element.href = media_url;
@@ -39,6 +38,9 @@
             download_element.click();
         }
 
+        /**
+         * @param {MouseEvent} e
+         */
         const handleBackgroundClick = e => {
             if (e.currentTarget === e.target) {
                 resetMediaUrl();
@@ -58,7 +60,7 @@
         function validateMediaUrl(url) {
             if (url === "" || url === undefined) {
                 is_video = false;
-                return;
+                return false;
             }
 
             if (!isUrlMediaFile(url)) {
@@ -66,6 +68,8 @@
             }
 
             is_video = isUrlVideo(url);
+
+            return true;
         }
 
         const resetMediaUrl = () => {

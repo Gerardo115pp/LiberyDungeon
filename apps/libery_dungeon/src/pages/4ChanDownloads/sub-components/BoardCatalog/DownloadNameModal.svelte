@@ -31,8 +31,11 @@
     =            Methods            =
     =============================================*/
 
-        const handleBackgroundClick = e => {
-            const { target, currentTarget } = e;
+        /**
+         * @param {MouseEvent} event
+         */
+        const handleBackgroundClick = event => {
+            const { target, currentTarget } = event;
 
             if (target === currentTarget) {
                 emitModalCloseEvent();
@@ -46,7 +49,8 @@
                 return;
             }
 
-            const cluster_uuid = document.querySelector("#dnm-content--cluster-select").value;
+            // @ts-ignore
+            const cluster_uuid = document.querySelector("#dnm-content--cluster-select")?.value ?? "";
 
             if (cluster_uuid === "") {
                 return;

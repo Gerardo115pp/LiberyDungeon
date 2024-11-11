@@ -24,7 +24,7 @@
         /** @type {boolean} whether the thread download is enqueued */
         let download_enqueued = false;
 
-        /** @type {DownloadProgress} the current download progress */
+        /** @type {DownloadProgress | undefined} the current download progress */
         let thread_download_progress;
 
         // thread_download_progress = new DownloadProgress({ download_uuid: catalog_thread.uuid, total_files: 100, downloaded_files: 10, completed: true });
@@ -32,7 +32,7 @@
         /** @type {DownloadProgressTransmisor} the websocket transmisor that will receive the download progress */
         let download_progress_transmisor;
 
-        /** @type {import('@models/4Chan').DownloadRegister} information the last time this thread was downloaded, if the thread has never been downloaded, this will be undefined */
+        /** @type {import('@models/4Chan').DownloadRegister | undefined} information the last time this thread was downloaded, if the thread has never been downloaded, this will be undefined */
         let download_register;
     
         const dispatcher = createEventDispatcher();
@@ -75,7 +75,7 @@
 
         /**
          * It suscribes to the download_uuid store, if the download_uuid is the same as the thread's uuid, it calls the listenDownloadProgress method
-         * @param download_uuid
+         * @param {string} download_uuid
          */
         const checkDownloadStarted = download_uuid => {
             if (download_uuid === catalog_thread.uuid) {
@@ -85,6 +85,9 @@
             }
         }
 
+        /**
+         * @param {string} enqueued_download
+         */
         const checkDownloadEnqueued = enqueued_download => {
             if (enqueued_download === catalog_thread.uuid) {
                 download_enqueued = true;
@@ -129,8 +132,14 @@
          * @param {MouseEvent} event 
          */
         const handleThreadClick = event => {
-            console.log("click", event.target.tagName);
-            if (event.target.tagName?.toLowerCase() === "img") {
+            if (event.target == null || !(event.target instanceof HTMLElement) ) return;
+
+            /**
+             * @type {HTMLElement}
+             */
+            const event_target = event.target;
+            
+            if (event_target.tagName?.toLowerCase() === "img") {
                 setSelectedThread();
             }
         }
@@ -157,7 +166,7 @@
 
         /**
          * Its called by the download_progress_transmisor when it receives a new download progress update
-         * @param new_download_progress
+         * @param {import('@models/Downloads').DownloadProgress} new_download_progress
          */
         const updateDownloadProgress = (new_download_progress) => {
             console.debug(`Updating download progress for thread ${catalog_thread.uuid}`, new_download_progress);
@@ -213,8 +222,8 @@
                 {/if}
             </class>
             <div class="ct-tw-sb-status-details">
-                <span>{!layout_properties.IS_MOBILE ? "Replies" : "R"}: <mark>{catalog_thread.responses}</mark></span>
-                <span>{!layout_properties.IS_MOBILE ? "Images" : "M"}: <mark>{catalog_thread.images}</mark></span>
+                <span>{!$layout_properties.IS_MOBILE ? "Replies" : "R"}: <mark>{catalog_thread.responses}</mark></span>
+                <span>{!$layout_properties.IS_MOBILE ? "Images" : "M"}: <mark>{catalog_thread.images}</mark></span>
             </div>
             <div class="ct-tw-sb-controls">
                 <button id="ct-tw-sb-download-btn" on:click={emitDownloadEvent}>

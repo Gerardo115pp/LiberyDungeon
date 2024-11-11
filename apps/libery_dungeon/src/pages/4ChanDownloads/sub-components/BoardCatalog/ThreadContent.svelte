@@ -13,7 +13,9 @@
         export let board_name;
         export let thread_id;
 
-        /** @type {ChanThread} */
+        /** 
+         * @type {ChanThread | null}
+         */
         let chan_thread;
 
         /** @type {string} the url of the media selected for preview*/
@@ -30,6 +32,9 @@
     =            Methods            =
     =============================================*/
 
+        /**
+         * @param {CustomEvent<{media_file_url: string}>} e
+         */
         const handleSelectMediaPreview = e => {
             const { media_file_url } = e.detail;
 
@@ -45,6 +50,10 @@
             selected_thread.set(null);
         }
 
+        /**
+         * Sets the preview media url
+         * @param {string} url
+         */
         const setPreviewMediaUrl = url => {
             preview_media_url = url;
         }
@@ -65,7 +74,7 @@
             </svg>
         </button>
     </div>
-    {#if chan_thread !== undefined}
+    {#if chan_thread != undefined}
         <div id="thread-content-wrapper">
             <div id="tcw-op-post">
                 <div id="tcw-op-post-status">
@@ -73,7 +82,7 @@
                         {chan_thread.getCreationDate()}
                     </span>
                 </div>
-                <div on:click={() => setPreviewMediaUrl(chan_thread.file)} id="tcw-op-image-wrapper" class="image-interact">
+                <div on:click={() => setPreviewMediaUrl(chan_thread?.file ?? "")} id="tcw-op-image-wrapper" class="image-interact">
                     <img src="{getProxyMediaUrl(chan_thread.cover_image_url)}" alt="thread {thread_id} cover">
                 </div>
                 <div id="tcw-op-post-content">
@@ -91,7 +100,7 @@
             </div>
             <ul id="thread-replies" class="libery-scroll">
                 {#each chan_thread.replies as reply}
-                    <ThreadReply on:select-media-preview={handleSelectMediaPreview} thread_reply={reply} op_post_id={chan_thread.uuid}/>
+                    <ThreadReply on:select-media-preview={handleSelectMediaPreview} thread_reply={reply} />
                 {/each}
             </ul>
         </div>

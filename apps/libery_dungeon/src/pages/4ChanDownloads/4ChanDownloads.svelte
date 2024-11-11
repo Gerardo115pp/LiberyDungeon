@@ -13,6 +13,7 @@
     import { selected_thread, selected_thread_id } from "./app_page_store";
     import { browser } from "$app/environment";
     import { access_state_confirmed, current_user_identity } from "@stores/user";
+    import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
     
     /*=============================================
     =            AppContext            =
@@ -53,7 +54,7 @@
 
         tracked_boards = await getTrackedBoards();        
 
-        if (!layout_properties.IS_MOBILE) {
+        if (!$layout_properties.IS_MOBILE) {
             defineDesktopKeybinds();
         }
     });
@@ -63,10 +64,18 @@
     =============================================*/
 
         const defineDesktopKeybinds = () => {
+            if (global_hotkeys_manager == null) {
+                console.error("In 4ChanDownloads.defineDesktopKeybinds: global_hotkeys_manager is null.");
+                return;
+            }
+            
+
             if (!global_hotkeys_manager.hasContext(hotkey_context_name)) {
                 const hotkeys_context = new HotkeysContext();
 
-                hotkeys_context.register(["a", "q"], () => console.log("a or q pressed"));
+                hotkeys_context.register(["a", "q"], () => console.log("a or q pressed"), {
+                    description: `${common_action_groups.GENERAL}Doesn't do anything yet.`
+                });
 
                 global_hotkeys_manager.declareContext(hotkey_context_name, hotkeys_context);
             }
@@ -95,6 +104,10 @@
         }
 
 
+        /**
+         * Handles the event of a new board being selected.
+         * @param {CustomEvent<{board_name: string}>} event
+         */
         const handleNewBoardSelected = (event) => {
             $selected_thread = null;
 
