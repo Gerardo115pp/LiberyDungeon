@@ -289,6 +289,11 @@
                  * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
                  */
                 const handleApplyFocusedTagToContent = async (event, hotkey) => {
+                    if ($current_category == null) {
+                        console.error("In CategoryTagger.handleApplyFocusedTagToContent: No current category available while trying to apply the focused tag to the content.");
+                        return;
+                    }
+                    
                     console.log("Applying focused tag.");
 
                     const dungeon_tag = $last_keyboard_focused_tag;
@@ -328,6 +333,11 @@
                  * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
                  */
                 const handleRemoveFocusedTagFromContent = async (event, hotkey) => {
+                    if ($current_category == null) {
+                        console.error("In CategoryTagger.handleRemoveFocusedTagFromContent: No current category available while trying to remove the focused tag from the content.");
+                        return;
+                    }
+                    
                     console.log("Removing focused tag.");
 
                     const dungeon_tag = $last_keyboard_focused_tag;
@@ -397,9 +407,11 @@
 
         /**
          * Handles the change of the current category.
-         * @param {import("@models/Categories").CategoryLeaf} new_category
+         * @param {import("@models/Categories").CategoryLeaf | null} new_category
          */
-        const handleCurrentCategoryChange = async new_category => {
+        const handleCurrentCategoryChange = async (new_category) => {
+            if (new_category === null) return;
+
             console.log("Refreshing taggings of:", new_category);
 
             if (new_category === null) return;
@@ -503,6 +515,11 @@
          * @param {CustomEvent<{tag_id: number}>} event
          */
         const handleTagSelection = async (event) => {
+            if ($current_category == null) {
+                console.error("In CategoryTagger.handleTagSelection: No current category available while trying to tag it.");
+                return;
+            }
+            
             const tag_id = event.detail.tag_id;
 
             let tagging_id = await tagCategory($current_category.uuid, tag_id);
@@ -528,6 +545,11 @@
          * Refreshes the current category taggings and sets them on current_category_taggings property.
          */
         const refreshCurrentCategoryTaggings = async () => {
+            if ($current_category == null) {
+                console.error("In CategoryTagger.refreshCurrentCategoryTaggings: No current category available while trying to refresh its taggings.");
+                return;
+            }
+            
             let new_taggings = await getEntityTaggings($current_category.uuid, $current_category.ClusterUUID);
 
             const category_uuid = $current_category.uuid;
@@ -541,7 +563,12 @@
          * Removes a given tag from the current category.
          * @param {number} tag_id
          */
-        const removeCategoryTag = async tag_id => {
+        const removeCategoryTag = async (tag_id) => {
+            if ($current_category == null) {
+                console.error("In CategoryTagger.removeCategoryTag: No current category available while trying to remove a tag.");
+                return;
+            }
+            
             if (tag_id < 0) {
                 console.error(`Tag ids are always positive numbers. got ${tag_id}`);
                 return;
