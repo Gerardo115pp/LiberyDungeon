@@ -1498,9 +1498,6 @@
         list-style: none;
         padding: 0;
         gap: 2px;
-        /* perspective: 2000px; */
-        /* perspective-origin: center; */
-        /* padding: 0 var(--spacing-3); */
     }
 
     
