@@ -58,7 +58,7 @@
 
         /**
          * A map of entries timestamp to their respective transaction details.  
-         * @type {Map<string, import('@models/Trashcan').TrashcanTransaction}
+         * @type {Map<string, import('@models/Trashcan').TrashcanTransaction>}
         */
         const loaded_trashcan_transactions = new Map();
 
@@ -90,7 +90,7 @@
 
         /**
          * Current selected trashcan transaction details.
-         * @type {import('@models/Trashcan').TrashcanTransaction}
+         * @type {import('@models/Trashcan').TrashcanTransaction | null}
          */
         let selected_trashcan_transaction = null;
 
@@ -122,6 +122,11 @@
              * @requires tmt_hotkeys_context_name
              */
             const registerTrashCanHotkeys = () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("In TrashcanTab.registerTrashCanHotkeys: global_hotkeys_manager is null");
+                    return;
+                }
+
                 if (global_hotkeys_manager.ContextName !== tmt_hotkeys_context_name) return;
 
                 for (let keybind of Object.values(keybinds)) {
@@ -138,7 +143,7 @@
              * @requires current_user_identity
              */
             const addPrivilegedHotkeys = () => {
-                if (current_user_identity == null) return;
+                if ($current_user_identity == null) return;
 
                 if ($current_user_identity.canModifyTrashcan()) {
                     keybinds.RESTORE_FOCUSED_TRANSACTION = {
@@ -265,7 +270,7 @@
 
                 let transaction_id = trashcan_transaction_entries[entry_keyboard_focused_index].timestamp;
                 
-                selected_trashcan_transaction = await selectTrashcanTransaction(transaction_id);
+                selected_trashcan_transaction = (await selectTrashcanTransaction(transaction_id)) ?? null;
                 selected_trashcan_entry_index = entry_keyboard_focused_index;
 
                 enableMediaKeyboardMovement();
@@ -282,6 +287,11 @@
              * Restores the currently focused transaction.
              */
             async function handleRestoreFocusedTransaction() {
+                if ($current_category == null) {
+                    console.error("In TrashcanTab.handleRestoreFocusedTransaction: $current_category is null");
+                    return;
+                }
+                
                 let focused_transaction = trashcan_transaction_entries[entry_keyboard_focused_index];   
 
                 let user_choice = await confirmPlatformMessage({
@@ -314,6 +324,13 @@
              * 
             */
             async function handleMediaKeyboardSelection() {
+                if (selected_trashcan_transaction == null) return;
+
+                if ($current_category == null) {
+                    console.error("In TrashcanTab.handleMediaKeyboardSelection: $current_category is null");
+                    return;
+                }
+
                 const media_focus_out_of_bounds = media_keyboard_focused_index < 0 || media_keyboard_focused_index >= selected_trashcan_transaction.Content.length; 
 
                 if (!validTransactionOpened() || !media_movement_enabled || media_focus_out_of_bounds) return;
@@ -336,9 +353,11 @@
 
             /**
              * Called from handleKeyboardMovement to 
-             * @param {boolan} is_direction_up
+             * @param {boolean} is_direction_up
              */
             const passKeyboardMovementToTransactionContent = (is_direction_up) => {
+                if (!validTransactionOpened() || !selected_trashcan_transaction) return;
+
                 let new_media_index = is_direction_up ? media_keyboard_focused_index - 1 : media_keyboard_focused_index + 1;
 
                 if (new_media_index < 0) {
@@ -358,10 +377,15 @@
              * Removes the TrashcanTab hotkeys from the Transactions Management Tool hotkeys context.
              */
             const removeTrashcanHotkeys = () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("In TrashcanTab.removeTrashcanHotkeys: global_hotkeys_manager is null");
+                    return;
+                }
+                
                 if (global_hotkeys_manager.ContextName !== tmt_hotkeys_context_name) return;
 
                 for (let keybind of Object.values(keybinds)) {
-                    global_hotkeys_manager.unregisterHotkeyFromContext(keybind.key_combo, keybind.mode ?? "keydown");
+                    global_hotkeys_manager.unregisterHotkeyFromContext(keybind.key_combo, keybind.options.mode ?? "keydown");
                 }
             }
 
@@ -384,6 +408,8 @@
              * @param {boolean} at_end
              */
             const enableMediaKeyboardMovement = (at_end=false) => {
+                if (selected_trashcan_transaction == null) return;
+
                 if(!at_end) setKeyboardFocusAtTop();
                 media_movement_enabled = true;
                 media_keyboard_focused_index = at_end ? selected_trashcan_transaction.Content.length - 1 : 0;
@@ -395,7 +421,7 @@
         /**
          * Returns whether a given index represents a selected transaction entry.
          * @param {number} check_index
-         * @returns {boolean
+         * @returns {boolean}
          */
         const isEntrySelected = (check_index) => {
             return selected_trashcan_entry_index === check_index && selected_trashcan_transaction != null;
@@ -415,6 +441,7 @@
          * @requires selected_trashcan_entry_index
          */ 
         const handleTransactionEntryClick = async (event) => {
+            // @ts-ignore
             let entry_index = event.target?.dataset?.entryIndex;
 
             if (entry_index == null) return;
@@ -431,7 +458,7 @@
 
             let transaction_id = trashcan_transaction_entries[entry_index].timestamp;
             
-            selected_trashcan_transaction = await selectTrashcanTransaction(transaction_id);
+            selected_trashcan_transaction = (await selectTrashcanTransaction(transaction_id)) ?? null;
             selected_trashcan_entry_index = entry_index;
             console.log("Selected trashcan transaction: ", selected_trashcan_transaction);
         }
@@ -441,6 +468,12 @@
          * @param {import('@models/Trashcan').TrashedMedia} focused_media
          */
         const restoreMediaToCurrentCategory = async (focused_media) => {
+            if (selected_trashcan_transaction == null) return;
+
+            if ($current_category == null) {
+                console.error("In TrashcanTab.restoreMediaToCurrentCategory: $current_category is null");
+                return;
+            }
 
             let transaction_copy = selected_trashcan_transaction.clone();
 
@@ -468,7 +501,7 @@
         /**
          * Selects a new trashcan transaction to be displayed.
          * @param {string} transaction_id
-         * @returns {import('@models/Trashcan').TrashcanTransaction}
+         * @returns {Promise<import('@models/Trashcan').TrashcanTransaction | undefined>}
          */
         const selectTrashcanTransaction = async (transaction_id) => {
             if (loaded_trashcan_transactions.has(transaction_id)) {
@@ -477,7 +510,7 @@
 
             let new_transaction = await getTrashcanTransaction(transaction_id);
 
-            if (new_transaction == null) return null;
+            if (new_transaction == null) return undefined;
 
             loaded_trashcan_transactions.set(transaction_id, new_transaction);
 
@@ -519,6 +552,10 @@
             {#if selected_transaction}
                 <div class="tmt-transaction-selected-details">
                     <TrashcanTransactionComponent 
+                        {...{
+                            ...{} 
+                            /* @ts-ignore */
+                        }}
                         the_transaction={selected_trashcan_transaction}
                         focused_media_index={media_keyboard_focused_index}
                         highlight_focused_media={media_movement_enabled}
