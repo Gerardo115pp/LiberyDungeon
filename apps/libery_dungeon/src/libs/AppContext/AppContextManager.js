@@ -34,7 +34,6 @@ class AppContextManager {
 
     /**
      * Executes all the context exit functions
-     * @private
      */
     #executeContextExit() {
         for (const fn of Object.values(this.#on_context_exit)) {
