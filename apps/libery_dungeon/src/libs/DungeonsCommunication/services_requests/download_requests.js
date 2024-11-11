@@ -27,6 +27,10 @@ export class GetChanBoardsRequest {
  * Requests a board's thread catalog
  */
 export class GetChanCatalogRequest {
+
+    /**
+     * @param {string} board_name 
+     */
     constructor(board_name) {
         this.board_name = board_name;
     }
@@ -52,6 +56,11 @@ export class GetChanCatalogRequest {
  * @param {string} board_name
  */
 export class GetChanThreadRequest {
+
+    /**
+     * @param {string} thread_id 
+     * @param {string} board_name 
+     */
     constructor(thread_id, board_name) {
         this.thread_id = thread_id;
         this.board_name = board_name;
@@ -73,11 +82,13 @@ export class GetChanThreadRequest {
 }
 
 export class PostThreadDownloadRequest {
+
     /** 
      * @param {string} thread_uuid
      * @param {string} board_name
      * @param {string} target_category_name
      * @param {string} parent_uuid
+     * @param {string} cluster_uuid
      */
     constructor(thread_uuid, board_name, target_category_name, parent_uuid, cluster_uuid) {
         this.thread_uuid = thread_uuid;
@@ -89,6 +100,9 @@ export class PostThreadDownloadRequest {
 
     toJson = attributesToJsonExclusive.bind(this);
 
+    /**
+     * @returns {Promise<HttpResponse<{ download_uuid: string }>>}
+     */
     do = async () => {
         const response = await fetch(`${collect_server}/4chan-downloads/thread/images`, {   
             method: "POST",
@@ -98,7 +112,12 @@ export class PostThreadDownloadRequest {
             body: this.toJson()
         }); 
 
-        let data = {};
+        /**
+         * @type {{download_uuid: string}}
+         */
+        let data = {
+            download_uuid: ""
+        };
 
         if (response.status <= 200 && response.status < 300) {
             data = await response.json();
@@ -111,6 +130,10 @@ export class PostThreadDownloadRequest {
 }
 
 export class GetDownloadRegisterRequest {
+
+    /**
+     * @param {string} download_uuid 
+     */
     constructor(download_uuid) {
         this.download_uuid = download_uuid;
     }
