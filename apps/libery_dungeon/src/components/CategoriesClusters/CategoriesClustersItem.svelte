@@ -14,7 +14,7 @@
          * The cluster this item is representing.
          * @type {import("@models/CategoriesClusters").CategoriesCluster} 
          */    
-        export let cluster = {};
+        export let cluster;
 
         /**
          * Dungeon door animation duration.
@@ -99,7 +99,7 @@
 
         /**
          * Prevents the the hotkey keystroke from being added to the category name.
-         * @param event
+         * @param {KeyboardEvent} event
          */
         const handleKeyPrevent = (event) => {
             if (!first_keydown_triggered) {
@@ -157,6 +157,10 @@
             goto(cluster_access.redirect_url);
         }
 
+        /**
+         * Renames the cluster.
+         * @param {string} new_name
+         */
         const renameCluster = async (new_name) => {
             let original_name = cluster.Name;
             console.log(`Renaming '${cluster.Name}' to '${new_name}'`);
