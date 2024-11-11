@@ -632,16 +632,17 @@ export const moveCategory = async (moved_category, new_parent_category) => {
      */
     export class CategoriesTree {
         /**
-         * 
          * @param {CategoryLeaf} root_category 
-         * @param {import('svelte/store').Writable<CategoryLeaf>} current_category_store 
+         * @param {import('svelte/store').Writable<CategoryLeaf | null>} current_category_store 
          */
         constructor(root_category, current_category_store) {
             /** @type {CategoryLeaf} the root category of the tree */
             this.root_category = root_category;
             /** @type {CategoryLeaf} the currently selected category */
             this.current_category = root_category;
-            /** @type {import('svelte/store').Writable<CategoryLeaf>} A store used for reactivity */   
+            /** 
+             * @type {import('svelte/store').Writable<CategoryLeaf | null>} A store used for reactivity
+             */   
             this.current_category_store = current_category_store;
 
             this.setCurrentCategory(root_category);
@@ -937,7 +938,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
      * Description placeholder
      * @date 10/20/2023 - 11:06:22 PM
      * @param {string} category_id
-     * @param {import('svelte/store').Writable<CategoryLeaf>} category_store
+     * @param {import('svelte/store').Writable<CategoryLeaf | null>} category_store
      * @param {string} [cluster_id] the uuid of the cluster. If category_id is set and not equal to the root category proxy id, cluster_id can be omitted. otherwise, cluster_id must be set.
      * @export
      * @returns {Promise<CategoriesTree | null>}
