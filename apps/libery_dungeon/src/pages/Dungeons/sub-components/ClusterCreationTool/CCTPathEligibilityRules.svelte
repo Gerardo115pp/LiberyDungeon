@@ -8,13 +8,13 @@
          * Whether to show the path elegibility rules dialog or not
          * @type {boolean}
          */
-        export let show_path_elegibility_rules = false;
+        export let show_path_eligibility_rules = false;
     
     /*=====  End of Properties  ======*/
     
 </script>
 
-<dialog open={show_path_elegibility_rules} id="cct-directory-eligibility-rules-dialog">
+<dialog open={show_path_eligibility_rules} id="cct-directory-eligibility-rules-dialog">
     <ol id="cct-directory-eligibility-rules-list">
         <li class="cct-derl-law law-title">
             <p>The path cannot be the root directory aka <code>'/'</code> or <code>'C:\'</code> in windows.</p>
