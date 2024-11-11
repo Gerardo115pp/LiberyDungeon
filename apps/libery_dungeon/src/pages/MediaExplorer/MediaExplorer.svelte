@@ -52,7 +52,7 @@
         import { current_user_identity } from "@stores/user";
         import { SearchResultsWrapper, wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
         import { use_category_folder_thumbnails } from "@app/config/ui_design";
-    import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
+        import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
 
     /*=====  End of Imports  ======*/
   

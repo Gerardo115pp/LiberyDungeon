@@ -880,7 +880,7 @@
 
                 let cached_category_index = await category_cache.getCategoryIndex(url_category_id);
 
-                if (cached_category_index !== determined_index) {
+                if (cached_category_index !== determined_index && cached_category_index != null) {
                     cached_category_index = Math.max(0, Math.min(cached_category_index, $current_category.content.length - 1));
                     determined_index = cached_category_index;
                 }
