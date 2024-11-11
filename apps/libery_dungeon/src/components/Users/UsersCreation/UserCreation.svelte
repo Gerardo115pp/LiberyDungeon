@@ -131,6 +131,8 @@
         const handleUserCreationFormSubmit = async event => {
             event.preventDefault();
 
+            console.log("Creating user...");
+
             if (!user_creation_data_ready) return;
 
             let created = await registerNewUser();
@@ -160,11 +162,14 @@
          * @returns {Promise<boolean>}
          */
         const registerNewUser = async () => {
-            if (new_user_username == "" || new_user_password == "" || initial_setup_secret === undefined) return false;
+            if (new_user_username == "" || new_user_password == "" ) return false;
+            console.log("3 Creating user...");
             let user_created = false;
 
             if (is_initial_setup) {
-                console.log("Creating initial user...");
+
+                if (initial_setup_secret == null) return false;
+
                 user_created = await createInitialUser(new_user_username, new_user_password, initial_setup_secret);
             } else {
                 console.log("Creating user...");
