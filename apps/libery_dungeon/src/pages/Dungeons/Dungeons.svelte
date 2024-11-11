@@ -127,6 +127,11 @@
             // Only call directly defineComponentHotkeys. All the other methods in this section should only be called by the global hotkeys manager.
 
             const defineComponentHotkeys = () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("In Dungeons.defineComponentHotkeys: The global hotkeys manager was not found.");
+                    return;
+                }
+                
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
 
@@ -205,7 +210,11 @@
              * handles the selection of a cluster via hotkeys.
              */
             const handleClusterSelection = () => {
+                /**
+                 * @type {HTMLElement | null}
+                 */
                 const selected_cluster_element = document.querySelector(`#dciw-cluster-item-${focused_cluster_index} > :first-child`);
+
                 if (selected_cluster_element === null) {
                     console.error(`The selected cluster element with index ${focused_cluster_index} was on the dom.`);
                     return;
@@ -237,8 +246,8 @@
 
             /**
              * Handles the deletion of a cluster data.
-             * @returns {void}
-            */
+             * @returns {Promise<void>}
+             */
             const handleDeleteClusterData = async () => {
                 const user_confirmation = await confirmPlatformMessage({
                     message_title: "Are you sure you want to delete all the cluster data?",
@@ -272,7 +281,7 @@
 
                     let labeled_error = new LabeledError(variable_enviroment, `There was an error while trying to delete data from the cluster '${cluster_to_delete.UUID}'.`, lf_errors.ERR_PROCESSING_ERROR);
 
-                    emitPlatformMessage(labeled_error);
+                    labeled_error.alert();
                 }
 
 
@@ -282,7 +291,8 @@
 
         /**
          * Gets a list of phrases and returns a random one.
-        */
+         * @param {string[]} phrases - The list of phrases to choose from.
+         */
         const chooseRandomPhrase = (phrases) => {
             return phrases[Math.floor(Math.random() * phrases.length)];
         }
@@ -292,6 +302,8 @@
          * @returns {void}
         */
         const dropHotkeysContext = () => {
+            if (global_hotkeys_manager == null) return;
+
             global_hotkeys_manager.dropContext(hotkeys_context_name);
         }
 
