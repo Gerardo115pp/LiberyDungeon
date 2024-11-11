@@ -1,5 +1,3 @@
-import { writable } from "svelte/store";
-
 /**
  * The hotkeys context name for the Transactions Management Tool.
  * @type {string}

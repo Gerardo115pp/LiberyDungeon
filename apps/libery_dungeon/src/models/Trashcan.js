@@ -174,7 +174,7 @@ export class TrashcanTransaction {
      * Takes a list of media parameters and loads them into Media instances.
      * @param {import('./Medias.js').MediaParams[]} content
      * @param {CategoryWeakIdentity} category_identity
-     * @returns {Media[]}
+     * @returns {TrashedMedia[]}
      */
     #loadContent(content, category_identity) {
         return content.map(media => new TrashedMedia(media, category_identity));
@@ -214,7 +214,7 @@ export const getTrashcanEntries = async () => {
 /**
  * Retrieves a trashcan transaction.
  * @param {string} transaction_id
- * @returns {Promise<TrashcanTransaction>}
+ * @returns {Promise<TrashcanTransaction | null>}
  */
 export const getTrashcanTransaction = async (transaction_id) => {
     const request = new GetTrashcanTransactionRequest(transaction_id);
