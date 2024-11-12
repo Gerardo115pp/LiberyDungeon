@@ -28,13 +28,12 @@ func (categories_clusters_repo *CategoriesClustersMysql) GetClusterByID(ctx cont
 	if err != nil {
 		return cluster, err
 	}
+	defer stmt.Close()
 
 	err = stmt.QueryRowContext(ctx, cluster_id).Scan(&cluster.Uuid, &cluster.Name, &cluster.FsPath, &cluster.FilterCategory, &cluster.RootCategory)
 	if err != nil {
 		return cluster, err
 	}
-
-	stmt.Close()
 
 	return cluster, nil
 }
