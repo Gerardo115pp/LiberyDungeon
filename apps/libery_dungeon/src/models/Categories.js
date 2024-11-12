@@ -8,7 +8,7 @@ import {
     PatchRenameCategoryRequest,
     PatchMoveCategoryRequest
 } from "@libs/DungeonsCommunication/services_requests/categories_requests";
-import { Media } from "./Medias";
+import { Media, getMediaIdentityByUUID } from "./Medias";
 import { 
     getAllCategoryIndexes, 
     addCategoryIndex, 
@@ -297,6 +297,12 @@ export const moveCategory = async (moved_category, new_parent_category) => {
         #category_thumbnail;
 
         /**
+         * The thumbnail media identity. To set it, call the setThumbnail method.
+         * @type {import('@models/Medias').MediaIdentity | null}
+         */
+        #the_thumbnail;
+
+        /**
          * @param {InnerCategoryParams} param0 
          */
         constructor ({name, uuid, fullpath, category_thumbnail}) {
@@ -311,15 +317,8 @@ export const moveCategory = async (moved_category, new_parent_category) => {
             this.fullpath = fullpath ?? InnerCategory.EMPTY_FULLPATH;
 
             this.#category_thumbnail = category_thumbnail;
-        }
 
-        /**
-         * Converts an InnerCategory to a Category Leaf. this requires fetch the category data 
-         * from the server.
-         * @returns {Promise<CategoryLeaf | null>}
-         */
-        toCategoryLeaf = async () => {
-            return getCategoryLeaf(this.uuid);
+            this.#the_thumbnail = null;
         }
 
         /**
@@ -330,6 +329,15 @@ export const moveCategory = async (moved_category, new_parent_category) => {
          */
         getRandomMediaURL = (cluster_id, cache_seconds) => {
             return getRandomMediaUrl(this.uuid, cluster_id, cache_seconds);
+        }
+
+        /**
+         * Whether the InnerCategory has a category_thumbnail set. THIS DOES NOT MEAN THE THUMBNAIL HAS BEEN LOADED.
+         * you will need to check thumbnailIsLoaded to see if the thumbnail has been loaded and if not, call the setThumbnail method which also returns whether the thumbnail could be loaded.
+         * @returns {boolean}
+         */
+        hasThumbnail = () => {
+            return this.#category_thumbnail !== "";
         }
 
         /**
@@ -345,6 +353,55 @@ export const moveCategory = async (moved_category, new_parent_category) => {
                 default:
                     throw new TypeError(`Cannot convert InnerCategory to ${hint}`);
             }
+        }
+
+        /**
+         * Sets the thumbnail of the category. Returns true if the InnerCategory now has a usable thumbnail.
+         * @return {Promise<boolean>}
+         */
+        setThumbnail = async () => {
+            if (this.#category_thumbnail === "") {
+                return false;
+            }
+
+            if (this.#the_thumbnail != null) return true;
+
+            const media_identity = await getMediaIdentityByUUID(this.#category_thumbnail);
+
+            if (media_identity === null) return false;
+
+            this.#the_thumbnail = media_identity;
+
+            return true;
+        }
+            
+        /**
+         * Converts an InnerCategory to a Category Leaf. this requires fetch the category data 
+         * from the server.
+         * @returns {Promise<CategoryLeaf | null>}
+         */
+        toCategoryLeaf = async () => {
+            return getCategoryLeaf(this.uuid);
+        }
+
+        /**
+         * Whether the thumbnail of the category has been loaded and is usable.
+         * @returns {boolean}
+         */
+        thumbnailIsLoaded = () => {
+            return this.#the_thumbnail !== null;
+        }
+
+        /**
+         * The category thumbnail media identity. If called when the thumbnail has not been loaded, it will panic.
+         * @returns {import('@models/Medias').MediaIdentity}
+         */
+        get Thumbnail() {
+            if (this.#the_thumbnail === null) {
+                throw new Error(`In InnerCategory<${this.name}>: Attempted to access a null thumbnail object. Call the setThumbnail method first, and if it returns true, then you can access the thumbnail.`);
+            }
+
+            return this.#the_thumbnail;
         }
     }
 
