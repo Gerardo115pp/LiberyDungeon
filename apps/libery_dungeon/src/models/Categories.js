@@ -6,7 +6,8 @@ import {
     GetCategoryRequest, 
     GetCategoryByFullpathRequest,
     PatchRenameCategoryRequest,
-    PatchMoveCategoryRequest
+    PatchMoveCategoryRequest,
+    PatchCategoryThumbnailRequest
 } from "@libs/DungeonsCommunication/services_requests/categories_requests";
 import { Media, getMediaIdentityByUUID } from "./Medias";
 import { 
@@ -216,6 +217,20 @@ export const moveCategory = async (moved_category, new_parent_category) => {
     }
 
     return new_category;
+}
+
+/**
+ * Sets a new media uuid as the thumbnail of a category
+ * @param {string} category_id the 40 character identifier of the category
+ * @param {string} media_id the 40 character identifier of the media
+ * @returns {Promise<boolean>} true if the thumbnail was set successfully
+ */
+export const changeCategoryThumbnail = async (category_id, media_id) => {
+    let category_thumbnail_request = new PatchCategoryThumbnailRequest(category_id, media_id);
+
+    let response = await category_thumbnail_request.do();
+
+    return response.data;
 }
 
 
