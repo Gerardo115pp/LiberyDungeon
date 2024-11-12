@@ -230,6 +230,9 @@ export class HotkeysController {
         this.#keyboard_past_keydowns.Clear(); // Prevent key strokes issued in previous contexts from affecting behavior in the new context.
         this.#keyboard_past_keyups.Clear(); 
 
+        this.#capture_hotkey_triggers.clear();
+        this.#capturing_hotkey = null;
+
         this.#current_hotkey_context = null;
     }
 
