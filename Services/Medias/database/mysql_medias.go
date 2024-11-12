@@ -84,21 +84,26 @@ func (db *MediasMysql) GetRandomMedia(ctx context.Context, cluster_id string, ca
 func (db *MediasMysql) GetMediaByID(ctx context.Context, media_id string) (*dungeon_models.Media, error) {
 	var media *dungeon_models.Media = new(dungeon_models.Media)
 
-	stmt, err := db.db.Prepare("SELECT `uuid`, `name`, `last_seen`, `main_category`, `type`, `downloaded_from` FROM `medias` WHERE `uuid` = ?")
+	stmt, err := db.db.Prepare("SELECT `uuid`, `name`, `last_seen`, `main_category`, `media_thumbnail`, `type`, `downloaded_from` FROM `medias` WHERE `uuid` = ?")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
 	var downloaded_from sql.NullInt64
+	var nullish_media_thumbnail sql.NullString
 
-	err = stmt.QueryRowContext(ctx, media_id).Scan(&media.Uuid, &media.Name, &media.LastSeen, &media.MainCategory, &media.Type, &downloaded_from)
+	err = stmt.QueryRowContext(ctx, media_id).Scan(&media.Uuid, &media.Name, &media.LastSeen, &media.MainCategory, &nullish_media_thumbnail, &media.Type, &downloaded_from)
 	if err != nil {
 		return nil, err
 	}
 
 	if downloaded_from.Valid {
 		media.DownloadedFrom = downloaded_from.Int64
+	}
+
+	if nullish_media_thumbnail.Valid {
+		media.MediaThumbnail = nullish_media_thumbnail.String
 	}
 
 	return media, nil
@@ -107,15 +112,16 @@ func (db *MediasMysql) GetMediaByID(ctx context.Context, media_id string) (*dung
 func (db *MediasMysql) GetMediaByName(ctx context.Context, media_name string, main_category_id string) (*dungeon_models.Media, error) {
 	var media *dungeon_models.Media = new(dungeon_models.Media)
 
-	stmt, err := db.db.Prepare("SELECT `uuid`, `name`, `last_seen`, `main_category`, `type`, `downloaded_from` FROM `medias` WHERE `name` = ? AND `main_category` = ?")
+	stmt, err := db.db.Prepare("SELECT `uuid`, `name`, `last_seen`, `main_category`, `media_thumbnail`, `type`, `downloaded_from` FROM `medias` WHERE `name` = ? AND `main_category` = ?")
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
 	var downloaded_from sql.NullInt64
+	var nullish_media_thumbnail sql.NullString
 
-	err = stmt.QueryRowContext(ctx, media_name, main_category_id).Scan(&media.Uuid, &media.Name, &media.LastSeen, &media.MainCategory, &media.Type, &downloaded_from)
+	err = stmt.QueryRowContext(ctx, media_name, main_category_id).Scan(&media.Uuid, &media.Name, &media.LastSeen, &media.MainCategory, &nullish_media_thumbnail, &media.Type, &downloaded_from)
 	if err != nil {
 		return nil, err
 	}
@@ -124,11 +130,15 @@ func (db *MediasMysql) GetMediaByName(ctx context.Context, media_name string, ma
 		media.DownloadedFrom = downloaded_from.Int64
 	}
 
+	if nullish_media_thumbnail.Valid {
+		media.MediaThumbnail = nullish_media_thumbnail.String
+	}
+
 	return media, nil
 }
 
 func (db *MediasMysql) InsertMedia(ctx context.Context, media *dungeon_models.Media) error {
-	stmt, err := db.db.Prepare("INSERT INTO medias (uuid, name, last_seen, main_category, type, downloaded_from) VALUES (?, ?, ?, ?, ?, ?)")
+	stmt, err := db.db.Prepare("INSERT INTO `medias` (`uuid`, `name`, `last_seen`, `main_category`, `type`, `downloaded_from`) VALUES (?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
@@ -149,7 +159,7 @@ func (db *MediasMysql) InsertMedia(ctx context.Context, media *dungeon_models.Me
 }
 
 func (db *MediasMysql) UpdateMediaName(ctx context.Context, media_id string, new_name string) error {
-	stmt, err := db.db.Prepare("UPDATE medias SET name = ? WHERE uuid = ?")
+	stmt, err := db.db.Prepare("UPDATE `medias` SET `name` = ? WHERE `uuid` = ?")
 	if err != nil {
 		return err
 	}
