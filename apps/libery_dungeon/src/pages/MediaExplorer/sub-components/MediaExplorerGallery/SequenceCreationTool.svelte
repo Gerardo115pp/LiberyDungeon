@@ -10,6 +10,7 @@
     import { cleanFilenameString } from '@libs/utils';
     import { sequenceRenameMedias } from '@models/Medias';
     import { hotkeys_sheet_visible } from '@stores/layout';
+    import { lf_errors } from '@libs/LiberyFeedback/lf_errors';
     
     /*=============================================
     =            Properties            =
@@ -126,6 +127,11 @@
              * defines the sequence creation tool hotkeys.
              */    
             const defineSCTHotkeys = () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("In SequenceCreationTool.defineSCTHotkeys, hotkeys manager is not available.");
+                    return;
+                }
+                
                 if (global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     global_hotkeys_manager.dropContext(hotkeys_context_name);
                 }
@@ -213,6 +219,11 @@
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
             const handleGalleryClose = (key_event, hotkey) => {
+                if (global_hotkeys_manager == null) {
+                    console.error("In SequenceCreationTool.handleGalleryClose, hotkeys manager is not available.");
+                    return;
+                }
+                
                 global_hotkeys_manager.loadPreviousContext();
 
                 global_hotkeys_manager.dropContext(hotkeys_context_name);
@@ -236,6 +247,7 @@
             const handleGotoMedia = (key_event, hotkey) => {
                 if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
 
+                // @ts-ignore - HasMatch === true, means hotkey.MatchMetadata is not null
                 let media_index = hotkey.MatchMetadata.MotionMatches[0]
 
                 media_index = Math.max(0, Math.min(media_index, unsequenced_medias.length - 1));
@@ -306,14 +318,13 @@
 
             /**
              * Inserts the yanked medias before the focused media. Called by a hotkey.
-             * @param key_event
-             * @param hotkey
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
             const handleInsertYankedMediasHotkey = (key_event, hotkey) => {
                 if ($me_gallery_yanked_medias.length === 0) return;
 
                 if (isCurrentMediaYanked()) {
-                    let user_error = new LabeledError("Unstable operation forbidden", "You attempted to insert before a media that would be moved by the insertion of the medias, this operation could have unpredictable results.")
+                    let user_error = new LabeledError("Unstable operation forbidden", "You attempted to insert before a media that would be moved by the insertion of the medias, this operation could have unpredictable results.", lf_errors.PROGRAMMING_ERROR__BROKEN_STATE);
 
                     user_error.alert();
                     return;
@@ -384,6 +395,11 @@
              * Saves the sequence.
              */
             const handleSaveSequence = async () => {
+                if ($current_category == null) {
+                    console.error("In SequenceCreationTool.handleSaveSequence, current category is not available.");
+                    return;
+                }
+                
                 // Show the would be parameters to test the api
 
                 let sequence_map = createSequenceMap(unsequenced_medias, sequence_prefix);
@@ -444,6 +460,9 @@
          * @typedef {Object<string, string>} SequenceMap - A map of the media uuids to the new sequence names without the extension.
          */
         const createSequenceMap = (medias, prefix) => {
+                /**
+                 * @type {Object<string, string>}
+                 */
                 let sequence_map = {};
 
                 const zero_padding = Math.max(2, Math.ceil(Math.log10(medias.length + 1)));
@@ -490,6 +509,11 @@
          * Generates an initial sequence prefix based on the current category name
          */
         const generateInitialSequencePrefix = () => {
+            if ($current_category == null) {
+                console.error("In SequenceCreationTool.generateInitialSequencePrefix, current category is not available.");
+                return;
+            }
+            
             let new_prefix = $current_category.name + "_";
 
             new_prefix = cleanFilenameString(new_prefix);
