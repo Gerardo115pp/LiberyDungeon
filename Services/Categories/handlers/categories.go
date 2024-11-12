@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"libery-dungeon-libs/communication"
+	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/libery_networking"
 	dungeon_models "libery-dungeon-libs/models"
 	app_config "libery_categories_service/Config"
@@ -176,14 +177,18 @@ func postCategoriesHandler(response http.ResponseWriter, request *http.Request) 
 
 func patchCategoriesHandler(response http.ResponseWriter, request *http.Request) {
 	var resource_path string = request.URL.Path
+	var handler_func http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
 
-	if resource_path == "/categories/rename" {
-		patchCategoryRenameHandler(response, request)
-	} else {
-		patchCategoryContentHandler(response, request)
+	switch resource_path {
+	case "/categories/rename":
+		handler_func = patchCategoryRenameHandler
+	case "/categories/thumbnail":
+		handler_func = patchCategoryThumbnailHandler
+	default:
+		handler_func = patchCategoryContentHandler
 	}
 
-	return
+	handler_func(response, request)
 }
 
 func patchCategoryRenameHandler(response http.ResponseWriter, request *http.Request) {
@@ -222,6 +227,35 @@ func patchCategoryRenameHandler(response http.ResponseWriter, request *http.Requ
 	response.Header().Add("Content-Type", "application/json")
 	response.WriteHeader(200)
 	json.NewEncoder(response).Encode(modified_category)
+}
+
+func patchCategoryThumbnailHandler(response http.ResponseWriter, request *http.Request) {
+	var category_thumbnail_request = &struct {
+		CategoryID string `json:"category_id"`
+		Thumbnail  string `json:"thumbnail"`
+	}{}
+
+	err := json.NewDecoder(request.Body).Decode(category_thumbnail_request)
+	if err != nil {
+		echo.Echo(echo.YellowFG, fmt.Sprintf("Error decoding category thumbnail request: %s", err.Error()))
+		response.WriteHeader(400)
+		return
+	}
+
+	if category_thumbnail_request.CategoryID == "" || category_thumbnail_request.Thumbnail == "" {
+		echo.Echo(echo.YellowFG, fmt.Sprintf("Missing category_id or thumbnail parameter"))
+		response.WriteHeader(400)
+		return
+	}
+
+	err = repository.CategoriesRepo.UpdateCategoryThumbnail(request.Context(), category_thumbnail_request.CategoryID, category_thumbnail_request.Thumbnail)
+	if err != nil {
+		echo.Echo(echo.YellowFG, fmt.Sprintf("Error updating category thumbnail: %s", err.Error()))
+		response.WriteHeader(404)
+		return
+	}
+
+	response.WriteHeader(204)
 }
 
 func patchCategoryContentHandler(response http.ResponseWriter, request *http.Request) {

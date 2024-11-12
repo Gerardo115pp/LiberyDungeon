@@ -609,3 +609,20 @@ func (categories_repo *CategoriesMysql) UpdateCategoryParent(ctx context.Context
 
 	return tx.Commit()
 }
+
+func (categories_repo *CategoriesMysql) UpdateCategoryThumbnail(ctx context.Context, category_uuid, new_thumbnail string) error {
+	var err error
+
+	stmt, err := categories_repo.db.Prepare("UPDATE `categorys` SET `category_thumbnail`=? WHERE `uuid`=?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, new_thumbnail, category_uuid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

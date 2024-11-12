@@ -23,6 +23,7 @@ type CategoriesRepository interface {
 	UpdateMedias(ctx context.Context, medias []dungeon_models.Media) error
 	UpdateCategoryName(ctx context.Context, category dungeon_models.Category, new_name string) error
 	UpdateCategoryParent(ctx context.Context, category dungeon_models.Category, new_parent dungeon_models.Category) error
+	UpdateCategoryThumbnail(ctx context.Context, category_uuid, new_thumbnail string) error
 }
 
 var CategoriesRepo CategoriesRepository
