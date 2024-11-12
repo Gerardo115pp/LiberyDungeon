@@ -12,6 +12,7 @@ type Media struct {
 	Name           string    `json:"name"`
 	LastSeen       time.Time `json:"last_seen"`
 	MainCategory   string    `json:"main_category"`
+	MediaThumbnail string    `json:"media_thumbnail"`
 	Type           MediaType `json:"type"`
 	DownloadedFrom int64     `json:"downloaded_from"` // Id of the thread download that created this media this media
 }

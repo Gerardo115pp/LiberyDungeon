@@ -63,11 +63,12 @@ func CreateNewCategoryIdentity(category *Category, cluster *CategoryCluster) *Ca
 }
 
 type Category struct {
-	Uuid     string `json:"uuid"`
-	Name     string `json:"name"`
-	Fullpath string `json:"fullpath"`
-	Parent   string `json:"parent"` // Id of another Category, if empty, it's a main Category
-	Cluster  string `json:"cluster"`
+	Uuid              string `json:"uuid"`
+	Name              string `json:"name"`
+	Fullpath          string `json:"fullpath"`
+	Parent            string `json:"parent"` // Id of another Category, if empty, it's a main Category
+	Cluster           string `json:"cluster"`
+	CategoryThumbnail string `json:"category_thumbnail"`
 }
 
 func (c *Category) CopyContent(other Category) {
@@ -76,6 +77,7 @@ func (c *Category) CopyContent(other Category) {
 	c.Fullpath = other.Fullpath
 	c.Parent = other.Parent
 	c.Cluster = other.Cluster
+	c.CategoryThumbnail = other.CategoryThumbnail
 }
 
 func (c *Category) RecalculateHash() string {
@@ -85,8 +87,10 @@ func (c *Category) RecalculateHash() string {
 }
 
 type ChildCategory struct {
-	Name string `json:"name"`
-	Uuid string `json:"uuid"`
+	Name              string `json:"name"`
+	Uuid              string `json:"uuid"`
+	Fullpath          string `json:"fullpath"`
+	CategoryThumbnail string `json:"category_thumbnail"`
 }
 
 type CategoryLeaf struct {
