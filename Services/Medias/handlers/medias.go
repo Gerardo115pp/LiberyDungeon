@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
+	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/libery_networking"
 	dungeon_models "libery-dungeon-libs/models"
 	"libery_medias_service/repository"
@@ -12,8 +14,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Gerardo115pp/patriot_router"
 	"github.com/Gerardo115pp/patriots_lib/echo"
 )
+
+var medias_resource_path string = "/medias(/.+)?"
+
+var MEDIAS_ROUTE *patriot_router.Route = patriot_router.NewRoute(medias_resource_path, false)
 
 func MediasHandler(service_instance libery_networking.Server) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
@@ -37,8 +44,40 @@ func MediasHandler(service_instance libery_networking.Server) http.HandlerFunc {
 }
 
 func getMediasHandler(response http.ResponseWriter, request *http.Request) {
-	response.WriteHeader(http.StatusMethodNotAllowed)
-	return
+	var resource string = request.URL.Path
+	handler_func := dungeon_helpers.ResourceNotFoundHandler
+
+	switch resource {
+	case "/medias/by-uuid":
+		handler_func = getMediaByUUIDHandler
+	default:
+		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediasHandler: Resource not found: %s", resource))
+	}
+
+	handler_func(response, request)
+}
+
+func getMediaByUUIDHandler(response http.ResponseWriter, request *http.Request) {
+	var media_uuid string = request.URL.Query().Get("uuid")
+
+	if media_uuid == "" {
+		echo.Echo(echo.RedBG, "In MediasService.medias.getMediaByUUIDHandler: Missing media uuid query parameter")
+		response.WriteHeader(400)
+		return
+	}
+
+	media, err := repository.MediasRepo.GetMediaByID(request.Context(), media_uuid)
+	if err != nil {
+		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaByUUIDHandler: Error getting media by ID: %s", err.Error()))
+		response.WriteHeader(404)
+		return
+	}
+
+	response.Header().Set("Content-Type", "application/json")
+	response.Header().Set("Cache-Control", "max-age=10600") // 3 hours
+
+	response.WriteHeader(200)
+	json.NewEncoder(response).Encode(media)
 }
 
 // Deprecated: This handler will be removed once other services that use it are updated.

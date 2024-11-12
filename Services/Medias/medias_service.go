@@ -17,7 +17,7 @@ import (
 func BinderRoutes(server libery_networking.Server, router *patriot_router.Router) {
 	router.RegisterRoute(patriot_router.NewRoute("/alive", true), handlers.AliveHandler(server))
 	router.RegisterRoute(patriot_router.NewRoute("/medias-fs.*", false), handlers.MediasFSHandler(server))
-	router.RegisterRoute(patriot_router.NewRoute("/medias", true), handlers.MediasHandler(server))
+	router.RegisterRoute(handlers.MEDIAS_ROUTE, handlers.MediasHandler(server))
 	router.RegisterRoute(patriot_router.NewRoute("/random-medias-fs.*", false), handlers.RandomMediasFsHandler(server))
 	router.RegisterRoute(patriot_router.NewRoute("/thumbnails-fs.*", false), middleware.ParseResourcePath(handlers.ThumbnailsHandler(server)))
 	router.RegisterRoute(patriot_router.NewRoute("/upload-streams.*", false), handlers.UploadStreamsHandler(server))
