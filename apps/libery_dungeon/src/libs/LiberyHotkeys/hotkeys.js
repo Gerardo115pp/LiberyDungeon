@@ -539,7 +539,7 @@ export class HotkeyData {
     /**
      * Whether there is a HotkeyMatch. meaning the match method was called and the hotkey produced a match. and the `run` method has not yet been called or has not ended.
      * hint: If the method `run` has been called but it is still running, the hotkey will be in a lock state.
-     * @returns {boolean}
+     * @returns {this is {#match_metadata: HotkeyMatch}}
      */
     get HasMatch() {
         return this.#match_metadata != null;
