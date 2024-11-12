@@ -129,3 +129,97 @@ export class PatchRenameMediasRequest {
         return new HttpResponse(response, renamed);
     }
 }
+
+/**
+ * Returns a media object by its uuid.
+ */
+export class GetMediaByUUIDRequest {
+
+    static endpoint = `${medias_server}/medias/by-uuid`;
+
+    /**
+     * @param {string} media_uuid
+     */
+    constructor(media_uuid) {
+        this.media_uuid = media_uuid;
+
+        if (!URL.canParse(`${GetMediaByUUIDRequest.endpoint}?uuid=${media_uuid}`, location.origin)) {
+            throw new Error(`url<${GetMediaByUUIDRequest.endpoint}> has a syntax problem`);
+        }
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import('@models/Medias').MediaParams | null>>}
+     */
+    do = async () => {
+        
+        let response;
+        let media = null;
+
+        const resource_url = new URL(GetMediaByUUIDRequest.endpoint, location.origin);
+
+        resource_url.searchParams.set("uuid", this.media_uuid);
+
+        try {
+            response = await fetch(resource_url);
+        } catch (error) {
+            console.error("Error while fetching media by uuid: ", error);
+            throw error;
+        }
+
+        if (response.ok) {
+            media = await response.json();
+        }
+
+        return new HttpResponse(response, media);
+    }
+}
+
+/**
+ * Returns a media identity object by the media uuid. Requires a cluster sign access to be present as a http-only cookie. otherwise 403 is returned.
+ */
+export class GetMediaIdentityByUUIDRequest {
+
+    static endpoint = `${medias_server}/medias/identity`;
+
+    /**
+     * @param {string} media_uuid
+     */
+    constructor(media_uuid) {
+        this.media_uuid = media_uuid;
+
+        if (!URL.canParse(`${GetMediaIdentityByUUIDRequest.endpoint}?uuid=${media_uuid}`, location.origin)) {
+            throw new Error(`url<${GetMediaIdentityByUUIDRequest.endpoint}> has a syntax problem`);
+        }
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import('@models/Medias').MediaIdentityParams | null>>}
+     */
+    do = async () => {
+        
+        let response;
+        let media_identity = null;
+
+        const resource_url = new URL(GetMediaIdentityByUUIDRequest.endpoint, location.origin);
+
+        resource_url.searchParams.set("uuid", this.media_uuid);
+
+        try {
+            response = await fetch(resource_url);
+        } catch (error) {
+            console.error("Error while fetching media identity by uuid: ", error);
+            throw error;
+        }
+
+        if (response.ok) {
+            media_identity = await response.json();
+        }
+
+        return new HttpResponse(response, media_identity);
+    }
+}
