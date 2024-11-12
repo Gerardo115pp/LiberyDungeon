@@ -28,22 +28,33 @@ func (categories_repo *CategoriesMysql) GetCategoryChildsByID(ctx context.Contex
 	var childs []dungeon_models.ChildCategory = make([]dungeon_models.ChildCategory, 0)
 	var err error
 
-	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name` FROM `categorys` WHERE `parent`=? ORDER BY `name`")
+	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `fullpath`, `category_thumbnail` FROM `categorys` WHERE `parent`=? ORDER BY `name`")
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx, category_id)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var child dungeon_models.ChildCategory
-		err = rows.Scan(&child.Uuid, &child.Name)
+		var null_string_category_thumbnail sql.NullString
+
+		err = rows.Scan(&child.Uuid, &child.Name, &child.Fullpath, &null_string_category_thumbnail)
 		if err != nil {
 			return nil, err
 		}
+
+		child.CategoryThumbnail = "" // The default value but explicit is better than implicit
+
+		if null_string_category_thumbnail.Valid {
+			child.CategoryThumbnail = null_string_category_thumbnail.String
+		}
+
 		childs = append(childs, child)
 	}
 
@@ -53,27 +64,35 @@ func (categories_repo *CategoriesMysql) GetCategoryChildsByID(ctx context.Contex
 func (categories_repo *CategoriesMysql) GetCategoryMedias(ctx context.Context, category_id string) ([]dungeon_models.Media, error) {
 	var category_medias []dungeon_models.Media = make([]dungeon_models.Media, 0)
 
-	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `last_seen`, `main_category`, `type`, `downloaded_from` FROM `medias` WHERE `main_category`=? ORDER BY `name`")
+	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `last_seen`, `main_category`, `media_thumbnail`, `type`, `downloaded_from` FROM `medias` WHERE `main_category`=? ORDER BY `name`")
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx, category_id)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var media dungeon_models.Media
 		var time_reciever sql.NullTime
+		var media_thumbnail_reciever sql.NullString
 		var null_int_reciever sql.NullInt64
 
-		err = rows.Scan(&media.Uuid, &media.Name, &time_reciever, &media.MainCategory, &media.Type, &null_int_reciever)
+		err = rows.Scan(&media.Uuid, &media.Name, &time_reciever, &media.MainCategory, &media_thumbnail_reciever, &media.Type, &null_int_reciever)
 		if err != nil {
 			return nil, err
 		}
 		if time_reciever.Valid {
 			media.LastSeen = time_reciever.Time
+		}
+
+		media.MediaThumbnail = ""
+		if media_thumbnail_reciever.Valid {
+			media.MediaThumbnail = media_thumbnail_reciever.String
 		}
 
 		if null_int_reciever.Valid {
@@ -89,22 +108,32 @@ func (categories_repo *CategoriesMysql) GetCategoryMedias(ctx context.Context, c
 func (categories_repo *CategoriesMysql) GetCategoryContent(ctx context.Context, category_id string) (*dungeon_models.CategoryLeaf, error) {
 	var category_leaf *dungeon_models.CategoryLeaf = new(dungeon_models.CategoryLeaf)
 
-	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster` FROM `categorys` WHERE uuid=?")
+	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster`, `category_thumbnail` FROM `categorys` WHERE `uuid`=?")
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	row := stmt.QueryRowContext(ctx, category_id)
 
 	var empty_parent_reciever sql.NullString
+	var null_string_category_thumbnail sql.NullString
 
-	err = row.Scan(&category_leaf.Uuid, &category_leaf.Name, &category_leaf.Fullpath, &empty_parent_reciever, &category_leaf.Cluster)
+	err = row.Scan(&category_leaf.Uuid, &category_leaf.Name, &category_leaf.Fullpath, &empty_parent_reciever, &category_leaf.Cluster, &null_string_category_thumbnail)
 	if err != nil {
 		return nil, err
 	}
 
+	category_leaf.Parent = "" // The default value but explicit is better than implicit
+
 	if empty_parent_reciever.Valid {
 		category_leaf.Parent = empty_parent_reciever.String
+	}
+
+	category_leaf.CategoryThumbnail = ""
+
+	if null_string_category_thumbnail.Valid {
+		category_leaf.CategoryThumbnail = null_string_category_thumbnail.String
 	}
 
 	category_leaf.InnerCategories, err = categories_repo.GetCategoryChildsByID(ctx, category_id)
@@ -123,22 +152,30 @@ func (categories_repo *CategoriesMysql) GetCategoryContent(ctx context.Context, 
 func (categories_repo *CategoriesMysql) GetCategory(ctx context.Context, category_id string) (dungeon_models.Category, error) {
 	var category dungeon_models.Category
 
-	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster` FROM `categorys` WHERE uuid=?")
+	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster`, `category_thumbnail` FROM `categorys` WHERE uuid=?")
 	if err != nil {
 		return category, err
 	}
+	defer stmt.Close()
 
 	row := stmt.QueryRowContext(ctx, category_id)
 
 	var empty_parent_reciever sql.NullString
+	var null_string_category_thumbnail sql.NullString
 
-	err = row.Scan(&category.Uuid, &category.Name, &category.Fullpath, &empty_parent_reciever, &category.Cluster)
+	err = row.Scan(&category.Uuid, &category.Name, &category.Fullpath, &empty_parent_reciever, &category.Cluster, &null_string_category_thumbnail)
 	if err != nil {
 		return category, err
 	}
 
 	if empty_parent_reciever.Valid {
 		category.Parent = empty_parent_reciever.String
+	}
+
+	category.CategoryThumbnail = ""
+
+	if null_string_category_thumbnail.Valid {
+		category.CategoryThumbnail = null_string_category_thumbnail.String
 	}
 
 	return category, nil
@@ -161,27 +198,34 @@ func (categories_repo *CategoriesMysql) GetCategories(ctx context.Context, categ
 func (categories_repo *CategoriesMysql) GetClusterCategories(ctx context.Context, cluster_id string) ([]dungeon_models.Category, error) {
 	var categories []dungeon_models.Category = make([]dungeon_models.Category, 0)
 
-	stmt, err := categories_repo.db.PrepareContext(ctx, "SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster` FROM `categorys` WHERE `cluster`=? ORDER BY `name`")
+	stmt, err := categories_repo.db.PrepareContext(ctx, "SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster`, `category_thumbnail` FROM `categorys` WHERE `cluster`=? ORDER BY `name`")
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx, cluster_id)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var category dungeon_models.Category
 		var empty_parent_reciever sql.NullString
+		var null_string_category_thumbnail sql.NullString
 
-		err = rows.Scan(&category.Uuid, &category.Name, &category.Fullpath, &empty_parent_reciever, &category.Cluster)
+		err = rows.Scan(&category.Uuid, &category.Name, &category.Fullpath, &empty_parent_reciever, &category.Cluster, &null_string_category_thumbnail)
 		if err != nil {
 			return nil, err
 		}
 
 		if empty_parent_reciever.Valid {
 			category.Parent = empty_parent_reciever.String
+		}
+
+		if null_string_category_thumbnail.Valid {
+			category.CategoryThumbnail = null_string_category_thumbnail.String
 		}
 
 		categories = append(categories, category)
@@ -193,27 +237,34 @@ func (categories_repo *CategoriesMysql) GetClusterCategories(ctx context.Context
 func (categories_repo *CategoriesMysql) GetAllCategories(ctx context.Context) ([]dungeon_models.Category, error) {
 	var categories []dungeon_models.Category = make([]dungeon_models.Category, 0)
 
-	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster` FROM `categorys` ORDER BY `name`")
+	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster`, `category_thumbnail` FROM `categorys` ORDER BY `name`")
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var category dungeon_models.Category
 		var empty_parent_reciever sql.NullString
+		var null_string_category_thumbnail sql.NullString
 
-		err = rows.Scan(&category.Uuid, &category.Name, &category.Fullpath, &empty_parent_reciever, &category.Cluster)
+		err = rows.Scan(&category.Uuid, &category.Name, &category.Fullpath, &empty_parent_reciever, &category.Cluster, &null_string_category_thumbnail)
 		if err != nil {
 			return nil, err
 		}
 
 		if empty_parent_reciever.Valid {
 			category.Parent = empty_parent_reciever.String
+		}
+
+		if null_string_category_thumbnail.Valid {
+			category.CategoryThumbnail = null_string_category_thumbnail.String
 		}
 
 		categories = append(categories, category)
@@ -225,22 +276,28 @@ func (categories_repo *CategoriesMysql) GetAllCategories(ctx context.Context) ([
 func (categories_repo *CategoriesMysql) GetCategoryContentByFullpath(ctx context.Context, category_path string, category_cluster string) (*dungeon_models.Category, error) {
 	var category *dungeon_models.Category = new(dungeon_models.Category)
 
-	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster` FROM `categorys` WHERE `fullpath`=? AND `cluster`=?")
+	stmt, err := categories_repo.db.Prepare("SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster`, `category_thumbnail` FROM `categorys` WHERE `fullpath`=? AND `cluster`=?")
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	row := stmt.QueryRowContext(ctx, category_path, category_cluster)
 
 	var empty_parent_reciever sql.NullString
+	var null_string_category_thumbnail sql.NullString
 
-	err = row.Scan(&category.Uuid, &category.Name, &category.Fullpath, &empty_parent_reciever, &category.Cluster)
+	err = row.Scan(&category.Uuid, &category.Name, &category.Fullpath, &empty_parent_reciever, &category.Cluster, &null_string_category_thumbnail)
 	if err != nil {
 		return nil, err
 	}
 
 	if empty_parent_reciever.Valid {
 		category.Parent = empty_parent_reciever.String
+	}
+
+	if null_string_category_thumbnail.Valid {
+		category.CategoryThumbnail = null_string_category_thumbnail.String
 	}
 
 	return category, nil
@@ -312,6 +369,7 @@ func (categories_repo *CategoriesMysql) DeleteCategoryMedias(ctx context.Context
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	for _, media := range medias {
 		_, err = stmt.ExecContext(ctx, media.Uuid)
@@ -342,6 +400,7 @@ func (categories_repo *CategoriesMysql) DeleteCategory(ctx context.Context, cate
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.ExecContext(ctx, category_id)
 	if err != nil {
@@ -365,11 +424,13 @@ func (categories_repo *CategoriesMysql) IsCategoryEmpty(ctx context.Context, cat
 	if err != nil {
 		return false, err
 	}
+	defer medias_count_stmt.Close()
 
 	category_count_stmt, err := categories_repo.db.Prepare("SELECT COUNT(*) FROM `categorys` WHERE `parent`=?")
 	if err != nil {
 		return false, err
 	}
+	defer category_count_stmt.Close()
 
 	var medias_count int
 	var category_count int
@@ -410,14 +471,14 @@ func (categories_repo *CategoriesMysql) InsertCategory(ctx context.Context, cate
 func (categories_repo *CategoriesMysql) UpdateMedia(ctx context.Context, media dungeon_models.Media) error {
 	var err error
 
-	stmt, err := categories_repo.db.Prepare("UPDATE `medias` SET `name`=?, `last_seen`=?, `main_category`=? WHERE `uuid`=?")
+	stmt, err := categories_repo.db.Prepare("UPDATE `medias` SET `name`=?, `last_seen`=?, `main_category`=?, `media_thumbnail`=? WHERE `uuid`=?")
 	if err != nil {
 		return err
 	}
 
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, media.Name, media.LastSeen, media.MainCategory, media.Uuid)
+	_, err = stmt.ExecContext(ctx, media.Name, media.LastSeen, media.MainCategory, media.MediaThumbnail, media.Uuid)
 	if err != nil {
 		return err
 	}
@@ -464,6 +525,7 @@ func (categories_repo *CategoriesMysql) UpdateCategoryName(ctx context.Context, 
 		tx.Rollback()
 		return err
 	}
+	defer rename_category_stmt.Close()
 
 	_, err = rename_category_stmt.ExecContext(ctx, new_name, category.Uuid)
 	if err != nil {
@@ -475,6 +537,7 @@ func (categories_repo *CategoriesMysql) UpdateCategoryName(ctx context.Context, 
 		tx.Rollback()
 		return err
 	}
+	defer rename_categories_fullpath_stmt.Close()
 
 	var new_fullpath string = helpers.RenameFsPath(category.Fullpath, new_name)
 
@@ -513,6 +576,7 @@ func (categories_repo *CategoriesMysql) UpdateCategoryParent(ctx context.Context
 
 		return fmt.Errorf("Error preparing update category statement: %s", err.Error())
 	}
+	defer update_category_stmt.Close()
 
 	_, err = update_category_stmt.ExecContext(ctx, new_parent.Uuid, new_category_path, category.Uuid)
 	if err != nil {
@@ -524,6 +588,15 @@ func (categories_repo *CategoriesMysql) UpdateCategoryParent(ctx context.Context
 	}
 
 	update_childs_stmt, err := tx.Prepare("UPDATE `categorys` SET `fullpath`=REPLACE(`fullpath`, ?, ?) WHERE `fullpath` LIKE ?")
+	if err != nil {
+		rollback_err := tx.Rollback()
+		if rollback_err != nil {
+			return fmt.Errorf("Error rolling back transaction: %s. Oiginal Error was: %s", rollback_err, err.Error())
+		}
+
+		return fmt.Errorf("Error preparing update childs statement: %s", err.Error())
+	}
+	defer update_childs_stmt.Close()
 
 	_, err = update_childs_stmt.ExecContext(ctx, category.Fullpath, new_category_path, category.Fullpath+"%")
 	if err != nil {
