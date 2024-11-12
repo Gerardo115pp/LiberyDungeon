@@ -2,7 +2,7 @@
     import { use_category_folder_thumbnails } from "@config/ui_design";
     import { categories_tree, yanked_category } from "@stores/categories_tree";
     import { moveCategory, renameCategory } from "@models/Categories";
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     import { browser } from "$app/environment";
     import { current_cluster } from "@stores/clusters";
     import viewport from "@components/viewport_actions/useViewportActions";
@@ -33,7 +33,18 @@
          * @type {boolean}
          */
         export let category_keyboard_focused = false;
-      
+
+        /**
+         * The image to use as a thumbnail for the category.
+         * @type {string | null}
+         */
+        let category_thumbnail_url = null;
+
+        /**
+         * Whether the component has been mounted.
+         * @type {boolean}
+         */
+        let component_mounted = false;
         
         /*----------  State  ----------*/
         
@@ -42,8 +53,8 @@
                  * @type {boolean}
                  */
                 let category_thumbnail_loaded = false;
-                $:if (inner_category.uuid) {
-                    category_thumbnail_loaded = false;
+                $:if (inner_category.uuid && browser && component_mounted) {
+                    determineCategoryThumbnailURL();
                 }
 
                 /**
@@ -85,11 +96,15 @@
             const dispatch = createEventDispatcher();
 
             $: if (category_keyboard_focused && browser) {
-                ensureCategoryFocuseVisibility();
+                ensureCategoryFocusedVisibility();
             }
     
     
     /*=====  End of Properties  ======*/
+
+    onMount(async () => {
+        component_mounted = true;
+    });
     
     /*=============================================
     =            Methods            =
@@ -118,6 +133,34 @@
             }
 
             category_renaming = false;
+        }
+
+        /**
+         * Determines the appropriate category thumbnail url to use.
+         * @returns {Promise<void>}
+         */
+        const determineCategoryThumbnailURL = async () => {
+            if (!$use_category_folder_thumbnails) return;
+
+            if ($current_cluster == null) {
+                throw new Error("In CategoryFolder.determineCategoryThumbnailURL: current_cluster is not available");
+            }
+
+            category_thumbnail_loaded = false;
+
+            if (!inner_category.hasThumbnail()) {
+                category_thumbnail_url = inner_category.getRandomMediaURL($current_cluster.UUID, 10600);
+            }
+
+            if (!inner_category.thumbnailIsLoaded()) {
+                const thumbnail_loaded = await inner_category.setThumbnail();
+
+                if (!thumbnail_loaded) {
+                    category_thumbnail_url = inner_category.getRandomMediaURL($current_cluster.UUID, 10600);
+                }
+            }
+            
+            category_thumbnail_url = inner_category.Thumbnail.Media.getResizedUrl(25); // 25%  of the current viewport.
         }
     
         const handleCategoryClick = () => {
@@ -287,10 +330,10 @@
             });
         }
 
-        function ensureCategoryFocuseVisibility() {
+        function ensureCategoryFocusedVisibility() {
             if (!category_keyboard_focused || category_element === undefined) return;
 
-            // TODO: add a check to see if the category is already visible
+            console.log("InnerCategory:", inner_category);
 
             category_element.scrollIntoView({
                 behavior: "smooth",
@@ -331,8 +374,16 @@
                     on:viewportLeave={handlerCategoryThumbnailViewportLeave} 
                     use:viewport
                 >
-                    {#if category_thumbnail_visible}
-                        <img fetchpriority="low" decoding="async" loading="lazy" src="{inner_category.getRandomMediaURL($current_cluster.UUID, 10600)}" alt="" aria-hidden="true" on:load={handleCategoryThumbnailLoaded} >
+                    {#if category_thumbnail_visible && category_thumbnail_url != null}
+                        <img 
+                            fetchpriority="low" 
+                            decoding="async" 
+                            loading="lazy" 
+                            src="{category_thumbnail_url}" 
+                            alt="" 
+                            aria-hidden="true" 
+                            on:load={handleCategoryThumbnailLoaded} 
+                        >
                     {/if}
                 </div>
                 <div class="ce-ic-thumbnail-overlay"></div>
