@@ -24,14 +24,21 @@ func NewCategoriesMysql() (*CategoriesMysql, error) {
 func (db *CategoriesMysql) GetCategoryByID(ctx context.Context, category_id string) (dungeon_models.Category, error) {
 	var category dungeon_models.Category
 
-	stmt, err := db.db.Prepare("SELECT uuid, name, fullpath, parent, cluster FROM categorys WHERE uuid = ?")
+	stmt, err := db.db.Prepare("SELECT `uuid`, `name`, `fullpath`, `parent`, `cluster`, `category_thumbnail` FROM `categorys` WHERE `uuid` = ?")
+	if err != nil {
+		return category, err
+	}
+	defer stmt.Close()
+
+	var nullish_category_thumbnail sql.NullString
+
+	err = stmt.QueryRowContext(ctx, category_id).Scan(&category.Uuid, &category.Name, &category.Fullpath, &category.Parent, &category.Cluster, &nullish_category_thumbnail)
 	if err != nil {
 		return category, err
 	}
 
-	err = stmt.QueryRowContext(ctx, category_id).Scan(&category.Uuid, &category.Name, &category.Fullpath, &category.Parent, &category.Cluster)
-	if err != nil {
-		return category, err
+	if nullish_category_thumbnail.Valid {
+		category.CategoryThumbnail = nullish_category_thumbnail.String
 	}
 
 	return category, nil
