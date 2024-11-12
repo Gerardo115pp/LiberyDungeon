@@ -14,6 +14,12 @@
         const handleDeleteCategoryContent = async () => {
             if ($current_category === null || $current_category === undefined || $current_category.hasInnerCategories()) return;
 
+            if ($categories_tree == null) {
+                console.error("In MediaExplorerNP.handleDeleteCategoryContent: $categories_tree is null");
+                return;
+            }
+            
+
             // const delete_category = confirm(`Are you sure you want to delete the category ${$current_category.name} and all its content? like, SUPEEER sure?`);
             const delete_category_choice = await confirmPlatformMessage({
                 message_title: `Delete category ${$current_category.name}`,
@@ -67,7 +73,7 @@
             </button>
         </li>
     {/if}
-    {#if layout_properties.IS_MOBILE}
+    {#if $layout_properties.IS_MOBILE}
          <li id="menmw-new-category">
              <button on:click={() => category_creation_tool_mounted.set(!$category_creation_tool_mounted)} id="new-category-btn" class="sketch-btn">
                  New category
