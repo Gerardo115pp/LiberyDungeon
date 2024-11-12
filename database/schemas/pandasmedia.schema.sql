@@ -24,6 +24,7 @@ CREATE TABLE `categorys` (
     `fullpath` varchar(300) NOT NULL,
     `parent` varchar(40) DEFAULT NULL,
     `cluster` varchar(36) DEFAULT NULL,
+    `category_thumbnail` varchar(40),
     PRIMARY KEY (`uuid`),
     KEY `parent_fk` (`parent`),
     KEY `cluster_fk` (`cluster`),
@@ -41,12 +42,16 @@ CREATE TABLE `medias` (`uuid` varchar(40) NOT NULL,
     `name` varchar(200) NOT NULL,
     `last_seen` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
     `main_category` varchar(40) NOT NULL,
+    `media_thumbnail` varchar(40),
     `type` enum('IMAGE','VIDEO') DEFAULT NULL,
     `downloaded_from` INT,
     PRIMARY KEY (`uuid`),
     KEY `main_category_fk` (`main_category`),
-    CONSTRAINT `main_category_fk` FOREIGN KEY (`main_category`) REFERENCES `categorys` (`uuid`) ON DELETE CASCADE
+    CONSTRAINT `main_category_fk` FOREIGN KEY (`main_category`) REFERENCES `categorys` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fk_media_thumbnail` FOREIGN KEY (`media_thumbnail`) REFERENCES `medias` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `categorys` ADD CONSTRAINT `category_thumbnail_fk` FOREIGN KEY (`category_thumbnail`) REFERENCES `medias` (`uuid`) ON DELETE SET NULL;
 
 DROP TABLE IF EXISTS `downloads`;
 CREATE TABLE `downloads`(
