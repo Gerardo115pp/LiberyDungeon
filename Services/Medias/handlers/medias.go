@@ -19,7 +19,7 @@ import (
 	"github.com/Gerardo115pp/patriots_lib/echo"
 )
 
-var medias_resource_path string = "/medias(/.+)?"
+var medias_resource_path string = "/medias(/.+)?$"
 
 var MEDIAS_ROUTE *patriot_router.Route = patriot_router.NewRoute(medias_resource_path, false)
 
