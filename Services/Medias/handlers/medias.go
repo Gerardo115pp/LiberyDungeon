@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"libery-dungeon-libs/dungeonsec/dungeon_middlewares"
 	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/libery_networking"
 	dungeon_models "libery-dungeon-libs/models"
@@ -49,7 +50,9 @@ func getMediasHandler(response http.ResponseWriter, request *http.Request) {
 
 	switch resource {
 	case "/medias/by-uuid":
-		handler_func = getMediaByUUIDHandler
+		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getMediaByUUIDHandler)
+	case "/medias/identity":
+		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getMediaIdentityHandler)
 	default:
 		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediasHandler: Resource not found: %s", resource))
 	}
@@ -78,6 +81,54 @@ func getMediaByUUIDHandler(response http.ResponseWriter, request *http.Request) 
 
 	response.WriteHeader(200)
 	json.NewEncoder(response).Encode(media)
+}
+
+// Returns a MediaIdentity item which is an extension of the Media struct which includes all the necessary information from the category and cluster to request a media file.
+func getMediaIdentityHandler(response http.ResponseWriter, request *http.Request) {
+	var media_uuid string = request.URL.Query().Get("uuid")
+
+	access_cluster, err := common_flows.GetCategoryClusterFromCookie(request)
+	if err != nil {
+		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Error getting category cluster from cookie: %s", err.Error()))
+		response.WriteHeader(403)
+		return
+	}
+
+	media, err := repository.MediasRepo.GetMediaByID(request.Context(), media_uuid)
+	if err != nil {
+		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Error getting media by ID: %s", err.Error()))
+		response.WriteHeader(404)
+		return
+	}
+
+	category, err := repository.CategoriesRepo.GetCategoryByID(request.Context(), media.MainCategory)
+	if err != nil {
+		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Error getting category by ID: %s", err.Error()))
+		response.WriteHeader(404)
+		return
+	}
+
+	category_cluster, err := repository.CategoriesClustersRepo.GetClusterByID(request.Context(), category.Cluster)
+	if err != nil {
+		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Error getting category cluster by ID: %s", err.Error()))
+		response.WriteHeader(404)
+		return
+	}
+
+	if category_cluster.Uuid != access_cluster.Uuid {
+		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Access denied to category cluster"))
+		response.WriteHeader(403)
+		return
+	}
+
+	media_identity := dungeon_models.CreateNewMediaIdentity(media, &category, &category_cluster)
+
+	response.Header().Set("Content-Type", "application/json")
+	response.Header().Set("Cache-Control", "max-age=10600") // 3 hours
+
+	response.WriteHeader(200)
+
+	json.NewEncoder(response).Encode(media_identity)
 }
 
 // Deprecated: This handler will be removed once other services that use it are updated.
