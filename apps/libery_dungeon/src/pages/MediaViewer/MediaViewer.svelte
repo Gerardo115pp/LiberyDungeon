@@ -39,8 +39,8 @@
         import { current_user_identity } from "@stores/user";
         import DiscreteFeedbackLog from "@libs/LiberyFeedback/FeedbackUI/DiscreteFeedbackLog.svelte";
         import { setDiscreteFeedbackMessage } from "@libs/LiberyFeedback/lf_utils";
-    import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
-    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
+        import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
+        import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     
     /*=====  End of Imports  ======*/
      
@@ -326,6 +326,11 @@
             }
             
             const clearActiveMediaChanges = () => {
+                if ($current_category == null) {
+                    console.error("In MediaViewer.clearActiveMediaChanges: $current_category is null.");
+                    return;
+                }
+                
                 if ($active_media_change === media_change_types.NORMAL) return;
 
                 const current_media = $current_category.content[$active_media_index];
@@ -340,6 +345,11 @@
              * @param {number} new_index
              */
             const changeDisplayedMedia = new_index => {
+                if ($current_category == null) {
+                    console.error("In MediaViewer.changeDisplayedMedia: $current_category is null.");
+                    return;
+                }
+                
                 if (new_index < 0 || new_index >= $current_category.content.length) {
                     return;
                 }
@@ -357,6 +367,10 @@
              * @returns {number}
              */
             const getNextNotDeletedMediaIndex = (from_index, forward, skip_moved=false) => {
+                if ($current_category == null) {
+                    throw Error("In MediaViewer.getNextNotDeletedMediaIndex: $current_category is null.");
+                }
+                
                 let next_index = from_index;
                 const media_count = $current_category.content.length;
                 let media_change;
@@ -438,6 +452,11 @@
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
             const handleMediaNavigation = async (key_event, hotkey) => {
+                if ($current_category == null) {
+                    console.error("In MediaViewer.handleMediaNavigation: $current_category is null.");
+                    return;
+                }
+                
                 let key_combo = hotkey.KeyCombo.toLowerCase();
                 
                 if ($random_media_navigation) {
@@ -469,6 +488,11 @@
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
             const handleMediaPositionJump = async (key_event, hotkey) => {
+                if ($current_category == null) {
+                    console.error("In MediaViewer.handleMediaPositionJump: $current_category is null.");
+                    return;
+                }
+                
                 if (!hotkey.WithVimMotion) {
                     console.error("The hotkey did not contain vim motion data");
                     return;
@@ -522,6 +546,11 @@
              * @param {string} key_combo
              */
             const handleRandomMediaNavigation = async (key_event, key_combo) => {
+                if ($current_category == null) {
+                    console.error("In MediaViewer.handleRandomMediaNavigation: $current_category is null.");
+                    return;
+                }
+                
                 let new_index = $active_media_index;
 
                 new_index = Math.floor(Math.random() * $current_category.content.length);
@@ -603,6 +632,18 @@
             }
 
             const handleGoBack = async () => {
+                if ($current_category == null) {
+                    console.error("In MediaViewer.handleGoBack: $current_category is null.");
+                    return;
+                }
+
+                if ($categories_tree == null) {
+                    console.error("In MediaViewer.handleGoBack: $categories_tree is null.");
+                    return;
+                }
+               
+
+                
                 if (global_hotkeys_manager == null) {
                     console.error("The global hotkeys manager is null");
                     return;
@@ -644,6 +685,11 @@
             }
 
             const rejectMedia = () => {
+                if ($current_category == null) {
+                    console.error("In MediaViewer.rejectMedia: $current_category is null.");
+                    return;
+                }
+                
                 const current_media = $current_category.content[$active_media_index];
                 let not_deleted_media_index = $active_media_index;
 
@@ -829,6 +875,11 @@
         /*=====  End of Media modifiers  ======*/
 
         const automoveMedia = () => {
+            if ($current_category == null) {
+                console.error("In MediaViewer.automoveMedia: $current_category is null.");
+                return;
+            }
+            
             if ($auto_move_on === false || $auto_move_category == null) return;
 
             let current_media = $current_category.content[$active_media_index];
@@ -849,6 +900,10 @@
          * @returns {Promise<number>} - the determined index
          */
         const determineActiveMediaIndexInitialValue = async () => {
+            if ($current_category == null) {
+                throw Error("In MediaViewer.determineActiveMediaIndexInitialValue: $current_category is null.");
+            }
+            
             let determined_index = 0;
             let url_holds_index = url_media_index != null && url_media_index !== "";
 
@@ -916,6 +971,10 @@
          * @returns {import('@models/Medias').Media}
          */
         const getActiveMedia = () => {
+            if ($current_category == null) {
+                throw Error("In MediaViewer.getActiveMedia: $current_category is null.");
+            }
+            
             return $current_category.content[$active_media_index];
         }
 
@@ -924,6 +983,11 @@
          * @param {CustomEvent<import('@models/Medias').Media>} event
          */
         const handleThumbnailClick = event => {
+            if ($current_category == null) {
+                console.error("In MediaViewer.handleThumbnailClick: $current_category is null.");
+                return;
+            }
+            
             const media_selected = event.detail;
             
             if (media_selected === undefined || media_selected === null) return;
@@ -998,6 +1062,11 @@
         }
 
         const saveActiveMediaToRoute = () => {
+            if ($current_category == null) {
+                console.error("In MediaViewer.saveActiveMediaToRoute: $current_category is null.");
+                return;
+            }
+            
             replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
         }
 

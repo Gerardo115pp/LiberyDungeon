@@ -1,8 +1,10 @@
 <script>
-    import events from "@components/Popups/events";
     import { hasClipboardWritePermission } from "@libs/utils";
     import { onMount } from "svelte";
     import InformationEntry from "./sub-components/InformationEntry.svelte";
+    import { active_media_index } from "@stores/media_viewer";
+    import { current_category } from "@stores/categories_tree";
+    import CategoryThumbnailSetBtn from "./sub-components/CategoryThumbnailSetBtn.svelte";
 
     
     /*=============================================
@@ -99,6 +101,13 @@
                     paste_on_click={can_clipboard_paste}
                 />
             </ul>
+            <menu id="mv-mip-category-actions">
+                {#if $current_category != null && $current_category.content[$active_media_index] != null}
+                    <CategoryThumbnailSetBtn 
+                        the_current_media={$current_category.content[$active_media_index]}
+                    />
+                {/if}
+            </menu>
         </hgroup>
         <hgroup id="mv-mip-cluster-information" class="mv-mip-media-information-section">
             <h3 class="mv-mip-section-name">
@@ -183,4 +192,19 @@
             --mv-mip-content-color: var(--grey-1);
         }
     }
+
+    
+    /*=============================================
+    =            Media section actions            =
+    =============================================*/
+    
+        menu#mv-mip-category-actions {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        } 
+    
+    /*=====  End of Media section actions  ======*/
+    
+    
 </style>
