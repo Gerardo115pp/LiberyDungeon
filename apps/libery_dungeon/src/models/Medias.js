@@ -1,4 +1,9 @@
-import { getMediaUrl, PatchRenameMediasRequest } from "@libs/DungeonsCommunication/services_requests/media_requests";
+import { 
+    GetMediaByUUIDRequest,
+    getMediaUrl,
+    PatchRenameMediasRequest,
+    GetMediaIdentityByUUIDRequest
+} from "@libs/DungeonsCommunication/services_requests/media_requests";
 
 const DEFAULT_IMAGE_WIDTH = 307;
 
@@ -10,6 +15,11 @@ const DEFAULT_IMAGE_WIDTH = 307;
  * @property {string} main_category the main category of the media resource
  * @property {string} type the type of the media resource, either IMAGE or VIDEO
  * @property {number} downloaded_from the id of the download batch that this media resource was downloaded from
+*/
+
+/**
+ * A media params extension with all the necessary properties from category and category cluster to retrieve a media file.
+* @typedef {{media: MediaParams} & import("@models/Categories").CategoryWeakIdentityParams} MediaIdentityParams
 */
 
 export class Media {
@@ -184,6 +194,88 @@ export class Media {
     }
 }
 
+export class MediaIdentity {
+    /**
+     * The media object
+     * @type {Media}
+     */
+    #the_media;
+
+    /**
+     * The category path
+     * @type {string}
+     */
+    #category_path;
+     
+    /**
+     * @type {string} 
+     */
+    #category_uuid;
+
+    /**
+     * @type {string}
+     */
+    #cluster_path;
+
+    /**
+     * @type {string}
+     */
+    #cluster_uuid;
+
+    /**
+     * @param {MediaIdentityParams} param0
+     */
+    constructor({media, category_path, category_uuid, cluster_path, cluster_uuid}) {
+        this.#the_media = new Media(media, category_path);
+
+        this.#category_path = category_path;
+        this.#category_uuid = category_uuid;
+
+        this.#cluster_path = cluster_path;
+        this.#cluster_uuid = cluster_uuid;
+    }
+
+    /**
+     * the uuid of the media.
+     * @type {string}
+     */
+    get uuid() {
+        return this.#the_media.uuid;
+    }
+
+    /**
+     * the name of the media.
+     * @type {string}
+     */
+    get name() {
+        return this.#the_media.name;
+    }
+
+    /**
+     * the main_category of the media.
+     * @type {string}
+     */
+    get main_category() {
+        return this.#the_media.main_category;
+    }
+
+    /**
+     * the type of the media.
+     * @type {string}
+     */
+    get type() {
+        return this.#the_media.type;
+    }
+
+    /**
+     * The media Object of the media identity.
+     * @type {Media}
+     */
+    get Media() {
+        return this.#the_media;
+    }
+}
+
 export class OrderedMedia {
     /**
      * The media object
@@ -311,3 +403,55 @@ export const sequenceRenameMedias = async (sequence_map, category_uuid) => {
 
     return renamed;
 }
+
+
+/*=============================================
+=            Model actions            =
+=============================================*/
+
+/**
+ * Returns a media object by its uuid.
+ * @param {string} media_uuid
+ * @returns {Promise<Media | null>}
+ */
+export const getMediaByUUID = async (media_uuid) => {
+    /**
+     * @type {Media | null}
+     */
+    let media = null;
+
+    const request = new GetMediaByUUIDRequest(media_uuid);
+
+    const response = await request.do();
+
+    if (response.Ok && response.data != null) {
+        media = new Media(response.data);
+    }
+
+    return media;
+}
+
+/**
+ * Returns a media identity object by the media uuid. Requires a cluster sign access to be present as a http-only cookie. otherwise the request will fail with a Forbidden status code.
+ * @param {string} media_uuid
+ * @returns {Promise<MediaIdentity | null>}
+ */
+export const getMediaIdentityByUUID = async (media_uuid) => {
+    /**
+     * @type {MediaIdentity | null}
+     */
+    let media_identity = null;
+
+    const request = new GetMediaIdentityByUUIDRequest(media_uuid);
+
+    const response = await request.do();
+
+    if (response.Ok && response.data != null) {
+        media_identity = new MediaIdentity(response.data);
+    }
+
+    return media_identity;
+}
+
+/*=====  End of Model actions  ======*/
+
