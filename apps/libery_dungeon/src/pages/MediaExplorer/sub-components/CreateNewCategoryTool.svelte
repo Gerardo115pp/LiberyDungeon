@@ -70,7 +70,7 @@
 
         /**
          * Prevents the the hotkey keystroke from being added to the category name.
-         * @param event
+         * @param {KeyboardEvent} event
          */
         const handleKeyPrevent = (event) => {
             if (!first_keydown_triggered) {
@@ -83,6 +83,12 @@
             let err;
             let created_category;
 
+            if ($categories_tree == null) {
+                console.error("In CreateNewCategoryTool.handleCreateNewCategory: $categories_tree is null");
+                return;
+            }
+            
+
             window.queueMicrotask(() => {
                 category_creation_tool_mounted.set(false);
             });
@@ -94,7 +100,7 @@
                     console.log("ALERTING ERROR: ", error);
                     error.alert();
                     return;
-                } else if (!(error instanceof Error)) {
+                } else if (!(error instanceof Error) && typeof error === "string") {
                     err = new Error(error);
                     console.log("failed to create category: ", err);
                 }
@@ -116,14 +122,18 @@
 
         /**
          * Verifies the validity and availability of the new category name.
-         * @returns {Promise<boolean>}
+         * @returns {Promise<boolean | undefined>}
          */
         const verifyCategoryName = async () => {
             if (category_name_input_element == null || new_category_name === "") return;
+            
+            if ($current_category == null) {
+                console.error("In CreateNewCategoryTool.verifyCategoryName: $current_category is null");
+                return;
+            }
+            
 
             let name_valid = category_name_input_element.checkValidity();
-
-
 
             if (name_valid) {
                 name_valid = await isCategoryNameAvailable(new_category_name, $current_category.uuid);

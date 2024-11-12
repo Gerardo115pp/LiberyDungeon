@@ -200,6 +200,7 @@
             const handleMediaItemDragStart = event => {
                 is_dragged = true;
 
+                // @ts-ignore - According to the MDN docs, this is not possibly null in a DragEvent for dragstart.
                 event.dataTransfer.effectAllowed = 'move';
 
                 console.log("Dragged media: ", ordered_media.Order);
@@ -213,6 +214,7 @@
                 is_dragged = false;
                 console.log(`Media item ${ordered_media.Order} drag end`);
 
+                // @ts-ignore - According to the MDN docs, this is not possibly null in a DragEvent for dragend.
                 let effect = event.dataTransfer.dropEffect;
 
                 console.log(`Drop effect: ${effect}`);
@@ -236,6 +238,7 @@
                 if (is_dragged) return;
                 event.preventDefault();
 
+                // @ts-ignore - According to the MDN docs, this is not possibly null in a DragEvent for dragover.
                 event.dataTransfer.dropEffect = 'move';
 
                 media_dragged_over
@@ -317,6 +320,10 @@
          */
         const handleMediaChanges = (change_type, media_uuid) => {
             if (media_uuid !== ordered_media.uuid) return;
+
+            if ($me_gallery_changes_manager == null) {
+                throw new Error("In MEGalleryDisplayItem.handleMediaChanges: me_gallery_changes_manager is null");
+            }
             
             let trusted_change_type = $me_gallery_changes_manager.getMediaChangeType(media_uuid);
             if (trusted_change_type !== change_type) {
@@ -337,6 +344,7 @@
                     let variable_environment_error = new VariableEnvironmentContextError("In MEGalleryDisplayItem.handleMediaChanges")
                     variable_environment_error.addVariable("change_type", change_type)
                     variable_environment_error.addVariable("trusted_change_type", trusted_change_type)
+                    // @ts-ignore
                     variable_environment_error.addVariable("this", this)
                     variable_environment_error.addVariable("media_item", ordered_media)
                     let labeled_err = new LabeledError(variable_environment_error, `Something weird happened. Received unknown change type: ${change_type}`, lf_errors.ERR_PROCESSING_ERROR);
@@ -428,7 +436,7 @@
             if ($me_gallery_changes_manager == null) return;
 
             let element_media_uuid = generateMediaChangesUuid(ordered_media);
-            $me_gallery_changes_manager.unsubscribeToChanges(element_media_uuid, handleMediaChanges)   
+            $me_gallery_changes_manager.unsubscribeToChanges(element_media_uuid);   
         }
     
     /*=====  End of Methods  ======*/

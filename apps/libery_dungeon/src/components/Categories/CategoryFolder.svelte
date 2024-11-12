@@ -303,8 +303,8 @@
     
 </script>
 
-<div class="ce-inner-wrapper">
-    <li class="ce-inner-category {category_item_class}"
+<div class="ce-inner-wrapper {category_item_class}">
+    <li class="ce-inner-category"
         bind:this={category_element} 
         class:keyboard-focused={category_keyboard_focused} 
         class:debug={false} 

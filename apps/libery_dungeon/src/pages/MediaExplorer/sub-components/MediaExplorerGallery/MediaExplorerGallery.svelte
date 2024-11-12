@@ -161,6 +161,7 @@
 
     onMount(() => {
         if (browser) {
+            // @ts-ignore - globalThis is not defined in the but is always available despite the environment.
             globalThis.meg_gallery_page = $page;
         }
 
@@ -186,6 +187,11 @@
              * Defines the hotkeys to interact with the media explorer gallery.
              */        
             const defineComponentHotkeys = () => {
+                if (global_hotkeys_manager == null) {
+                    console.error("In MediaExplorerGallery.defineComponentHotkeys: No hotkeys manager available.");
+                    return;
+                }
+                
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
 
@@ -293,10 +299,13 @@
 
                 $me_gallery_changes_manager.clearAllMoveChanges();
 
+                // FIXME: This 
+                // @ts-ignore - this could be an issue but it's complex so, i will Fix it later.
                 me_gallery_yanked_medias.set([
                     ...yanked_medias,
                     ...selected_medias
                 ]);
+
                 const total_yanked_medias_count = $me_gallery_yanked_medias.length;
 
                 emitPlatformMessage(`Appended ${selected_medias.length} medias to existing ${original_yanked_medias_count} yanked medias. There are now ${total_yanked_medias_count} yanked medias.`);
@@ -321,6 +330,11 @@
              * Closes the gallery and exits the hotkeys context.
              */
             const handleGalleryClose = async () => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("No changes manager available to close the gallery.");
+                    return;
+                }
+
                 if ($me_gallery_changes_manager.ChangesAmount > 0) {
                     let amount_deleted_medias = $me_gallery_changes_manager.DeletedMedias.length;
 
@@ -497,7 +511,9 @@
                 let selected_medias = $me_gallery_changes_manager.MovedMedias;
 
                 $me_gallery_changes_manager.clearAllMoveChanges();
-                
+
+                // FIXME: Implement an interface for bothe MediaChangesEmitter and MediasChangesManager to accept something like a MediaLike element.
+                // @ts-ignore - this could be an issue but it's complex so, i will Fix it later.
                 me_gallery_yanked_medias.set(selected_medias);
 
                 emitPlatformMessage(`Yanked ${selected_medias.length} medias.`);
@@ -623,6 +639,9 @@
          * @returns {import('@models/Medias').OrderedMedia | null}
          */
         const getFocusedMedia = () => {
+            /**
+             * @type {import('@models/Medias').OrderedMedia | null}
+             */
             let focused_media = ordered_medias[media_focus_index];
 
             if (focused_media === undefined) {
@@ -661,7 +680,14 @@
          * @param {MouseEvent} event
          */
         const handleMediaItemClicked = (event) => {
+            if (!(event.currentTarget instanceof HTMLElement)) return;
+
             let media_order_data = event.currentTarget.dataset.mediaOrder;
+
+            if (media_order_data == null) {
+                throw new Error("Media item clicked but had no data-media-order attribute.");
+            }
+
             let media_order = parseInt(media_order_data);
 
             const active_media_range = getLoadedMediaRange();
@@ -847,9 +873,15 @@
         /**
          * Process current media changes in the gallery. in the media explorer gallery, move changes are used as a selection mechanism, we dont actually commit move changes.
          * so if there are any when this method is called, they will be unstaged.
-         * @returns {promise<void>}
+         * @returns {Promise<void>}
          */
         const processMediaChanges = async () => {
+            if ($current_category == null) {
+                console.error("In MediaExplorerGallery.processMediaChanges: No current category available.");
+                return;
+            }
+
+            
             if ($me_gallery_changes_manager === null) {
                 console.warn("No changes manager available to process the current media changes.");
                 return;
@@ -857,7 +889,7 @@
     
             $me_gallery_changes_manager.clearAllMoveChanges();
 
-            await $me_gallery_changes_manager.commitChanges($current_category.uuid, $current_cluster.UUID);
+            await $me_gallery_changes_manager.commitChanges($current_category.uuid);
         }
 
         /**
@@ -890,6 +922,11 @@
          * Resets the MEG gallery state.
          */
         const resetGalleryState = () => {
+            if (global_hotkeys_manager == null) {
+                console.error("In MediaExplorerGallery.resetGalleryState: No hotkeys manager available.");
+                return;
+            }
+            
             media_focus_index = 0;
             global_hotkeys_manager.dropContext(hotkeys_context_name);
 
@@ -901,16 +938,34 @@
          * Throws an error if called when active_medias is not empty.
          */
         const recoverGalleryFocusItem = async () => {
-            /** @type {number} */
+            if ($current_category == null) {
+                console.error("In MediaExplorerGallery.recoverGalleryFocusItem: No current category available.");
+                return;
+            }
+
+            if (category_cache == null) {
+                console.error("In MediaExplorerGallery.recoverGalleryFocusItem: No category cache available.");
+                return;
+            }
+
+            
+            /** @type {number | undefined} */
             let cached_media_index = await category_cache.getCategoryIndex($current_category.uuid); 
             console.log("Indexed db cached media index:", cached_media_index);
+
+            /**
+             * @type {number | undefined}
+             */
+            // @ts-ignore - meg_gallery is defined in the page state.
             let page_state_store_index = $page.state?.meg_gallery?.media_index;
+
             console.log("History API cached media index:", page_state_store_index);
 
             cached_media_index = cached_media_index ?? page_state_store_index;
 
             if (cached_media_index == null) {
                 console.log("No cached media index found in the page state.");
+                return;
             }
 
             console.log(`kept media index: ${cached_media_index}`);
@@ -1063,6 +1118,11 @@
          * @param {import('@models/Medias').OrderedMedia} media_item 
          */
         const toggleMediaSelect = (media_item) => {
+            if ($me_gallery_changes_manager === null) {
+                console.warn("In MediaExplorerGallery.toggleMediaSelect: No changes manager available to stage the selection of the media item.");
+                return;
+            }
+
             let current_media_change = $me_gallery_changes_manager.getMediaChangeType(media_item.uuid);
 
             if (current_media_change === media_change_types.MOVED) {
@@ -1072,7 +1132,7 @@
 
             // on this meg gallery, we don't actually commit move media changes, only delete changes. instead of committing the move changes, we used them as
             // a select mechanism. if there are any move changes when committing, we will unstage them first.
-            let fake_inner_category = new InnerCategory({name: "me-gallery-mock-category", uuid: "me-gallery-mock-category"});
+            let fake_inner_category = new InnerCategory({name: "me-gallery-mock-category", uuid: "me-gallery-mock-category", fullpath: "me-gallery-mock-category"});
             $me_gallery_changes_manager.stageMediaMove(media_item.Media, fake_inner_category);
             console.log(`Media ${media_item.uuid} staged to be moved.`);
         }
@@ -1083,6 +1143,11 @@
          * @param {boolean} [keep_deleted=true] - if true and the media is already staged for deletion, it will not be unstaged.
          */
         const toggleMediaDeletion = (ordered_media, keep_deleted=false) => {
+            if ($me_gallery_changes_manager === null) {
+                console.warn("In MediaExplorerGallery.toggleMediaDeletion: No changes manager available to stage the deletion of the media item.");
+                return;
+            }
+
             let current_media_change = $me_gallery_changes_manager.getMediaChangeType(ordered_media.uuid);
 
             if (current_media_change === media_change_types.DELETED && !keep_deleted) {

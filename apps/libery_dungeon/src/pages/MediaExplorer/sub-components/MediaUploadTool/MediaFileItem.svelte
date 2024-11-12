@@ -140,7 +140,7 @@
             <img src={media_file.Src} alt={media_file.name} />
         {:else}
             <!-- svelte-ignore a11y-media-has-caption -->
-            <video src={media_file.Src} alt={media_file.name} controls={false} paused>
+            <video src={media_file.Src} controls={false}>
                 <track kind="caption"/>
             </video>
         {/if}

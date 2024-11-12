@@ -6,7 +6,6 @@
     import GridLoader from "@components/UI/Loaders/GridLoader.svelte";
     import { mediaFilesReadableSize } from "@libs/LiberyUploads/utils";
 
-
     
     /*=============================================
     =            Properties            =
@@ -79,8 +78,11 @@
             medias_uploaded++;
         }
 
-        const handleFilesDragOver = e => {
-            e.preventDefault();
+        /**
+         * @param {DragEvent} event
+         */
+        const handleFilesDragOver = event => {
+            event.preventDefault();
 
             files_over_mut_content = true;
         }
@@ -92,6 +94,11 @@
         const handleFilesDrop = e => {
             e.preventDefault();
 
+            if (e.dataTransfer?.files == null) {
+                console.error("handleFilesDrop: e.dataTransfer is null or has no files");
+                return;
+            }
+
             const files = e.dataTransfer.files;
 
             readFileList(files);
@@ -99,15 +106,20 @@
 
         /**
          * Handles the change event of the file input, reads the files and adds them to the new_media_files array
-         * @param {InputEvent} e
+         * @type {import('svelte/elements').ChangeEventHandler<HTMLInputElement>}
          */
         const handleNewFiles = e => {
+            if (!(e.target instanceof HTMLInputElement)) {
+                console.error("handleNewFiles: e.target is not an instance of HTMLInputElement");
+                return;
+            }
+
             /**
              * @type {HTMLInputElement}
              */
             const file_input = e.target;
 
-            if (!(file_input instanceof HTMLInputElement) || file_input.type !== "file" || file_input.files == null) {
+            if (file_input.type !== "file" || file_input.files == null) {
                 console.error("handleNewFiles: file_input is not an instance of HTMLInputElement or was not 'file' type. likely called from a wrong event");
                 return;
             }
@@ -140,11 +152,17 @@
             files_been_read = false;
         }
 
-        const endUpload = async new_index => {
+        
+        const endUpload = async () => {
             media_upload_tool_mounted.set(false);
         }
 
         const uploadFiles = async () => {
+            if ($current_category == null) {
+                console.error("In MediaUploadTool.uploadFiles: current_category is null");
+                return;
+            }
+            
             if (new_media_files.length === 0) {
                 return;
             }
