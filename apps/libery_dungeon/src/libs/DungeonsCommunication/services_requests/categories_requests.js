@@ -228,6 +228,53 @@ export class PatchRenameCategoryRequest {
 }
 
 /**
+ * Patches the category thumbnail.
+ */
+export class PatchCategoryThumbnailRequest {
+
+    static endpoint = `${categories_server}/categories/thumbnail`;
+
+    /**
+     * @param {string} category_id
+     * @param {string} thumbnail
+     */
+    constructor(category_id, thumbnail) {
+        this.category_id = category_id;
+        this.thumbnail = thumbnail;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<boolean>>}
+     */
+    do = async () => {
+        let was_successful = false;
+
+        let response;
+
+        try {
+            response = await fetch(PatchCategoryThumbnailRequest.endpoint, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: this.toJson()
+            });
+        } catch (error) {
+            console.error("Error while patching the category thumbnail: ", error);
+            throw error;
+        }
+
+        if (response.ok) {
+            was_successful = true;
+        }
+
+        return new HttpResponse(response, was_successful);
+    }
+}
+
+/**
  * Moves a category to another parent category
  */
 export class PatchMoveCategoryRequest {
