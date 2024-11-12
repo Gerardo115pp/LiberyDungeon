@@ -244,16 +244,7 @@ export class PatchMoveCategoryRequest {
     toJson = attributesToJson.bind(this);
 
     /**
-     * @typedef {Object} PatchMoveCategoryResponse
-     * @property {string} uuid
-     * @property {string} name
-     * @property {string} parent
-     * @property {string} fullpath
-     * @property {string} cluster
-     */
-
-    /**
-     * @returns {Promise<HttpResponse<PatchMoveCategoryResponse>>}
+     * @returns {Promise<HttpResponse<import('@models/Categories').CategoryParams>>}
      */
     do = async () => {
         const response = await fetch(`${categories_server}/categories-tree/move`, {

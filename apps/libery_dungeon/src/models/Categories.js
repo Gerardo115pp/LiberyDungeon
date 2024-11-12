@@ -29,29 +29,52 @@ const ROOT_CATEGORY_PROXY_UUID = "main";
  * @property {string} fullpath the full path of the category in the virtual file system
  * @property {string} parent the 40 character identifier of the parent category
  * @property {string} cluster the 40 character identifier of the cluster
+ * @property {string} category_thumbnail the thumbnail of the category. if the category has no thumbnail, it will be set to an empty string otherwise it will be a media uuid.
 */
 
 export class Category {
-    /** @type {string} the 40 character identifier of the category */
+    /** 
+     * @type {string} the 40 character identifier of the category 
+     */
     #uuid;
-    /** @type {string} the name of the category */
+
+    /** 
+     * @type {string} the name of the category 
+     */
     #name;
-    /** @type {string} the 40 character identifier of the parent category */
+
+    /** 
+     * @type {string} the 40 character identifier of the parent category 
+     */
     #parent;
-    /** @type {string} the full path of the category in the virtual file system */
+
+    /** 
+     * @type {string} the full path of the category in the virtual file system 
+     */
     #fullpath;
-    /** @type {string} the id of the cluster the category belongs to */
+
+    /** 
+     * @type {string} the id of the cluster the category belongs to 
+     */
     #cluster;
+
+    /**
+     * the thumbnail of the category. if the category has no thumbnail, it will be set to an empty string
+     * @type {string}
+     */
+    #category_thumbnail;
+
 
     /**
      * @param {CategoryParams} param0 
      */
-    constructor({uuid, name, parent, fullpath, cluster}) {
+    constructor({uuid, name, parent, fullpath, cluster, category_thumbnail}) {
         this.#uuid = uuid;
         this.#name = name;
         this.#parent = parent;
         this.#fullpath = fullpath;
         this.#cluster = cluster;
+        this.#category_thumbnail = category_thumbnail;
     }
 
     get FullPath() {
@@ -79,7 +102,12 @@ export class Category {
      * @returns {InnerCategory}
      */
     toInnerCategory = () => {
-        return new InnerCategory({name: this.#name, uuid: this.#uuid, fullpath: this.#fullpath});
+        return new InnerCategory({
+            name: this.#name,
+            uuid: this.#uuid,
+            fullpath: this.#fullpath,
+            category_thumbnail: this.#category_thumbnail
+        });
     }
 
     /**
@@ -208,6 +236,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
      * @property {string} name the name of the category
      * @property {string} uuid the 40 character identifier of the category
      * @property {string} fullpath the full path of the category in the virtual file system
+     * @property {string} category_thumbnail the thumbnail of the category. if the category has no thumbnail, it will be set to an empty string
     */
 
     export class CategoryWeakIdentity {
@@ -262,9 +291,15 @@ export const moveCategory = async (moved_category, new_parent_category) => {
         fullpath;
 
         /**
+         * the thumbnail of the category. if the category has no thumbnail, it will be set to an empty string
+         * @type {string}
+         */
+        #category_thumbnail;
+
+        /**
          * @param {InnerCategoryParams} param0 
          */
-        constructor ({name, uuid, fullpath}) {
+        constructor ({name, uuid, fullpath, category_thumbnail}) {
             if (name === undefined || uuid === undefined) {
                 throw new Error("The name and uuid of the category must be set");
             }
@@ -274,6 +309,8 @@ export const moveCategory = async (moved_category, new_parent_category) => {
             this.uuid = uuid;
             
             this.fullpath = fullpath ?? InnerCategory.EMPTY_FULLPATH;
+
+            this.#category_thumbnail = category_thumbnail;
         }
 
         /**
@@ -336,6 +373,7 @@ export const moveCategory = async (moved_category, new_parent_category) => {
      * @property {import('@models/Medias').MediaParams[]} content JSON data of the media resources of this category
      * @property {string} fullpath the full path of the category in the cluster virtual file system
      * @property {string} cluster the uuid4 identifier of the cluster
+     * @property {string} category_thumbnail the thumbnail of the category. if the category has no thumbnail, it will be set to an empty string else it will be a media uuid.
     */
 
     export class CategoryLeaf {
@@ -364,9 +402,15 @@ export const moveCategory = async (moved_category, new_parent_category) => {
         #cluster;
 
         /**
+         * The category thumbnail. if the category has no thumbnail, it will be set to an empty string
+         * @type {string}
+         */
+        #category_thumbnail;
+
+        /**
          * @param {CategoryLeafParams} param0 
          */
-        constructor({uuid, name, parent, inner_categories, content, fullpath, cluster}) {
+        constructor({uuid, name, parent, inner_categories, content, fullpath, cluster, category_thumbnail}) {
             /** @type {string} the 40 character identifier of the category */
             this.uuid = uuid;
 
@@ -391,6 +435,8 @@ export const moveCategory = async (moved_category, new_parent_category) => {
             });
 
             this.#cluster = cluster;
+
+            this.#category_thumbnail = category_thumbnail;
 
             this.#inner_categories_map = {};
 
@@ -447,7 +493,8 @@ export const moveCategory = async (moved_category, new_parent_category) => {
             return new InnerCategory({
                 name: this.name,
                 uuid: this.uuid,
-                fullpath: this.#fullpath
+                fullpath: this.#fullpath,
+                category_thumbnail: this.#category_thumbnail
             });
         }
 
