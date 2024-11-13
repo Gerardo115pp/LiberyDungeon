@@ -135,7 +135,6 @@
              * @type {boolean}
              */
             export let was_media_display_as_gallery;
-            $: console.log("MediaExplorer.was_media_display_as_gallery:", was_media_display_as_gallery);
 
             /**
              * Whether to force the media gallery to recover the focus on the last viewed media.
@@ -334,7 +333,7 @@
                             description: "<content>Rename category",
                         });
 
-                        hotkeys_context.register(["n"], handleCreateNewCategory, {
+                        hotkeys_context.register(["i c"], handleCreateNewCategory, {
                             description: "<content>Open create new category tool",
                         });
                     }
@@ -406,7 +405,6 @@
                     was_media_display_as_gallery = false;
                 }
 
-                console.log("Shift is pressed: ", key_event.shiftKey);
 
                 if (key_event.shiftKey) {
                     recover_gallery_focus = true;
@@ -514,7 +512,6 @@
                 }
                 
                 
-                console.log("Syncing current category");
                 if (is_category_resyncing) return;
                 is_category_resyncing = true;
 
@@ -770,7 +767,6 @@
                     return;
                 }
                 
-                console.log("FS_CHANGED event received", event);
 
                 const fs_change_message = event?.EventPayload.payload;
 
@@ -858,7 +854,9 @@
          * @returns {boolean}
          */
         const focusCategoryByUUID = (category_uuid) => {
+            console.log("Focusing category by uuid:", category_uuid);
             const displayed_categories = getDisplayCategories();
+            console.log("displayed_categories:", displayed_categories);
             const category_index = displayed_categories.findIndex(inner_category => inner_category.uuid === category_uuid);
 
             if (category_index === -1) {
@@ -1109,8 +1107,6 @@
         const handleGalleryOpenMediaViewer = event => {
             const { media_index } = event.detail;
 
-            console.log("Opening media viewer for media index:", media_index);
-
             was_media_display_as_gallery = true;
             
             enterMediaViewer(media_index);
@@ -1275,15 +1271,14 @@
             $me_gallery_yanked_medias.forEach(media => {
                 yanked_media_sources[media.main_category] = yanked_media_sources[media.main_category] ?? [];
 
+                // @ts-ignore
                 yanked_media_sources[media.main_category].push(media);
             });
 
-            console.log("Yanked media sources:", yanked_media_sources);
             let media_changes_manager = new MediaChangesManager();
 
             for (let source_category_uuid of Object.keys(yanked_media_sources)) {
                 let medias = yanked_media_sources[source_category_uuid];
-                console.log(`Staging medias from category(${source_category_uuid}):`, medias);
 
                 medias.forEach(media => {
                     media_changes_manager.stageMediaMove(media, $current_category.asInnerCategory());
