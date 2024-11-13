@@ -475,10 +475,15 @@ func (categories_repo *CategoriesMysql) UpdateMedia(ctx context.Context, media d
 	if err != nil {
 		return err
 	}
-
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, media.Name, media.LastSeen, media.MainCategory, media.MediaThumbnail, media.Uuid)
+	var media_thumbnail *string
+
+	if media.MediaThumbnail != "" {
+		media_thumbnail = &media.MediaThumbnail
+	}
+
+	_, err = stmt.ExecContext(ctx, media.Name, media.LastSeen, media.MainCategory, media_thumbnail, media.Uuid)
 	if err != nil {
 		return err
 	}
