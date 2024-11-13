@@ -50,7 +50,7 @@ export const navigateToParentCategory = async () => {
     // @ts-ignore
     replaceState(`/dungeon-explorer/${category.parent}`);
 
-    the_tree.navigateToParent();
+    await the_tree.navigateToParent();
 
     return;
 }
