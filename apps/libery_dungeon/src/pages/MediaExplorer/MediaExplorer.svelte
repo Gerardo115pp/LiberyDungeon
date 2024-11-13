@@ -1607,7 +1607,17 @@
             left: 0;
             width: 100%;
             padding: var(--vspacing-1);
+            z-index: var(--z-index-t-1);
+
+            & p#lce-fco-category-filter-string {
+                font-size: var(--font-size-2);
+                color: var(--grey-1);
+                line-height: 1.8;
+                background: hsl(from var(--grey-9) h s l / 0.3);
+                font-weight: 500;
+            }
         }
+        
     
     /*=====  End of Controls overlay  ======*/
     
