@@ -55,6 +55,12 @@ if (browser) {
  */
 export const layout_properties = writable(LAYOUT_PROPERTIES);
 
+/**
+ * Whether the rendering components should avoid mounting heavy resources like images or videos. This is useful to control when heavy resources should be loaded.
+ * @returns {import('svelte/store').Writable<boolean>}
+ */
+export const avoid_heavy_resources = writable(false);
+
 
 export const defineLayout = () => {
     if (!browser) return;
