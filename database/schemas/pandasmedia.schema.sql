@@ -51,6 +51,7 @@ CREATE TABLE `medias` (`uuid` varchar(40) NOT NULL,
     CONSTRAINT `fk_media_thumbnail` FOREIGN KEY (`media_thumbnail`) REFERENCES `medias` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 ALTER TABLE `categorys` ADD CONSTRAINT `category_thumbnail_fk` FOREIGN KEY (`category_thumbnail`) REFERENCES `medias` (`uuid`) ON DELETE SET NULL;
 
 DROP TABLE IF EXISTS `downloads`;

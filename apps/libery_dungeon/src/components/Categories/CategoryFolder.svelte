@@ -458,6 +458,10 @@
                 background-color: hsl(from var(--grey) h s l / 0.4);
                 z-index: var(--z-index-b-1);
             }
+
+            &.category-highlighted:not(.keyboard-focused) .ce-ic-thumbnail-overlay  {
+                background-color: hsl(from var(--success) h s l / 0.4);
+            }
             
             & .category-thumbnail-wrapper {
                 position: absolute;
@@ -512,6 +516,7 @@
             & .category-thumbnail-wrapper img {
                 opacity: 1;
             }
+
         }
 
         .ce-inner-wrapper:has(> li.ce-inner-category.category-with-thumbnail) {
