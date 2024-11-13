@@ -6,6 +6,7 @@
     import { browser } from "$app/environment";
     import { current_cluster } from "@stores/clusters";
     import viewport from "@components/viewport_actions/useViewportActions";
+    import { avoid_heavy_resources } from "@stores/layout";
 
     
     /*=============================================
@@ -56,13 +57,6 @@
                 $:if (inner_category.uuid && browser && component_mounted) {
                     determineCategoryThumbnailURL();
                 }
-
-                /**
-                 * Whether the category icon is currently visible.
-                 * @type {boolean}
-                 */
-                let category_thumbnail_visible = false;
-
 
         /*----------  Category Editing  ----------*/
         
@@ -157,6 +151,7 @@
 
                 if (!thumbnail_loaded) {
                     category_thumbnail_url = inner_category.getRandomMediaURL($current_cluster.UUID, 10600);
+                    return;
                 }
             }
             
@@ -302,24 +297,7 @@
          * @param {Event} event
          */
         const handleCategoryThumbnailLoaded = event => {
-            console.log("Category thumbnail loaded:", event.target);
             category_thumbnail_loaded = true;
-        }
-
-        /**
-         * Handles the viewportEnter event on the category thumbnail.
-         * @type {import('@components/viewport_actions/useViewportActions').ViewportEventHandler}
-         */
-        const handlerCategoryThumbnailViewportEnter = (event) => {
-            category_thumbnail_visible = true;
-        }
-
-        /**
-         * Handles the viewportLeave event on the category thumbnail.
-         * @type {import('@components/viewport_actions/useViewportActions').ViewportEventHandler}
-         */
-        const handlerCategoryThumbnailViewportLeave = (event) => {
-            category_thumbnail_visible = false;
         }
 
         const emitCategorySelectedEvent = () => {
@@ -369,12 +347,8 @@
     >
         {#key inner_category.uuid}
             {#if $use_category_folder_thumbnails && inner_category != null}
-                <div class="category-thumbnail-wrapper" 
-                    on:viewportEnter={handlerCategoryThumbnailViewportEnter} 
-                    on:viewportLeave={handlerCategoryThumbnailViewportLeave} 
-                    use:viewport
-                >
-                    {#if category_thumbnail_visible && category_thumbnail_url != null}
+                <div class="category-thumbnail-wrapper">
+                    {#if category_thumbnail_url != null && !$avoid_heavy_resources}
                         <img 
                             fetchpriority="low" 
                             decoding="async" 
