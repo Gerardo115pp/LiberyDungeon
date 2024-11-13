@@ -100,6 +100,8 @@ export class Media {
      * @returns {string}
      */
     getResizedUrl(viewport_percentage) {
+        if (viewport_percentage === 0) return this.Url;
+
         let target_width = DEFAULT_IMAGE_WIDTH;
         if (globalThis.innerWidth != null) {
             // window context
@@ -128,6 +130,16 @@ export class Media {
         let ext = this.FileExtension.toLowerCase();
 
         return this.isVideo() || ext === "gif";
+    }
+
+    /**
+     * Whether the media source is an animated image.
+     * @returns {boolean}
+     */
+    isAnimatedImage = () => {
+        let ext = this.FileExtension.toLowerCase();
+
+        return ext === "gif";
     }
 
     /**
