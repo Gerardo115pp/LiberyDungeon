@@ -13,7 +13,9 @@
     =            Properties            =
     =============================================*/
 
-        /** @type {import('@models/Categories').InnerCategory} */
+        /** 
+         * @type {import('@models/Categories').InnerCategory} 
+         */
         export let inner_category;
 
         /**
@@ -154,8 +156,10 @@
                     return;
                 }
             }
+
+            const media_thumbnail = inner_category.Thumbnail.Media;
             
-            category_thumbnail_url = inner_category.Thumbnail.Media.getResizedUrl(25); // 25%  of the current viewport.
+            category_thumbnail_url = inner_category.Thumbnail.Media.isAnimatedImage() ? media_thumbnail.Url : media_thumbnail.getResizedUrl(25); // 25%  of the current viewport.
         }
     
         const handleCategoryClick = () => {
