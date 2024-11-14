@@ -300,7 +300,7 @@
         display: grid;
         container-type: size;
         place-items: center;
-        backdrop-filter: var(--backdrop-filer-blur); 
+        backdrop-filter: var(--backdrop-filter-blur); 
         background: hsl(from var(--grey) h s l / 0.5);
     }
 

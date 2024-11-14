@@ -297,7 +297,7 @@
         position: fixed;
         inset: 0;
         place-items: center;
-        backdrop-filter: var(--backdrop-filer-blur);
+        backdrop-filter: var(--backdrop-filter-blur);
         z-index: var(--z-index-t-6);
     }
 
