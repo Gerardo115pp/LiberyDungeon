@@ -9,7 +9,7 @@ import {
     PatchMoveCategoryRequest,
     PatchCategoryThumbnailRequest
 } from "@libs/DungeonsCommunication/services_requests/categories_requests";
-import { Media, getMediaIdentityByUUID } from "./Medias";
+import { Media, getMediaIdentityByUUID, MediaIdentity } from "./Medias";
 import { 
     getAllCategoryIndexes, 
     addCategoryIndex, 
@@ -374,7 +374,7 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
          * Sets the thumbnail of the category. Returns true if the InnerCategory now has a usable thumbnail.
          * @return {Promise<boolean>}
          */
-        setThumbnail = async () => {
+        loadThumbnail = async () => {
             if (this.#category_thumbnail === "") {
                 return false;
             }
@@ -388,6 +388,20 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
             this.#the_thumbnail = media_identity;
 
             return true;
+        }
+
+        /**
+         * Sets the category thumbnail only locally
+         * @param {import('@models/Medias').MediaIdentity} new_thumbnail
+         */
+        setThumbnail = (new_thumbnail) => {
+            if (!(new_thumbnail instanceof MediaIdentity)) {
+                throw new Error(`In InnerCategory<${this.name}>.setThumbnail: Attempted to pass a non-MediaIdentity object as the thumbnail`);
+            }
+
+            this.#category_thumbnail = new_thumbnail.uuid;
+
+            this.#the_thumbnail = new_thumbnail;
         }
             
         /**
