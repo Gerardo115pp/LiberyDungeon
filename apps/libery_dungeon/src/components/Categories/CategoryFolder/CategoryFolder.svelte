@@ -6,6 +6,7 @@
     import { browser } from "$app/environment";
     import { current_cluster } from "@stores/clusters";
     import { avoid_heavy_resources } from "@stores/layout";
+    import CategoryConfiguration from "./sub-components/CategoryConfiguration.svelte";
 
     
     /*=============================================
@@ -35,6 +36,12 @@
          * @type {boolean}
          */
         export let category_keyboard_focused = false;
+
+        /**
+         * Whether to show the category configuration popover when the category is keyboard_focused.
+         * @type {boolean}
+         */
+        export let show_category_configuration = false;
 
         /**
          * The image to use as a thumbnail for the category.
@@ -328,6 +335,13 @@
 </script>
 
 <div class="ce-inner-wrapper {category_item_class}">
+    {#if component_mounted && category_keyboard_focused && show_category_configuration && !is_ephemeral}
+        <div class="ce-inwra-configuration-popover">
+            <CategoryConfiguration 
+                the_inner_category={inner_category}
+            /> 
+        </div>
+    {/if}
     <li class="ce-inner-category"
         bind:this={category_element} 
         class:keyboard-focused={category_keyboard_focused} 
@@ -386,6 +400,23 @@
     .ce-inner-wrapper {
         --timing: 400ms;
         --rotation: 20deg;
+
+        position: relative;
+        z-index: var(--z-index-1);
+    }
+
+    .ce-inner-wrapper:has(> .ce-inner-category.keyboard-focused) {
+        z-index: var(--z-index-2);
+    }
+
+    .ce-inwra-configuration-popover {
+        position: absolute;
+        width: 150%;
+        height: 110%;
+        inset: -5% auto auto 50%;
+        translate: -50% 0;
+        z-index: var(--z-index-t-2);
+        box-shadow: var(--shadow-1);
     }
 
     li.ce-inner-category {
@@ -413,14 +444,7 @@
     li.ce-inner-category.category-highlighted:not(.keyboard-focused) {
         background: hsl(from var(--main) h s l / 0.05);
     }
-
-    /* @media(pointer: fine) {
-        .ce-inner-category:not(.dragging):hover {
-            
-        }
-    } */
-
-    
+   
     /*=============================================
     =            CategoryThumbnail            =
     =============================================*/
@@ -434,7 +458,7 @@
 
 
             & .ce-ic-icon, & .ce-ic-label {
-                z-index: var(--z-index-1);
+                z-index: var(--z-index-3);
             }
 
             & .ce-ic-label {
@@ -459,7 +483,7 @@
                 width: 100%;
                 height: 100%;
                 background-color: hsl(from var(--grey) h s l / 0.4);
-                z-index: var(--z-index-b-1);
+                z-index: var(--z-index-2);
             }
 
             &.category-highlighted:not(.keyboard-focused) .ce-ic-thumbnail-overlay  {
@@ -470,7 +494,7 @@
                 position: absolute;
                 width: 100cqw;
                 height: 100cqh;
-                z-index: var(--z-index-b-2);
+                z-index: var(--z-index-1);
             }
 
             & .category-thumbnail-wrapper img {
@@ -485,10 +509,10 @@
                 content: "";
                 position: absolute;
                 inset: 0;
-                z-index: 100;
                 background-image: radial-gradient(circle, transparent 50cqw, var(--grey-black));
                 opacity: 0;
                 transition: opacity var(--timing);
+                z-index: var(--z-index-4);
             }
 
             &::after {
@@ -497,11 +521,10 @@
                 inset: 80% 0.5rem 0.5rem;
                 translate: 0;
                 transform: translateZ(-33cqw);
-                /* transform: translateZ(-100px); */
                 background: black;
                 filter: blur(1rem);
                 opacity: 0;
-                z-index: 1;
+                z-index: var(--z-index-3);
                 transition: rotate var(--timing), translate var(--timing)
             }
         }
@@ -560,8 +583,6 @@
         }
     
     /*=====  End of CategoryThumbnail  ======*/
-    
-    
 
     svg.ce-ic-icon {
         width: 100%;
