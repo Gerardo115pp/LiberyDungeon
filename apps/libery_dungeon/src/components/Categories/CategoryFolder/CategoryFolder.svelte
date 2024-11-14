@@ -155,7 +155,7 @@
             }
 
             if (!inner_category.thumbnailIsLoaded()) {
-                const thumbnail_loaded = await inner_category.setThumbnail();
+                const thumbnail_loaded = await inner_category.loadThumbnail();
 
                 if (!thumbnail_loaded) {
                     category_thumbnail_url = inner_category.getRandomMediaURL($current_cluster.UUID, 10600);
@@ -174,6 +174,17 @@
 
         const handleCategoryRenameRequested = () => {
             category_renaming = (inner_category != null); // Refuse to rename a category with out a leaf. Because we can't cause a reactivity update.
+        }
+
+        /**
+         * Handles the thumbnail changed event emitted by the CategoryConfiguration sub-component.
+         * @type {import('./sub-components/category_folder_subs').CategoryConfig_ThumbnailChanged}
+         */
+        const handleThumbnailChanged = updated_category => {
+            if (!inner_category.hasThumbnail() || !inner_category.loadThumbnail()) return;
+
+            category_thumbnail_url = inner_category.Thumbnail.Media.isAnimatedImage() ? inner_category.Thumbnail.Media.Url : inner_category.Thumbnail.Media.getResizedUrl(25);
+        
         }
 
         
@@ -339,6 +350,7 @@
         <div class="ce-inwra-configuration-popover">
             <CategoryConfiguration 
                 the_inner_category={inner_category}
+                on_thumbnail_change={handleThumbnailChanged}
             /> 
         </div>
     {/if}
