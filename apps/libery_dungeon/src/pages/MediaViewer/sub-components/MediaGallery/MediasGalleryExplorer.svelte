@@ -1,8 +1,12 @@
+<!-- Component deprecated, don't use -->
+
 <script>
+// @ts-nocheck
+
     import { current_category } from "@stores/categories_tree";
     import { CategoriesTree, getCategoryTree, CategoryLeaf } from "@models/Categories";
     import { writable } from "svelte/store";
-    import CategoryFolder from "@components/Categories/CategoryFolder.svelte";
+    import CategoryFolder from "@components/Categories/CategoryFolder/CategoryFolder.svelte";
     import MediasIcon from "@components/Medias/MediasIcon.svelte";
     import LiberyHeadline from "@components/UI/LiberyHeadline.svelte";
     import { createEventDispatcher, onMount } from "svelte";
