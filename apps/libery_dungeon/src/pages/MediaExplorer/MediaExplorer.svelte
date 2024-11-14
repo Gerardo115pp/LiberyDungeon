@@ -15,7 +15,7 @@
         import CategoryTagger from "@components/DungeonTags/CategoryTagger/CategoryTagger.svelte";
         import MediaUploadTool from "./sub-components/MediaUploadTool/MediaUploadTool.svelte";
         import CreateNewCategoryTool from "./sub-components/CreateNewCategoryTool.svelte";
-        import CategoryFolder from "@components/Categories/CategoryFolder.svelte";
+        import CategoryFolder from "@components/Categories/CategoryFolder/CategoryFolder.svelte";
         import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { CursorMovementWASD } from "@app/common/keybinds/CursorMovement";
@@ -114,6 +114,12 @@
              * @type {string}
              */
             const category_content_member_html_class = "dme-content-item";
+
+            /**
+             * Whether the focused category folder should show it's configuration popover.
+             * @type {boolean}
+             */
+            let show_category_folder_config = false;
         
         /*----------  State  ----------*/
 
@@ -336,6 +342,10 @@
                         hotkeys_context.register(["i c"], handleCreateNewCategory, {
                             description: "<content>Open create new category tool",
                         });
+                        
+                        hotkeys_context.register(["; c"], handleToggleFocusedCategoryConfig, {
+                            description: `${common_action_groups.CONTENT}Opens a configuration panel for the ${ui_category_reference.EntityName}.`
+                        });
                     }
 
                     hotkeys_context.register(["b"], () => { category_search_focused.set(!$category_search_focused);}, {
@@ -489,6 +499,16 @@
             const handleCreateNewCategory = () => {
                 category_creation_tool_mounted.set(!$category_creation_tool_mounted);
             }
+
+            /**
+             * Toggles the show_category_folder_config state.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleToggleFocusedCategoryConfig = () => {
+                show_category_folder_config = !show_category_folder_config;
+            }
+
+            
 
             /**
              * Enables the experimental feature use_category_folder_thumbnails. The thumbnails used for categories are fullsized images, heavliy deteriorates performance.
@@ -1368,7 +1388,7 @@
          * Sets the keyboard_focused_category to the given index.
          * @param {number} index
          */
-        const setKeyboardFocusedCategory = index => {
+        const setKeyboardFocusedCategory = async index => {
             if (the_wasd_dungeon_explorer_navigator !== null) {
                 the_wasd_dungeon_explorer_navigator.updateCursorPosition(index);
             } else {
@@ -1525,6 +1545,7 @@
                     category_item_class={category_content_member_html_class}
                     inner_category={ic}
                     category_keyboard_focused={keyboard_focused_category === h}
+                    show_category_configuration={show_category_folder_config}
                 />
             {/each}
             {#if $current_category.content.length > 0}
