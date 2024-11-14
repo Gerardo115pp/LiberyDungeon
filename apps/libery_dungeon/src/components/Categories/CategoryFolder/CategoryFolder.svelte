@@ -5,7 +5,6 @@
     import { createEventDispatcher, onMount } from "svelte";
     import { browser } from "$app/environment";
     import { current_cluster } from "@stores/clusters";
-    import viewport from "@components/viewport_actions/useViewportActions";
     import { avoid_heavy_resources } from "@stores/layout";
 
     
