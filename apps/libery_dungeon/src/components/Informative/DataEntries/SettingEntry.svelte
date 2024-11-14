@@ -36,7 +36,33 @@
          * @type {true | null}
          */
         export let is_required = null;
+        
+        
+        /*----------  Event handlers  ----------*/
 
+            /**
+             * An event handler for the setting-change event
+             * @type {import('./data_entries').SettingChangeHandler}
+             */
+            export let on_setting_change = (setting_key, new_value) => {};
+
+        
+        /*----------  Behavior  ----------*/
+        
+            /**
+             * Whether new setting values should be automatically trimmed.
+             * @type {boolean}
+             * @default true
+             */
+            export let auto_trim_setting = true;
+        
+        /*----------  State  ----------*/
+        
+            /**
+             * Whether the new setting is valid.
+             * @type {boolean}
+             */
+            let setting_is_valid = false;
         
         /*----------  Style  ----------*/
         
@@ -62,12 +88,65 @@
     /*=============================================
     =            Methods            =
     =============================================*/
+
+        /**
+         * Emits the setting-change event if the new setting is valid.
+         */
+        const emitNewSettingIfValid = () => {
+            if (the_setting_changer_input == null || !setting_is_valid) return;
+
+            let new_setting_value = the_setting_changer_input.value;
+
+            if (auto_trim_setting) {
+                new_setting_value = new_setting_value.trim();
+            }
+
+            on_setting_change(id_selector, new_setting_value);
+
+            the_setting_changer_input.blur();
+        }
     
+        /**
+         * Handles the keydown event from the_setting_changer_input.
+         * @param {KeyboardEvent} event
+         */
+        const handleKeyDown = event => {
+            if (the_setting_changer_input == null) {
+                return
+            }
+
+            if (event.key === "Escape") the_setting_changer_input.blur();
+
+            if (event.key === "Enter") {
+                event.preventDefault();
+                
+                if (!setting_is_valid) {
+                    the_setting_changer_input.reportValidity();
+                    return;
+                }
+
+                emitNewSettingIfValid();
+            }
+        }
+
+        /**
+         * Handles the keyup event from the_setting_changer_input.
+         * @param {KeyboardEvent} event
+         */
+        const handleKeyUp = event => {
+            if (the_setting_changer_input == null) return;
+
+            event.preventDefault();
+
+            if (the_setting_changer_input.validationMessage !== "") {
+                the_setting_changer_input.setCustomValidity("");
+            }
+
+            setting_is_valid = the_setting_changer_input.checkValidity();
+        }
 
     
     /*=====  End of Methods  ======*/
-    
-    
     
 </script>
 
@@ -83,6 +162,8 @@
             bind:this={the_setting_changer_input}
             type="text"
             bind:value={information_entry_value}
+            on:keydown={handleKeyDown}
+            on:keyup={handleKeyUp}
             spellcheck="false"
             pattern={value_pattern}
             required={is_required}
