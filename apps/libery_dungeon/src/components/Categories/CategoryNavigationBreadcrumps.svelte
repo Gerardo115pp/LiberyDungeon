@@ -111,8 +111,20 @@
          * @param {MouseEvent} event
          */
         const handleBreadcrumbFragmentClick = async event => {
+            if (!event.currentTarget || !(event.currentTarget instanceof HTMLElement)) return;
+
+            if ($current_category == null) {
+                console.error("In CategoryNavigationBreadcrumbs.handleBreadcrumbFragmentClick: $current_category is null");
+                return;
+            }
+            
             let breadcrumb_path = event.currentTarget.dataset.breadcrumbPath;
             if (breadcrumb_path === $current_category.FullPath) {
+                return;
+            }
+
+            if (breadcrumb_path == null) {
+                console.error("In CategoryNavigationBreadcrumbs.handleBreadcrumbFragmentClick: breadcrumb_path is null");
                 return;
             }
 
