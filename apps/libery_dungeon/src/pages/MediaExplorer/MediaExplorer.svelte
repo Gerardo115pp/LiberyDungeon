@@ -17,14 +17,13 @@
         import CreateNewCategoryTool from "./sub-components/CreateNewCategoryTool.svelte";
         import CategoryFolder from "@components/Categories/CategoryFolder/CategoryFolder.svelte";
         import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
-        import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { CursorMovementWASD } from "@app/common/keybinds/CursorMovement";
         import { CategoryLeaf, getCategory, getCategoryTree, InnerCategory, moveCategory } from "@models/Categories";
         import LiberyHeadline from "@components/UI/LiberyHeadline.svelte";
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
         import MediasIcon from "@components/Medias/MediasIcon.svelte";
         import { onDestroy, onMount, tick } from "svelte";
-        import { hotkeys_sheet_visible, layout_properties } from "@stores/layout";
+        import { layout_properties } from "@stores/layout";
         import { app_contexts } from "@libs/AppContext/app_contexts";
         import { app_context_manager } from "@libs/AppContext/AppContextManager";
         import { 

@@ -332,7 +332,11 @@ export class CursorMovementWASD {
             return;
         }
 
-        let cursor_set = this.#grid_navigation_wrapper.Grid.setCursor(new_cursor_position);
+        let cursor_set = false;
+
+        if (this.#grid_navigation_wrapper.Grid.isUsable()) {
+            cursor_set = this.#grid_navigation_wrapper.Grid.setCursor(new_cursor_position)
+        }
 
         if (!cursor_set) {
             console.error("The cursor position is out of bounds or there was a problem setting it.");

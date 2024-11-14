@@ -880,12 +880,20 @@ export class GridNavigationWrapper {
     #onMutation(mutations, observer) {
         console.log("Mutation detected", mutations);
 
-        let current_cursor = this.#grid_sequence.Cursor;
+        const usable_before_mutation = this.#grid_sequence.isUsable();
+
+        let current_cursor = 0;
+
+        if (usable_before_mutation) { // handle's cases when the grid parent has no child elements.
+            current_cursor = this.#grid_sequence.Cursor;
+        }
 
         this.scanGridMembers();
 
-        current_cursor = this.#grid_sequence.clampSequenceIndex(current_cursor);
+        if (!this.#grid_sequence.isUsable()) return;
 
+        current_cursor = this.#grid_sequence.clampSequenceIndex(current_cursor);
+    
         this.#grid_sequence.setCursor(current_cursor);
     }
 
