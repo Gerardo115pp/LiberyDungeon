@@ -418,6 +418,14 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
 
             return this.#the_thumbnail;
         }
+
+        /**
+         * Returns the category thumbnail uuid, if the category has no thumbnail, then this property returns an empty string.
+         * @type {string}
+         */
+        get ThumbnailUUID() {
+            return this.#category_thumbnail;
+        }
     }
 
     /**
