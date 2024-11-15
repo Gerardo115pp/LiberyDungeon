@@ -190,6 +190,11 @@
             --hspacing-1: 4.79%;
             --hspacing-2: 36px;
 
+            /** Common Spacings */
+
+                --common-page-inline-padding: var(--spacing-3);
+                --common-page-block-padding: var(--spacing-3);
+
         /* Fonts */
             --font-size-1: var(--vspacing-2); /* 16px */
             --font-size-2: calc(var(--vspacing-3) * 0.59375); /* 19px */
@@ -510,8 +515,8 @@
     }
 
     .full-vw {
-        width: 100vw;
-        transform: translateX(calc(var(--page-lateral-spacing) * -1));
+        width: 100dvw;
+        translate: calc(-1 * var(--common-page-inline-padding));
     }
 
     .form-page-wrapper {
