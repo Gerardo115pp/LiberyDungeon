@@ -1,6 +1,8 @@
 <script>
+    import { browser } from '$app/environment';
     import LiberyHeadline from '@components/UI/LiberyHeadline.svelte';
-    import { onMount } from 'svelte';
+    import { navbar_ethereal } from '@stores/layout';
+    import { onMount, onDestroy } from 'svelte';
 
     /*=============================================
     =            Properties            =
@@ -22,12 +24,32 @@
 
     onMount(() => {
         handleChangeBillboardImage();
+
+        checkWindowScroll();
     });
 
+    onDestroy(() => {
+        if (!browser) return;
+
+        hanldeBillboardDestroy();
+    });
     
     /*=============================================
     =            Methods            =
     =============================================*/
+
+        /**
+         * checks if the scrollY is below a threshold and if so, turns the navbar ethereal.
+         */
+        const checkWindowScroll = () => {
+            if (globalThis.self == null) return; // not a windowed context.
+
+            if (window.scrollY < 100) {
+                navbar_ethereal.set(true);
+            } else {
+                navbar_ethereal.set(false);
+            }
+        }
     
         /**
          * Changes the current billboard media.
@@ -64,13 +86,29 @@
             console.log("Changed billboard media to: ", current_billboard_media);
         
         }
+
+        /**
+         *  Handles an onscroll event listener on the document window.
+         */
+        const handleWindowScroll = () => {
+            checkWindowScroll();
+        }
+
+    
+        /**
+         * Handles the destruction of the billboard component.
+         */
+        const hanldeBillboardDestroy = () => {
+            navbar_ethereal.set(false);
+        }
     
     /*=====  End of Methods  ======*/
     
-    
-    
 </script>
 
+<svelte:window 
+    on:scroll|passive={handleWindowScroll}
+/>
 <section id="media-explorer-billboard">
     <div id="mexbill-underlay-billboard-wrapper">
         {#if current_billboard_media != null}
