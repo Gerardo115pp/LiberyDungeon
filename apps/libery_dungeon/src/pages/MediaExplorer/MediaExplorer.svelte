@@ -1466,6 +1466,7 @@
     </title>
 </svelte:head>
 <main id="libery-categories-explorer"
+    class:with-billboard={($current_category?.content?.length ?? 0) > 0}
     class:with-category-thumbnails={$use_category_folder_thumbnails}
     style:position="relative"
 >
@@ -1597,8 +1598,12 @@
 </main>
 
 <style>
-    #libery-categories-explorer {
+    
+    :global(#libery-dungeon-content:has(main#libery-categories-explorer.with-billboard)) {
+        margin-top: 0 !important;
+    }
 
+    #libery-categories-explorer {
         position: relative;
         display: flex;
         flex-direction: column;
@@ -1606,10 +1611,19 @@
         padding-inline: var(--common-page-inline-padding);
         padding-block: var(--common-page-block-padding);
     }
+
+    main#libery-categories-explorer.with-billboard {
+        padding: 0;
+    }
     
     /*=============================================
     =            header            =
     =============================================*/
+
+        .with-billboard header#lce-upper-content {
+            position: relative;
+            padding-block-start: calc(var(--navbar-height) + var(--spacing-2));
+        }
 
         header#lce-upper-content {
             display: flex;
@@ -1667,8 +1681,6 @@
     
     /*=====  End of Controls overlay  ======*/
     
-    
-    
     .fullwidth-modals {
         position: fixed;
         top: var(--navbar-height);
@@ -1687,6 +1699,11 @@
         list-style: none;
         padding: 0;
         gap: 2px;
+    }
+
+    .with-billboard ul#category-content {
+        padding-inline: var(--common-page-inline-padding);
+        padding-block-end: var(--common-page-block-padding);
     }
 
     

@@ -114,7 +114,7 @@
     section#media-explorer-billboard {
         --shadows-color: hsl(from var(--body-bg-color) h s l / 0.85);
         
-        position: relative;
+        /* position: relative; */
         display: flex;
         width: 100%;
         height: 50dvh;
@@ -130,6 +130,7 @@
     
         #mexbill-underlay-billboard-wrapper {
             position: absolute;
+            inset: 0;
             /* width: 100dvw; */
             height: 200cqh;
             z-index: var(--z-index-b-5);
@@ -167,13 +168,15 @@
         /* -------------------------------- Synopsis -------------------------------- */
 
         #mexbill-synopsis-panel {
+            --synopsis-panel-bg: hsl(from var(--grey-1) h s l / 0.08);
+
             width: max-content;
-            background: hsl(from var(--body-bg-color) h s l / 0.2);
+            background: var(--synopsis-panel-bg);
             padding-block-start: var(--spacing-2);
             padding-block-end: var(--spacing-4);
             padding-inline: var(--spacing-5);
             translate: calc(-1 * var(--common-page-inline-padding));
-            box-shadow: 0 -10px 36px 40px hsl(from var(--body-bg-color) h s l / 0.2);
+            box-shadow: 0 -10px 36px 40px var(--synopsis-panel-bg);
         }
     
     /*=====  End of Billboard  ======*/
