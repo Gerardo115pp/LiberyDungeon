@@ -1,6 +1,7 @@
 <script>
     import { browser } from '$app/environment';
     import LiberyHeadline from '@components/UI/LiberyHeadline.svelte';
+    import { CanvasImage } from '@libs/LiberyColors/image_models';
     import { navbar_ethereal } from '@stores/layout';
     import { onMount, onDestroy } from 'svelte';
 
@@ -50,6 +51,36 @@
                 navbar_ethereal.set(false);
             }
         }
+
+        /**
+         * Calculates the white percentage of the passed Media element(HTML).
+         * @param {HTMLImageElement | HTMLVideoElement} media_element
+         * @returns {number}
+         */
+        const calculateMediaWhitePercentage = (media_element) => {
+            console.time("Calculating white percentage of the media element.");
+            const canvas_image = new CanvasImage(media_element);
+            console.timeEnd("Calculating white percentage of the media element.");
+
+            return canvas_image.whitePercentage(1);
+        }
+
+
+        /**
+         * Returns the html billboard element.
+         * @returns {HTMLImageElement | HTMLVideoElement | null}
+         */
+        const getBillboardElement = () => {
+            const billboard_element = document.getElementById("mexbill-billboard");
+
+            if (billboard_element == null) return billboard_element;
+
+            if (!(billboard_element instanceof HTMLImageElement || billboard_element instanceof HTMLVideoElement)) {
+                throw new Error("In ExplorerBillboard.getBillboardElement: The element with id 'mexbill-billboard' is not an instance of HTMLImageElement or HTMLVideoElement.");
+            }
+
+            return billboard_element;
+        }
     
         /**
          * Changes the current billboard media.
@@ -93,13 +124,62 @@
         const handleWindowScroll = () => {
             checkWindowScroll();
         }
-
     
         /**
          * Handles the destruction of the billboard component.
          */
         const hanldeBillboardDestroy = () => {
             navbar_ethereal.set(false);
+        }
+
+        /**
+         * Handles the load event of the billboard Image.
+         * @param {Event} event
+         */
+        const handleBillboardImageLoad = (event) => {
+            const billboard_element = event.target;
+
+            if (!(billboard_element instanceof HTMLImageElement)) {
+                console.error("In ExplorerBillboard.handleBillboardImageLoad: The event target is not an instance of HTMLImageElement.");
+                return;
+            }
+
+            let new_white_percentage = calculateMediaWhitePercentage(billboard_element);
+
+            console.log("White percentage of the billboard image: ", new_white_percentage);
+        }
+
+        /**
+         * Handles the load event of the billboard Video.
+         * @param {Event} event
+         */
+        const handleBillboardVideoLoad = (event) => {
+            const billboard_element = event.target;
+
+            if (!(billboard_element instanceof HTMLVideoElement)) {
+                console.error("In ExplorerBillboard.handleBillboardVideoLoad: The event target is not an instance of HTMLVideoElement.");
+                return;
+            }
+
+            let new_white_percentage = calculateMediaWhitePercentage(billboard_element);
+
+            console.log("White percentage of the billboard video: ", new_white_percentage);
+        }
+
+        /**
+         * Handles the error event of the billboard Image.
+         * @param {Event} event
+         */
+        const handleBillboardImageError = (event) => {
+            console.log("Error loading billboard image: ", event);
+        }
+
+        /**
+         * Handles the error event of the billboard Video.
+         * @param {Event} event
+         */
+        const handleBillboardVideoError = (event) => {
+            console.log("Error loading billboard video: ", event);
         }
     
     /*=====  End of Methods  ======*/
@@ -114,13 +194,19 @@
         {#if current_billboard_media != null}
             {#if current_billboard_media.isImage()}
                 <img
+                    id="mexbill-billboard"
                     decoding="async"
                     src="{current_billboard_media.Url}" 
+                    on:load={handleBillboardImageLoad}
+                    on:error={handleBillboardImageError}
                     alt=""
                 >
             {:else if current_billboard_media.isVideo()}
                 <video 
+                    id="mexbill-billboard"
                     src="{current_billboard_media.Url}"
+                    on:loadeddata={handleBillboardVideoLoad}
+                    on:error={handleBillboardVideoError}
                     muted
                     autoplay
                     loop

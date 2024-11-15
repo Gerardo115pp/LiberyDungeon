@@ -1,4 +1,4 @@
-class CanvasImage {
+export class CanvasImage {
 
     /**
      * The image canvas.
@@ -80,10 +80,14 @@ class CanvasImage {
 
     /**
      * returns fuzzy logic function to determine the white percentage of an image is, that is, out of all the pixels of an image in an img tag, how many of them are whitish.
-     * @param {number} quality
+     * @param {number} [quality=10]
      * @returns {number}
      */
     whitePercentage = (quality) => {
+        if (quality == null) {
+            quality =  10;
+        }
+
         const pixel_count = this.#width * this.#height;
 
         const white_definition = 200;
