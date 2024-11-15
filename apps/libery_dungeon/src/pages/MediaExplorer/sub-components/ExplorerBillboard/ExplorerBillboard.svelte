@@ -168,14 +168,14 @@
         /* -------------------------------- Synopsis -------------------------------- */
 
         #mexbill-synopsis-panel {
-            --synopsis-panel-bg: hsl(from var(--grey-1) h s l / 0.08);
+            /* --synopsis-panel-bg: hsl(from var(--grey-black) h s l / 0.25); */
 
-            width: max-content;
-            background: var(--synopsis-panel-bg);
+            width: 100%;
+            /* background: var(--synopsis-panel-bg); */
             padding-block-start: var(--spacing-2);
             padding-block-end: var(--spacing-4);
             padding-inline: var(--spacing-5);
-            translate: calc(-1 * var(--common-page-inline-padding));
+            /* translate: calc(-1 * var(--common-page-inline-padding)); */
             box-shadow: 0 -10px 36px 40px var(--synopsis-panel-bg);
         }
     
