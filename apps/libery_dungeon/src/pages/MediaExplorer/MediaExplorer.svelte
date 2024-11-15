@@ -52,6 +52,7 @@
         import { SearchResultsWrapper, wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
         import { use_category_folder_thumbnails } from "@app/config/ui_design";
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
+    import ExplorerBillboard from "./sub-components/ExplorerBillboard/ExplorerBillboard.svelte";
 
     /*=====  End of Imports  ======*/
   
@@ -1504,26 +1505,49 @@
                 category_leaf_item={$current_category}
                 on:breadcrumb-selected={handleBreadcrumbSelected}
             />
-        {/if}
-        <button id="lce-uc-current-category-name" 
-            class:parent-accepting-drop={category_over_parent_label}
-            on:click={handleGoToParentCategory} 
-            on:dragover={handleParentDragOver}
-            on:dragenter={handleParentDragEnter}
-            on:dragleave={handleParentDragLeave}
-            on:drop={handleDropCategoryOnParent}
-        >
-            {#if $current_category !== null && $current_category !== undefined}
-                <LiberyHeadline 
-                    headline_tag="Cell"
-                    headline_color="var(--grey-1)"
-                    forced_font_size="calc(var(--font-size-{$layout_properties.IS_MOBILE ? '4' : 'h3'}) * 1.6)"
-                    extra_props="style='awesome!'"
-                    headline_text={$category_search_term === "" ? $current_category.name : `Search: ${$category_search_term}`}
-                    force_bottom_lines
-                />
+            {#if $current_category.content.length > 0}
+                <ExplorerBillboard
+                    the_billboard_category={$current_category}
+                >
+                    <button id="lce-uc-current-category-name" 
+                        slot="billboard-headline"
+                        class:parent-accepting-drop={category_over_parent_label}
+                        on:click={handleGoToParentCategory} 
+                        on:dragover={handleParentDragOver}
+                        on:dragenter={handleParentDragEnter}
+                        on:dragleave={handleParentDragLeave}
+                        on:drop={handleDropCategoryOnParent}
+                    >
+                        <LiberyHeadline 
+                            headline_tag="Cell"
+                            headline_color="var(--grey-1)"
+                            forced_font_size="calc(var(--font-size-{$layout_properties.IS_MOBILE ? '4' : 'h3'}) * 1.6)"
+                            extra_props="style='awesome!'"
+                            headline_text={$category_search_term === "" ? $current_category.name : `Search: ${$category_search_term}`}
+                            force_bottom_lines
+                        />
+                    </button>
+                </ExplorerBillboard>
+            {:else}
+                <button id="lce-uc-current-category-name" 
+                    class:parent-accepting-drop={category_over_parent_label}
+                    on:click={handleGoToParentCategory} 
+                    on:dragover={handleParentDragOver}
+                    on:dragenter={handleParentDragEnter}
+                    on:dragleave={handleParentDragLeave}
+                    on:drop={handleDropCategoryOnParent}
+                >
+                    <LiberyHeadline 
+                        headline_tag="Cell"
+                        headline_color="var(--grey-1)"
+                        forced_font_size="calc(var(--font-size-{$layout_properties.IS_MOBILE ? '4' : 'h3'}) * 1.6)"
+                        extra_props="style='awesome!'"
+                        headline_text={$category_search_term === "" ? $current_category.name : `Search: ${$category_search_term}`}
+                        force_bottom_lines
+                    />
+                </button>
             {/if}
-        </button>
+        {/if}
     </header>
     <ul id="category-content" class:debug={false}>
         {#if $category_search_results.length > 0}
@@ -1574,11 +1598,13 @@
 
 <style>
     #libery-categories-explorer {
+
         position: relative;
         display: flex;
         flex-direction: column;
         row-gap: var(--vspacing-4);
-        padding: var(--vspacing-3);
+        padding-inline: var(--common-page-inline-padding);
+        padding-block: var(--common-page-block-padding);
     }
     
     /*=============================================
