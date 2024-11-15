@@ -148,7 +148,7 @@
                 throw new Error("In CategoryFolder.determineCategoryThumbnailURL: current_cluster is not available");
             }
 
-            category_thumbnail_loaded = false;
+            // category_thumbnail_loaded = false; // HOTFIX: This is causing the thumbnail to not load properly. TODO: Investigate why this is happening.
 
             if (!inner_category.hasThumbnail()) {
                 category_thumbnail_url = inner_category.getRandomMediaURL($current_cluster.UUID, 10600);
