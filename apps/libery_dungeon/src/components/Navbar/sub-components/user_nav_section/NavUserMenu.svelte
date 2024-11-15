@@ -74,9 +74,13 @@
         width: 100%;
         background: var(--body-bg-color);
         padding: var(--spacing-2) var(--spacing-4);
-        border-radius: 0;
+        border-radius: var(--border-radius);
         transition: background 0.3s ease-out;
         color: var(--main-dark);
+
+        &:hover {
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
 
         & h3 {
             font-family: var(--font-decorative);
@@ -87,6 +91,9 @@
         }
     }
 
+    :global(#libery-dungeon-navbar.navbar-ethereal button#ldn-nusw-user-label) {
+        background-color: hsl(from var(--body-bg-color) h s l / 0.2);
+    }
     
     /*=============================================
     =            Settings menu            =

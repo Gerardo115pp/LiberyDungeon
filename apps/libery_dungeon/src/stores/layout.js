@@ -137,6 +137,11 @@ export function setVirtualMobile(is_mobile) {
 export const navbar_hidden = writable(false);
 
 /**
+ * Whether the navbar is ethereal. This means it is visible but is much more transparent.
+ */
+export const navbar_ethereal = writable(false);
+
+/**
  * whether to show the hotkeys help modal or not. THIS IS NOT THE HOTKEYS SHEET. this is the little floating button labeled '?' that TRIGGERS the hotkeys sheet on hover.
  * @type {import("svelte/store").Writable<boolean>} 
  * @default true

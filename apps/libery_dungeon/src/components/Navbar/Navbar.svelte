@@ -1,5 +1,5 @@
 <script>
-    import { layout_properties } from "@stores/layout";
+    import { layout_properties, navbar_ethereal } from "@stores/layout";
     import { writable } from "svelte/store";
     import MainLogo from "@components/UI/MainLogo.svelte";
     import BurgerBtn from "@components/UI/BurgerBTN.svelte";
@@ -106,7 +106,13 @@
 
 </script>
 
-<nav role="toolbar" id="libery-dungeon-navbar" class:navbar-is-hidden={$navbar_hidden} class:opaque-background={$menu_visible} class:adebug={false}>
+<nav id="libery-dungeon-navbar"
+    role="toolbar" 
+    class:navbar-is-hidden={$navbar_hidden} 
+    class:navbar-ethereal={$navbar_ethereal && !$menu_visible}
+    class:opaque-background={$menu_visible} 
+    class:adebug={false}
+>
     <div id="ldn-content">
         <div id="ldn-left-content">
             <div class="ldn-rc-burger-wrapper">
@@ -148,6 +154,12 @@
         backdrop-filter: blur(10px);
         border-bottom: .5px solid var(--grey-9);
         transition: background 0.3s ease-out, opacity 0.3s ease-out, visibility 0.3s linear allow-discrete;
+    }
+
+    #libery-dungeon-navbar.navbar-ethereal {
+        background: linear-gradient(to bottom, hsl(from var(--body-bg-color) h s l / 0.95), hsl(from var(--body-bg-color) h s l / 0.05));
+        border-bottom: none;
+        backdrop-filter: none;
     }
 
     :global(.dark-mode nav#libery-dungeon-navbar) {
