@@ -72,9 +72,7 @@
 </script>
 
 <section id="media-explorer-billboard">
-    <div id="mexbill-underlay-billboard-wrapper"
-        class="full-vw"
-    >
+    <div id="mexbill-underlay-billboard-wrapper">
         {#if current_billboard_media != null}
             {#if current_billboard_media.isImage()}
                 <img
@@ -131,7 +129,7 @@
         #mexbill-underlay-billboard-wrapper {
             position: absolute;
             inset: 0;
-            /* width: 100dvw; */
+            width: 100dvw;
             height: 200cqh;
             z-index: var(--z-index-b-5);
             /* overflow: hidden; */
