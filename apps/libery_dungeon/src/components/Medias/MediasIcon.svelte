@@ -44,13 +44,14 @@
 <style>
     .ce-inner-medias {
         width: 100%;
-        transition: all .3s ease-in;
-        padding: var(--vspacing-1);
+        background: hsl(from var(--grey) h s l / 0.8);
+        padding: var(--spacing-1);
         border: .5px solid var(--grey);
+        border-radius: var(--border-radius);
+        transition: all .3s ease-in;
     }
 
     :has(> .keyboard-focused) {
-        /* background: var(--grey-8); */
         border-color: var(--main);
     }
     
