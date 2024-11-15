@@ -122,6 +122,14 @@ export class Media {
     }
 
     /**
+     * Whether the media is an image.
+     * @returns {boolean}
+     */
+    isImage = () => {
+        return this.type === media_types.IMAGE;
+    }
+
+    /**
      * Whether the media sources is an animation. returns true if the media source is a video or gif.
      * TODO: find a way to detect animated webp.
      * @returns {boolean}
