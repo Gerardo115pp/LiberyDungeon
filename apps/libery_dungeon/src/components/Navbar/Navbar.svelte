@@ -153,11 +153,11 @@
         z-index: var(--z-index-t-2);
         backdrop-filter: blur(10px);
         border-bottom: .5px solid var(--grey-9);
-        transition: background 0.3s ease-out, opacity 0.3s ease-out, visibility 0.3s linear allow-discrete;
+        transition: background 0.3s ease-out, opacity 0.3s ease-out, visibility 0.3s linear allow-discrete, backdrop-filter 0.25s linear allow-discrete;
     }
 
     #libery-dungeon-navbar.navbar-ethereal {
-        background: linear-gradient(to bottom, hsl(from var(--body-bg-color) h s l / 0.95), hsl(from var(--body-bg-color) h s l / 0.05));
+        background: linear-gradient(to bottom, hsl(from var(--body-bg-color) h s l / 0.85), transparent);
         border-bottom: none;
         backdrop-filter: none;
     }
