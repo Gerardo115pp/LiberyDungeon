@@ -1309,9 +1309,10 @@
 
     #mw-video-controller-wrapper {
         position: absolute;
-        width: max(13vw, 400px);
+        width: 50dvw;
+        height: 110px;
         left: 50%;
-        bottom: 10%;
+        bottom: 5%;
         transform: translateX(-50%);
     }
 

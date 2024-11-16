@@ -760,9 +760,9 @@
 </script>
 
 <svelte:document on:mousemove={handleMouseMovement} />
-<div 
+<div id="libery-video-controller" 
+    class="libery-dungeon-window"
     role="group" 
-    id="libery-video-controller" 
     aria-label="Video controls" 
     class:adebug={false}  
     style:opacity={controller_opacity}
@@ -771,60 +771,80 @@
     on:mouseleave={() => mouse_over_controller = false}
     on:touchstart={handleControllerTouch}
 >
-    <div id="lvc-progress-current-duration-label" class="lvc-time-label">
-        {#if !!the_video_element && the_video_element.readyState > 0}
-            <p>{video_progress_string}</p>
-        {/if}
+    <div id="lvc-content-wrapper">
+        <div id="lvc-duration-section">            
+            <div id="lvc-progress-current-duration-label" class="lvc-time-label">
+                {#if !!the_video_element && the_video_element.readyState > 0}
+                    <p>{video_progress_string}</p>
+                {/if}
+            </div>
+            <div id="lvc-progress-bar-track">
+                <!-- <svg id="lvc-pbt-track-bar" 
+                    viewBox="0 0 102 5"
+                    on:click={handleProgressClick}
+                    preserveAspectRatio="none"
+                >
+                    <path id="lvc-pbt-tb-empty-track" d="M 2 2.5 L 100 2.5" />
+                    <path id="lvc-pbt-tb-progress-track" d="M 2 2.5 L {video_progress + 2} 2.5" />
+                    <circle id="lvc-pbt-tb-progress-indicator" cx="{video_progress + 3}" cy="2.5" r="2.5" />
+                </svg> -->
+                <div id="lvc-pbt-track-bar">
+                    <div id="lvc-pbt-tc-progress-wrapper">
+                        <div id="lvc-pbt-tc-progress"
+                            style:scale="{video_progress}% 1"
+                        ></div>
+                    </div>
+                    <div id="lvc-pbt-tc-time-scrubber"
+                        style:translate="{video_progress}cqw"
+                    ></div>
+                </div>
+            </div>
+            <div id="lvc-progress-total-duration-label" class="lvc-time-label">
+                <p>{video_duration_string}</p>
+            </div>
+        </div>
+        <fieldset id="video-controls">
+            <button class="lvc-control-btn" id="lvc-toggle-mute-btn" on:click={toggleMute}>
+                <svg viewBox="0 0 24 24">
+                    <path class="outline-path thin" d="M1 18L1 6H5l5 -4V22l-5 -4Z"/>
+                    {#if !video_muted}
+                        <path class="outline-path thin" d="M14 6Q 20 12 14 18"/>
+                        <path class="outline-path thin" d="M14 2C 24 2 24 20 14 22"/>
+                    {:else}
+                        <path class="outline-path" d="M14 6L23 18M14 18L23 6"/>
+                    {/if}
+                </svg>
+            </button>
+            <button class="lvc-control-btn" id="lvc-back-btn" on:click={() => skipVideoPercentage(false)}>
+                <svg viewBox="0 0 100 100">
+                    <path class="outline-path" d="M 30 80A 40 40 0 1 0 25 20m5 -0.25l-5 0.25l0 -5" />
+                    <text x="50" y="50">-5%</text>
+                </svg>
+            </button>
+            <button class="lvc-control-btn" id="lvc-pause-btn" aria-label="Pause video" on:click={pauseVideo}>
+                <svg viewBox="0 0 100 100">
+                    {#if !video_paused}
+                        <path d="M 30 20 L 30 80 L 45 80 L 45 20 L 30 20 Z M 55 20 L 55 80 L 70 80 L 70 20 L 55 20 Z" />
+                    {:else}
+                        <path d="M20 20L74 50L20 80Z"/>
+                    {/if}
+                </svg>
+            </button>
+            <button class="lvc-control-btn" id="lvc-forward-btn" aria-label="go forward 5%" on:click={() => skipVideoPercentage(true)}>
+                <svg viewBox="0 0 100 100">
+                    <path d="M 70 80A 40 40 0 1 1 75 20m-5 0.25l5 -0.25l0 -5" />
+                    <text x="50" y="50">+5%</text>
+                </svg>
+            </button>
+            <button class="lvc-control-btn" id="lvc-playback-speed-btn" aria-label="slow down video" on:click={() => setVideoPlaybackRate(false)}>
+                <svg viewBox="0 0 24 24" fill="none">
+                        <path class="outline-path thin" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2" /> 
+                        <path class="outline-path thin" d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2" stroke-dasharray="4 3"/>
+                        <path class="outline-path thin" d="M15.4137 10.941C16.1954 11.4026 16.1954 12.5974 15.4137 13.059L10.6935 15.8458C9.93371 16.2944 9 15.7105 9 14.7868L9 9.21316C9 8.28947 9.93371 7.70561 10.6935 8.15419L15.4137 10.941Z" />
+                </svg>
+            </button>
+        </fieldset>
     </div>
-    <div id="lvc-progress-total-duration-label" class="lvc-time-label">
-        <p>{video_duration_string}</p>
-    </div>
-    <div id="lvc-progress-bar-track">
-        <svg id="lvc-pbt-track-bar" viewBox="0 0 102 5" on:click={handleProgressClick} >
-            <path id="lvc-pbt-tb-empty-track" d="M 2 2.5 L 100 2.5" />
-            <path id="lvc-pbt-tb-progress-track" d="M 2 2.5 L {video_progress + 2} 2.5" />
-            <circle id="lvc-pbt-tb-progress-indicator" cx="{video_progress + 3}" cy="2.5" r="2.5" />
-        </svg>
-    </div>
-    <button id="lvc-back-btn" on:click={() => skipVideoPercentage(false)}>
-        <svg viewBox="0 0 100 100">
-            <path class="outline-path" d="M 30 80A 40 40 0 1 0 25 20m5 -0.25l-5 0.25l0 -5" />
-            <text x="50" y="50">-5%</text>
-        </svg>
-    </button>
-    <button id="lvc-pause-btn" aria-label="Pause video" on:click={pauseVideo}>
-        <svg viewBox="0 0 100 100">
-            {#if !video_paused}
-                <path d="M 30 20 L 30 80 L 45 80 L 45 20 L 30 20 Z M 55 20 L 55 80 L 70 80 L 70 20 L 55 20 Z" />
-            {:else}
-                <path d="M20 20L74 50L20 80Z"/>
-            {/if}
-        </svg>
-    </button>
-    <button id="lvc-forward-btn" aria-label="go forward 5%" on:click={() => skipVideoPercentage(true)}>
-        <svg viewBox="0 0 100 100">
-            <path class="outline-path" d="M 70 80A 40 40 0 1 1 75 20m-5 0.25l5 -0.25l0 -5" />
-            <text x="50" y="50">+5%</text>
-        </svg>
-    </button>
-    <button id="lvc-playback-speed-btn" aria-label="slow down video" on:click={() => setVideoPlaybackRate(false)}>
-        <svg viewBox="0 0 24 24" fill="none">
-                <path class="outline-path thin" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2" /> 
-                <path class="outline-path thin" d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2" stroke-dasharray="4 3"/>
-                <path class="outline-path thin" d="M15.4137 10.941C16.1954 11.4026 16.1954 12.5974 15.4137 13.059L10.6935 15.8458C9.93371 16.2944 9 15.7105 9 14.7868L9 9.21316C9 8.28947 9.93371 7.70561 10.6935 8.15419L15.4137 10.941Z" />
-        </svg>
-    </button>
-    <button id="lvc-toggle-mute-btn" on:click={toggleMute}>
-        <svg viewBox="0 0 24 24">
-            <path class="outline-path thin" d="M1 18L1 6H5l5 -4V22l-5 -4Z"/>
-            {#if !video_muted}
-                <path class="outline-path thin" d="M14 6Q 20 12 14 18"/>
-                <path class="outline-path thin" d="M14 2C 24 2 24 20 14 22"/>
-            {:else}
-                <path class="outline-path" d="M14 6L23 18M14 18L23 6"/>
-            {/if}
-        </svg>
-    </button>
 </div>
 
 <style>
@@ -840,151 +860,198 @@
     }
 
     #libery-video-controller {
-        container-type: inline-size;
+        display: flex;
+        container-type: size;
+        background-color: hsl(from var(--body-bg-color) h s l / 0.5);
+        backdrop-filter: blur(10px);
+        border: 0.2px solid hsl(from var(--main-dark-color-7) h s l / 0.7);
+        justify-content: center;
+        align-items: center;
         box-sizing: border-box;
         min-height: 100px;
         height: 100%;
         width: 100%;
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        background: var(--grey-8);
-        padding: var(--vspacing-1);
+        padding: var(--spacing-1);
         transition: all .46s ease-in-out;
-        grid-template-areas: 
-            "vpt vp vp vp vp vp vdt"
-            "rs e1 vb p vf e2 rs2";
     }
 
-    #libery-video-controller button {
+    #libery-video-controller #lvc-content-wrapper {
+        display: grid;
+        box-sizing: border-box;
+        width: min(100cqw, 800px);
+        height: 100cqh;
+        row-gap: 10%;
+    }
+
+    #lvc-duration-section {
         width: 100%;
         display: flex;
-        background: none;
-        border: none;
-        align-items: center;
-        justify-content: center;
-        transition: all .28s ease-in-out;
+        column-gap: 5%;
     }
 
-    
-    
-    #libery-video-controller svg {
-        width: 10cqw;
+    fieldset#video-controls {
+        display: flex;
+        justify-content: space-between;
     }
+    
+    /*----------  Time labels  ----------*/
 
-    @media (pointer:fine) {
-        #libery-video-controller button:hover {
-            background: var(--grey-5);
+        .lvc-time-label {
+            width: 8em
         }
-    }
 
+        .lvc-time-label > p {
+            box-sizing: border-box;
+            color: var(--main-7);
+            font-size: var(--font-size-2);
+            text-align: center;
+            font-family: var(--font-read);  
+        }
+
+        #lvc-progress-current-duration-label {
+            grid-area: vpt;        
+        }
+
+        #lvc-progress-total-duration-label {
+            grid-area: vdt;
+        }
     
-    #libery-video-controller svg path {
-        fill: var(--main-dark);
-    }
-    
-    #libery-video-controller svg path.outline-path {
-        stroke: var(--main-dark);
-        fill: none;
-        stroke-width: 2px;
-    }
+    /*----------  Control buttons  ----------*/
+        
+        #libery-video-controller button.lvc-control-btn {
+            width: 100%;
+            display: flex;
+            background: none;
+            border: none;
+            align-items: center;
+            justify-content: center;
+            transition: all .28s ease-in-out;
+        }
+        
+        #libery-video-controller .lvc-control-btn svg {
+            width: min(16cqw, 50px);
+        }
 
-    #libery-video-controller svg path.outline-path.thin {
-        stroke-width: 1px;
-    }
+        #libery-video-controller .lvc-control-btn svg path {
+            fill: var(--main-dark);
+        }
+        
+        #libery-video-controller .lvc-control-btn svg path.outline-path {
+            stroke: var(--main-dark);
+            fill: none;
+            stroke-width: 2px;
+        }
 
-    #libery-video-controller svg text {
-        font-size: var(--font-size-3);
-        font-family: var(--font-read);
-        fill: var(--main-dark);
-        transform-box: fill-box;
-        transform-origin: center center;
-        transform: translateX(-50%); 
-    }
+        #libery-video-controller .lvc-control-btn svg path.outline-path.thin {
+            stroke-width: 1px;
+        }
 
-    .lvc-time-label > p {
-        color: var(--main-7);
-        font-size: var(--font-size-1);
-        text-align: center;
-        font-family: var(--font-read);  
-    }
+        #libery-video-controller .lvc-control-btn svg text {
+            font-size: var(--font-size-3);
+            font-family: var(--font-read);
+            fill: var(--main-dark);
+            transform-box: fill-box;
+            transform-origin: center center;
+            transform: translateX(-50%); 
+        }
 
-    #lvc-progress-current-duration-label {
-        grid-area: vpt;        
-    }
+        @media (pointer:fine) {
+            #libery-video-controller button:hover {
+                background: var(--grey-5);
+            }
+        }
 
-    #lvc-progress-total-duration-label {
-        grid-area: vdt;
-    }
+        #lvc-pause-btn {
+            grid-area: p;
 
+            & svg {
+                overflow: visible;
+            }
+        }
+        
+        #libery-video-controller #lvc-back-btn.lvc-control-btn {
+            grid-area: vb;
 
+            & svg path {
+                stroke: var(--main-dark);
+                stroke-width: 5px;
+                fill: transparent;
+            }
+        }
 
-    #lvc-pause-btn {
-        grid-area: p;
-    }
-    
-    #lvc-pause-btn svg {
-        width: 16cqw;
-        overflow: visible;
-    }
-    
-    #lvc-forward-btn {
-        grid-area: vf;
-    }
+        #libery-video-controller #lvc-forward-btn.lvc-control-btn {
+            grid-area: vf;
 
-    #lvc-back-btn {
-        grid-area: vb;
-        /* transform: rotateX(180deg); */
-    }
+            & svg path {
+                stroke: var(--main-dark);
+                stroke-width: 5px;
+                fill: transparent;
+            }
+        }
 
-    #lvc-playback-speed-btn {
-        grid-area: e2;
-    }
+        #lvc-playback-speed-btn {
+            grid-area: e2;
+        }
 
-    #lvc-toggle-mute-btn {
-        grid-area: e1;
-    }
+        #lvc-toggle-mute-btn {
+            grid-area: e1;
 
+            & svg path {
+                stroke-linejoin: round;
+            }
+        }
     
     /*----------  ProgressBar  ----------*/
     
-    #lvc-progress-bar-track {
-        grid-area: vp;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    svg#lvc-pbt-track-bar {
-        width: 100%;
-        height: 100%;
-        overflow: visible;
-    }
+        #lvc-progress-bar-track {
+            grid-area: vp;
+            width: 100%;
+            /* height: 20cqh; */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    path#lvc-pbt-tb-empty-track {
-        stroke: var(--grey-5);
-        stroke-width: 2px;
-        stroke-linecap: round;
-    }
+        #lvc-pbt-track-bar {
+            position: relative;
+            container-type: size;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--grey-black);
 
-    circle#lvc-pbt-tb-progress-indicator {
-        fill: var(--main-dark);
-        transform-box: fill-box;
-        transform-origin: center center;
-        transition: all .35s ease-in-out;
-    }
+            & #lvc-pbt-tc-progress-wrapper {
+                width: 100%;
+                height: 100%;
+                border-radius: inherit;
+                overflow: hidden;
+            }
 
-    circle#lvc-pbt-tb-progress-indicator:hover {
-        transform: scale(1.8);
-        opacity: .5;
-    }
+            & #lvc-pbt-tc-progress {
+                width: 100%;
+                height: 100%;
+                background: var(--grey-8);
+                transform-origin: left center;
+                transition: scale 0.22s linear;
+            }
 
-    path#lvc-pbt-tb-progress-track {
-        stroke: var(--main-dark-color-8);
-        stroke-width: 2px;
-        stroke-linecap: round;
-    }
+            & #lvc-pbt-tc-time-scrubber {
+                position: absolute;
+                background: var(--main-dark);
+                top: 0;
+                left: 0;
+                width: 100cqh;
+                height: 100cqh;
+                border-radius: 50%;
+                transform-origin: center;
+                scale: 2.3;
+                transition: scale 0.3s ease-out, translate 0.22s linear;
+            } 
+
+            & #lvc-pbt-tc-time-scrubber:hover {
+                scale: 3;
+            }
+        }
 
     @media only screen and (max-width: 612px) {
         #libery-video-controller {
@@ -992,4 +1059,9 @@
         }
     }
 
+    /* @container (width > 1000px) {
+        #libery-video-controller #lvc-content-wrapper {
+            padding-inline: 10cqw;
+        }        
+    } */
 </style>
