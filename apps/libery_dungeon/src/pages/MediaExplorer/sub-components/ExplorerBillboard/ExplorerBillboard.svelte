@@ -173,9 +173,7 @@
                 return;
             }
 
-            let new_white_percentage = calculateMediaWhitePercentage(billboard_element);
-
-            console.log("White percentage of the billboard video: ", new_white_percentage);
+            use_dark_theme = false;
         }
 
         /**
@@ -252,6 +250,7 @@
         /* Style custom-properites for the LiberyHeadline */
         --text-color-1: var(--grey-1);
         --text-color-2: var(--grey-3);
+        --text-shadow: none;
         
         /* position: relative; */
         display: flex;
@@ -264,7 +263,8 @@
     }
 
     section#media-explorer-billboard.dark-overlay-color-theme {
-        --text-color-1: hsl(from var(--main) calc(h * 1.15) s l / 0.8);
+        --text-shadow: 0 -4px 58px hsl(from var(--body-bg-color) h s l / 0.8);
+        --text-color-1: var(--main-5);
         --text-color-2: var(--grey);
     }
     
