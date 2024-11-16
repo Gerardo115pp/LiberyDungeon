@@ -31,7 +31,7 @@ import { writable } from "svelte/store";
      * Whether the current category configuration component is mounted or not.
      * @type {import('svelte/store').Writable<boolean>}
      */
-    export const current_category_configuration_mounted = writable(true);
+    export const current_category_configuration_mounted = writable(false);
 
     /**
      * Whether the category search bar is been focused or not.
