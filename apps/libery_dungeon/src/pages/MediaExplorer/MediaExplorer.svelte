@@ -493,7 +493,16 @@
 
                 if (item_selected == null) return;
 
-                navigateToSelectedCategory(item_selected.uuid);
+                await navigateToSelectedCategory(item_selected.uuid);
+
+                await tick();
+
+                if (the_wasd_dungeon_explorer_navigator != null) {
+                    if (the_wasd_dungeon_explorer_navigator.MovementController.Grid.isUsable() && the_wasd_dungeon_explorer_navigator.MovementController.Grid.CursorRow === 0) {
+                        console.log("The cursor is at the top of the grid, scrolling to the top of the viewport");
+                        window.scrollTo(0, 0);
+                    }
+                }
             }
 
             const handleCreateNewCategory = () => {
@@ -1166,14 +1175,16 @@
                     await navigateToParentCategory();
                     await tick();
                     focusCategoryByUUID(current_category_uuid);
-                    return 
+                    break;
                 case $current_category.isChildCategoryUUID(category_uuid):
-                    return navigateToChildCategory(category_uuid);
+                    await navigateToChildCategory(category_uuid);
+                    break;
                 default:
                     if (category_uuid === $current_category.uuid) return;
                     console.log("Navigating to unconnected category");
-                    navigateToUnconnectedCategory(category_uuid);
-            }                
+                    await navigateToUnconnectedCategory(category_uuid);
+                    break;
+            }
         }
 
         /**
@@ -1185,9 +1196,11 @@
                 console.error("In MediaExplorer.navigateToChildCategory , categories_tree is null");
                 return;
             }
+
+            console.log("Navigating to child category. page state:", $page.state);
             
             replaceState(`/dungeon-explorer/${category_uuid}`, $page.state);
-            $categories_tree.navigateToLeaf(category_uuid);
+            await $categories_tree.navigateToLeaf(category_uuid);
         }
 
         /**
