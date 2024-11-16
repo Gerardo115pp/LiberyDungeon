@@ -1577,7 +1577,7 @@
                     extra_class={category_content_member_html_class}
                     images_count={$current_category.content.length} 
                     keyboard_focused={keyboard_focused_category === $current_category.InnerCategories.length}
-                    ensure_visibility={$current_category.content.length > 8}
+                    ensure_visibility={$current_category.InnerCategories.length > 8}
                 />
             {/if}
         {/if}
