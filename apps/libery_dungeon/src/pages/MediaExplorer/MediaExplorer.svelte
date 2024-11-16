@@ -1519,31 +1519,11 @@
                 category_leaf_item={$current_category}
                 on:breadcrumb-selected={handleBreadcrumbSelected}
             />
-            {#if $current_category.content.length > 0}
-                <ExplorerBillboard
-                    the_billboard_category={$current_category}
-                >
-                    <button id="lce-uc-current-category-name" 
-                        slot="billboard-headline"
-                        class:parent-accepting-drop={category_over_parent_label}
-                        on:click={handleGoToParentCategory} 
-                        on:dragover={handleParentDragOver}
-                        on:dragenter={handleParentDragEnter}
-                        on:dragleave={handleParentDragLeave}
-                        on:drop={handleDropCategoryOnParent}
-                    >
-                        <LiberyHeadline 
-                            headline_tag="Cell"
-                            headline_font_size="calc(var(--font-size-{$layout_properties.IS_MOBILE ? '4' : 'h1'}) * 0.7)"
-                            headline_font_weight="bolder"
-                            extra_props="style='awesome!'"
-                            headline_text={$category_search_term === "" ? $current_category.name : `Search: ${$category_search_term}`}
-                            force_bottom_lines
-                        />
-                    </button>
-                </ExplorerBillboard>
-            {:else}
+            <ExplorerBillboard
+                the_billboard_category={$current_category}
+            >
                 <button id="lce-uc-current-category-name" 
+                    slot="billboard-headline"
                     class:parent-accepting-drop={category_over_parent_label}
                     on:click={handleGoToParentCategory} 
                     on:dragover={handleParentDragOver}
@@ -1553,14 +1533,14 @@
                 >
                     <LiberyHeadline 
                         headline_tag="Cell"
-                        headline_color="var(--grey-1)"
-                        headline_font_size="calc(var(--font-size-{$layout_properties.IS_MOBILE ? '4' : 'h3'}) * 1.6)"
+                        headline_font_size="calc(var(--font-size-{$layout_properties.IS_MOBILE ? '4' : 'h1'}) * 0.7)"
+                        headline_font_weight="bolder"
                         extra_props="style='awesome!'"
                         headline_text={$category_search_term === "" ? $current_category.name : `Search: ${$category_search_term}`}
                         force_bottom_lines
                     />
                 </button>
-            {/if}
+            </ExplorerBillboard>
         {/if}
     </header>
     <ul id="category-content" class:debug={false}>

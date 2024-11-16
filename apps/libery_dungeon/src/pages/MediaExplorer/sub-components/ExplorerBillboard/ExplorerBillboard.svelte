@@ -29,12 +29,14 @@
              * @type {boolean}
              * @default false - White overlay color theme is best for MOST cases except when the media is extremely white.
              */ 
-            let use_dark_theme = true;
+            let use_dark_theme = false;
     
     /*=====  End of Properties  ======*/
 
     onMount(() => {
-        handleChangeBillboardImage();
+        if (the_billboard_category != null && the_billboard_category.content.length > 0) {
+            handleChangeBillboardImage();
+        }
 
         checkWindowScroll();
     });
@@ -200,6 +202,7 @@
     on:scroll|passive={handleWindowScroll}
 />
 <section id="media-explorer-billboard"
+    class:loaded-billboard={current_billboard_media != null}
     class:dark-overlay-color-theme={use_dark_theme}
 >
     <div id="mexbill-underlay-billboard-wrapper">
@@ -255,11 +258,15 @@
         /* position: relative; */
         display: flex;
         width: 100%;
-        height: 50dvh;
+        height: 300px;
         container-type: size;
         flex-direction: column;
         justify-content: flex-end;
         z-index: var(--z-index-b-1);
+    }
+    
+    section#media-explorer-billboard.loaded-billboard {
+        height: 50dvh;        
     }
 
     section#media-explorer-billboard.dark-overlay-color-theme {
@@ -309,20 +316,24 @@
             }
         }  
 
-        /* -------------------------------- Synopsis -------------------------------- */
-
-            #mexbill-synopsis-panel {
-                /* --synopsis-panel-bg: hsl(from var(--grey-black) h s l / 0.25); */
-
-                width: 100%;
-                /* background: var(--synopsis-panel-bg); */
-                padding-block-start: var(--spacing-2);
-                padding-block-end: var(--spacing-4);
-                padding-inline: var(--spacing-5);
-                /* translate: calc(-1 * var(--common-page-inline-padding)); */
-                box-shadow: 0 -10px 36px 40px var(--synopsis-panel-bg);
-            }
-    
+        
     /*=====  End of Billboard  ======*/
-    
+        
+    /* -------------------------------- Synopsis -------------------------------- */
+
+        section#media-explorer-billboard.loaded-billboard #mexbill-synopsis-panel {
+            padding-inline: var(--spacing-5);
+        }
+        
+        #mexbill-synopsis-panel {
+            /* --synopsis-panel-bg: hsl(from var(--grey-black) h s l / 0.25); */
+            
+            width: 100%;
+            /* background: var(--synopsis-panel-bg); */
+            padding-block-start: var(--spacing-2);
+            padding-block-end: var(--spacing-4);
+            padding-inline: var(--common-page-inline-padding);
+            /* translate: calc(-1 * var(--common-page-inline-padding)); */
+            box-shadow: 0 -10px 36px 40px var(--synopsis-panel-bg);
+        }
 </style>
