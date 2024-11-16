@@ -466,6 +466,7 @@
             background: transparent;
             border-radius: var(--border-radius);
             box-shadow: var(--shadow-2);
+            padding-block: 0;
             transition: all var(--timing) ease-out, opacity calc(1.25 * var(--timing)) ease-out, border calc(2.25 * var(--timing)) ease-out, rotate var(--timing) ease, box-shadow var(--timing) ease-out;
 
 
@@ -659,4 +660,3 @@
 
 
 </style>
-
