@@ -51,9 +51,6 @@
     /*=====  End of Properties  ======*/
 
     onMount(() => {
-        if (the_billboard_category != null && the_billboard_category.content.length > 0) {
-            handleChangeBillboardImage();
-        }
 
         checkWindowScroll();
 
@@ -119,14 +116,18 @@
         function handleCategoryChange(new_category) {
             const was_current_media_null = current_billboard_media == null;
 
-            // console.log("Billboard - Category changed: ", new_category);
+            console.log("Billboard - Category changed: ", new_category);
             if (new_category == null) return;
 
             if (new_category.content.length > 0) {
                 handleChangeBillboardImage();
             }
             
-            // console.log("Billboard - Category content length: ", new_category.content.length);
+            console.log("Billboard - Category content length: ", new_category.content.length);
+            console.log("Billboard - was_current_media_null: ", was_current_media_null);
+            console.log("Billboard - current_billboard_media: ", current_billboard_media);
+
+           
 
             if (was_current_media_null && current_billboard_media != null) {
                 onvalid_media_change();
