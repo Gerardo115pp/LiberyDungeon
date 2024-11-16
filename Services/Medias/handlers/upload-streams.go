@@ -75,6 +75,11 @@ func getChunkedUploadStreamsTicketHandler(response http.ResponseWriter, request 
 	}
 
 	upload_ticket, err := service_models.NewChunkedUploadTicketFromRequest(request)
+	if err != nil {
+		echo.Echo(echo.RedBG, fmt.Sprintf("In getChunkedUploadStreamsTicketHandler: Error getting upload ticket because '%s'", err.Error()))
+		response.WriteHeader(400)
+		return
+	}
 
 	upload_ticket_claims, err := service_models.GenerateChunkedUploadTicket(upload_ticket, time.Now().Add(time.Hour*24), app_config.JWT_SECRET)
 	if err != nil {
