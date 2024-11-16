@@ -1,10 +1,10 @@
 <script>
     import { layout_properties } from "@stores/layout";
-    import { category_creation_tool_mounted, category_search_focused, media_upload_tool_mounted, category_search_results, category_search_term } from "../app_page_store";
+    import { category_creation_tool_mounted, category_search_focused, media_upload_tool_mounted, category_search_results, category_search_term, current_category_configuration_mounted } from "../app_page_store";
     import { current_category, navigateToParentCategory, categories_tree } from "@stores/categories_tree";
     import CategorySearchBar from "@components/CategorySearchBar/CategorySearchBar.svelte";
-    import { InnerCategory } from "@models/Categories";
     import { confirmPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+    import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
 
     
     /*=============================================
@@ -37,7 +37,6 @@
                 
         } 
 
-
         /**
          * Handle the search results from the category search bar
          * @param {CustomEvent<{ results: import('@models/Categories').Category[], search_query: string }>} event
@@ -55,17 +54,33 @@
             category_search_results.set(search_results);
             category_search_term.set(search_query);
         }
+
+        /**
+         * Handles the click of the category configuration button.
+         * @param {MouseEvent} event
+         */
+        const handleCategoryConfigClick = (event) => {
+            current_category_configuration_mounted.set(!$current_category_configuration_mounted);
+        }
+
     /*=====  End of Methods  ======*/
-    
     
 </script>
 
 <ul class="page-nav-menu" id="media-explorer-nav-menu-wrapper">
-    <li id="menmw-upload-medias">
-        <button on:click={() => media_upload_tool_mounted.set(!$media_upload_tool_mounted)} id="upload-medias-btn" class="sketch-btn">
-            Upload
-        </button>
-    </li>
+    {#if $current_category != null}
+        <li id="menmw-upload-medias">
+            <button on:click={() => media_upload_tool_mounted.set(!$media_upload_tool_mounted)} id="upload-medias-btn" class="sketch-btn">
+                Upload
+            </button>
+        </li>
+        <li id="menmw-category-config">
+            <button on:click={handleCategoryConfigClick} id="upload-medias-btn" class="sketch-btn">
+                {ui_core_dungeon_references.CATEGORY.EntityName} config
+            </button>
+        </li>
+    {/if}
+
     {#if $current_category !== null && $current_category.hasContent() && !$current_category.hasInnerCategories()}
         <li id="menmw-upload-medias">
             <button on:click={handleDeleteCategoryContent} id="delete-content-btn" class="sketch-btn">
@@ -85,7 +100,6 @@
             <CategorySearchBar autofocus on:search-results={handleCategoriesResults}/>
         </li>
     {/if}
-
 </ul>
 
 <style>
