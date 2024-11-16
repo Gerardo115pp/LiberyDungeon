@@ -811,6 +811,12 @@ export class GridNavigationWrapper {
     #mutation_config;
 
     /**
+     * The callback for the resize event.
+     * @type {EventListener}
+     */
+    #onresize_bounded;
+
+    /**
      * @param {string} grid_parent_selector - the selector for the grid parent
      * @param {string} grid_member_selector - the selector for the grid members. the grid parent selector will be prepended to this selector.
      */
@@ -825,6 +831,8 @@ export class GridNavigationWrapper {
         this.#mutation_config = {
             childList: true,
         };
+
+        this.#onresize_bounded = this.#onResize.bind(this);
     }
 
     /**
@@ -834,6 +842,10 @@ export class GridNavigationWrapper {
         if (this.#mutation_observer !== null) {
             this.#mutation_observer.disconnect();
             this.#mutation_observer = null;
+        }
+
+        if (this.#onresize_bounded !== null) {
+            window.removeEventListener("resize", this.#onresize_bounded);
         }
 
         this.#grid_parent = null;
@@ -878,8 +890,6 @@ export class GridNavigationWrapper {
      * @param {MutationObserver} observer
      */
     #onMutation(mutations, observer) {
-        console.log("Mutation detected", mutations);
-
         const usable_before_mutation = this.#grid_sequence.isUsable();
 
         let current_cursor = 0;
@@ -894,6 +904,30 @@ export class GridNavigationWrapper {
 
         current_cursor = this.#grid_sequence.clampSequenceIndex(current_cursor);
     
+        this.#grid_sequence.setCursor(current_cursor);
+    }
+
+    /**
+     * Handles the resize event. must be bounded to the instance. and it is NOT related to #onMutation at all fucking copilot so stupid.
+     * @param {Event} event
+     */
+    #onResize(event) {
+        console.log("Resize event detected", event);
+
+        const usable_before_resize = this.#grid_sequence.isUsable();
+
+        let current_cursor = 0;
+
+        if (usable_before_resize) {
+            current_cursor = this.#grid_sequence.Cursor;
+        }
+
+        this.scanGridMembers();
+
+        if (!this.#grid_sequence.isUsable()) return;
+
+        current_cursor = this.#grid_sequence.clampSequenceIndex(current_cursor);
+
         this.#grid_sequence.setCursor(current_cursor);
     }
 
@@ -922,6 +956,8 @@ export class GridNavigationWrapper {
         this.#mutation_observer = new MutationObserver(this.#onMutation.bind(this));
 
         this.#mutation_observer.observe(this.#grid_parent, this.#mutation_config);
+
+        window.addEventListener("resize", this.#onresize_bounded);
     }
 
     /**
