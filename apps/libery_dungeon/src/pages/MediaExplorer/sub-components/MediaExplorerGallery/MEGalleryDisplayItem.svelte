@@ -5,6 +5,7 @@
     import { onMount, onDestroy } from 'svelte';
     import { lf_errors } from '@libs/LiberyFeedback/lf_errors';
     import viewport from '@components/viewport_actions/useViewportActions';
+    import { ensureElementVisible } from '@libs/utils';
     
     /*=============================================
     =            Properties            =
@@ -301,7 +302,9 @@
          * @param {HTMLElement} element
          */
         function ensureElementIsVisible(element) {
-            element.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+            if (element == null) return;
+
+            ensureElementVisible(element);
         }
 
         /**

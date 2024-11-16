@@ -1,4 +1,6 @@
 <script>
+    import { ensureElementVisible } from "@libs/utils";
+
     /*=============================================
     =            Properties            =
     =============================================*/
@@ -52,16 +54,12 @@
                 return;
             }
 
-            the_media_icon.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-                inline: "center"
-            });
+            console.log("RUN: ensuring media icon visibility"); // DEBUG
+
+            ensureElementVisible(the_media_icon);
         }
     
     /*=====  End of Methods  ======*/
-    
-    
 
 </script>
 

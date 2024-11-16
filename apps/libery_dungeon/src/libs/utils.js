@@ -167,6 +167,41 @@ export const isUrlMediaFile = media_url => {
 }
 
 /**
+ * Whether a given HtMLElemnt is completly invisible in the scroll view. That is, nor the bottom or the top of the element is visible. requires
+ * to be runing in a window context.
+ * @param {HTMLElement} element
+ * @returns {boolean}
+ */
+export const isOutTheViewport = element => {
+    if (!hasWindowContext()) {
+        throw Error("isInViewport requires a window context.");
+    }
+
+    const rect = element.getBoundingClientRect();
+
+    console.log("element rect:", rect);
+
+    return rect.top <= 0 && rect.bottom <= 0 || rect.top >= window.innerHeight && rect.bottom >= window.innerHeight;    
+}
+
+/**
+ * Scrolls an element into view. if the element is completly out of view, it uses instant scroll, otherwise it uses smooth scroll.
+ * @param {HTMLElement} element
+ * @returns {void}
+ */
+export const ensureElementVisible = element => {
+    if (!hasWindowContext()) return;
+
+    const element_out_of_view = isOutTheViewport(element);
+
+    element.scrollIntoView({
+        behavior: element_out_of_view ? 'instant' : 'smooth',
+        block: 'center',
+        inline: 'center'
+    });
+}
+
+/**
  * Returns the filename from a media url 
  * @param {string} media_url 
  * @returns 
@@ -623,10 +658,10 @@ export const videoDurationToString = (duration, is_seconds = true) => {
 =            Environment capabilities detection            =
 =============================================*/
 
-export const hasWindowContext = () => typeof window === 'object' && globalThis === window;
+    export const hasWindowContext = () => typeof window === 'object' && globalThis === window;
 
 
-export const canUseDOMEvents = () => hasWindowContext() && typeof window.addEventListener === 'function';
+    export const canUseDOMEvents = () => hasWindowContext() && typeof window.addEventListener === 'function';
 
 /*=====  End of Environment capabilities detection  ======*/
 

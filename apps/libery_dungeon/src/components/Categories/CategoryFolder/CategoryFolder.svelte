@@ -7,6 +7,7 @@
     import { current_cluster } from "@stores/clusters";
     import { avoid_heavy_resources } from "@stores/layout";
     import CategoryConfiguration from "./sub-components/CategoryConfiguration.svelte";
+    import { ensureElementVisible, isOutTheViewport } from "@libs/utils";
 
     
     /*=============================================
@@ -186,7 +187,6 @@
             category_thumbnail_url = inner_category.Thumbnail.Media.isAnimatedImage() ? inner_category.Thumbnail.Media.Url : inner_category.Thumbnail.Media.getResizedUrl(25);
         
         }
-
         
         /*=============================================
         =            Drag Handlers            =
@@ -332,13 +332,7 @@
         function ensureCategoryFocusedVisibility() {
             if (!category_keyboard_focused || category_element === undefined) return;
 
-            console.log("InnerCategory:", inner_category);
-
-            category_element.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-                inline: "center",
-            });
+            ensureElementVisible(category_element);
         }
 
     /*=====  End of Methods  ======*/
