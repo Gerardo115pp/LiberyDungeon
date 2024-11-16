@@ -80,7 +80,7 @@ export class CanvasImage {
 
     /**
      * returns fuzzy logic function to determine the white percentage of an image is, that is, out of all the pixels of an image in an img tag, how many of them are whitish.
-     * @param {number} [quality=10]
+     * @param {number} [quality=10] - larger values will make the function run faster but be less accurate. minimum value is 1 and max is the pixel count of the image.
      * @returns {number}
      */
     whitePercentage = (quality) => {
@@ -94,22 +94,99 @@ export class CanvasImage {
         const opaque_definition = 127;
 
         let white_pixels_found = 0;
+        let pixels_checked = 0;
+
+        quality = Math.min(4 * quality, pixel_count);
 
         for (let h = 0; h < pixel_count; h+=quality) {
             const offset = h * 4;
 
-            const red = this.#image_data.data[offset];
-            const green = this.#image_data.data[offset + 1];
-            const blue = this.#image_data.data[offset + 2];
-            const alpha = this.#image_data.data[offset + 3];
+            const pixel_whitish = this.isPixelWhite(offset);
 
-            const color_channels_average = (red + green + blue) / 3;
-
-            if (alpha != null && alpha >= opaque_definition && color_channels_average >= white_definition) {
+            if (pixel_whitish) {
                 white_pixels_found++;
             }
         }
 
         return (white_pixels_found / (pixel_count/quality)) * 100;
     }
+
+    /**
+     * fuzzy logic function to determine whether a given pixel is white or not.
+     * @param {number} pixel_index
+     * @returns {boolean}
+     */
+    isPixelWhite = (pixel_index) => {
+        const offset = pixel_index * 4;
+
+        const red = this.#image_data.data[offset];
+        const green = this.#image_data.data[offset + 1];
+        const blue = this.#image_data.data[offset + 2];
+        const alpha = this.#image_data.data[offset + 3];
+
+        if (alpha == null || alpha < 127) return false;
+
+        const pixel_lstar = perceivedLuminance(red, green, blue);
+        
+        return pixel_lstar > 20;
+    }
 };
+
+/**
+ * Return the luminance of a pixel. based on the sRGB color space formula. Fast but not very accurate.
+ * @param {number} red
+ * @param {number} green
+ * @param {number} blue
+ * @returns {number}
+ */
+const stdRgbLuminance = (red, green, blue) => {
+    return (0.299 * red) + (0.587 * green) + (0.114 * blue);
+}
+
+/**
+ * Return the luminance of a pixel.
+ * @param {number} red - 0 to 255
+ * @param {number} green - 0 to 255
+ * @param {number} blue - 0 to 255
+ * @returns {number}
+ */
+const sRGBLuminance = (red, green, blue) => {
+    const vR = red / 255;
+    const vG = green / 255;
+    const vB = blue / 255;
+
+    const Y = (0.2126 * sRGBToLinear(vR)) + (0.7152 * sRGBToLinear(vG)) + (0.0722 * sRGBToLinear(vB));
+
+    return Y;
+}
+
+/**
+ * Send this function a decimal sRGB gamma encoded color value
+ * between 0.0 and 1.0, and it returns a linearized value.
+ * @param {number}  color_channel
+ * @returns {number}
+ */
+const sRGBToLinear = (color_channel) => {
+    if (color_channel <= 0.04045) {
+        return color_channel / 12.92;
+    }
+
+    return Math.pow((color_channel + 0.055) / 1.055, 2.4);
+}
+
+/**
+ * Returns the perceived luminance of a pixel.
+ * @param {number} red - 0 to 255
+ * @param {number} green - 0 to 255`
+ * @param {number} blue - 0 to 255
+ * @returns {number}
+ */
+const perceivedLuminance = (red, green, blue) => {
+    const Y = sRGBLuminance(red, green, blue);
+
+    if (Y <= 0.008856451679) {
+        return Y * 903.2962963;
+    }
+
+    return Math.pow(Y, 1/3) * 116 - 16;
+}

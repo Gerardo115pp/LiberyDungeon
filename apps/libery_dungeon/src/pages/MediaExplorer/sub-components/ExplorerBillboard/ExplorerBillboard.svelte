@@ -20,6 +20,16 @@
          * @type {import('@models/Medias').Media | null}
          */
         let current_billboard_media = null;
+
+        
+        /*----------  Style  ----------*/
+        
+            /**
+             * The theme color to use fort the overlay content(the text). It's value is determined by the color pallette of the current_billboard_media.
+             * @type {boolean}
+             * @default false - White overlay color theme is best for MOST cases except when the media is extremely white.
+             */ 
+            let use_dark_theme = true;
     
     /*=====  End of Properties  ======*/
 
@@ -62,9 +72,8 @@
             const canvas_image = new CanvasImage(media_element);
             console.timeEnd("Calculating white percentage of the media element.");
 
-            return canvas_image.whitePercentage(1);
+            return canvas_image.whitePercentage(3);
         }
-
 
         /**
          * Returns the html billboard element.
@@ -146,7 +155,10 @@
 
             let new_white_percentage = calculateMediaWhitePercentage(billboard_element);
 
+            use_dark_theme = new_white_percentage > 18;
+
             console.log("White percentage of the billboard image: ", new_white_percentage);
+            console.log("White overlay color theme: ", !use_dark_theme);
         }
 
         /**
@@ -189,7 +201,9 @@
 <svelte:window 
     on:scroll|passive={handleWindowScroll}
 />
-<section id="media-explorer-billboard">
+<section id="media-explorer-billboard"
+    class:dark-overlay-color-theme={use_dark_theme}
+>
     <div id="mexbill-underlay-billboard-wrapper">
         {#if current_billboard_media != null}
             {#if current_billboard_media.isImage()}
@@ -237,7 +251,7 @@
         --shadows-color: hsl(from var(--body-bg-color) h s l / 0.85);
         /* Style custom-properites for the LiberyHeadline */
         --text-color-1: var(--grey-1);
-        --text-color-2: var(--grey-4);
+        --text-color-2: var(--grey-3);
         
         /* position: relative; */
         display: flex;
@@ -247,6 +261,11 @@
         flex-direction: column;
         justify-content: flex-end;
         z-index: var(--z-index-b-1);
+    }
+
+    section#media-explorer-billboard.dark-overlay-color-theme {
+        --text-color-1: hsl(from var(--main) calc(h * 1.15) s l / 0.8);
+        --text-color-2: var(--grey);
     }
     
     /*=============================================

@@ -166,7 +166,7 @@
     .bottom-lines svg path{
         position: relative;
         stroke: var(--main-dark-color-7);
-        stroke-width: 3;
+        stroke-width: .7ex;
         transform-box: fill-box;
         z-index: var(--z-index-2);
     }

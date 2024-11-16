@@ -1521,7 +1521,6 @@
                     >
                         <LiberyHeadline 
                             headline_tag="Cell"
-                            headline_color="var(--grey-1)"
                             headline_font_size="calc(var(--font-size-{$layout_properties.IS_MOBILE ? '4' : 'h1'}) * 0.7)"
                             extra_props="style='awesome!'"
                             headline_text={$category_search_term === "" ? $current_category.name : `Search: ${$category_search_term}`}
