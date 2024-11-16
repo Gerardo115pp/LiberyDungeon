@@ -17,6 +17,7 @@
          * @type {string} - the text to be displayed in the headline
          */
         export let headline_text;
+
         /**
          * @type {string} - extra props to be added to the headline tag as html
          */
@@ -24,53 +25,43 @@
 
         /**
          * @type {string} - the color of the headline
+         * @default "var(--text-color-1)"
          */
-        export let headline_color = "var(--main)";
-        export let vspacing = "var(--vspacing-1)";
-        export let forced_font_size;
+        export let headline_color = "var(--text-color-1)";
+
+        /**
+         * A color for the wrapping tags.
+         * @type {string}
+         * @default "var(--text-color-2"
+         */
+        export let headline_tag_color = "var(--text-color-2)";
+
+        export let spacing = "var(--spacing-1)";
+        
+        /**
+         * @type {string} 
+         */
+        export let headline_font_size;
 
         /**
          * By default if the tag name is not h1, the bottom lines are not shown. if this is set to true, the bottom lines will be shown no matter the tag name
          * @type {boolean}
          */
         export let force_bottom_lines = false;
+
         export let animated = true;
     
+        /*----------  Style  ----------*/
+
+                export let text_transform = "uppercase";
+
+        /*----------  Animation  ----------*/
+
+            let visible = false;
+            export let animation_duration = 400;
+            export let animation_delay = 0;
     
     /*=====  End of Properties  ======*/
-    
-    
-
-    
-    
-    /*----------  Style  ----------*/
-
-    export let text_transform = "uppercase";
-    
-    
-    
-    const headline_settings = {
-        h1: {
-            font_size: "var(--font-size-h1)",
-            color: "var(--main)",
-        },
-        h2: {
-            font_size: "var(--font-size-h2)",
-            color: "var(--main-5)",
-        },
-    }
-
-    // @ts-ignore
-    $: headline_color = headline_color || headline_settings[headline_tag]?.color;
-    // @ts-ignore
-    const headline_font_size = headline_settings[headline_tag]?.font_size || "var(--font-size-h1)";
-
-    
-    /*----------  Animation  ----------*/
-
-    let visible = false;
-    export let animation_duration = 400;
-    export let animation_delay = 0;
 
 
     /**
@@ -112,11 +103,14 @@
 
 </script>
 
-<TaggedText {vspacing} tag_name={headline_tag} {extra_props}>
+<TaggedText 
+    spacing={spacing} tag_name={headline_tag} {extra_props}
+    tag_color={headline_tag_color}
+>
     <div class="headline-wrapper" on:viewportEnter={() => visible = true} use:viewport>
         <h1 class="libery-headline" 
             style:color="{headline_color}" 
-            style:font-size={forced_font_size === undefined ? headline_font_size : forced_font_size} 
+            style:font-size={headline_font_size} 
             style:text-transform={text_transform}
         >
             {headline_text}

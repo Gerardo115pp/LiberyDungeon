@@ -222,7 +222,7 @@
                 <LiberyHeadline 
                     headline_tag="name"
                     headline_color="var(--grey-1)"
-                    forced_font_size="var(--font-size-h3)"
+                    headline_font_size="var(--font-size-h3)"
                     extra_props="style='awesome!'"
                     headline_text={the_billboard_category.name}
                     force_bottom_lines
@@ -235,6 +235,9 @@
 <style>
     section#media-explorer-billboard {
         --shadows-color: hsl(from var(--body-bg-color) h s l / 0.85);
+        /* Style custom-properites for the LiberyHeadline */
+        --text-color-1: var(--grey-1);
+        --text-color-2: var(--grey-4);
         
         /* position: relative; */
         display: flex;
@@ -289,17 +292,17 @@
 
         /* -------------------------------- Synopsis -------------------------------- */
 
-        #mexbill-synopsis-panel {
-            /* --synopsis-panel-bg: hsl(from var(--grey-black) h s l / 0.25); */
+            #mexbill-synopsis-panel {
+                /* --synopsis-panel-bg: hsl(from var(--grey-black) h s l / 0.25); */
 
-            width: 100%;
-            /* background: var(--synopsis-panel-bg); */
-            padding-block-start: var(--spacing-2);
-            padding-block-end: var(--spacing-4);
-            padding-inline: var(--spacing-5);
-            /* translate: calc(-1 * var(--common-page-inline-padding)); */
-            box-shadow: 0 -10px 36px 40px var(--synopsis-panel-bg);
-        }
+                width: 100%;
+                /* background: var(--synopsis-panel-bg); */
+                padding-block-start: var(--spacing-2);
+                padding-block-end: var(--spacing-4);
+                padding-inline: var(--spacing-5);
+                /* translate: calc(-1 * var(--common-page-inline-padding)); */
+                box-shadow: 0 -10px 36px 40px var(--synopsis-panel-bg);
+            }
     
     /*=====  End of Billboard  ======*/
     

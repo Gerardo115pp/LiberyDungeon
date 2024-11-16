@@ -2,10 +2,14 @@
     export let tag_name;
     export let content_padding = 26;
     export let extra_props = "";
-    export let vspacing = "var(--spacing-1)";
+    export let spacing = "var(--spacing-1)";
+    export let tag_color = "var(--grey-8)";
 </script>
 
-<div class="tagged-text-wrapper" style:row-gap={vspacing}>
+<div class="tagged-text-wrapper" 
+    style:row-gap={spacing}
+    style:--tag-color={tag_color}
+>
     <div class="top-tag-wrapper">
         <i class="html-tag">{`<${tag_name}${ extra_props !== '' ? ' ' : '>'}`}</i>
         {#if extra_props !== ''}
@@ -22,6 +26,10 @@
     .tagged-text-wrapper {
         display: flex;
         flex-direction: column;
+
+        & .html-tag {
+            color: var(--tag-color);
+        }
     }
 
     .tagged-text-wrapper .top-tag-wrapper {
