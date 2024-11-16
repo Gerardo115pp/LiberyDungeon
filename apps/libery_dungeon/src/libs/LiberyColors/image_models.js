@@ -43,10 +43,10 @@ export class CanvasImage {
 
         this.#context = rendering_context;
 
-        this.#width = image.width;
+        this.#width = image instanceof HTMLVideoElement ? image.videoWidth : image.width;
         this.#canvas.width = this.#width;
 
-        this.#height = image.height;
+        this.#height = image instanceof HTMLVideoElement ? image.videoHeight : image.height;
         this.#canvas.height = this.#height;
 
         
