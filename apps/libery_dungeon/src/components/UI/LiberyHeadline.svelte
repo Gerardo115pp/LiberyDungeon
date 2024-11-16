@@ -36,6 +36,20 @@
          */
         export let headline_tag_color = "var(--text-color-2)";
 
+        /**
+         * Headline font family.
+         * @type {string}
+         * @default "var(--font-titles)"
+         */
+        export let headline_font_family = "var(--font-titles)";
+
+        /**
+         * Headline font weight.
+         * @type {string}
+         * @default "normal"
+         */
+        export let headline_font_weight = "normal";
+
         export let spacing = "var(--spacing-1)";
         
         /**
@@ -110,7 +124,9 @@
     <div class="headline-wrapper" on:viewportEnter={() => visible = true} use:viewport>
         <h1 class="libery-headline" 
             style:color="{headline_color}" 
+            style:font-family={headline_font_family}
             style:font-size={headline_font_size} 
+            style:font-weight={headline_font_weight}
             style:text-transform={text_transform}
         >
             {headline_text}
@@ -138,7 +154,7 @@
         display: flex;
         width: 100%;
         flex-direction: column;
-        row-gap: var(--vspacing-2);
+        row-gap: var(--spacing-2);
     }
 
     h1.libery-headline {
@@ -148,6 +164,7 @@
         font-weight: 400;
         letter-spacing: -3.36px;
         white-space: nowrap;
+        text-shadow: var(--text-shadow);
         line-height: .75;
         margin: 0;
         padding: 0;

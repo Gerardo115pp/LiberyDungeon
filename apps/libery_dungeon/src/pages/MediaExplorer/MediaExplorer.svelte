@@ -1522,6 +1522,7 @@
                         <LiberyHeadline 
                             headline_tag="Cell"
                             headline_font_size="calc(var(--font-size-{$layout_properties.IS_MOBILE ? '4' : 'h1'}) * 0.7)"
+                            headline_font_weight="bolder"
                             extra_props="style='awesome!'"
                             headline_text={$category_search_term === "" ? $current_category.name : `Search: ${$category_search_term}`}
                             force_bottom_lines
