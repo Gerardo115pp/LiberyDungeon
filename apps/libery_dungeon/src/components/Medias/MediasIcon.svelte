@@ -14,17 +14,60 @@
         export let keyboard_focused = false;
 
         /**
+         * Whether the media icon should be scrolled into be when keyboard_focused.
+         * @type {boolean}
+         */
+        export let ensure_visibility = true;
+
+        /**
          * Extra html class(es) to be added to the media-icon component instance.
          * @type {string}
          */
         export let extra_class = "";
-    
+
+        /**
+         * The media icon component instance
+         * @type {HTMLLIElement | null}
+         */
+        let the_media_icon = null;
+        $: if (ensure_visibility && keyboard_focused === true && the_media_icon != null) {
+            ensureMediasIconVisibility();
+        }
     
     /*=====  End of Properties  ======*/
 
+    
+    /*=============================================
+    =            Methods            =
+    =============================================*/
+    
+        /**
+         * Ensures that the media icon is visible in the viewport
+         */
+        function ensureMediasIconVisibility() {
+           if (globalThis.self == null) return;
+
+            if (the_media_icon == null) {
+                console.error("In MediaIcon.ensureMediasIconVisibility: the_media_icon reference is null");
+                return;
+            }
+
+            the_media_icon.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+                inline: "center"
+            });
+        }
+    
+    /*=====  End of Methods  ======*/
+    
+    
+
 </script>
 
-<li class="ce-inner-medias {extra_class}">
+<li class="ce-inner-medias {extra_class}"
+    bind:this={the_media_icon}
+>
     <button id="medias-link-wrapper" class:keyboard-focused={keyboard_focused}>
         <svg class="ce-im-icon" viewBox="0 0 110 110">
             <path class="ce-im-icon-hand" transform="translate(8, 0)" d="M30 80L32 47Q35 37 38 45L38 48L39.5 44Q42.5 34 45.5 45L45.5 47L46.7 42.5Q51 32 52.6 46L54.4 28q3 -8 5.2 0L60 80"/>
