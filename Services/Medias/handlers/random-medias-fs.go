@@ -63,6 +63,7 @@ func getRandomMediasFsHandler(response http.ResponseWriter, request *http.Reques
 
 		cluster = *token_cluster
 	} else {
+		echo.Echo(echo.GreenFG, fmt.Sprintf("Using query parameter cluster_id: '%s'", cluster_id))
 		cluster, err = repository.CategoriesClustersRepo.GetClusterByID(request.Context(), cluster_id)
 		if err != nil {
 			echo.Echo(echo.RedFG, fmt.Sprintf("In getRandomMediasFsHandler: Error getting cluster by id because '%s'", err.Error()))
@@ -79,13 +80,14 @@ func getRandomMediasFsHandler(response http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	file_descriptor, err := service_helpers.GetFileDescriptor(path.Join(cluster.FsPath, category.Fullpath, media.Name))
+	media_path := path.Join(cluster.FsPath, category.Fullpath, media.Name)
+
+	file_descriptor, err := service_helpers.GetFileDescriptor(media_path)
 	if err != nil {
-		echo.Echo(echo.RedFG, fmt.Sprintf("In getRandomMediasFsHandler: Error getting media file descriptor because '%s'", err.Error()))
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getRandomMediasFsHandler: Error getting media file descriptor<on '%s'> because '%s'", media_path, err.Error()))
 		response.WriteHeader(404)
 		return
 	}
-
 	defer file_descriptor.Close()
 	file_header := make([]byte, 512)
 	file_descriptor.Read(file_header)

@@ -335,6 +335,14 @@
 </script>
 
 <main id="dungeons-selector-page">
+    <div id="dsp-underlay-wrapper">
+        <img
+            aria-hidden="true"
+            decoding="async" 
+            class="dsp-underlay"
+            src="https://libery-dungeon.com/medias-api/random-medias-fs?cluster_id=72739c6a-5c29-47ba-b2c1-f554750f6788&category_id=f491e6df7d83435f1900a74e9538b9b2714871bf" alt=""
+        >
+    </div>
     {#if show_cluster_creation_tool}
         <div id="cluster-creation-tool-component-wrapper">
             <ClusterCreationTool
@@ -342,47 +350,109 @@
             />
         </div>
     {/if}
-    <header id="dsp-dungeons-header">
-        <hgroup id="dsp-dungeons-headlines">
-            <h1 id="dsp-dungeons-headline">
-                {chooseRandomPhrase(gaming_phrases.headlines)}
-            </h1>
-            <p id="dsp-dungeons-subheadline">
-                Choose a dungeon. Then {chooseRandomPhrase(gaming_phrases.subheadlines)}.
-            </p>
-        </hgroup>
-    </header>
-    <ul id="dsp-libery-dungeons-grid" 
-        class:dtwo={false}
-        style:grid-template-columns={`repeat(${cluster_per_row}, 1fr)`}
-    >
-        {#each categories_clusters as dungeon_cluster, h}
-            {@const is_keyboard_focused = h === focused_cluster_index}
-            <li id="dciw-cluster-item-{h}"
-                class="dungeon-cluster-item-wrapper"
-            >
-                <CategoriesClustersItem 
-                    cluster={dungeon_cluster}
-                    keyboard_focused={is_keyboard_focused}
-                />
-                {#if is_keyboard_focused}
-                    <DungeonSelectionHint />
-                {/if}
-            </li>
-        {/each}
-    </ul>
+    <div id="dsp-content-wrapper">
+        <header id="dsp-dungeons-header">
+            <hgroup id="dsp-dungeons-headlines">
+                <h1 id="dsp-dungeons-headline">
+                    {chooseRandomPhrase(gaming_phrases.headlines)}
+                </h1>
+                <p id="dsp-dungeons-subheadline">
+                    Choose a dungeon. Then {chooseRandomPhrase(gaming_phrases.subheadlines)}.
+                </p>
+            </hgroup>
+        </header>
+        <ul id="dsp-libery-dungeons-grid" 
+            class:dtwo={false}
+            style:grid-template-columns={`repeat(${cluster_per_row}, 1fr)`}
+        >
+            {#each categories_clusters as dungeon_cluster, h}
+                {@const is_keyboard_focused = h === focused_cluster_index}
+                <li id="dciw-cluster-item-{h}"
+                    class="dungeon-cluster-item-wrapper"
+                >
+                    <CategoriesClustersItem 
+                        cluster={dungeon_cluster}
+                        keyboard_focused={is_keyboard_focused}
+                    />
+                    {#if is_keyboard_focused}
+                        <DungeonSelectionHint />
+                    {/if}
+                </li>
+            {/each}
+        </ul>
+    </div>
 </main>
 
 <style>
     #dungeons-selector-page {
+        --dsp-content-width: 1000px;
+
         position: relative;
-        display: flex;
         height: calc(100dvh - var(--navbar-height));
+        container-type: inline-size;
+        display: flex;
+        justify-content: center;
+    }
+
+    #dsp-content-wrapper {
+        background: hsl(from var(--body-bg-color) h s l / 0.98);
+        width: var(--dsp-content-width);
+        height: 100%;
+        display: flex;
         flex-direction: column;
         align-items: center;
         gap: calc(var(--vspacing-4) * 1.5);
-    }
 
+        &::before {
+            content: "";
+            position: absolute;
+            background-image: radial-gradient(ellipse 90% 71% at 18%, hsl(from var(--body-bg-color) h s l / 0.3) 0%, hsl(from var(--body-bg-color) h s l / 0.5) 20%, hsl(from var(--body-bg-color) h s l / 0.7) 45%, hsl(from var(--body-bg-color) h s l / 0.90) 70%, hsl(from var(--body-bg-color) h s l / 0.98) 90%);
+            inset: 0;
+            width: calc(calc(100dvw - var(--dsp-content-width)) / 2);
+            height: 100%;
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            background-image: radial-gradient(ellipse 90% 71% at 80%, transparent 0%, hsl(from var(--body-bg-color) h s l / 0.5) 20%, hsl(from var(--body-bg-color) h s l / 0.7) 45%, hsl(from var(--body-bg-color) h s l / 0.90) 70%, hsl(from var(--body-bg-color) h s l / 0.98) 90%);
+            inset: 0 0 auto auto;
+            width: calc(calc(100dvw - var(--dsp-content-width)) / 2);
+            height: 100%;
+            right: 0;
+        }
+    }
+    
+    /*=============================================
+    =            Dungeon underlay            =
+    =============================================*/
+        
+        #dsp-underlay-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100dvw;
+            height: calc(100dvh - var(--navbar-height));
+            z-index: var(--z-index-b-5);
+        }
+
+        img.dsp-underlay {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }        
+    
+        @container (width > 1950px) {
+            #dsp-content-wrapper::before {
+                background-image: radial-gradient(ellipse 80% 81% at 0%, hsl(from var(--body-bg-color) h s l / 0.3) 0%, hsl(from var(--body-bg-color) h s l / 0.5) 20%, hsl(from var(--body-bg-color) h s l / 0.7) 45%, hsl(from var(--body-bg-color) h s l / 0.90) 70%, hsl(from var(--body-bg-color) h s l / 0.98) 90%);
+            }
+
+            #dsp-content-wrapper::after {
+                background-image: radial-gradient(ellipse 80% 81% at 100%, hsl(from var(--body-bg-color) h s l / 0.4) 0%, hsl(from var(--body-bg-color) h s l / 0.5) 20%, hsl(from var(--body-bg-color) h s l / 0.7) 45%, hsl(from var(--body-bg-color) h s l / 0.90) 70%, hsl(from var(--body-bg-color) h s l / 0.98) 90%);
+            }
+        }
+
+    /*=====  End of Dungeon underlay  ======*/
     
     /*=============================================
     =            Headlines            =
@@ -390,17 +460,16 @@
     
         #dsp-dungeons-header {
             display: flex;
-            
             flex-direction: column;
             align-items: center;
-            padding: var(--vspacing-5) 0 0 0;
+            padding: var(--spacing-5) 0 0 0;
         }
 
         #dsp-dungeons-header hgroup#dsp-dungeons-headlines {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: var(--vspacing-2);
+            gap: var(--spacing-2);
             text-align: center;
 
             & h1#dsp-dungeons-headline {
@@ -417,8 +486,6 @@
         }
     
     /*=====  End of Headlines  ======*/
-    
-    
 
     #dsp-libery-dungeons-grid {
         display: grid;
@@ -461,6 +528,5 @@
         }
     
     /*=====  End of Cluster creation tool  ======*/
-    
-    
+
 </style>
