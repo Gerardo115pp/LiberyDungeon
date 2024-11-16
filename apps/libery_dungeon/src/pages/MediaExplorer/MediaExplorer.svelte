@@ -124,6 +124,12 @@
         /*----------  State  ----------*/
 
             /**
+             * Whether the explorer billboard has loaded a valid media for the billboard.
+             * @type {boolean}
+             */    
+            let explorer_billboard_has_media = false;
+
+            /**
              * Whether a category is been dragged over the parent category label
              * @type {boolean}
              */
@@ -499,7 +505,7 @@
 
                 if (the_wasd_dungeon_explorer_navigator != null) {
                     if (the_wasd_dungeon_explorer_navigator.MovementController.Grid.isUsable() && the_wasd_dungeon_explorer_navigator.MovementController.Grid.CursorRow === 0) {
-                        console.log("The cursor is at the top of the grid, scrolling to the top of the viewport");
+                        // console.log("The cursor is at the top of the grid, scrolling to the top of the viewport");
                         window.scrollTo(0, 0);
                     }
                 }
@@ -883,9 +889,7 @@
          * @returns {boolean}
          */
         const focusCategoryByUUID = (category_uuid) => {
-            console.log("Focusing category by uuid:", category_uuid);
             const displayed_categories = getDisplayCategories();
-            console.log("displayed_categories:", displayed_categories);
             const category_index = displayed_categories.findIndex(inner_category => inner_category.uuid === category_uuid);
 
             if (category_index === -1) {
@@ -1156,6 +1160,14 @@
         }
 
         /**
+         * Handles the onvalid_media_change event emitted by the ExplorerBillboard component.
+         * @returns {void}
+         */
+        const handleValidMediaChange = () => {
+            explorer_billboard_has_media = true;
+        }
+
+        /**
          * Navigates to a selected category. Determines if the category is a child category in which case it will navigate to it using SPA navigation.
          * If the category is not a child category or parent, it will navigate it using the browser's navigation.
          * @param {string} category_uuid
@@ -1170,7 +1182,6 @@
 
             switch (true) {
                 case $current_category.isParentCategoryUUID(category_uuid):
-                    console.log("Navigating to parent category");
                     const current_category_uuid = $current_category.uuid;
                     await navigateToParentCategory();
                     await tick();
@@ -1181,7 +1192,6 @@
                     break;
                 default:
                     if (category_uuid === $current_category.uuid) return;
-                    console.log("Navigating to unconnected category");
                     await navigateToUnconnectedCategory(category_uuid);
                     break;
             }
@@ -1196,8 +1206,6 @@
                 console.error("In MediaExplorer.navigateToChildCategory , categories_tree is null");
                 return;
             }
-
-            console.log("Navigating to child category. page state:", $page.state);
             
             replaceState(`/dungeon-explorer/${category_uuid}`, $page.state);
             await $categories_tree.navigateToLeaf(category_uuid);
@@ -1479,7 +1487,7 @@
     </title>
 </svelte:head>
 <main id="libery-categories-explorer"
-    class:with-billboard={($current_category?.content?.length ?? 0) > 0}
+    class:with-billboard={($current_category?.content?.length ?? 0) > 0 || explorer_billboard_has_media}
     class:with-category-thumbnails={$use_category_folder_thumbnails}
     style:position="relative"
 >
@@ -1521,6 +1529,7 @@
             />
             <ExplorerBillboard
                 the_billboard_category={$current_category}
+                onvalid_media_change={handleValidMediaChange}
             >
                 <button id="lce-uc-current-category-name" 
                     slot="billboard-headline"

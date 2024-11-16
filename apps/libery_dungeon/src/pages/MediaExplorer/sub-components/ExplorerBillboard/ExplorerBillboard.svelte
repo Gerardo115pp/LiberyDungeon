@@ -21,6 +21,11 @@
          */
         let current_billboard_media = null;
 
+        /**
+         * A callback triggered when the current_billboard_media changes to a valid media.
+         * @type {() => void}
+         */
+        export let onvalid_media_change = () => {};
         
         /*----------  Style  ----------*/
         
@@ -30,6 +35,18 @@
              * @default false - White overlay color theme is best for MOST cases except when the media is extremely white.
              */ 
             let use_dark_theme = false;
+
+        
+        /*----------  State  ----------*/
+        
+            /**
+             * Whether the billboard has mounted.
+             * @type {boolean}
+             */ 
+            let component_mounted = false;
+            $: if (the_billboard_category != null && component_mounted) {
+                handleCategoryChange(the_billboard_category);
+            }
     
     /*=====  End of Properties  ======*/
 
@@ -39,12 +56,14 @@
         }
 
         checkWindowScroll();
+
+        component_mounted = true;
     });
 
     onDestroy(() => {
         if (!browser) return;
 
-        hanldeBillboardDestroy();
+        handleBillboardDestroy();
     });
     
     /*=============================================
@@ -91,6 +110,22 @@
             }
 
             return billboard_element;
+        }
+
+        /**
+         * handles the current category change.
+         * @param {import('@models/Categories').CategoryLeaf} new_category
+         */
+        function handleCategoryChange(new_category) {
+            if (new_category == null) return;
+
+            if (new_category.content.length > 0) {
+                handleChangeBillboardImage();
+            }
+
+            if (current_billboard_media != null) {
+                onvalid_media_change();
+            };
         }
     
         /**
@@ -139,7 +174,7 @@
         /**
          * Handles the destruction of the billboard component.
          */
-        const hanldeBillboardDestroy = () => {
+        const handleBillboardDestroy = () => {
             navbar_ethereal.set(false);
         }
 
