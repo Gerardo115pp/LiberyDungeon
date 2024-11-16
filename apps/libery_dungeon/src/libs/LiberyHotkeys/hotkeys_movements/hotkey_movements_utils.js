@@ -844,9 +844,7 @@ export class GridNavigationWrapper {
             this.#mutation_observer = null;
         }
 
-        if (this.#onresize_bounded !== null) {
-            window.removeEventListener("resize", this.#onresize_bounded);
-        }
+        window.removeEventListener("resize", this.#onresize_bounded);
 
         this.#grid_parent = null;
         this.#grid_sequence.clear();
