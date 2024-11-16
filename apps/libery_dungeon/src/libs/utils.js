@@ -179,7 +179,6 @@ export const isOutTheViewport = element => {
 
     const rect = element.getBoundingClientRect();
 
-    console.log("element rect:", rect);
 
     return rect.top <= 0 && rect.bottom <= 0 || rect.top >= window.innerHeight && rect.bottom >= window.innerHeight;    
 }
@@ -352,7 +351,6 @@ export const videoDurationToString = (duration, is_seconds = true) => {
          */
         Add(value) {
             let new_node = new StackNode(value);
-            console.log("Added called");
             new_node.Next = this.#top;
             this.#top = new_node;
         }
