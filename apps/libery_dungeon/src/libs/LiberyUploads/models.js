@@ -72,7 +72,6 @@ export class MediaFile {
     /**
      * Uploads the file in a single request. If the file is too large, it will throw an error.
      * Returns true if the file was uploaded successfully, false otherwise.
-     * @param {string} category_id
      * @returns {Promise<boolean>}
      */
     async fastUpload() {
@@ -112,7 +111,7 @@ export class MediaFile {
     /**
      * Returns true if the media file is an image, false if it is a video and throws an error if it is neither.
      * @param {boolean} strict if false and the media file is neither an image nor a video, the function will return null instead of throwing an error
-     * @returns {boolean}
+     * @returns {boolean | null}
      * @throws {Error} if the media file is neither an image nor a video
      */
     isImage (strict = true) {
@@ -156,6 +155,7 @@ export class MediaFile {
 
         return new Promise((resolve, reject) => {
             file_reader.onload = () => {
+                // @ts-ignore
                 this.#src = file_reader.result;
                 resolve();
             }
@@ -187,12 +187,12 @@ export class MediaFile {
 
         if (N === 0) return read_result;
 
-        const chunk = this.readBlob(N);
-        if (chunk === undefined) {
+        const chunk_result = await this.readBlob(N);
+        if (chunk_result === undefined || chunk_result.chunk === undefined) {
             read_result.error = io_errors.ERR_EOF;
             return read_result;
         }
-        const chunk_buffer = await chunk.arrayBuffer();
+        const chunk_buffer = await chunk_result.chunk.arrayBuffer();
 
         read_result.chunk = new Uint8Array(chunk_buffer);
 
@@ -237,7 +237,6 @@ export class MediaFile {
         return read_blob_result;
     }
 
-
     /**
      * Seek sets the offset for the next Read to offset, interpreted according to whence: SeekStart means relative to the start of
      * the file, SeekCurrent means relative to the current offset, and SeekEnd means relative to the end (for example, offset = -2 specifies the penultimate byte of the file).
@@ -248,7 +247,7 @@ export class MediaFile {
      * @param {number} offset
      * @param {number} whence
      * @returns {SeekResult}
-     * @typedef {number} SeekResult
+     * @typedef {Object} SeekResult
      * @property {number} offset
      * @property {string | null} error
      */
@@ -301,7 +300,7 @@ export class ChunkedMediaUpload {
     #media_file
 
     /**
-     * @param {category_id} category_id
+     * @param {string} category_id
      * @param {MediaFile} media_file
      */
     constructor(category_id, media_file) {
@@ -319,7 +318,7 @@ export class ChunkedMediaUpload {
 
     /**
      * Fetches an upload ticket for a media chunked upload. 
-     * @returns {Promise<string>}
+     * @returns {Promise<string | null>}
      */
     async getUploadTicket() {
         const upload_uuid = crypto.randomUUID();

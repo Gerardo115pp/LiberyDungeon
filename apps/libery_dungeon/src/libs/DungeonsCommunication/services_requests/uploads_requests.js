@@ -9,7 +9,7 @@ export class GetUploadStreamTicketRequest {
 
     /**
      * @param {string} upload_uuid
-     * @param {int} total_medias
+     * @param {number} total_medias
      * @param {string} category_uuid
      */
     constructor(upload_uuid, total_medias, category_uuid) {
@@ -21,7 +21,7 @@ export class GetUploadStreamTicketRequest {
     toJson = attributesToJson.bind(this);
 
     /**
-     * @returns {Promise<HttpResponse<BooleanResponse>}
+     * @returns {Promise<HttpResponse<import('../base').BooleanResponse>>}
      */
     do = async () => {
         let response;
@@ -45,10 +45,11 @@ export class GetUploadStreamTicketRequest {
             console.error("Error while getting upload stream ticket: ", error);
         }
 
-        if (response.ok) {
+        if (response?.ok) {
             ticket_signed_response = await response.json();
         }
         
+        // @ts-ignore
         return new HttpResponse(response, ticket_signed_response);    
     }
 }
@@ -57,8 +58,8 @@ export class GetUploadStreamTicketRequest {
 * @typedef {Object} GetChunkedUploadTicketParams
  * @property {string} upload_uuid - a client side generated uuid that represents the upload
  * @property {string} upload_filename - the name of the file that will be uploaded
- * @property {string} upload_size - the total size of the file that will be uploaded
- * @property {string} upload_chunks - the amount of chunks that the file will be split into
+ * @property {number} upload_size - the total size of the file that will be uploaded
+ * @property {number} upload_chunks - the amount of chunks that the file will be split into
  * @property {string} category_uuid - the category where the file will be uploaded
 */
 
@@ -127,13 +128,21 @@ export class GetChunkedUploadTicketRequest {
         let upload_ticket = null;
         let response;
 
-        let request_endpoint = GetChunkedUploadTicketRequest.endpoint;
-        request_endpoint += `?upload_uuid=${this.upload_uuid}`
-        request_endpoint += `&upload_filename=${this.upload_filename}`
-        request_endpoint += `&upload_size=${this.upload_size}`
-        request_endpoint += `&upload_chunks=${this.upload_chunks}`
-        request_endpoint += `&category_uuid=${this.category_uuid}`
+        console.log("upload:", this);
 
+        let request_endpoint = new URL(GetChunkedUploadTicketRequest.endpoint, location.origin);
+        // request_endpoint += `?upload_uuid=${this.upload_uuid}`
+        request_endpoint.searchParams.set("upload_uuid", this.upload_uuid);
+        // request_endpoint += `&upload_filename=${this.upload_filename}`
+        request_endpoint.searchParams.set("upload_filename", this.upload_filename);
+        // request_endpoint += `&upload_size=${this.upload_size}`
+        request_endpoint.searchParams.set("upload_size", this.upload_size.toString());
+        // request_endpoint += `&upload_chunks=${this.upload_chunks}`
+        request_endpoint.searchParams.set("upload_chunks", this.upload_chunks.toString());
+        // request_endpoint += `&category_uuid=${this.category_uuid}`
+        request_endpoint.searchParams.set("category_uuid", this.category_uuid);
+
+        console.log("Requesting upload ticket: ", request_endpoint);
 
         try {
             response = await fetch(request_endpoint, {
@@ -144,9 +153,10 @@ export class GetChunkedUploadTicketRequest {
             });
         } catch (error) {
             console.error("Error while getting upload ticket: ", error);
+            throw error;
         }
 
-        if (response.ok) {
+        if (response?.ok) {
             /**
              * @type {import("../base").SingleStringResponse}
              */
@@ -209,6 +219,7 @@ export class PostChunkedUploadRequest {
 
         let was_uploaded = response?.ok === true;
 
+        // @ts-ignore
         return new HttpResponse(response, was_uploaded);
     }
 }

@@ -48,7 +48,7 @@ export const getChunkedUploadTicket = async (ticket_params) => {
  * limit is exceeded, insert file requests will fail unless a new ticket is requested. Requires a user to have the 'upload_files' or 'ALL_PRIVILEGES' grants.
  * The token validity is 10 minutes per file that will be uploaded. After each file is uploaded, the token's validity is recalculated with only
  * the remaining number of files been considered. The token is stored as an HttpOnly cookie, not directly returned to the client.
- * @param {int} number_of_uploads
+ * @param {number} number_of_uploads
  * @param {string} recipient_category_uuid
  * @returns {Promise<boolean>}
  */
