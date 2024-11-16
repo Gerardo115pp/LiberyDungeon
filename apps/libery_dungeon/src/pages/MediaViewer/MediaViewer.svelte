@@ -38,9 +38,10 @@
         import { page } from "$app/stores";
         import { current_user_identity } from "@stores/user";
         import DiscreteFeedbackLog from "@libs/LiberyFeedback/FeedbackUI/DiscreteFeedbackLog.svelte";
-        import { setDiscreteFeedbackMessage } from "@libs/LiberyFeedback/lf_utils";
+        import { confirmPlatformMessage, setDiscreteFeedbackMessage } from "@libs/LiberyFeedback/lf_utils";
         import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
+    import { MediaFile, MediaUploader } from "@libs/LiberyUploads/models";
     
     /*=====  End of Imports  ======*/
      
@@ -1073,7 +1074,7 @@
         /**
          * Captures a frame from the video element as a webp and downloads it.
          */
-        const captureVideoFrame = () => {
+        const captureVideoFrame = async () => {
             if (video_element == null) {
                 return;
             };
@@ -1101,12 +1102,45 @@
 
             ctx.drawImage(video_element, 0, 0, canvas.width, canvas.height);
 
-            let dataURL = canvas.toDataURL("image/webp");
-
             const active_media = getActiveMedia();
 
             const media_name = active_media.MediaName;
             const frame_image_name = `${media_name}_frame_${video_element.currentTime}.webp`;
+
+            const user_wants_upload = await confirmPlatformMessage({
+                message_title: "Screenshot taken",
+                question_message: "Do you want to upload the screenshot?",
+                auto_focus_cancel: false,
+                cancel_label: "No",
+                confirm_label: "Yes",
+                danger_level: -1
+            });
+
+            const generated_media_mime_type = "image/webp";
+
+            if (user_wants_upload === 1) {
+                canvas.toBlob(blob => {
+                    if (blob === null) {
+                        const variable_enviroment = new VariableEnvironmentContextError("In MediaViewer.captureVideoFrame");
+
+                        variable_enviroment.addVariable("blob is null", blob === null);
+                        variable_enviroment.addVariable("canvas is HTMLCanvasElement", canvas instanceof HTMLCanvasElement);
+                        console.dirxml(canvas);
+                        console.dirxml(active_media);
+
+                        const labeled_err = new LabeledError(variable_enviroment, "Could not capture the video frame. Are you using an old browser?", lf_errors.ERR_UNSUPPORTED_BROWSER_FEATURE);
+
+                        labeled_err.alert();
+                        return;
+                    }
+
+                    uploadGeneratedMedia(blob, frame_image_name, generated_media_mime_type);
+                }, generated_media_mime_type, 1);
+
+                return;
+            }
+
+            let dataURL = canvas.toDataURL(generated_media_mime_type);
 
             // download the image as a file just for testing purposes
             let a = document.createElement("a");
@@ -1150,6 +1184,42 @@
             }
 
             applyMediaModifiersConfig(true);
+        }
+
+        /**
+         * Uploads a given blob to the medias service.
+         * @param {Blob} media_blob
+         * @param {string} media_name
+         * @param {string} mime_type
+         * @returns {Promise<void>}
+         */
+        const uploadGeneratedMedia = async (media_blob, media_name, mime_type) => {
+            if ($current_category == null) {
+                console.error("In MediaViewer.uploadGeneratedMedia: $current_category is null.");
+                return;
+            }
+
+            if ($categories_tree == null) {
+                console.error("In MediaViewer.uploadGeneratedMedia: $categories_tree is null.");
+                return;
+            }
+            
+
+            const blob_file = new File([media_blob], media_name, {
+                type: mime_type,
+                lastModified: new Date().getTime()
+            });
+
+            const media_file = new MediaFile(blob_file);
+            
+            const media_uploader = new MediaUploader([media_file]);
+
+            media_uploader.onAllUploaded = async () => {
+                await $categories_tree.updateCurrentCategory();
+                setDiscreteFeedbackMessage(`Media<${media_name}> uploaded.`);
+            }
+
+            media_uploader.startUpload($current_category.uuid);
         }
     
     /*=====  End of Methods  ======*/
