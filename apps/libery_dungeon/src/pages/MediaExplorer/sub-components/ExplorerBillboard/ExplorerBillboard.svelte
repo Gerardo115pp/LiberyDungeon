@@ -117,13 +117,18 @@
          * @param {import('@models/Categories').CategoryLeaf} new_category
          */
         function handleCategoryChange(new_category) {
+            const was_current_media_null = current_billboard_media == null;
+
+            // console.log("Billboard - Category changed: ", new_category);
             if (new_category == null) return;
 
             if (new_category.content.length > 0) {
                 handleChangeBillboardImage();
             }
+            
+            // console.log("Billboard - Category content length: ", new_category.content.length);
 
-            if (current_billboard_media != null) {
+            if (was_current_media_null && current_billboard_media != null) {
                 onvalid_media_change();
             };
         }
@@ -132,7 +137,10 @@
          * Changes the current billboard media.
          */ 
         const handleChangeBillboardImage = () => {
-            if (current_billboard_media != null && the_billboard_category.content.length === 1) return; // no other options but the one that already exists.
+            if (current_billboard_media != null && the_billboard_category.content.length === 1) {
+                current_billboard_media = the_billboard_category.content[0];
+                return;
+            }
 
             let inifite_loop_guard = 0;
 
