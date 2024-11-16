@@ -171,7 +171,8 @@
 <style>
     menu.category-navigation-breadcrumbs {
         --active-breadcrumb-color: var(--main-dark-color-7);    
-        --menu-border-style: 1.25px solid var(--grey-9);
+        /* --menu-border-style: 1.25px solid var(--grey-9); */
+        --menu-border-style: none;
      
         display: flex;
         gap: var(--spacing-1);
