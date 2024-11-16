@@ -474,10 +474,11 @@
             }
 
             & .ce-ic-label h3 {
-                font-family: var(--font-decorative);
+                font-family: var(--font-read);
                 width: 100%;
-                background: hsl(from var(--grey-7) h s l / 0.95);
-                font-size: var(--font-size-1);
+                background: hsl(from var(--grey-7) h s l / 0.75);
+                font-size: calc(var(--font-size-1) * 1.05);
+                font-weight: 550;
                 text-align: center;
                 line-height: 1;
                 padding: 0.5em 2ex;
