@@ -361,7 +361,7 @@ export class HotkeysController {
      */
     #handleKeyDown(event) {
         if (this.#shouldIgnoreEvent(event)) return;
-        console.log("keydown: ", event);
+        // console.log("keydown: ", event);
 
         if (this.#capturing_hotkey != null) {
             this.#handleCaptureHotkey(event);
@@ -376,7 +376,7 @@ export class HotkeysController {
         const capture_hotkey = this.#matchCaptureHotkey(event);
 
         if (capture_hotkey != null && capture_hotkey.CaptureState === HotkeyCaptureMatcher.CAPTURE_STATE_ACTIVE) {
-            console.log("Capture hotkey is active");
+            // console.log("Capture hotkey is active");
             this.#capturing_hotkey = capture_hotkey;
             return;
         }
@@ -429,7 +429,7 @@ export class HotkeysController {
         const capture_ended = this.#capturing_hotkey.capture(event);
 
         if (capture_ended) {
-            console.log("Capture ended");
+            // console.log("Capture ended");
             this.#activateHotkey(this.#capturing_hotkey, event);
         }
     }
@@ -483,7 +483,7 @@ export class HotkeysController {
 
         if (capture_hotkey == null) return null;
 
-        console.log("Matching candidate capture hotkey: ", capture_hotkey);
+        // console.log("Matching candidate capture hotkey: ", capture_hotkey);
 
         if (capture_hotkey.HotkeyType !== HotkeyData.HOTKEY_TYPE__CAPTURE || capture_hotkey.CaptureState !== HotkeyCaptureMatcher.CAPTURE_STATE_UNACTIVE) {
             throw new Error(`Hotkey ${capture_hotkey.KeyCombo} is not a capture hotkey or is not in the unactive state`);
@@ -495,7 +495,7 @@ export class HotkeysController {
             capture_hotkey = null;
         }
 
-        console.log("Capture hotkey: ", capture_hotkey);
+        // console.log("Capture hotkey: ", capture_hotkey);
 
         return capture_hotkey;
     }

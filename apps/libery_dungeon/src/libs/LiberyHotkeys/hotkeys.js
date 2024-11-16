@@ -349,7 +349,7 @@ export class HotkeyData {
          * @returns {boolean}
          */
         capture(event) {
-            console.log(`Capturing event in HotkeyData: ${this.#key_combo}`, event);
+            // console.log(`Capturing event in HotkeyData: ${this.#key_combo}`, event);
 
             if (this.#hotkey_type !== HotkeyData.HOTKEY_TYPE__CAPTURE || this.#capture_matcher == null) {
                 throw new Error("Hotkey is not a capture hotkey.");   
@@ -663,7 +663,6 @@ export class HotkeyData {
             }
             
             if (IsModifier(event.key)) {
-                console.log(`Modifier ${event.key} found. Skipping.`);
                 continue;
             }
 
@@ -683,14 +682,12 @@ export class HotkeyData {
 
                     let motion_match_number = fragment.matchVimMotion(event_history);
                     if (isNaN(motion_match_number)) {
-                        console.log(`Vim motion match failed. Hotkey ${this.#key_combo} did not match event_history:`, event_history);
                         hotkey_matched = false;
                         break;
                     }
 
                     this.#match_metadata.addMotion(motion_match_number);
                 } else {
-                    console.log(`Fragment ${fragment.Identity} did not match event ${event.key}`);
                     hotkey_matched = false;
                 }
 
@@ -698,7 +695,6 @@ export class HotkeyData {
                 fragment_match = event !== null ? fragment.match(event) : false;
     
                 if (!fragment_match) {
-                    console.log(`Fragment ${fragment.Identity} did not match event ${event?.key}`);
                     hotkey_matched = false;
                 }
             } 
@@ -709,8 +705,6 @@ export class HotkeyData {
             last_sequence_time = event.timeStamp;
 
         } while (hotkey_matched && fragment != null && !event_history.TraversalEnd); // If we run out of fragments and hotkey_matched is still true, that should mean a positive match.
-
-        console.log(`Hotkey ${this.#key_combo} matched: ${hotkey_matched}`);
 
         if (!hotkey_matched) {
             this.#destroyMatchMetadata();
