@@ -3,7 +3,7 @@
     import SettingEntry from '@components/Informative/DataEntries/SettingEntry.svelte';
     import { slide } from 'svelte/transition';
     import { quartOut } from 'svelte/easing';
-    import { getMediaByUUID, getMediaIdentityByUUID } from '@models/Medias';
+    import { getMediaIdentityByUUID } from '@models/Medias';
     import { LabeledError, VariableEnvironmentContextError } from '@libs/LiberyFeedback/lf_models';
     import { lf_errors } from '@libs/LiberyFeedback/lf_errors';
     import { changeCategoryThumbnail } from '@models/Categories';

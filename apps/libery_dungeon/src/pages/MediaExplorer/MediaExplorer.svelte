@@ -11,6 +11,7 @@
             category_search_results,
             category_search_term,
             resetCategorySearchState,
+            current_category_configuration_mounted,
         } from "@pages/MediaExplorer/app_page_store";
         import CategoryTagger from "@components/DungeonTags/CategoryTagger/CategoryTagger.svelte";
         import MediaUploadTool from "./sub-components/MediaUploadTool/MediaUploadTool.svelte";
@@ -53,6 +54,7 @@
         import { use_category_folder_thumbnails } from "@app/config/ui_design";
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
     import ExplorerBillboard from "./sub-components/ExplorerBillboard/ExplorerBillboard.svelte";
+    import CategoryConfiguration from "@components/Categories/CategoryFolder/sub-components/CategoryConfiguration.svelte";
 
     /*=====  End of Imports  ======*/
   
@@ -1514,6 +1516,13 @@
             on:close-category-tagger={handleCategoryTaggerClose}
         />
     {/if}
+    {#if $current_category_configuration_mounted && $current_category != null}
+        <div id="category-configuration-component-wrapper">
+            <CategoryConfiguration
+                the_inner_category={$current_category.asInnerCategory()}
+            />
+        </div>
+    {/if}
     <div id="lce-floating-controls-overlay">
         {#if category_name_search_query || capturing_category_name_search}
              <p id="lce-fco-category-filter-string">
@@ -1659,6 +1668,17 @@
     
     
     /*=====  End of header  ======*/
+
+        #category-configuration-component-wrapper {
+            --parent-height: calc(100dvh - var(--navbar-height));
+
+            position: fixed;
+            width: min(1000px, 80%);
+            inset: calc(var(--parent-height) * 0.1) auto auto 50%;
+            translate: -50%;
+            height: calc(var(--parent-height) * 0.6);
+            z-index: var(--z-index-t-1);
+        }
     
     /*=============================================
     =            Controls overlay            =
@@ -1680,7 +1700,6 @@
                 font-weight: 500;
             }
         }
-        
     
     /*=====  End of Controls overlay  ======*/
     
