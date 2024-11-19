@@ -123,11 +123,9 @@
                 handleChangeBillboardImage();
             }
             
-            console.log("Billboard - Category content length: ", new_category.content.length);
-            console.log("Billboard - was_current_media_null: ", was_current_media_null);
-            console.log("Billboard - current_billboard_media: ", current_billboard_media);
-
-           
+            // console.log("Billboard - Category content length: ", new_category.content.length);
+            // console.log("Billboard - was_current_media_null: ", was_current_media_null);
+            // console.log("Billboard - current_billboard_media: ", current_billboard_media);
 
             if (was_current_media_null && current_billboard_media != null) {
                 onvalid_media_change();
@@ -170,7 +168,6 @@
             current_billboard_media = new_billboard_media;
 
             console.log("Changed billboard media to: ", current_billboard_media);
-        
         }
 
         /**

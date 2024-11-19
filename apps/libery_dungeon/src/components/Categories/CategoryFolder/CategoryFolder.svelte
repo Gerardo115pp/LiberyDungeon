@@ -149,10 +149,9 @@
                 throw new Error("In CategoryFolder.determineCategoryThumbnailURL: current_cluster is not available");
             }
 
-            category_thumbnail_loaded = false;
-
             if (!inner_category.hasThumbnail()) {
                 category_thumbnail_url = inner_category.getRandomMediaURL($current_cluster.UUID, 10600);
+                return;
             }
 
             if (!inner_category.thumbnailIsLoaded()) {
@@ -321,6 +320,15 @@
             category_thumbnail_loaded = true;
         }
 
+        /**
+         * Handles thumbnail loading errors.
+         * @param {Event} event
+         */
+        const handleCategoryThumbnailLoadError = event => {
+            console.error(`Failed to load category<${inner_category.uuid}> thumbnail`);
+            category_thumbnail_loaded = false;
+        }
+
         const emitCategorySelectedEvent = () => {
             // TODO: Update subscribers to not expect 'inner_category'
             dispatch("category-selected", {
@@ -380,6 +388,7 @@
                             alt="" 
                             aria-hidden="true" 
                             on:load={handleCategoryThumbnailLoaded} 
+                            on:error={handleCategoryThumbnailLoadError}
                         >
                     {/if}
                 </div>
