@@ -123,7 +123,10 @@
             current_cluster_unsubscriber = current_cluster.subscribe(async (value) => {
                 if (value !== null) {
                     await verifyLoadedClusterTags();
+
                     current_cluster_unsubscriber();
+
+                    current_cluster_unsubscriber = () => {}
                 }
             });
         } else {
@@ -139,7 +142,9 @@
 
     onDestroy(() => {
         resetHotkeyContext();
-    })
+        current_category_unsubscriber();
+        current_cluster_unsubscriber();
+    });
     
     /*=============================================
     =            Methods            =
