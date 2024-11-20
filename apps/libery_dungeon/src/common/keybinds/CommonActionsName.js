@@ -7,6 +7,8 @@ import { HOTKEYS_GENERAL_GROUP, HOTKEYS_HIDDEN_GROUP } from "@libs/LiberyHotkeys
 
 export const DROP_HOTKEY_CONTEXT = Symbol("DROP_HOTKEY_CONTEXT");
 export const WASD_NAVIGATION = Symbol("WASD_NAVIGATION");
+export const UP_DOWN_NAVIGATION = Symbol("UP_DOWN_NAVIGATION");
+export const LEFT_RIGHT_NAVIGATION = Symbol("LEFT_RIGHT_NAVIGATION");
 export const SHOW_HOTKEYS_TABLE = Symbol("SHOW_HOTKEYS_TABLE");
 
 export const common_action_groups = {
