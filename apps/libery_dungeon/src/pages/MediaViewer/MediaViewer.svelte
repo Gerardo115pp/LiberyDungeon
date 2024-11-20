@@ -12,7 +12,7 @@
         import { getCategoryTree, category_cache } from "@models/Categories";
         import MediasGallery from "./sub-components/MediaGallery/MediasGallery.svelte";
         import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
-        import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
+        import HotkeysContext, { ComponentHotkeyContext } from "@libs/LiberyHotkeys/hotkeys_context";
         import { app_contexts } from "@libs/AppContext/app_contexts";
         import { hotkeys_sheet_visible, inCinemaMode, inDarkMode, layout_properties, navbar_hidden, toggleCinemaMode, toggleDarkMode } from "@stores/layout";
         import { onMount, onDestroy, tick } from "svelte";
@@ -44,9 +44,11 @@
         import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
         import { MediaFile, MediaUploader } from "@libs/LiberyUploads/models";
-    import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
-    import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
-    import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
+        import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
+        import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
+        import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
+    import generateMediaTaggerHotkeyContext from "@components/DungeonTags/MediaTagger/media_tagger_hotkeys";
+    import { LEFT_RIGHT_NAVIGATION }  from "@common/keybinds/CommonActionsName";
     
     /*=====  End of Imports  ======*/
      
@@ -92,6 +94,15 @@
              * @type {HTMLVideoElement} that displays video medias
             */
             let video_element;
+        
+        
+        /*----------  Sub-components hotkeys context  ----------*/
+        
+            /**
+             * The component hotkey context for the child Media tagger.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
+             */
+            let media_tagger_hotkeys_context = null;
 
         /*=============================================
         =            State            =
@@ -172,6 +183,8 @@
 
         if (!$layout_properties.IS_MOBILE) {
             defineDesktopKeybinds();
+
+            defineSubComponentsHotkeyContext();
         }
 
         if ($current_category === null) {
@@ -822,6 +835,38 @@
 
                 media_tagging_tool_mounted.set(!media_tagger_was_mounted);
             }
+
+            /* ---------------------- sub-components hotkey contex ---------------------- */
+
+                /**
+                 * Defines hotkey contexts for sub components.
+                 */
+                const defineSubComponentsHotkeyContext = () => {
+                    media_tagger_hotkeys_context = defineMediaTaggerHotkeyContext();
+                }
+
+                /**
+                 * defines the hotkey context for the media tagger tool component.
+                 * @requires generateMediaTaggerHotkeyContext
+                 * @returns {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+                 */
+                const defineMediaTaggerHotkeyContext = () => {
+                    const media_tagger_context =  generateMediaTaggerHotkeyContext();
+
+                    const left_right_navigation = media_tagger_context.getHotkeyAction(LEFT_RIGHT_NAVIGATION);
+
+                    if (left_right_navigation == null) {
+                        throw Error("In MediaViewer.defineMediaTaggerHotkeyContext: the generated hotkey context for the media tagger component had no LEFT_RIGHT_NAVIGATION action.")
+                    }
+
+                    if (left_right_navigation.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
+                        left_right_navigation.overwriteDescription(`${common_action_groups.NAVIGATION}Navigate through the medias, A for previous, D for next`);
+
+                        left_right_navigation.Callback = handleMediaNavigation;
+                    }
+
+                    return media_tagger_context;
+                }
         
         /*=====  End of Keybinding  ======*/
 
@@ -1317,8 +1362,9 @@
             {/if}
         </div>
         <div id="ldmv-media-tagger-tool">
-            {#if $media_tagging_tool_mounted}
+            {#if $media_tagging_tool_mounted && media_tagger_hotkeys_context != null}
                 <MediaTagger 
+                    component_hotkey_context={media_tagger_hotkeys_context}
                     the_active_media={$current_category.content[$active_media_index]} 
                     background_alpha={0.8}
                     on:close-medias-tagger={handleMediaTaggerClose}

@@ -21,6 +21,7 @@
         import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
     import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
     import MediaTaggings from "./sub-components/MediaTaggings.svelte";
+    import generateMediaTaggerHotkeyContext, { media_tagger_actions } from "./media_tagger_hotkeys";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -36,7 +37,11 @@
              */
             const global_hotkeys_manager = getHotkeysManager();
 
-            const hotkeys_context_name = "active-media-tagger-tool";
+            /**
+             * The media tagger component hotkey context 
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+             */
+            export let component_hotkey_context = generateMediaTaggerHotkeyContext();
 
             /* -------------------------- sub-component context -------------------------- */
 
@@ -175,19 +180,18 @@
                     return;
                 };
 
-                if (global_hotkeys_manager.hasContext(hotkeys_context_name)) {
-                    global_hotkeys_manager.dropContext(hotkeys_context_name);
+                if (global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+                    global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
                 }
 
-                const hotkeys_context = new HotkeysContext();
+                if (component_hotkey_context.HasGeneratedHotkeysContext()) {
+                    component_hotkey_context.dropHotkeysContext();
+                }
+
+                const hotkeys_context = preparePublicHotkeysActions(component_hotkey_context);
 
                 hotkeys_context.register(["q", "t"], handleCloseMediasTaggerTool, {
                     description: `<${HOTKEYS_GENERAL_GROUP}>Closes the ${ui_entity_reference.EntityNamePlural} tagger tool.`,
-                    await_execution: false
-                });
-
-                hotkeys_context.register(["w", "s"], handleSectionFocusNavigation, {
-                    description: `<navigation>Moves up and down through the tool's sections.`,
                     await_execution: false
                 });
 
@@ -198,9 +202,34 @@
 
                 wrapShowHotkeysTable(hotkeys_context);
 
-                global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
 
-                global_hotkeys_manager.loadContext(hotkeys_context_name);
+                global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
+            }
+
+            /**
+             * Prepares the public hotkey cations to generate the hotkeys context.
+             * @param {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext} new_component_hotkey_context
+             * @returns {import('@libs/LiberyHotkeys/hotkeys_context').default}
+             */
+            const preparePublicHotkeysActions = (new_component_hotkey_context) => {
+
+                /* --------------------------- Up down navigation --------------------------- */
+
+                    const up_down_navigation = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.WS_NAVIGATION);
+
+                    up_down_navigation.Options = {
+                        description: `<navigation>Moves up and down through the tool's sections.`,
+                        await_execution: false
+                    }
+
+                    up_down_navigation.Callback = handleSectionFocusNavigation
+                
+                /* -------------------------------------------------------------------------- */
+
+                const hotkey_context = new_component_hotkey_context.generateHotkeysContext();
+
+                return hotkey_context;
             }
 
             /**
@@ -260,7 +289,7 @@
             const resetHotkeyContext = () => {
                 if (global_hotkeys_manager == null) return;
 
-                if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+                if (global_hotkeys_manager.ContextName !== component_hotkey_context.HotkeysContextName) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
             }
