@@ -1,6 +1,6 @@
 <script>
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
-    import TaxonomyTags from "../../TagTaxonomyComponents/TaxonomyTags/TaxonomyTags.svelte";
+    import TaxonomyTags from "./TaxonomyTags/TaxonomyTags.svelte";
     import { cluster_tags } from "@stores/dungeons_tags";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";

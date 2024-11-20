@@ -10,7 +10,7 @@
         import { current_category } from "@stores/categories_tree";
         import { LabeledError, UIReference, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
-        import ClusterPublicTags from "./sub-components/ClusterPublicTags.svelte";
+        import ClusterPublicTags from "../TagTaxonomyComponents/ClusterPublicTags.svelte";
         import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
         import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import HotkeysContext, { ComponentHotkeyContext } from "@libs/LiberyHotkeys/hotkeys_context";
