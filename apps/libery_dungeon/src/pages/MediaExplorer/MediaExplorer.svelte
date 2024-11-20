@@ -24,7 +24,7 @@
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
         import MediasIcon from "@components/Medias/MediasIcon.svelte";
         import { onDestroy, onMount, tick } from "svelte";
-        import { layout_properties } from "@stores/layout";
+        import { layout_properties, navbar_solid } from "@stores/layout";
         import { app_contexts } from "@libs/AppContext/app_contexts";
         import { app_context_manager } from "@libs/AppContext/AppContextManager";
         import { 
@@ -326,10 +326,8 @@
                     }
                           
                     if ($current_user_identity?.canUploadFiles()) {
-                        hotkeys_context.register(["u"], () => {
-                                media_upload_tool_mounted.set(!$media_upload_tool_mounted);
-                            }, {
-                                description: "<content>Open media upload tool",
+                        hotkeys_context.register(["u"], handleToggleMediaUploadsTool, {
+                                description: `<${common_action_groups.CONTENT}>Open media upload tool`,
                         });
                     }
 
@@ -525,7 +523,15 @@
                 show_category_folder_config = !show_category_folder_config;
             }
 
-            
+            /**
+             * Toggles on/off the media uploads tool.
+             * @returns {void}
+             */            
+            const handleToggleMediaUploadsTool = () => {
+                media_upload_tool_mounted.set(!$media_upload_tool_mounted);
+                navbar_solid.set($media_upload_tool_mounted);
+
+            }
 
             /**
              * Enables the experimental feature use_category_folder_thumbnails. The thumbnails used for categories are fullsized images, heavliy deteriorates performance.
