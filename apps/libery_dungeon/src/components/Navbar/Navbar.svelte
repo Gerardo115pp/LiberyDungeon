@@ -1,5 +1,5 @@
 <script>
-    import { layout_properties, navbar_ethereal } from "@stores/layout";
+    import { layout_properties, navbar_ethereal, navbar_solid } from "@stores/layout";
     import { writable } from "svelte/store";
     import MainLogo from "@components/UI/MainLogo.svelte";
     import BurgerBtn from "@components/UI/BurgerBTN.svelte";
@@ -110,7 +110,7 @@
     role="toolbar" 
     class:navbar-is-hidden={$navbar_hidden} 
     class:navbar-ethereal={$navbar_ethereal && !$menu_visible}
-    class:opaque-background={$menu_visible} 
+    class:opaque-background={$menu_visible || $navbar_solid} 
     class:adebug={false}
 >
     <div id="ldn-content">
