@@ -84,13 +84,16 @@
          * @type {import("@models/DungeonTags").DungeonTagging[]}
          */ 
         export let current_media_taggings = [];
-        $: handleCategoryTaggingsChange(current_media_taggings);
+        $: handleMediaTaggingsChange(current_media_taggings);
 
         /**
          * The currently active media.
          * @type {import('@models/Medias').Media}
          */
         export let the_active_media;
+        $: if (the_active_media != null && the_wasd_keybind_wrapper != null) {
+            updateWasdGridSelectors();
+        }
 
         /**
          * A map of TagTaxonomy names -> DungeonTags.
@@ -414,7 +417,7 @@
          * Handles changes to the cluster tags.
          * @param {import("@models/DungeonTags").DungeonTagging[]} new_taggings
          */
-        function handleCategoryTaggingsChange(new_taggings) {
+        function handleMediaTaggingsChange(new_taggings) {
             if (new_taggings.length <= 0) return;
 
             const updated_tag_taxonomy_map = getTagTaxonomyMap(new_taggings);
@@ -483,6 +486,24 @@
             // @ts-ignore
             globalThis.the_grid_navigation_wrapper = the_wasd_keybind_wrapper; 
         }
+
+        /**
+         * Updates the selectors for the wasd cursor movement wrapper.
+         */
+        const updateWasdGridSelectors = () => {
+            if (the_wasd_keybind_wrapper == null) return;
+
+            const grid_selectors = getFocusedTaggingsGridSelectors();
+
+            if (grid_selectors == null) {
+                console.error("No grid selectors found for the focused taggings.");
+                return;
+            };
+
+            the_wasd_keybind_wrapper.changeGridContainer(grid_selectors.grid_parent_selector, grid_selectors.grid_member_selector);
+        }
+
+    
 
     /*=====  End of Methods  ======*/
     
