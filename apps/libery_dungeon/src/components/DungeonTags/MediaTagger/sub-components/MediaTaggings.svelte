@@ -1,10 +1,6 @@
 <script>
-    import { current_category } from "@stores/categories_tree";
     import { cluster_tags } from "@stores/dungeons_tags";
-    import { getEntityTaggings } from "@models/DungeonTags";
     import { createEventDispatcher, onDestroy, onMount } from "svelte";
-    import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
-    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import DeleteableItem from "@components/ListItems/DeleteableItem.svelte";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
@@ -87,8 +83,14 @@
          * The current category's taggings.
          * @type {import("@models/DungeonTags").DungeonTagging[]}
          */ 
-        export let current_category_taggings = [];
-        $: handleCategoryTaggingsChange(current_category_taggings);
+        export let current_media_taggings = [];
+        $: handleCategoryTaggingsChange(current_media_taggings);
+
+        /**
+         * The currently active media.
+         * @type {import('@models/Medias').Media}
+         */
+        export let the_active_media;
 
         /**
          * A map of TagTaxonomy names -> DungeonTags.
@@ -358,10 +360,6 @@
          * @returns {import('@common/interfaces/common_actions').GridSelectors | null}
          */
         const getFocusedTaggingsGridSelectors = () => {
-            if ($current_category == null) {
-                console.error("In CategoryTaggings.getFocusedTaggingsGridSelectors: $current_category is null.");
-                return null;
-            }
             
             if (tag_taxonomy_map == null) return null;
 
@@ -373,9 +371,8 @@
 
             const taxonomy_name = getFocusedTagTaxonomyName();
 
-            grid_selectors.grid_parent_selector = `#category-${$current_category.uuid}-attribute-${taxonomy_name}`;
+            grid_selectors.grid_parent_selector = `#media-${the_active_media.uuid}-attribute-${taxonomy_name}`;
             grid_selectors.grid_member_selector = `.${taxonomy_name}-${GRID_MOVEMENT_ITEM_CLASS}`;
-
 
             return grid_selectors;
         }
@@ -491,18 +488,18 @@
     
 </script>
 
-{#if $current_category != null && tag_taxonomy_map != null && $cluster_tags.length > 0} 
+{#if the_active_media != null && tag_taxonomy_map != null && $cluster_tags.length > 0} 
     <div id="mpt-current-media-tags"
         class:hotkey-control={has_hotkey_control}
     >
         <header id="mpt-cmt-header">
             <h4>
-                Attributes for <span>{$current_category.name}</span>
+                Attributes for <span>{the_active_media.name}</span>
             </h4>
         </header>
         {#each tag_taxonomy_map as [taxonomy_name, taxonomy_members], h}
             {@const is_taxonomy_keyboard_focused = focused_taxonomy_index === h && has_hotkey_control}
-            {@const taxonomy_members_list_id_selector = `category-${$current_category.uuid}-attribute-${taxonomy_name}`}
+            {@const taxonomy_members_list_id_selector = `media-${the_active_media.uuid}-attribute-${taxonomy_name}`}
             <ol id={taxonomy_members_list_id_selector}
                 class="current-media-attribute dungeon-tag-container"
                 class:focused-attribute={is_taxonomy_keyboard_focused}

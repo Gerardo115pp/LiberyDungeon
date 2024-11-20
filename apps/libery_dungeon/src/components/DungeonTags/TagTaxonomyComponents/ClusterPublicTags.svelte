@@ -467,8 +467,7 @@
                     class:has-hotkey-control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
                 >
                     {#if is_keyboard_focused && cpt_focused_tag_taxonomy_rename_mode}
-                        <input 
-                            class="rename-input cpt-ttm-taxonomy-name"
+                        <input class="rename-input cpt-ttm-taxonomy-name"
                             bind:this={the_taxonomy_renamer_input}
                             value="{taxonomy_tags.Taxonomy.Name}"
                             on:keydown={handleTagRenamerKeyDown}
@@ -515,7 +514,7 @@
 <style>
     #cluster-public-tags {
         display: grid;
-        grid-template-columns: 8cqw 1fr;
+        grid-template-columns: 8em 1fr;
         box-sizing: border-box;
         width: 100%;
         column-gap: var(--spacing-2);

@@ -6,7 +6,6 @@
         import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
         import { createEventDispatcher, onDestroy, onMount } from "svelte";
         import { current_cluster } from "@stores/clusters";
-        import { current_category } from "@stores/categories_tree";
         import { LabeledError, UIReference, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
         import ClusterPublicTags from "../TagTaxonomyComponents/ClusterPublicTags.svelte";
@@ -20,6 +19,8 @@
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
         import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
         import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
+    import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
+    import MediaTaggings from "./sub-components/MediaTaggings.svelte";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -46,12 +47,22 @@
                 let taxonomy_tags_hotkeys_context = null;
         
         /*=====  End of Hotkeys  ======*/
+
+        /**
+         * The media to manage taggings for.
+         * @type {import('@models/Medias').Media}
+         */
+        export let the_active_media;
+
     
         /**
          * Whether the cluster_tags correctness with respect to the current_cluster has been checked.
          * @type {boolean}
          */ 
         let cluster_tags_checked = false;
+        $: if (the_active_media !== null && cluster_tags_checked) {
+            handleActiveMediaChange(the_active_media);
+        }
 
         /**
          * Current media taggings.
@@ -77,13 +88,13 @@
              * A UiReference object, to create ui messages about the tag taxonomy. used to pass down to general purpose components.
              * @type {UIReference}
              */
-            const ui_taxonomy_reference = new UIReference("attribute", "attributes");
+            const ui_taxonomy_reference = ui_pandasworld_tag_references.TAG_TAXONOMY;
 
             /**
              * A UiReference object, to create ui messages about the dungeon-tag. used to pass down to general purpose components.
              * @type {UIReference}
              */
-            const ui_tag_reference = new UIReference("value", "values");
+            const ui_tag_reference = ui_pandasworld_tag_references.TAG;
         
         
         /*----------  Style  ----------*/
@@ -118,7 +129,6 @@
             let mt_section_active = false;
 
         let current_cluster_unsubscriber = () => {};
-        let current_category_unsubscriber = () => {};
 
         const dispatch = createEventDispatcher();
     
@@ -138,7 +148,6 @@
             await verifyLoadedClusterTags();
         }
 
-        current_category_unsubscriber = current_category.subscribe(handleCurrentCategoryChange)
 
         defineSubComponentsHotkeysContext();
 
@@ -319,7 +328,7 @@
         const defineComponentMetadata = () => {
             let dtt_sections = getSectionNodes();
 
-            if (dtt_sections == null) {
+            if (dtt_sections == null || dtt_sections.length === 0) {
                 console.error("Could not find the medias tagger tool sections.");
                 return;
             }
@@ -349,16 +358,16 @@
         /**
          * Handles the change of the current category.
          * TODO: This behavior is not needed for the medias tagger tool. Find all it's branch effects and replace them for an 'active media' change handling instead.
-         * @param {import("@models/Categories").CategoryLeaf | null} new_category
+         * @param {import("@models/Medias").Media | null} new_active_media
          */
-        const handleCurrentCategoryChange = async (new_category) => {
-            if (new_category === null) return;
+        async function handleActiveMediaChange(new_active_media) {
+            if (new_active_media === null) return;
 
-            console.log("Refreshing taggings of:", new_category);
+            console.log("Refreshing taggings of:", new_active_media);
 
-            if (new_category === null) return;
+            if (new_active_media === null) return;
 
-            await refreshActiveMediaTaggings();
+            await refreshActiveMediaTaggings(new_active_media);
         }
 
         /**
@@ -366,7 +375,11 @@
          * @param {CustomEvent<{removed_tag: number}>} event
          */
         const handleRemoveMediaTag = event => {
-            console.error("Implementation of removing media tags is not coded yet.");
+            let tag_id = event?.detail?.removed_tag;
+
+            if (tag_id == null) return;
+
+            removeMediaTag(tag_id);
         }
 
         /**
@@ -446,7 +459,7 @@
 
             cluster_tags.set(new_cluster_tags);
 
-            await refreshActiveMediaTaggings();
+            await refreshActiveMediaTaggings(the_active_media);
         }
         
         /**
@@ -454,14 +467,37 @@
          * @param {CustomEvent<{tag_id: number}>} event
          */
         const handleTagSelection = async (event) => {
-            // REFACTOR: Implement the tag selection behavior.
+            const tag_id = event.detail.tag_id;
+
+            let tagging_id = await tagMedia(the_active_media.uuid, tag_id);
+
+            if (tagging_id == null) {
+                const variable_environment = new VariableEnvironmentContextError("In MediaTagger.handleTagSelection");
+
+                variable_environment.addVariable("tag_id", tag_id);
+                variable_environment.addVariable("the_active_media.uuid", the_active_media.uuid);
+
+                const labeled_error = new LabeledError(variable_environment, "Failed to tag the media.", lf_errors.ERR_PROCESSING_ERROR);
+
+                labeled_error.alert();
+                return;
+            }
+
+            await refreshActiveMediaTaggings(the_active_media);
         }
 
         /**
          * Refreshes the current media taggings and sets them on active_media_taggings property.
+         * @param {import('@models/Medias').Media} new_active_media
          */
-        const refreshActiveMediaTaggings = async () => {
-            // REFACTOR: Implement the taggings refresh behavior.
+        async function refreshActiveMediaTaggings(new_active_media) {
+            if (new_active_media === null ) return;
+
+            let new_taggings = await getEntityTaggings(new_active_media.uuid, $current_cluster.UUID);
+
+            console.log(`Media ${new_active_media.uuid} had taggings:`, new_taggings);
+
+            current_media_taggings = new_taggings;
         }
 
         /**
@@ -469,7 +505,26 @@
          * @param {number} tag_id
          */
         const removeMediaTag = async (tag_id) => {
-            // REFACTOR: Implement the tag removal behavior.
+            if (tag_id < 0) {
+                console.error(`Tag ids are always positive numbers. got ${tag_id}`);
+                return;
+            }
+
+            const deleted = await untagEntity(the_active_media.uuid, tag_id);
+
+            if (!deleted) {
+                const variable_environment = new VariableEnvironmentContextError("In MediaTagger.removeMediaTag");
+
+                variable_environment.addVariable("tag_id", tag_id);
+                variable_environment.addVariable("the_active_media.uuid", the_active_media.uuid);
+
+                const labeled_err = new LabeledError(variable_environment, "Could not remove attribute.", lf_errors.ERR_PROCESSING_ERROR);
+
+                labeled_err.alert();
+                return;
+            }
+
+            await refreshActiveMediaTaggings(the_active_media);
         }
     
         /**
@@ -524,7 +579,13 @@
         class="dungeon-scroll dmtt-section"
         class:focused-section={mt_focused_section === 1}
     >
-
+        <MediaTaggings 
+            the_active_media={the_active_media}
+            current_media_taggings={current_media_taggings}
+            has_hotkey_control={mt_focused_section === 1 && mt_section_active}
+            on:drop-hotkeys-control={handleRecoverHotkeysControl}
+            on:remove-category-tag={handleRemoveMediaTag}
+        />
     </article>
     <article id="dmtt-cluster-user-tags"
         class="dmtt-section"

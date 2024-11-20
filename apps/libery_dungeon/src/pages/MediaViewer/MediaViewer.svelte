@@ -44,6 +44,9 @@
         import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
         import { MediaFile, MediaUploader } from "@libs/LiberyUploads/models";
+    import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
+    import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
+    import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
     
     /*=====  End of Imports  ======*/
      
@@ -305,6 +308,10 @@
 
                         hotkeys_context.register("shift+alt+e", e => skip_deleted_medias.set(!$skip_deleted_medias), {
                             description: "<navigation>Toggle skipping deleted medias."
+                        });
+
+                        hotkeys_context.register("t", handleShowMediaTaggerTool, {
+                            description: `${common_action_groups.CONTENT}Opens up the tool to configure the current ${ui_core_dungeon_references.MEDIA.EntityName}'s ${ui_pandasworld_tag_references.TAG_TAXONOMY.EntityNamePlural}.`
                         });
                     }
 
@@ -634,6 +641,15 @@
                 show_media_information_panel = !show_media_information_panel;
             }
 
+            /**
+             * Toggles the media tagger tool. and if necessary loads the MediaViewer 
+             * hotkey context.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleShowMediaTaggerTool = (event, hotkey) => {
+                toggleMediaTaggerTool();
+            }
+
             const handleGoBack = async () => {
                 if ($current_category == null) {
                     console.error("In MediaViewer.handleGoBack: $current_category is null.");
@@ -785,6 +801,26 @@
                 let feedback_message = $random_media_navigation ? "random navigation: on" : "random navigation: off";
 
                 setDiscreteFeedbackMessage(feedback_message);
+            }
+
+            /**
+             * Toggles the state of the media tagger and if necessary loads the
+             * MediaViewer hotkey context. This last part is necessary cause the 
+             * media tagger defines it's own HotkeyContext on mount and when onmounted
+             * it just loads the previous context, not the media viewer specifically. 
+             * so this just makes sure the media viewer recovers hotkey control.
+             */
+            const toggleMediaTaggerTool = () => {
+                const media_tagger_was_mounted = $media_tagging_tool_mounted;
+
+                if (media_tagger_was_mounted) {
+
+                    if (global_hotkeys_manager != null && global_hotkeys_manager.ContextName != hotkeys_context_name) {
+                        defineDesktopKeybinds();
+                    }
+                }
+
+                media_tagging_tool_mounted.set(!media_tagger_was_mounted);
             }
         
         /*=====  End of Keybinding  ======*/
@@ -1003,6 +1039,13 @@
             saveActiveMediaToRoute();
             applyMediaModifiersConfig();
             show_media_gallery = false;
+        }
+
+        /**
+         * Handles the clousure of the media tagger.
+         */
+        const handleMediaTaggerClose = () => {
+            toggleMediaTaggerTool();
         }
 
         function onComponentExit() {        
@@ -1276,7 +1319,9 @@
         <div id="ldmv-media-tagger-tool">
             {#if $media_tagging_tool_mounted}
                 <MediaTagger 
+                    the_active_media={$current_category.content[$active_media_index]} 
                     background_alpha={0.8}
+                    on:close-medias-tagger={handleMediaTaggerClose}
                 />
             {/if}
         </div>
