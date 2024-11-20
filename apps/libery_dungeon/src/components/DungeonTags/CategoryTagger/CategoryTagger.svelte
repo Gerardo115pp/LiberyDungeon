@@ -19,7 +19,7 @@
         import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
-    import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+        import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -669,7 +669,8 @@
 </dialog>
 
 <style>
-    #dungeon-category-tagger-tool {
+    dialog#dungeon-category-tagger-tool {
+        position: static;
         display: flex;
         width: clamp(400px, 82dvw, 1800px);
         height: calc(calc(100dvh - var(--navbar-height)) * 0.9);

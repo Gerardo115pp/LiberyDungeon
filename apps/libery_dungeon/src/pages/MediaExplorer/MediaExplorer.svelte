@@ -1518,9 +1518,11 @@
         </div>
     {/if}
     {#if $category_tagger_tool_mounted}
-        <CategoryTagger
-            on:close-category-tagger={handleCategoryTaggerClose}
-        />
+        <div class="fullwidth-modals" id="category-tagger-component-wrapper">
+            <CategoryTagger
+                on:close-category-tagger={handleCategoryTaggerClose}
+            />
+        </div>
     {/if}
     {#if $current_category_configuration_mounted && $current_category != null}
         <div id="category-configuration-component-wrapper">
@@ -1675,17 +1677,22 @@
     
     /*=====  End of header  ======*/
 
-        #category-configuration-component-wrapper {
-            --parent-height: calc(100dvh - var(--navbar-height));
+    #category-configuration-component-wrapper {
+        --parent-height: calc(100dvh - var(--navbar-height));
 
-            position: fixed;
-            width: min(1000px, 80%);
-            inset: calc(var(--parent-height) * 0.1) auto auto 50%;
-            translate: -50%;
-            height: calc(var(--parent-height) * 0.6);
-            z-index: var(--z-index-t-1);
-        }
-    
+        position: fixed;
+        width: min(1000px, 80%);
+        inset: calc(var(--parent-height) * 0.1) auto auto 50%;
+        translate: -50%;
+        height: calc(var(--parent-height) * 0.6);
+        z-index: var(--z-index-t-1);
+    }
+
+    #category-tagger-component-wrapper {
+        display: flex;
+        align-items: center;
+    }
+
     /*=============================================
     =            Controls overlay            =
     =============================================*/
