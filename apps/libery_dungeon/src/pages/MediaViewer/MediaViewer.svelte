@@ -34,6 +34,8 @@
         } from "@stores/media_viewer";
         import { current_cluster, loadCluster } from "@stores/clusters";
         import MediaInformationPanel from "./sub-components/MediaInformation/MediaInformationPanel.svelte";
+        import MediaTagger from "@components/DungeonTags/MediaTagger/MediaTagger.svelte";
+        import { media_tagging_tool_mounted } from "./app_page_store";
         import { goto } from "$app/navigation";
         import { page } from "$app/stores";
         import { current_user_identity } from "@stores/user";
@@ -41,7 +43,7 @@
         import { confirmPlatformMessage, setDiscreteFeedbackMessage } from "@libs/LiberyFeedback/lf_utils";
         import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
-    import { MediaFile, MediaUploader } from "@libs/LiberyUploads/models";
+        import { MediaFile, MediaUploader } from "@libs/LiberyUploads/models";
     
     /*=====  End of Imports  ======*/
      
@@ -1271,6 +1273,13 @@
                 />
             {/if}
         </div>
+        <div id="ldmv-media-tagger-tool">
+            {#if $media_tagging_tool_mounted}
+                <MediaTagger 
+                    background_alpha={0.8}
+                />
+            {/if}
+        </div>
         {#if $current_category?.content.length > 0 && show_media_gallery}            
             <div id="ldmv-media-gallery-wrapper">
                 <MediasGallery on:thumbnail-click={handleThumbnailClick} all_available_medias={$current_category.content} category_path={$current_category.FullPath}/>
@@ -1334,6 +1343,13 @@
         font-size: var(--font-size-1);
         left: var(--vspacing-3);
         z-index: var(--z-index-t-1);
+    }
+
+    #ldmv-media-tagger-tool {
+        position: absolute;    
+        width: 40dvw;
+        height: calc(calc(100dvh * 0.97) - var(--navbar-height));
+        inset: var(--navbar-height) auto auto var(--common-page-inline-padding);
     }
 
     #ldmv-media-gallery-wrapper {

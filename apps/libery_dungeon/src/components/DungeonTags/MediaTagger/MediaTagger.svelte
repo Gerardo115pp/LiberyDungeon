@@ -4,14 +4,13 @@
     =============================================*/
         import { deleteTagTaxonomy, getEntityTaggings, getTaxonomyTagsByUUID, tagCategory, tagCategoryContent, tagMedia, untagCategoryContent, untagEntity } from "@models/DungeonTags";
         import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
-        import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
         import { createEventDispatcher, onDestroy, onMount } from "svelte";
         import { current_cluster } from "@stores/clusters";
         import { current_category } from "@stores/categories_tree";
         import { LabeledError, UIReference, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
         import ClusterPublicTags from "../TagTaxonomyComponents/ClusterPublicTags.svelte";
-        import CategoryTaggings from "./sub-components/CategoryTaggings.svelte";
+        import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
         import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import HotkeysContext, { ComponentHotkeyContext } from "@libs/LiberyHotkeys/hotkeys_context";
         import generateTaxonomyTagsHotkeysContext, { taxonomy_tags_actions } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_hotkeys";
@@ -20,6 +19,7 @@
         import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
         import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+        import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -35,7 +35,7 @@
              */
             const global_hotkeys_manager = getHotkeysManager();
 
-            const hotkeys_context_name = "category-tagger-tool";
+            const hotkeys_context_name = "active-media-tagger-tool";
 
             /* -------------------------- sub-component context -------------------------- */
 
@@ -54,18 +54,16 @@
         let cluster_tags_checked = false;
 
         /**
-         * Current category taggings.
+         * Current media taggings.
          * @type {import("@models/DungeonTags").DungeonTagging[]}
          */
-        let current_category_taggings = [];
+        let current_media_taggings = [];
 
         /**
          * The category tagger tool node.
          * @type {HTMLDialogElement | null}
          */
-        let the_category_tagger_tool = null;
-
-
+        let the_media_tagger_tool = null;
         
         /*----------  UI references  ----------*/
         
@@ -73,7 +71,7 @@
              * A UiReference object, to create ui messages about the taggable entity. used to pass down to general purpose components
              * @type {UIReference}
              */
-            const ui_entity_reference = new UIReference("category", "categories");
+            const ui_entity_reference = ui_core_dungeon_references.MEDIA;
 
             /**
              * A UiReference object, to create ui messages about the tag taxonomy. used to pass down to general purpose components.
@@ -86,6 +84,16 @@
              * @type {UIReference}
              */
             const ui_tag_reference = new UIReference("value", "values");
+        
+        
+        /*----------  Style  ----------*/
+        
+            /**
+             * A number between 0 and 1 that is used for the alpha channel of the tool's background color.
+             * @type {number}
+             * @default 1
+             */
+            export let background_alpha = 1;
         
         /*----------  Component metadata  ----------*/
         
@@ -101,13 +109,13 @@
              * The focused section indicator.
              * @type {number}
              */ 
-            let ct_focused_section = 0;
+            let mt_focused_section = 0;
 
             /**
              * Section active.
              * @type {boolean}
              */
-            let ct_section_active = false;
+            let mt_section_active = false;
 
         let current_cluster_unsubscriber = () => {};
         let current_category_unsubscriber = () => {};
@@ -150,7 +158,7 @@
         =============================================*/
         
             /**
-             * Defines the tools hotkeys.
+             * Defines the tool's hotkeys.
              */ 
             const defineDesktopKeybinds = () => {
                 if (global_hotkeys_manager == null) {
@@ -164,8 +172,8 @@
 
                 const hotkeys_context = new HotkeysContext();
 
-                hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
-                    description: `<${HOTKEYS_GENERAL_GROUP}>Closes the category tagger tool.`,
+                hotkeys_context.register(["q", "t"], handleCloseMediasTaggerTool, {
+                    description: `<${HOTKEYS_GENERAL_GROUP}>Closes the ${ui_entity_reference.EntityNamePlural} tagger tool.`,
                     await_execution: false
                 });
 
@@ -187,13 +195,13 @@
             }
 
             /**
-             * Emits an event to close the category tagger tool and drops the hotkeys context.
+             * Emits an event to close the medias tagger tool and drops the hotkeys context.
              * @param {KeyboardEvent} event
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
-            const handleCloseCategoryTaggerTool = (event, hotkey) => {
+            const handleCloseMediasTaggerTool = (event, hotkey) => {
                 resetHotkeyContext();
-                emitCloseCategoryTagger();
+                emitCloseMediasTagger();
             }
 
             /**
@@ -202,9 +210,9 @@
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
             const handleSectionFocusNavigation = (event, hotkey) => {
-                if (ct_section_active) return;
+                if (mt_section_active) return;
 
-                let new_focused_section = ct_focused_section;
+                let new_focused_section = mt_focused_section;
 
                 const navigation_step = event.key === "w" ? -1 : 1;
 
@@ -216,7 +224,7 @@
                     new_focused_section = 0;
                 }
 
-                ct_focused_section = new_focused_section;
+                mt_focused_section = new_focused_section;
             }
 
             /**
@@ -227,14 +235,14 @@
             const handleSectionSelection = (event, hotkey) => {
                 event.preventDefault();
 
-                ct_section_active = true;
+                mt_section_active = true;
             }
 
             /**
              * Recovers the hotkeys control and deactivates the active section.
              */
             const handleRecoverHotkeysControl = () => {
-                ct_section_active = false;
+                mt_section_active = false;
             }
 
             /**
@@ -268,15 +276,15 @@
                     const alt_select_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_SELECT_FOCUSED_TAG);
 
                     if (alt_select_focused_tag_action != null && alt_select_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
-                        alt_select_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Applies the focused ${ui_tag_reference.EntityName} to the current ${ui_entity_reference.EntityName} media content.`);
+                        alt_select_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Applies the focused ${ui_tag_reference.EntityName} to the current ${ui_entity_reference.EntityName}.`);
 
-                        alt_select_focused_tag_action.Callback = handleApplyFocusedTagToContent;
+                        alt_select_focused_tag_action.Callback = handleApplyFocusedTagToMedia;
                     }
 
                     const alt_delete_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_DELETE_FOCUSED_TAG);
 
                     if (alt_delete_focused_tag_action != null && alt_delete_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
-                        alt_delete_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Removes the focused ${ui_tag_reference.EntityName} from the current ${ui_entity_reference.EntityName} media content.`);
+                        alt_delete_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Removes the focused ${ui_tag_reference.EntityName} from the current ${ui_entity_reference.EntityName}.`);
 
                         alt_delete_focused_tag_action.Callback = handleRemoveFocusedTagFromContent;
                     }
@@ -285,47 +293,12 @@
                 }
 
                 /**
-                 * Applies the focused tag on the category content medias.
+                 * Applies the focused tag on the active media.
                  * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
                  */
-                const handleApplyFocusedTagToContent = async (event, hotkey) => {
-                    if ($current_category == null) {
-                        console.error("In CategoryTagger.handleApplyFocusedTagToContent: No current category available while trying to apply the focused tag to the content.");
-                        return;
-                    }
-                    
-                    console.log("Applying focused tag.");
-
-                    const dungeon_tag = $last_keyboard_focused_tag;
-
-                    if (dungeon_tag == null) {
-                        console.error("In CategoryTagger.handleApplyFocusedTagToContent: No focused tag available while trying to apply it to the content.");
-                        return;
-                    }
-
-                    console.log("Focused tag: ", dungeon_tag);
-
-                    const content_count = $current_category.content.length;
-
-                    let successfully_applied = await tagCategoryContent($current_category.uuid, dungeon_tag.Id);
-
-                    if (!successfully_applied) {
-                        const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.handleApplyFocusedTagToContent");
-
-                        variable_environment.addVariable("dungeon_tag.Name", dungeon_tag.Name);
-                        variable_environment.addVariable("current_category.uuid", $current_category.uuid);
-                        variable_environment.addVariable("content_count", content_count);
-                        variable_environment.addVariable("dungeon_tag.Id", dungeon_tag.Id);
-
-                        const labeled_error = new LabeledError(variable_environment, "Failed to apply the focused tag to the content.", lf_errors.ERR_PROCESSING_ERROR);
-
-                        labeled_error.alert();
-                        return;
-                    }
-
-                    let feedback_message =`Applied the ${ui_tag_reference.EntityName} '${dungeon_tag.Name}' to ${content_count} medias.`
-
-                    emitPlatformMessage(feedback_message);
+                const handleApplyFocusedTagToMedia = async (event, hotkey) => {
+                    // REFACTOR: Decide whether to remove the alt select from the medias tagger or what effect it should have in this context. Maybe apply to all it's siblings medias?
+                    console.warn("Applying focused tag to media is not implemented.");
                 }
 
                 /**
@@ -333,55 +306,21 @@
                  * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
                  */
                 const handleRemoveFocusedTagFromContent = async (event, hotkey) => {
-                    if ($current_category == null) {
-                        console.error("In CategoryTagger.handleRemoveFocusedTagFromContent: No current category available while trying to remove the focused tag from the content.");
-                        return;
-                    }
-                    
-                    console.log("Removing focused tag.");
-
-                    const dungeon_tag = $last_keyboard_focused_tag;
-
-                    if (dungeon_tag == null) {
-                        console.error("In CategoryTagger.handleRemoveFocusedTagFromContent: No focused tag available while trying to remove it from the content.");
-                        return;
-                    }
-
-                    console.log("Focused tag: ", dungeon_tag);
-
-                    const content_count = $current_category.content.length;
-
-                    let successfully_removed = await untagCategoryContent($current_category.uuid, dungeon_tag.Id);
-
-                    if (!successfully_removed) {
-                        const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.handleRemoveFocusedTagFromContent");
-
-                        variable_environment.addVariable("dungeon_tag.Name", dungeon_tag.Name);
-                        variable_environment.addVariable("current_category.uuid", $current_category.uuid);
-                        variable_environment.addVariable("content_count", content_count);
-                        variable_environment.addVariable("dungeon_tag.Id", dungeon_tag.Id);
-
-                        const labeled_error = new LabeledError(variable_environment, "Failed to remove the focused tag from the content.", lf_errors.ERR_PROCESSING_ERROR);
-
-                        labeled_error.alert();
-                        return;
-                    }
-
-                    let feedback_message =`Removed the ${ui_tag_reference.EntityName} '${dungeon_tag.Name}' from ${content_count} medias.`
-
-                    emitPlatformMessage(feedback_message);
+                    // REFACTOR: If alt select is implemented, implement it's reverse/undo action here.
+                    console.warn("Removing focused tag from media is not implemented.");
                 }
         
         /*=====  End of Keybinds  ======*/
 
         /**
          * Defines the component's content metadata.
+         * TODO: Streamline this menu navigation technique into a movement wrapper.
          */
         const defineComponentMetadata = () => {
             let dtt_sections = getSectionNodes();
 
             if (dtt_sections == null) {
-                console.error("Could not find the category tagger tool sections.");
+                console.error("Could not find the medias tagger tool sections.");
                 return;
             }
 
@@ -389,24 +328,27 @@
         }
         
         /**
-         * Emits an event to the parent to close the category tagger tool.
+         * Emits an event to the parent to close the medias tagger tool.
          */
-        const emitCloseCategoryTagger = () => {
-            dispatch("close-category-tagger");
+        const emitCloseMediasTagger = () => {
+            dispatch("close-medias-tagger");
         }
 
         /**
-         * Returns all the section nodes of the category tagger tool.
+         * Returns all the section nodes of the medias tagger tool.
          * @returns {NodeListOf<HTMLElement> | undefined}
          */
         const getSectionNodes = () => {
-            if (the_category_tagger_tool == null) return; 
+            if (the_media_tagger_tool == null) return; 
 
-            return the_category_tagger_tool.querySelectorAll(".dctt-section");
+            const section_selector = ".dmtt-section";
+
+            return the_media_tagger_tool.querySelectorAll(section_selector);
         }
 
         /**
          * Handles the change of the current category.
+         * TODO: This behavior is not needed for the medias tagger tool. Find all it's branch effects and replace them for an 'active media' change handling instead.
          * @param {import("@models/Categories").CategoryLeaf | null} new_category
          */
         const handleCurrentCategoryChange = async (new_category) => {
@@ -416,19 +358,15 @@
 
             if (new_category === null) return;
 
-            await refreshCurrentCategoryTaggings();
+            await refreshActiveMediaTaggings();
         }
 
         /**
-         * Handles the remove-category-tag event emitted by the CategoryTaggings component.
+         * Handles the remove-media-tag event emitted by the MediaTaggings component.
          * @param {CustomEvent<{removed_tag: number}>} event
          */
-        const handleRemoveCategoryTag = event => {
-            let tag_id = event?.detail?.removed_tag;
-
-            if (tag_id == null) return;
-
-            removeCategoryTag(tag_id);
+        const handleRemoveMediaTag = event => {
+            console.error("Implementation of removing media tags is not coded yet.");
         }
 
         /**
@@ -450,7 +388,7 @@
             let deleted = await deleteTagTaxonomy(taxonomy_uuid);
 
             if (!deleted) {
-                const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.handleTagTaxonomyDeleted");
+                const variable_environment = new VariableEnvironmentContextError("In MediasTagger.handleTagTaxonomyDeleted");
 
                 variable_environment.addVariable("taxonomy_uuid", taxonomy_uuid);
 
@@ -465,6 +403,7 @@
 
         /**
          * Refreshes the content of a TagTaxonomy.
+         * REFACTOR: This method(an the other similar tag taxonomy changes methods) are exactly the same as the ones in the CategoryTagger. If they need no changes at all, maybe they should be extracted to a common file.
          * @param {CustomEvent<{taxonomy: string}>} event
          */
         const handleTaxonomyContentChanged = async event => {
@@ -478,7 +417,7 @@
             let new_taxonomy_tags = await getTaxonomyTagsByUUID(taxonomy_uuid);
 
             if (new_taxonomy_tags === null) {
-                const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.handleTaxonomyContentChanged");
+                const variable_environment = new VariableEnvironmentContextError("In MediaTagger.handleTaxonomyContentChanged");
 
                 variable_environment.addVariable("taxonomy_tags_index", taxonomy_tags_index);
                 variable_environment.addVariable("cluster_tags", $cluster_tags);
@@ -507,7 +446,7 @@
 
             cluster_tags.set(new_cluster_tags);
 
-            await refreshCurrentCategoryTaggings();
+            await refreshActiveMediaTaggings();
         }
         
         /**
@@ -515,79 +454,22 @@
          * @param {CustomEvent<{tag_id: number}>} event
          */
         const handleTagSelection = async (event) => {
-            if ($current_category == null) {
-                console.error("In CategoryTagger.handleTagSelection: No current category available while trying to tag it.");
-                return;
-            }
-            
-            const tag_id = event.detail.tag_id;
-
-            let tagging_id = await tagCategory($current_category.uuid, tag_id);
-
-            if (tagging_id == null) {
-                const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.handleTagSelection");
-
-                variable_environment.addVariable("tag_id", tag_id);
-                variable_environment.addVariable("current_category.uuid", $current_category.uuid);
-
-                const labeled_error = new LabeledError(variable_environment, "Failed to tag the entity. Duplicated tagging?", lf_errors.ERR_LOADING_ERROR);
-
-                labeled_error.alert();
-                return;
-            }
-
-            console.log("Tagging ID: ", tagging_id);
-
-            await refreshCurrentCategoryTaggings();
+            // REFACTOR: Implement the tag selection behavior.
         }
 
         /**
-         * Refreshes the current category taggings and sets them on current_category_taggings property.
+         * Refreshes the current media taggings and sets them on active_media_taggings property.
          */
-        const refreshCurrentCategoryTaggings = async () => {
-            if ($current_category == null) {
-                console.error("In CategoryTagger.refreshCurrentCategoryTaggings: No current category available while trying to refresh its taggings.");
-                return;
-            }
-            
-            let new_taggings = await getEntityTaggings($current_category.uuid, $current_category.ClusterUUID);
-
-            const category_uuid = $current_category.uuid;
-
-            console.log(`'${category_uuid}' had taggings:`, new_taggings);
-
-            current_category_taggings = new_taggings;
+        const refreshActiveMediaTaggings = async () => {
+            // REFACTOR: Implement the taggings refresh behavior.
         }
 
         /**
-         * Removes a given tag from the current category.
+         * Removes a given tag from the active media.
          * @param {number} tag_id
          */
-        const removeCategoryTag = async (tag_id) => {
-            if ($current_category == null) {
-                console.error("In CategoryTagger.removeCategoryTag: No current category available while trying to remove a tag.");
-                return;
-            }
-            
-            if (tag_id < 0) {
-                console.error(`Tag ids are always positive numbers. got ${tag_id}`);
-                return;
-            }
-
-            const deleted = await untagEntity($current_category.uuid, tag_id);
-
-            if (!deleted) {
-                const variable_environment = new VariableEnvironmentContextError("In CategoryTagger.removeCategoryTag");
-
-                variable_environment.addVariable("tag_id", tag_id);
-                variable_environment.addVariable("current_category.uuid", $current_category.uuid);
-
-                const labeled_err = new LabeledError(variable_environment, "Could not remove attribute.", lf_errors.ERR_PROCESSING_ERROR);
-
-                labeled_err.alert();
-            }
-
-            await refreshCurrentCategoryTaggings();
+        const removeMediaTag = async (tag_id) => {
+            // REFACTOR: Implement the tag removal behavior.
         }
     
         /**
@@ -620,41 +502,37 @@
     
 </script>
 
-<dialog open id="dungeon-category-tagger-tool"
-    bind:this={the_category_tagger_tool}
-    class:section-activated={ct_section_active}
+<dialog open id="dungeon-medias-tagger-tool"
+    bind:this={the_media_tagger_tool}
+    class:section-activated={mt_section_active}
     class="libery-dungeon-window"
+    style:--background-alpha={background_alpha}
 >
-    <section id="tag-taxonomy-creator-section" 
-        class="dctt-section"
-        class:focused-section={ct_focused_section === 0}
+    <section id="dmtt-tag-taxonomy-creator-section" 
+        class="dmtt-section"
+        class:focused-section={mt_focused_section === 0}
     >
         <TagTaxonomyCreator
             ui_entity_reference={ui_entity_reference}
             ui_taxonomy_reference={ui_taxonomy_reference}
-            has_hotkey_control={ct_focused_section === 0 && ct_section_active}
+            has_hotkey_control={mt_focused_section === 0 && mt_section_active}
             on:tag-taxonomy-created={handleTagTaxonomyCreated}
             on:drop-hotkeys-control={handleRecoverHotkeysControl}
         />
     </section>
-    <article id="dctt-current-category-tags-wrapper"
-        class="dungeon-scroll dctt-section"
-        class:focused-section={ct_focused_section === 1}
+    <article id="dmtt-current-media-tags-wrapper"
+        class="dungeon-scroll dmtt-section"
+        class:focused-section={mt_focused_section === 1}
     >
-        <CategoryTaggings 
-            has_hotkey_control={ct_focused_section === 1 && ct_section_active}
-            current_category_taggings={current_category_taggings}
-            on:remove-category-tag={handleRemoveCategoryTag}
-            on:drop-hotkeys-control={handleRecoverHotkeysControl}
-        />
+
     </article>
-    <article id="dctt-cluster-user-tags"
-        class="dctt-section"
-        class:focused-section={ct_focused_section === 2}
+    <article id="dmtt-cluster-user-tags"
+        class="dmtt-section"
+        class:focused-section={mt_focused_section === 2}
     >
         {#if cluster_tags_checked && taxonomy_tags_hotkeys_context != null}
             <ClusterPublicTags 
-                has_hotkey_control={ct_focused_section === 2 && ct_section_active}
+                has_hotkey_control={mt_focused_section === 2 && mt_section_active}
                 ui_entity_reference={ui_entity_reference}
                 ui_taxonomy_reference={ui_taxonomy_reference}
                 ui_tag_reference={ui_tag_reference}
@@ -670,47 +548,49 @@
 
 <style>
 
-    dialog#dungeon-category-tagger-tool {
+    dialog#dungeon-medias-tagger-tool {
         position: static;
+        box-sizing: border-box;
         display: flex;
-        width: clamp(400px, 82dvw, 1800px);
-        height: calc(calc(100dvh - var(--navbar-height)) * 0.9);
+        width: 100%;
+        height: 100%;
         container-type: size;
         flex-direction: column;
+        background: hsl(from var(--body-bg-color) h s l / var(--background-alpha));
         row-gap: calc(var(--spacing-2) + var(--spacing-1));
         padding: var(--spacing-1);
         z-index: var(--z-index-t-1);
         outline: none;
 
-        & > .dctt-section {
+        & > .dmtt-section {
             padding: 0 var(--spacing-2);
             border-left-width: calc(var(--med-border-width) * 1.5);
             border-style: solid;
             border-left-color:  transparent;
         }
     
-        & > .dctt-section:not(:last-child) {
+        & > .dmtt-section:not(:last-child) {
             border-bottom: var(--border-thin-grey-8);
         }
 
-        & > .dctt-section.focused-section {
+        & > .dmtt-section.focused-section {
             border-left-color: hsl(from var(--main-6) h s l / 0.7);
             transition: border-left-color 0.3s ease-out;
         }
     }
 
-    #dungeon-category-tagger-tool.section-activated {
-        & > .dctt-section.focused-section {
+    #dungeon-medias-tagger-tool.section-activated {
+        & > .dmtt-section.focused-section {
             border-left-width: calc(var(--med-border-width) * 2.5);
         }
     }
 
-    article#dctt-cluster-user-tags {
+    article#dmtt-cluster-user-tags {
         height: 35cqh;
         container-type: size;
     }
 
-    article#dctt-current-category-tags-wrapper {
+    article#dmtt-current-media-tags-wrapper {
         height: 30cqh;
         overflow: auto;
     }
