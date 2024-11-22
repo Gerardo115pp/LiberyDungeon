@@ -167,6 +167,23 @@
              * @type {boolean} 
              */
             let cinema_mode = false;
+
+            
+            /*----------  Sub components state  ----------*/
+            
+                /**
+                 * The media viewer media tagger.
+                 * @type {MediaTagger | null}
+                 */ 
+                let the_media_tagger = null;
+
+                /**
+                 * Whether the media tagger should be hidden. unlike media_tagging_tool_mounted, which defines whether the Media tagging tool has been mounted on them dom.
+                 * This variable determines whether the already mounted media tagger, is visible and can be interacted with(pointer events).
+                 * @type {boolean}
+                 * @default true
+                 */
+                let media_tagger_hidden = true;
         
         /*=====  End of State  ======*/
         
@@ -826,14 +843,22 @@
             const toggleMediaTaggerTool = () => {
                 const media_tagger_was_mounted = $media_tagging_tool_mounted;
 
-                if (media_tagger_was_mounted) {
+                if (!media_tagger_was_mounted) {
+                    media_tagging_tool_mounted.set(true);
+                } else {
 
-                    if (global_hotkeys_manager != null && global_hotkeys_manager.ContextName != hotkeys_context_name) {
-                        defineDesktopKeybinds();
+                    if (media_tagger_hidden && the_media_tagger != null) {
+
+                        the_media_tagger.defineDesktopKeybinds();
+
+                    } else if (!media_tagger_hidden) {
+                        if (global_hotkeys_manager != null && global_hotkeys_manager.ContextName != hotkeys_context_name) {
+                            defineDesktopKeybinds();
+                        }
                     }
                 }
 
-                media_tagging_tool_mounted.set(!media_tagger_was_mounted);
+                media_tagger_hidden = !media_tagger_hidden;
             }
 
             /* ---------------------- sub-components hotkey contex ---------------------- */
@@ -1361,9 +1386,12 @@
                 />
             {/if}
         </div>
-        <div id="ldmv-media-tagger-tool">
+        <div id="ldmv-media-tagger-tool" 
+            class:media-tagger-hidden={media_tagger_hidden}
+        >
             {#if $media_tagging_tool_mounted && media_tagger_hotkeys_context != null}
                 <MediaTagger 
+                    bind:this={the_media_tagger}
                     component_hotkey_context={media_tagger_hotkeys_context}
                     the_active_media={$current_category.content[$active_media_index]} 
                     background_alpha={0.8}
@@ -1407,51 +1435,67 @@
         transition: scale .33s ease-out, translate .5s ease-out;
     }
 
-    #mw-video-controller-wrapper {
-        position: absolute;
-        width: 50dvw;
-        height: 110px;
-        left: 50%;
-        bottom: 5%;
-        transform: translateX(-50%);
-    }
+    /* -------------------------- Media viewer - tools -------------------------- */
 
-    #ldmv-category-changes-manager {
-        position: absolute;
-        top: var(--navbar-height);
-        right: 0;
-        width: 20vw;
-        height: calc(100vh - var(--navbar-height));
-        z-index: var(--z-index-t-1);
-    }
+        #mw-video-controller-wrapper {
+            position: absolute;
+            width: 50dvw;
+            height: 110px;
+            left: 50%;
+            bottom: 5%;
+            transform: translateX(-50%);
+        }
 
-    #ldmv-media-information-panel-wrapper {
-        position: absolute;
-        container-type: size;
-        top: calc(var(--navbar-height) + var(--vspacing-2));
-        width: clamp(300px, 45em, 40vw);
-        height: calc(100dvh - calc(var(--navbar-height) * 1.5));
-        font-size: var(--font-size-1);
-        left: var(--vspacing-3);
-        z-index: var(--z-index-t-1);
-    }
+        #ldmv-category-changes-manager {
+            position: absolute;
+            top: var(--navbar-height);
+            right: 0;
+            width: 20vw;
+            height: calc(100vh - var(--navbar-height));
+            z-index: var(--z-index-t-1);
+        }
 
-    #ldmv-media-tagger-tool {
-        position: absolute;    
-        width: 40dvw;
-        height: calc(calc(100dvh * 0.97) - var(--navbar-height));
-        inset: var(--navbar-height) auto auto var(--common-page-inline-padding);
-    }
+        #ldmv-media-information-panel-wrapper {
+            position: absolute;
+            container-type: size;
+            top: calc(var(--navbar-height) + var(--vspacing-2));
+            width: clamp(300px, 45em, 40vw);
+            height: calc(100dvh - calc(var(--navbar-height) * 1.5));
+            font-size: var(--font-size-1);
+            left: var(--vspacing-3);
+            z-index: var(--z-index-t-1);
+        }
 
-    #ldmv-media-gallery-wrapper {
-        position: absolute;
-        top: 30%;
-        left: 15%;
-        width: 35vw;
-        height: 50vh;
-        z-index: var(--z-index-t-2);
-    }
+        /*=============================================
+        =            Media tagger            =
+        =============================================*/
+        
+            #ldmv-media-tagger-tool {
+                position: absolute;    
+                width: 40dvw;
+                height: calc(calc(100dvh * 0.97) - var(--navbar-height));
+                inset: var(--navbar-height) auto auto var(--common-page-inline-padding);
+            }        
 
+            #ldmv-media-tagger-tool.media-tagger-hidden {
+                opacity: 0;
+                pointer-events: none;
+            }
+        
+        /*=====  End of Media tagger  ======*/
+        
+        
+
+        #ldmv-media-gallery-wrapper {
+            position: absolute;
+            top: 30%;
+            left: 15%;
+            width: 35vw;
+            height: 50vh;
+            z-index: var(--z-index-t-2);
+        }
+
+    /* -------------------------------------------------------------------------- */
     
     /*=============================================
     =            Cinema mode            =

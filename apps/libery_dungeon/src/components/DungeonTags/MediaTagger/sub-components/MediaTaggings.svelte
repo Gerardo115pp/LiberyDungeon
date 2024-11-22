@@ -418,7 +418,9 @@
          * @param {import("@models/DungeonTags").DungeonTagging[]} new_taggings
          */
         function handleMediaTaggingsChange(new_taggings) {
-            if (new_taggings.length <= 0) return;
+            if (new_taggings.length <= 0) {
+                tag_taxonomy_map = null;
+            };
 
             const updated_tag_taxonomy_map = getTagTaxonomyMap(new_taggings);
 

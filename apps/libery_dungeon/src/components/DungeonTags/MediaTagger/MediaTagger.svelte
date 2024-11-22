@@ -19,9 +19,9 @@
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
         import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
         import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
-    import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
-    import MediaTaggings from "./sub-components/MediaTaggings.svelte";
-    import generateMediaTaggerHotkeyContext, { media_tagger_actions } from "./media_tagger_hotkeys";
+        import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
+        import MediaTaggings from "./sub-components/MediaTaggings.svelte";
+        import generateMediaTaggerHotkeyContext, { media_tagger_actions } from "./media_tagger_hotkeys";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -174,7 +174,7 @@
             /**
              * Defines the tool's hotkeys.
              */ 
-            const defineDesktopKeybinds = () => {
+            export function defineDesktopKeybinds() {
                 if (global_hotkeys_manager == null) {
                     console.error("Hotkeys manager not available.");
                     return;
