@@ -738,6 +738,8 @@
                     console.error("In MediaViewer.rejectMedia: $current_category is null.");
                     return;
                 }
+
+                let feedback_message;
                 
                 const current_media = $current_category.content[$active_media_index];
                 let not_deleted_media_index = $active_media_index;
@@ -745,8 +747,10 @@
                 if ($active_media_change !== media_change_types.DELETED) {
                     $media_changes_manager.stageMediaDeletion(current_media);
                     not_deleted_media_index = getNextNotDeletedMediaIndex($active_media_index, true);
+                    feedback_message = "stage for deletion";
                 } else {
                     $media_changes_manager.unstageMediaDeletion(current_media.uuid);
+                    feedback_message = "unstaged for deletion";
                 }
                 
                 if (not_deleted_media_index !== $active_media_index) {
@@ -756,7 +760,6 @@
                     active_media_change.set($media_changes_manager.getMediaChangeType(current_media.uuid));
                 }
 
-                let feedback_message = $active_media_change === media_change_types.DELETED ? "media rejected" : "restored";
 
                 setDiscreteFeedbackMessage(feedback_message);
             }
