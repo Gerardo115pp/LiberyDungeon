@@ -1132,7 +1132,13 @@
 
             // on this meg gallery, we don't actually commit move media changes, only delete changes. instead of committing the move changes, we used them as
             // a select mechanism. if there are any move changes when committing, we will unstage them first.
-            let fake_inner_category = new InnerCategory({name: "me-gallery-mock-category", uuid: "me-gallery-mock-category", fullpath: "me-gallery-mock-category"});
+            let fake_inner_category = new InnerCategory({
+                name: "me-gallery-mock-category", 
+                uuid: "me-gallery-mock-category", 
+                fullpath: "me-gallery-mock-category",
+                category_thumbnail: "me-gallery-mock-category",
+            });
+
             $me_gallery_changes_manager.stageMediaMove(media_item.Media, fake_inner_category);
             console.log(`Media ${media_item.uuid} staged to be moved.`);
         }
