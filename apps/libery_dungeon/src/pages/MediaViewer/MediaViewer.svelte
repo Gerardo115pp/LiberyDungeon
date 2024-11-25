@@ -68,7 +68,7 @@
     /*=====  End of App Context  ======*/
     
     /*=============================================
-    =            properties            =
+    =            Properties            =
     =============================================*/
 
         let global_hotkeys_manager = getHotkeysManager();
@@ -171,19 +171,30 @@
             
             /*----------  Sub components state  ----------*/
             
-                /**
-                 * The media viewer media tagger.
-                 * @type {MediaTagger | null}
-                 */ 
-                let the_media_tagger = null;
+                
+                /*----------  Media Tagger  ----------*/
+                    /**
+                     * The media viewer media tagger.
+                     * @type {MediaTagger | null}
+                     */ 
+                    let the_media_tagger = null;
 
-                /**
-                 * Whether the media tagger should be hidden. unlike media_tagging_tool_mounted, which defines whether the Media tagging tool has been mounted on them dom.
-                 * This variable determines whether the already mounted media tagger, is visible and can be interacted with(pointer events).
-                 * @type {boolean}
-                 * @default true
-                 */
-                let media_tagger_hidden = true;
+                    /**
+                     * Whether the media tagger should be hidden. unlike media_tagging_tool_mounted, which defines whether the Media tagging tool has been mounted on them dom.
+                     * This variable determines whether the already mounted media tagger, is visible and can be interacted with(pointer events).
+                     * @type {boolean}
+                     * @default true
+                     */
+                    let media_tagger_hidden = true;
+                
+                /*----------  Video Controller  ----------*/
+                
+                    /**
+                     * Whether to auto hide the video controller.
+                     * @type {boolean}
+                     * @default true
+                     */ 
+                    let auto_hide_video_controller = true;
         
         /*=====  End of State  ======*/
         
@@ -191,7 +202,7 @@
         
             let active_media_index_unsubscriber = () => {};
     
-    /*=====  End of properties  ======*/
+    /*=====  End of Properties  ======*/
     
     onMount(async () => {
         if (!ensureCluster()) return;
@@ -1370,7 +1381,7 @@
                 <VideoController 
                     the_video_element={video_element} 
                     media_uuid={$current_category.content[$active_media_index].uuid}
-                    auto_hide
+                    bind:auto_hide={auto_hide_video_controller}
                     on:capture-frame={captureVideoFrame}
                 />
             </div>
