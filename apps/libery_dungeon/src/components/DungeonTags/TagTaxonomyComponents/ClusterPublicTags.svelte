@@ -13,6 +13,8 @@
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import { LabeledError } from "@libs/LiberyFeedback/lf_models";
     import generateTaxonomyTagsHotkeysContext from "@components/DungeonTags/TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_hotkeys";
+    import generateClusterPublicTagsHotkeyContext, { cluster_public_tags_actions } from "./cluster_public_tags_hotkeys";
+    import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
     
     /*=============================================
     =            Properties            =
@@ -27,7 +29,11 @@
                  */
                 const global_hotkeys_manager = getHotkeysManager();
 
-                const hotkeys_context_name = "cluster_public_tags";
+                /**
+                 * The component hotkey context for the cluster public tags component.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+                 */
+                export let component_hotkey_context = generateClusterPublicTagsHotkeyContext();
 
                 /**
                  * Component hotkey context to pass down to the Tag taxonomy components.
@@ -150,16 +156,12 @@
                     return;
                 }
 
-                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
-                    const hotkeys_context = new HotkeysContext();
+                if (!global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+                    const hotkeys_context = preparePublicHotkeyActions(component_hotkey_context);
 
                     hotkeys_context.register(["q", "t"], handleDropHotkeyControl, {
                         description: `<${HOTKEYS_GENERAL_GROUP}>Deselects the Category tagger section.`,
                         await_execution: false
-                    });
-
-                    hotkeys_context.register(["w", "s"], handleTagTaxonomyNavigation, {
-                        description: "<navigation>Moves the changes the focused attribute up/down.",
                     });
 
                     hotkeys_context.register(["e"], handleTagTaxonomySelection, {
@@ -181,19 +183,46 @@
                         description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
                     });
 
-                    global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                    global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
                 }
                 
-                global_hotkeys_manager.loadContext(hotkeys_context_name);
+                global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
+            }
+
+            /**
+             * Prepares the public hotkey actions to generate the hotkeys context.
+             * @param {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext} new_component_hotkey_context
+             * @returns {import('@libs/LiberyHotkeys/hotkeys_context').default}
+             */
+            const preparePublicHotkeyActions = (new_component_hotkey_context) => {
+                if (component_hotkey_context.HasGeneratedHotkeysContext()) {
+                    component_hotkey_context.dropHotkeysContext();
+                }
+
+                /* --------------------------- up/down navigation --------------------------- */
+
+                    const up_down_navigation = new_component_hotkey_context.getHotkeyActionOrPanic(cluster_public_tags_actions.WS_NAVIGATION);
+
+                    up_down_navigation.Options = {
+                        description: `${common_action_groups.NAVIGATION}Moves the changes the focused attribute up/down.`
+                    }
+
+                    up_down_navigation.Callback = handleTagTaxonomyNavigation;
+
+                /* -------------------------------------------------------------------------- */
+
+                const hotkeys_context = new_component_hotkey_context.generateHotkeysContext();
+
+                return hotkeys_context
             }
 
             /**
              * Drops the component hotkey context
              */
             const dropHotkeyContext = () => {
-                if (global_hotkeys_manager == null || !global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
+                if (global_hotkeys_manager == null || !global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) return;
 
-                global_hotkeys_manager.dropContext(hotkeys_context_name);
+                global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
             }
 
             /**
@@ -293,7 +322,7 @@
              * Drops the tools hotkey contexts and loads the previous context.
              */
             const resetHotkeyContext = () => {
-                if (global_hotkeys_manager == null || global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+                if (global_hotkeys_manager == null || global_hotkeys_manager.ContextName !== component_hotkey_context.HotkeysContextName) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
             }
