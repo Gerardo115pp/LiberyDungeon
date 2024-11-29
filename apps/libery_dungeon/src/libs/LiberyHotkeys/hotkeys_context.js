@@ -618,6 +618,26 @@ export class ComponentHotkeyContext {
 
         return action?.HotkeyTriggers ?? [];
     }
+
+    /**
+     * Returns the hotkey context name of the last activated child hotkeys context in a Component hotkey context chain . e.g: consider a component hotkey context chain like A(active)->B(active)->C(active)->D(unactive).
+     * The method will return the hotkey context name of C because it's active but non of it's children have activated their hotkeys context. If the co
+     * @returns {string}
+     */
+    getLastActiveChildContextName() {
+        if (!this.#active) return "";
+
+        let active_child_context_name = this.#hotkeys_context_name;
+
+        for (const [child_context_name, child_context] of this.#child_hotkeys_contexts) {
+            if (child_context.Active) {
+                active_child_context_name = child_context.getLastActiveChildContextName();
+                break
+            }
+        }
+
+        return active_child_context_name;
+    }
    
     /**
      * The hotkeys context name the component should use.
