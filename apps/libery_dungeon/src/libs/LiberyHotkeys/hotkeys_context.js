@@ -382,6 +382,18 @@ export class ComponentHotkeyContext {
      */
     static OVERRIDE_BEHAVIOR_IGNORE = Symbol("OVERRIDE_BEHAVIOR_IGNORE");
 
+    /**
+     * An optional reference to the a parent's hotkeys context. This is useful to streamline the nesting of components that use their own hotkeys context.
+     * @type {ComponentHotkeyContext | null}
+     */
+    #parent_hotkeys_context;
+
+    /**
+     * A map of child hotkey contexts.
+     * @type {Map<string, ComponentHotkeyContext>}
+     */
+    #child_hotkeys_contexts;
+
     /** 
      * The hotkeys context for the component
      * @type {HotkeysContext | null} 
@@ -418,6 +430,8 @@ export class ComponentHotkeyContext {
      * @param {string} hotkeys_context_name
      */
     constructor(hotkeys_context_name) {
+        this.#parent_hotkeys_context = null;
+        this.#child_hotkeys_contexts = new Map();
         this.#hotkeys_context = null;
         this.#actions = new Map();
         this.#extra_hotkeys = [];
@@ -457,6 +471,14 @@ export class ComponentHotkeyContext {
         }
 
         return action.OverwriteBehavior;
+    }
+
+    /**
+     * A map of child hotkey contexts. this is useful when a component has multiple child components that need to handle their own and we need to know about them from a non-direct parent hotkeys context.
+     * @type {Map<string, ComponentHotkeyContext>}
+     */
+    get ChildHotkeysContexts() {
+        return this.#child_hotkeys_contexts;
     }
 
     /**
@@ -670,6 +692,22 @@ export class ComponentHotkeyContext {
         }
 
         hotkey_action.overwriteDescription(new_description);
+    }
+
+    /**
+     * An optional reference to the a parent's hotkeys context. This is useful to streamline the nesting of components that use their own hotkeys context.
+     * @type {ComponentHotkeyContext | null}
+     */
+    get ParentHotkeysContext() {
+        return this.#parent_hotkeys_context;
+    }
+
+    /**
+     * An optional reference to the a parent's hotkeys context. This is useful to streamline the nesting of components that use their own hotkeys context.
+     * @param {ComponentHotkeyContext} parent_hotkeys_context
+     */
+    set ParentHotkeysContext(parent_hotkeys_context) {
+        this.#parent_hotkeys_context = parent_hotkeys_context;
     }
     
     /**
