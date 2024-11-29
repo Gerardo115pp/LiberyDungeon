@@ -163,7 +163,7 @@ export class HotkeyContextManager {
     /**
      * Returns true if the current context registers the provided hotkey
      * @param {string} hotkey
-     * @param {"keypress"|"keydown"|"keyup"} mode
+     * @param {"keydown"|"keyup"} mode
      * @returns {boolean}
      */
     hasHotkey(hotkey, mode="keydown") {
@@ -239,6 +239,40 @@ export class HotkeyContextManager {
 
         this.loadContext(previous_context_name, false);
         return true;
+    }
+
+    /**
+     * Loads a previously used context and returns the context load history back to that point. Returns true if the context was found and loaded
+     * @param {string} hotkey_context_name 
+     * @returns {boolean} 
+     */
+    loadPastContext(hotkey_context_name) {
+        if (!this.hasContext(hotkey_context_name) || !this.#context_stack || (this.#context_stack?.IsEmpty() ?? false)) return false;
+
+        /**
+         * used in case the context is not found and the context stack needs to be restored.
+         * @type {string[]}
+         */
+        const disposed_contexts = [];
+
+        while (!this.#context_stack.IsEmpty()) {
+            let context_name = this.#context_stack.Pop();
+
+            if (context_name === null) break;
+
+            if (context_name === hotkey_context_name) {
+                this.loadContext(hotkey_context_name, false);
+                return true;
+            }
+
+            disposed_contexts.push(context_name);
+        }
+
+        for (let h = 0; h < disposed_contexts.length; h++) {
+            this.#context_stack.Add(disposed_contexts[h]);
+        }
+
+        return false;
     }
 
     /**
