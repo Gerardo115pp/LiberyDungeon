@@ -459,6 +459,14 @@ export class ComponentHotkeyContext {
     }
 
     /**
+     * Adds a child hotkeys context to the ComponentHotkeyContext.
+     * @param {ComponentHotkeyContext} child_hotkeys_context
+     */
+    addChildContext(child_hotkeys_context) {
+        this.#child_hotkeys_contexts.set(child_hotkeys_context.HotkeysContextName, child_hotkeys_context);
+    }
+
+    /**
      * Returns the overwriting behavior for a given action name. If the action does not exist, it returns undefined.
      * @param {Symbol} action_name
      * @returns {Symbol | undefined}
