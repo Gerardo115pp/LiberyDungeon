@@ -3,8 +3,7 @@ import { HotkeyData, default_hotkey_register_options  } from "./hotkeys"
 import { HOTKEY_NULL_DESCRIPTION, HOTKEY_NULLISH_HANDLER } from "./hotkeys_consts"
 
 /**
-* CHORE: Rename all references to key_combo to hotkey_trigger
-* CHORE: Rename change all jsdoc for hotkey callbacks from function to HotkeyCallback
+* CHORE: change all jsdoc for hotkey callbacks from function to HotkeyCallback
 */
 
 /**
@@ -46,13 +45,34 @@ export default class HotkeysContext {
     /**
      * returns true if the hotkey is registered on the context
      * @param {string} hotkey
-     * @param {"keypress"|"keydown"|"keyup"} mode
+     * @param {"keydown"|"keyup"} mode
      * @returns {boolean}
      */
     hasHotkey(hotkey, mode="keydown") {
         let mode_hotkeys = this.#modeHotkeys(mode)
 
         return mode_hotkeys.has(hotkey);
+    }
+
+    /**
+     * Returns if a hotkey trigger is registered on the context. different from hasHotkey, this handles strings and arrays of strings.
+     * The method returns true if and only if all the hotkey combos are not registered on the context. 
+     * @param {string | string[]} hotkey_trigger
+     * @param {"keydown"|"keyup"} mode
+     * @returns {boolean}
+     */
+    hasHotkeyTrigger(hotkey_trigger, mode="keydown") {
+        if (!Array.isArray(hotkey_trigger)) {
+            return this.hasHotkey(hotkey_trigger, mode);
+        }
+
+        let has_hotkey = false;
+
+        for (let h = 0; h < hotkey_trigger.length && !has_hotkey; h++) {
+            has_hotkey = this.hasHotkey(hotkey_trigger[h], mode);
+        }
+
+        return has_hotkey;
     }
 
     /**
@@ -375,6 +395,13 @@ export class ComponentHotkeyContext {
     #actions
 
     /**
+     * A low priority array of hotkeys a parent component wants the child component to register on their hotkeys context. This hotkeys are registered after the child component's hotkeys and if a conflict is 
+     * found, the hotkey is ignored and an error is logged.
+     * @type {HotkeyRegisterParams[]}
+     */
+    #extra_hotkeys;
+
+    /**
      * The name of the hotkey context
      * @type {string}
      */
@@ -393,8 +420,28 @@ export class ComponentHotkeyContext {
     constructor(hotkeys_context_name) {
         this.#hotkeys_context = null;
         this.#actions = new Map();
+        this.#extra_hotkeys = [];
         this.#hotkeys_context_name = hotkeys_context_name;
         this.#final = false;
+    }
+
+    /**
+     * Applies the extra hotkeys, if any, to the generated hotkeys context. which means this method has to be called after the hotkeys context has been generated otherwise it will panic.
+     * @returns {void}
+     */
+    applyExtraHotkeys() {
+        if (this.#hotkeys_context == null) {
+            throw new Error(`The ComponentHotkeyContext '${this.#hotkeys_context_name}' has not generated its hotkeys context yet.`);
+        }
+
+        for (const hotkey_params of this.#extra_hotkeys) {
+           if (this.#hotkeys_context.hasHotkeyTrigger(hotkey_params.hotkey_triggers, hotkey_params.options.mode)) {
+                console.error(`The hotkey ${hotkey_params.hotkey_triggers} is already registered on the hotkeys context. Ignoring...`);
+                continue;
+           }
+
+            this.#hotkeys_context.register(hotkey_params.hotkey_triggers, hotkey_params.callback, hotkey_params.options);
+        }
     }
 
     /**
@@ -697,6 +744,16 @@ export class ComponentHotkeyContext {
         const new_hotkey_action = new HotkeyAction(safe_hotkey_action);
 
         this.#actions.set(action_name, new_hotkey_action);
+    }
+
+    /**
+     * Registers an extra hotkey that a child component can register using methods and references from the parent component. This is ideal when you want to maintain certain functionality of the parent component in a child's
+     * hotkeys context. This is completely safe to call after Final has been set.
+     * @param {HotkeyRegisterParams} hotkey_params
+     * @returns {void}
+     */
+    registerExtraHotkey(hotkey_params) {
+        this.#extra_hotkeys.push(hotkey_params);
     }
 
     /**
