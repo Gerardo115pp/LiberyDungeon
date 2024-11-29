@@ -427,6 +427,13 @@ export class ComponentHotkeyContext {
     #final;
 
     /**
+     * Whether the hotkey context has been loaded, this shall be managed by the component itself and should be true if the component has loaded the hotkeys context onto the hotkey context manager, even if the hotkey context 
+     * loaded in the hotkey binder is not the component's hotkey context but a child of it. it only returns to false if the component has dropped the hotkeys context and returned the hotkey control back to the parent.
+     * @type {boolean}
+     */
+    #active;
+
+    /**
      * @param {string} hotkeys_context_name
      */
     constructor(hotkeys_context_name) {
@@ -437,6 +444,25 @@ export class ComponentHotkeyContext {
         this.#extra_hotkeys = [];
         this.#hotkeys_context_name = hotkeys_context_name;
         this.#final = false;
+        this.#active = false;
+    }
+
+    /**
+     * Whether the hotkey context has been loaded, this shall be managed by the component itself and should be true if the component has loaded the hotkeys context onto the hotkey context manager, even if the hotkey context
+     * loaded in the hotkey binder is not the component's hotkey context but a child of it. it only returns to false if the component has dropped the hotkeys context and returned the hotkey control back to the parent.
+     * @type {boolean}
+     */
+    get Active() {
+        return this.#active;
+    }
+
+    /**
+     * Whether the hotkey context has been loaded, this shall be managed by the component itself and should be true if the component has loaded the hotkeys context onto the hotkey context manager, even if the hotkey context
+     * loaded in the hotkey binder is not the component's hotkey context but a child of it. it only returns to false if the component has dropped the hotkeys context and returned the hotkey control back to the parent.
+     * @param {boolean} active
+     */
+    set Active(active) {
+        this.#active = active;
     }
 
     /**
