@@ -434,6 +434,12 @@ export class ComponentHotkeyContext {
     #active;
 
     /**
+     * A callback triggered whenever the #active property changes.
+     * @type {(active: boolean) => void}
+     */
+    #active_state_change_callback;
+
+    /**
      * @param {string} hotkeys_context_name
      */
     constructor(hotkeys_context_name) {
@@ -445,6 +451,7 @@ export class ComponentHotkeyContext {
         this.#hotkeys_context_name = hotkeys_context_name;
         this.#final = false;
         this.#active = false;
+        this.#active_state_change_callback = (a) => {};
     }
 
     /**
@@ -463,6 +470,7 @@ export class ComponentHotkeyContext {
      */
     set Active(active) {
         this.#active = active;
+        this.#active_state_change_callback(active);
     }
 
     /**
@@ -746,6 +754,14 @@ export class ComponentHotkeyContext {
         }
 
         hotkey_action.overwriteDescription(new_description);
+    }
+
+    /**
+     * Set a callback to be triggered whenever the component's active state changes.
+     * @param {(active: boolean) => void} callback
+     */
+    onActiveChange(callback) {
+        this.#active_state_change_callback = callback;
     }
 
     /**
