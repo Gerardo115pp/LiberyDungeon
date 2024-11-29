@@ -21,7 +21,9 @@
         import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
         import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
         import MediaTaggings from "./sub-components/MediaTaggings.svelte";
-        import generateMediaTaggerHotkeyContext, { media_tagger_actions } from "./media_tagger_hotkeys";
+        import generateMediaTaggerHotkeyContext, { media_tagger_actions, media_tagger_child_contexts } from "./media_tagger_hotkeys";
+    import { cluster_public_tags_actions } from "../TagTaxonomyComponents/cluster_public_tags_hotkeys";
+
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -44,6 +46,12 @@
             export let component_hotkey_context = generateMediaTaggerHotkeyContext();
 
             /* -------------------------- sub-component context -------------------------- */
+
+                /**
+                 * The component hotkey context for the cluster public tags component.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
+                 */
+                let cluster_public_tags_hotkeys_context = null
 
                 /**
                  * The component hotkeys context for the child taxonomy tags components.
@@ -152,7 +160,6 @@
         } else {
             await verifyLoadedClusterTags();
         }
-
 
         defineSubComponentsHotkeysContext();
 
@@ -301,6 +308,7 @@
                  */
                 const defineSubComponentsHotkeysContext = () => {   
                     taxonomy_tags_hotkeys_context = defineTaxonomyTagsHotkeysContext();
+                    cluster_public_tags_hotkeys_context = defineClusterPublicTagsHotkeysContext();
                 }
 
                 /**
@@ -328,6 +336,34 @@
                     }
 
                     return taxonomy_tags_context;
+                }
+
+                /**
+                 * Defines the hotkeys context for the cluster public tags component.
+                 * @returns {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+                 */
+                const defineClusterPublicTagsHotkeysContext = () => {
+                    const cluster_public_tags_context = component_hotkey_context.ChildHotkeysContexts.get(media_tagger_child_contexts.CLUSTER_PUBLIC_TAGS);
+
+                    if (cluster_public_tags_context == null) {
+                        throw Error("In MediaTagger.defineClusterPublicTagsHotkeysContext: ClusterPublicTags context was not defined as a child context of the MediaTagger context.");
+                    }
+
+                    /* -------------------------- left right navigation ------------------------- */
+
+                        const component_left_right_navigation = component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.AD_NAVIGATION);
+
+                       if (!component_left_right_navigation.HasNullishCallback() && !component_left_right_navigation.HasNullishDescription()) {
+                           const child_left_right_navigation = cluster_public_tags_context.getHotkeyActionOrPanic(cluster_public_tags_actions.AD_NAVIGATION);
+
+                           child_left_right_navigation.overwriteDescription(component_left_right_navigation.Options.description);
+
+                           child_left_right_navigation.Callback = component_left_right_navigation.Callback;
+                       }
+
+                    /* -------------------------------------------------------------------------- */
+
+                    return cluster_public_tags_context;
                 }
 
                 /**
@@ -620,13 +656,14 @@
         class="dmtt-section"
         class:focused-section={mt_focused_section === 2}
     >
-        {#if cluster_tags_checked && taxonomy_tags_hotkeys_context != null}
+        {#if cluster_tags_checked && taxonomy_tags_hotkeys_context != null && cluster_public_tags_hotkeys_context != null}
             <ClusterPublicTags 
                 has_hotkey_control={mt_focused_section === 2 && mt_section_active}
                 ui_entity_reference={ui_entity_reference}
                 ui_taxonomy_reference={ui_taxonomy_reference}
                 ui_tag_reference={ui_tag_reference}
                 taxonomy_tags_hotkeys_context={taxonomy_tags_hotkeys_context}
+                component_hotkey_context={cluster_public_tags_hotkeys_context}
                 on:tag-selected={handleTagSelection}
                 on:delete-taxonomy={handleTagTaxonomyDeleted}
                 on:taxonomy-content-change={handleTaxonomyContentChanged}
