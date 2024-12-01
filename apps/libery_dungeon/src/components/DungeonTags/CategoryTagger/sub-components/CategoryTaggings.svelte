@@ -1,10 +1,7 @@
 <script>
     import { current_category } from "@stores/categories_tree";
     import { cluster_tags } from "@stores/dungeons_tags";
-    import { getEntityTaggings } from "@models/DungeonTags";
     import { createEventDispatcher, onDestroy, onMount } from "svelte";
-    import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
-    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import DeleteableItem from "@components/ListItems/DeleteableItem.svelte";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
@@ -13,6 +10,7 @@
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     import { CursorMovementWASD, GRID_MOVEMENT_ITEM_CLASS } from "@app/common/keybinds/CursorMovement";
     import { browser } from "$app/environment";
+    import generateCategoryTaggingsHotkeyContext from "./category_taggings_hotkeys";
     
     /*=============================================
     =            Properties            =
@@ -27,7 +25,12 @@
              */
             const global_hotkeys_manager = getHotkeysManager();
 
-            const hotkeys_context_name = "category_attributes";
+            /**
+             * The component hotkey context for the category taggings.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+             */
+            export let component_hotkey_context = generateCategoryTaggingsHotkeyContext();
+
 
             /*=============================================
             =            Hotkeys state            =
@@ -38,15 +41,6 @@
                  * @type {boolean}
                  */
                 let component_mounted = false;
-            
-                /**
-                 * Whether it has hotkey control.
-                 * @type {boolean}
-                 */ 
-                export let has_hotkey_control = false;
-                $: if (has_hotkey_control && component_mounted) {
-                    defineDesktopKeybinds();
-                }
         
             /*=====  End of Hotkeys state  ======*/
             
@@ -102,6 +96,8 @@
 
     onMount(async () => {
         component_mounted = true;
+
+        component_hotkey_context.onActiveChange(handleHotkeyContextActiveChange);
     });
 
     onDestroy(() => {
@@ -125,8 +121,8 @@
             const defineDesktopKeybinds = () => {
                 if (global_hotkeys_manager == null) return;
 
-                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
-                    const hotkeys_context = new HotkeysContext();
+                if (!global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+                    const hotkeys_context = component_hotkey_context.generateHotkeysContext();
 
                     setGridNavigationWrapper(hotkeys_context);
 
@@ -147,10 +143,10 @@
                         description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
                     });
 
-                    global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                    global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
                 }
                 
-                global_hotkeys_manager.loadContext(hotkeys_context_name);
+                global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
             }
 
             /**
@@ -194,9 +190,9 @@
              * Drops the component hotkey context
              */
             const dropHotkeyContext = () => {
-                if (global_hotkeys_manager == null || !global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
+                if (global_hotkeys_manager == null || !global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) return;
 
-                global_hotkeys_manager.dropContext(hotkeys_context_name);
+                global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
             }
 
             const dropGridNavigationWrapper = () => {
@@ -231,6 +227,21 @@
                 let focused_tagging = tag_taxonomy_map.get(focused_taxonomy)[focused_tag_index];
 
                 return focused_tagging;
+            }
+
+            /**
+             * Handles the active state change of the ComponentHotkeyContext.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ActiveChangeCallback}
+             */
+            const handleHotkeyContextActiveChange = (active) => {
+                if (!component_mounted) return;
+
+                if (active) {
+                    defineDesktopKeybinds();
+                } else {
+                    dropHotkeyContext();
+                    dropGridNavigationWrapper();
+                }
             }
 
             /**
@@ -294,7 +305,7 @@
              * Drops the tools hotkey contexts and loads the previous context.
              */
             const resetHotkeyContext = () => {
-                if (global_hotkeys_manager == null || global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+                if (global_hotkeys_manager == null || global_hotkeys_manager.ContextName !== component_hotkey_context.HotkeysContextName) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
             }
@@ -493,7 +504,7 @@
 
 {#if $current_category != null && tag_taxonomy_map != null && $cluster_tags.length > 0} 
     <div id="cpt-current-category-tags"
-        class:hotkey-control={has_hotkey_control}
+        class:hotkey-control={component_hotkey_context.Active}
     >
         <header id="cpt-cct-header">
             <h4>
@@ -501,7 +512,7 @@
             </h4>
         </header>
         {#each tag_taxonomy_map as [taxonomy_name, taxonomy_members], h}
-            {@const is_taxonomy_keyboard_focused = focused_taxonomy_index === h && has_hotkey_control}
+            {@const is_taxonomy_keyboard_focused = focused_taxonomy_index === h && component_hotkey_context.Active}
             {@const taxonomy_members_list_id_selector = `category-${$current_category.uuid}-attribute-${taxonomy_name}`}
             <ol id={taxonomy_members_list_id_selector}
                 class="current-category-attribute dungeon-tag-container"
