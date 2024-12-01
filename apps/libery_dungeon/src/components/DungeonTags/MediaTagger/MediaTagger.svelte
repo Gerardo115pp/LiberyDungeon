@@ -22,8 +22,7 @@
         import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
         import MediaTaggings from "./sub-components/MediaTaggings.svelte";
         import generateMediaTaggerHotkeyContext, { media_tagger_actions, media_tagger_child_contexts } from "./media_tagger_hotkeys";
-    import { cluster_public_tags_actions } from "../TagTaxonomyComponents/cluster_public_tags_hotkeys";
-
+        import { cluster_public_tags_actions } from "../TagTaxonomyComponents/cluster_public_tags_hotkeys";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -197,7 +196,7 @@
 
                 const hotkeys_context = preparePublicHotkeysActions(component_hotkey_context);
 
-                hotkeys_context.register(["q", "t"], handleCloseMediasTaggerTool, {
+                hotkeys_context.register(["q"], handleCloseMediasTaggerTool, {
                     description: `<${HOTKEYS_GENERAL_GROUP}>Closes the ${ui_entity_reference.EntityNamePlural} tagger tool.`,
                     await_execution: false
                 });

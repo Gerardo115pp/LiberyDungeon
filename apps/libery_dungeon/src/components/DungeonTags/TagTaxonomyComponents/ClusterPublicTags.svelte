@@ -159,7 +159,7 @@
                 if (!global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
                     const hotkeys_context = preparePublicHotkeyActions(component_hotkey_context);
 
-                    hotkeys_context.register(["q", "t"], handleDropHotkeyControl, {
+                    hotkeys_context.register(["q"], handleDropHotkeyControl, {
                         description: `<${HOTKEYS_GENERAL_GROUP}>Deselects the Category tagger section.`,
                         await_execution: false
                     });
