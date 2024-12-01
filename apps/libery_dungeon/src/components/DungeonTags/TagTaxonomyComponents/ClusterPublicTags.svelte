@@ -118,6 +118,8 @@
 
     onMount(() => {
         component_hotkey_context.onActiveChange(handleComponentActiveState);
+
+        defineSubComponentsHotkeysContext();
     });
 
     onDestroy(() => {
@@ -325,6 +327,17 @@
 
                 global_hotkeys_manager.loadPreviousContext();
             }
+
+            /* --------------------- sub-components hotkey contexts --------------------- */
+
+                /**
+                 * Defines the hotkeys context for sub-components.
+                 */
+                const defineSubComponentsHotkeysContext = () => {   
+                    component_hotkey_context.addChildContext(taxonomy_tags_hotkeys_context);
+
+                    component_hotkey_context.inheritExtraHotkeys();
+                }
 
         /*=====  End of Keybinds  ======*/
 
