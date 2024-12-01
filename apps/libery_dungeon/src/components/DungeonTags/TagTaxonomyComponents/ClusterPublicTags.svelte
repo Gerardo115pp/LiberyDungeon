@@ -15,6 +15,7 @@
     import generateTaxonomyTagsHotkeysContext from "@components/DungeonTags/TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_hotkeys";
     import generateClusterPublicTagsHotkeyContext, { cluster_public_tags_actions } from "./cluster_public_tags_hotkeys";
     import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
+    import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
     
     /*=============================================
     =            Properties            =
@@ -44,21 +45,13 @@
                 /*=============================================
                 =            Hotkeys state            =
                 =============================================*/
-
-                    /**
-                     * Whether the component has mounted or not.
-                     * @type {boolean}
-                     */
-                    let has_mounted = false;
                 
                     /**
                      * Whether it has hotkey control.
                      * @type {boolean}
                      */ 
                     export let has_hotkey_control = false;
-                    $: if (has_hotkey_control && has_mounted) {
-                        defineDesktopKeybinds();
-                    }
+                    $: component_hotkey_context.Active = has_hotkey_control;
             
                 /*=====  End of Hotkeys state  ======*/
                 
@@ -72,7 +65,7 @@
                      * @type {number}
                      */
                     let cpt_focused_tag_taxonomy_index = 0;
-                    $: if (cpt_focused_tag_taxonomy_index >= 0 && has_hotkey_control) {
+                    $: if (cpt_focused_tag_taxonomy_index >= 0 && component_hotkey_context.Active) {
                         ensureFocusedTagTaxonomyVisible();
                     }
 
@@ -130,7 +123,7 @@
     /*=====  End of Properties  ======*/
 
     onMount(() => {
-        has_mounted = true;
+        component_hotkey_context.onActiveChange(handleComponentActiveState);
     });
 
     onDestroy(() => {
@@ -179,9 +172,9 @@
                         mode: "keyup"
                     });
 
-                    hotkeys_context.register(["?"], toggleHotkeysSheet, {
-                        description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
-                    });
+                    wrapShowHotkeysTable(hotkeys_context);
+
+                    component_hotkey_context.applyExtraHotkeys();
 
                     global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
                 }
@@ -230,6 +223,18 @@
              */
             const emitDropHotkeyContext = () => {
                 dispatch("drop-hotkeys-control");
+            }
+
+            /**
+             * Handles the change in active state from the component hotkey context.
+             * @param {boolean} new_state
+             */
+            const handleComponentActiveState = new_state => {
+                has_hotkey_control = new_state;
+
+                if (new_state) {
+                    defineDesktopKeybinds();
+                }
             }
 
             /**
@@ -490,7 +495,7 @@
         </header>
         <ol class="cpt-ttm-tag-taxonomies">
             {#each $cluster_tags as taxonomy_tags, h (taxonomy_tags.Taxonomy.UUID)}
-                {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && has_hotkey_control}
+                {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && component_hotkey_context.Active}
                 <li  class="cpt-ttm-taxonomy"
                     class:keyboard-focused={is_keyboard_focused}
                     class:has-hotkey-control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
@@ -522,7 +527,7 @@
         class="dungeon-scroll" 
     >
         {#each $cluster_tags as taxonomy_tags, h (taxonomy_tags.Taxonomy.UUID)}
-            {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && has_hotkey_control}
+            {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && component_hotkey_context.Active}
             <TaxonomyTags 
                 taxonomy_tags={taxonomy_tags}
                 has_hotkey_control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
