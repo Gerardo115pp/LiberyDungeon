@@ -3,7 +3,6 @@
     import { createEventDispatcher, onDestroy, onMount } from "svelte";
     import DeleteableItem from "@components/ListItems/DeleteableItem.svelte";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
-    import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { toggleHotkeysSheet } from "@stores/layout";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
@@ -112,6 +111,8 @@
 
     onMount(async () => {
         component_mounted = true;
+
+        component_hotkey_context.onActiveChange(handleHotkeyContextActiveChange);
     });
 
     onDestroy(() => {
@@ -250,6 +251,19 @@
                 let focused_tagging = tag_taxonomy_map.get(focused_taxonomy)[focused_tag_index];
 
                 return focused_tagging;
+            }
+
+            /**
+             * Handles the active state change of the ComponentHotkeyContext.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ActiveChangeCallback}
+             */
+            const handleHotkeyContextActiveChange = (active) => {
+                if (active) {
+                    defineDesktopKeybinds();
+                } else {
+                    dropHotkeyContext();
+                    dropGridNavigationWrapper();
+                }
             }
 
             /**
@@ -526,44 +540,46 @@
     
 </script>
 
-{#if the_active_media != null && tag_taxonomy_map != null && $cluster_tags.length > 0} 
+{#if the_active_media != null} 
     <div id="mpt-current-media-tags"
-        class:hotkey-control={has_hotkey_control}
+        class:hotkey-control={component_hotkey_context.Active}
     >
         <header id="mpt-cmt-header">
             <h4>
                 Attributes for <span>{the_active_media.name}</span>
             </h4>
         </header>
-        {#each tag_taxonomy_map as [taxonomy_name, taxonomy_members], h}
-            {@const is_taxonomy_keyboard_focused = focused_taxonomy_index === h && has_hotkey_control}
-            {@const taxonomy_members_list_id_selector = `media-${the_active_media.uuid}-attribute-${taxonomy_name}`}
-            <ol id={taxonomy_members_list_id_selector}
-                class="current-media-attribute dungeon-tag-container"
-                class:focused-attribute={is_taxonomy_keyboard_focused}
-            >
-                <p class="dungeons-field-label">{taxonomy_name}</p>
-                {#each taxonomy_members as dungeon_tagging, k}
-                    {@const is_tag_keyboard_focused = is_taxonomy_keyboard_focused && focused_tag_index === k}
-                    <DeleteableItem
-                        class_selector="{taxonomy_name}-{GRID_MOVEMENT_ITEM_CLASS}"
-                        item_color={!is_tag_keyboard_focused ? "var(--grey)" : "var(--grey-8)"}
-                        item_id={dungeon_tagging.Tag.Id}
-                        on:item-deleted={handleCategoryTagDeleted}
-                        squared_style
-                    >
-                        <p class="cma-attribute-name-wrapper">
-                            <i>
-                                {k + 1}
-                            </i>
-                            <span class="cma-attribute-name">
-                                {dungeon_tagging.Tag.Name}
-                            </span>
-                        </p>
-                    </DeleteableItem>
-                {/each}
-            </ol>
-        {/each}
+        {#if tag_taxonomy_map != null && $cluster_tags.length > 0}
+            {#each tag_taxonomy_map as [taxonomy_name, taxonomy_members], h}
+                {@const is_taxonomy_keyboard_focused = focused_taxonomy_index === h && component_hotkey_context.Active}
+                {@const taxonomy_members_list_id_selector = `media-${the_active_media.uuid}-attribute-${taxonomy_name}`}
+                <ol id={taxonomy_members_list_id_selector}
+                    class="current-media-attribute dungeon-tag-container"
+                    class:focused-attribute={is_taxonomy_keyboard_focused}
+                >
+                    <p class="dungeons-field-label">{taxonomy_name}</p>
+                    {#each taxonomy_members as dungeon_tagging, k}
+                        {@const is_tag_keyboard_focused = is_taxonomy_keyboard_focused && focused_tag_index === k}
+                        <DeleteableItem
+                            class_selector="{taxonomy_name}-{GRID_MOVEMENT_ITEM_CLASS}"
+                            item_color={!is_tag_keyboard_focused ? "var(--grey)" : "var(--grey-8)"}
+                            item_id={dungeon_tagging.Tag.Id}
+                            on:item-deleted={handleCategoryTagDeleted}
+                            squared_style
+                        >
+                            <p class="cma-attribute-name-wrapper">
+                                <i>
+                                    {k + 1}
+                                </i>
+                                <span class="cma-attribute-name">
+                                    {dungeon_tagging.Tag.Name}
+                                </span>
+                            </p>
+                        </DeleteableItem>
+                    {/each}
+                </ol>
+            {/each}
+        {/if}
     </div>
 {/if}
 

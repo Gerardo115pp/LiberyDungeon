@@ -23,6 +23,7 @@
         import MediaTaggings from "./sub-components/MediaTaggings.svelte";
         import generateMediaTaggerHotkeyContext, { media_tagger_actions, media_tagger_child_contexts } from "./media_tagger_hotkeys";
         import { cluster_public_tags_actions } from "../TagTaxonomyComponents/cluster_public_tags_hotkeys";
+        import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -50,7 +51,28 @@
                  * The component hotkey context for the cluster public tags component.
                  * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
                  */
-                let cluster_public_tags_hotkeys_context = null
+                let cluster_public_tags_hotkeys_context = component_hotkey_context.ChildHotkeysContexts.get(media_tagger_child_contexts.CLUSTER_PUBLIC_TAGS) ?? null;
+                if (cluster_public_tags_hotkeys_context == null) {
+                    throw new Error("In MediaTagger, invalid component_hotkey_context: ClusterPublicTags hotkeys context was not defined as a child context of the MediaTagger context.");
+                }
+
+                /**
+                 * The component hotkey context for the tag taxonomy creator.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
+                 */
+                let tag_taxonomy_creator_hotkeys_context = component_hotkey_context.ChildHotkeysContexts.get(media_tagger_child_contexts.TAG_TAXONOMY_CREATOR) ?? null;
+                if (tag_taxonomy_creator_hotkeys_context == null) {
+                    throw new Error("In MediaTagger, invalid component_hotkey_context: TagTaxonomyCreator hotkeys context was not defined as a child context of the MediaTagger context.");
+                }
+
+                /**
+                 * The component hotkey context for the media taggings component.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
+                 */
+                let media_taggings_hotkeys_context = component_hotkey_context.ChildHotkeysContexts.get(media_tagger_child_contexts.MEDIA_TAGGINGS) ?? null;
+                if (media_taggings_hotkeys_context == null) {
+                    throw new Error("In MediaTagger, invalid component_hotkey_context: MediaTaggings hotkeys context was not defined as a child context of the MediaTagger context.");
+                }
 
                 /**
                  * The component hotkeys context for the child taxonomy tags components.
@@ -117,15 +139,7 @@
              * @default 1
              */
             export let background_alpha = 1;
-        
-        /*----------  Component metadata  ----------*/
-        
-            /**
-             * The count of dtt-sections in the category tagger.
-             * @type {number}
-             */
-            let dtt_sections_count;
-        
+                
         /*----------  Hotkey state  ----------*/
         
             /**
@@ -135,10 +149,20 @@
             let mt_focused_section = 0;
 
             /**
-             * Section active.
+             * Whether the focused section is active.
              * @type {boolean}
              */
-            let mt_section_active = false;
+            let mt_focused_section_active = false;
+
+            /**
+             * Sub-component sections.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext[]}
+             */
+            const sub_component_sections = [
+                tag_taxonomy_creator_hotkeys_context,
+                media_taggings_hotkeys_context,
+                cluster_public_tags_hotkeys_context
+            ];
 
         let current_cluster_unsubscriber = () => {};
 
@@ -147,8 +171,6 @@
     /*=====  End of Properties  ======*/
 
     onMount(async () => {
-        defineComponentMetadata();
-
         if ($current_cluster === null) {
             current_cluster_unsubscriber = current_cluster.subscribe(async (value) => {
                 if (value !== null) {
@@ -257,19 +279,13 @@
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
             const handleSectionFocusNavigation = (event, hotkey) => {
-                if (mt_section_active) return;
+                if (sub_component_sections[mt_focused_section].Active) return;
 
                 let new_focused_section = mt_focused_section;
 
                 const navigation_step = event.key === "w" ? -1 : 1;
 
-                new_focused_section += navigation_step;
-
-                if (new_focused_section < 0) {
-                    new_focused_section = dtt_sections_count - 1;
-                } else if (new_focused_section >= dtt_sections_count) {
-                    new_focused_section = 0;
-                }
+                new_focused_section = linearCycleNavigationWrap(mt_focused_section, sub_component_sections.length - 1, navigation_step).value;
 
                 mt_focused_section = new_focused_section;
             }
@@ -282,14 +298,14 @@
             const handleSectionSelection = (event, hotkey) => {
                 event.preventDefault();
 
-                mt_section_active = true;
+                sub_component_sections[mt_focused_section].Active = true;
             }
 
             /**
              * Recovers the hotkeys control and deactivates the active section.
              */
             const handleRecoverHotkeysControl = () => {
-                mt_section_active = false;
+                sub_component_sections[mt_focused_section].Active = false;
             }
 
             /**
@@ -311,8 +327,7 @@
                 const defineSubComponentsHotkeysContext = () => {   
                     taxonomy_tags_hotkeys_context = defineTaxonomyTagsHotkeysContext();
                     
-                    cluster_public_tags_hotkeys_context = defineClusterPublicTagsHotkeysContext();
-                    component_hotkey_context.addChildContext(cluster_public_tags_hotkeys_context);
+                    defineClusterPublicTagsHotkeysContext();
 
                     component_hotkey_context.inheritExtraHotkeys();
                 }
@@ -346,7 +361,7 @@
 
                 /**
                  * Defines the hotkeys context for the cluster public tags component.
-                 * @returns {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+                 * @returns {void}
                  */
                 const defineClusterPublicTagsHotkeysContext = () => {
                     const cluster_public_tags_context = component_hotkey_context.ChildHotkeysContexts.get(media_tagger_child_contexts.CLUSTER_PUBLIC_TAGS);
@@ -368,8 +383,6 @@
                        }
 
                     /* -------------------------------------------------------------------------- */
-
-                    return cluster_public_tags_context;
                 }
 
                 /**
@@ -391,39 +404,12 @@
                 }
         
         /*=====  End of Keybinds  ======*/
-
-        /**
-         * Defines the component's content metadata.
-         * TODO: Streamline this menu navigation technique into a movement wrapper.
-         */
-        const defineComponentMetadata = () => {
-            let dtt_sections = getSectionNodes();
-
-            if (dtt_sections == null || dtt_sections.length === 0) {
-                console.error("Could not find the medias tagger tool sections.");
-                return;
-            }
-
-            dtt_sections_count = dtt_sections.length;
-        }
         
         /**
          * Emits an event to the parent to close the medias tagger tool.
          */
         const emitCloseMediasTagger = () => {
             dispatch("close-medias-tagger");
-        }
-
-        /**
-         * Returns all the section nodes of the medias tagger tool.
-         * @returns {NodeListOf<HTMLElement> | undefined}
-         */
-        const getSectionNodes = () => {
-            if (the_media_tagger_tool == null) return; 
-
-            const section_selector = ".dmtt-section";
-
-            return the_media_tagger_tool.querySelectorAll(section_selector);
         }
 
         /**
@@ -630,7 +616,7 @@
 
 <dialog open id="dungeon-medias-tagger-tool"
     bind:this={the_media_tagger_tool}
-    class:section-activated={mt_section_active}
+    class:section-activated={sub_component_sections[mt_focused_section].Active}
     class="libery-dungeon-window"
     style:--background-alpha={background_alpha}
 >
@@ -639,9 +625,9 @@
         class:focused-section={mt_focused_section === 0}
     >
         <TagTaxonomyCreator
+            component_hotkey_context={tag_taxonomy_creator_hotkeys_context}
             ui_entity_reference={ui_entity_reference}
             ui_taxonomy_reference={ui_taxonomy_reference}
-            has_hotkey_control={mt_focused_section === 0 && mt_section_active}
             on:tag-taxonomy-created={handleTagTaxonomyCreated}
             on:drop-hotkeys-control={handleRecoverHotkeysControl}
         />
@@ -651,9 +637,10 @@
         class:focused-section={mt_focused_section === 1}
     >
         <MediaTaggings 
+            component_hotkey_context={media_taggings_hotkeys_context}
             the_active_media={the_active_media}
             current_media_taggings={current_media_taggings}
-            has_hotkey_control={mt_focused_section === 1 && mt_section_active}
+            has_hotkey_control={media_taggings_hotkeys_context.Active}
             on:drop-hotkeys-control={handleRecoverHotkeysControl}
             on:remove-category-tag={handleRemoveMediaTag}
         />
@@ -664,7 +651,7 @@
     >
         {#if cluster_tags_checked && taxonomy_tags_hotkeys_context != null && cluster_public_tags_hotkeys_context != null}
             <ClusterPublicTags 
-                has_hotkey_control={mt_focused_section === 2 && mt_section_active}
+                has_hotkey_control={cluster_public_tags_hotkeys_context.Active}
                 ui_entity_reference={ui_entity_reference}
                 ui_taxonomy_reference={ui_taxonomy_reference}
                 ui_tag_reference={ui_tag_reference}

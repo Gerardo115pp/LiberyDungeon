@@ -69,16 +69,6 @@
              */
             let has_mounted = false;
         
-            /**
-             * Whether it has hotkey control.
-             * @type {boolean}
-             */ 
-            export let has_hotkey_control = false;
-            $: if (has_hotkey_control && has_mounted) {
-                defineDesktopKeybinds();
-                focusNewAttributeNameInput();
-            }
-        
         /*=====  End of Hotkeys state  ======*/
 
         /*----------  UI references  ----------*/
@@ -101,6 +91,8 @@
 
     onMount(() => {
         has_mounted = true;
+
+        component_hotkey_context.onActiveChange(handleHotkeyContextActiveChange);
     });
 
     onDestroy(() => {
@@ -171,7 +163,23 @@
              */
             const handleCloseCategoryTaggerTool = (event, hotkey) => {
                 resetHotkeyContext();
-                emitDropHotkeyContext()
+                emitDropHotkeyContext();
+            }
+
+            /**
+             * Handles the active state change of the ComponentHotkeyContext.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ActiveChangeCallback}
+             */
+            const handleHotkeyContextActiveChange = (is_active) => {
+                if (!has_mounted) return;
+
+                if (is_active) {
+                    defineDesktopKeybinds();
+                    focusNewAttributeNameInput();
+                } else {
+                    resetHotkeyContext();
+                    emitDropHotkeyContext();
+                }
             }
 
             /**
@@ -182,6 +190,7 @@
 
                 if (global_hotkeys_manager.ContextName !== component_hotkey_context.HotkeysContextName) return; 
 
+                console.log("Dropping hotkey context");
                 global_hotkeys_manager.loadPreviousContext();
             }
 
