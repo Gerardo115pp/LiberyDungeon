@@ -96,7 +96,19 @@
             let video_element;
         
         
-        /*----------  Sub-components hotkeys context  ----------*/
+        /*----------  hotkeys contexts  ----------*/
+
+            /**
+             * @type {string}
+             * the name of the hotkeys context
+             */
+            const hotkeys_context_name = "media_viewer";
+
+            /**
+             * The media viewer component hotkey context.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+             */
+            const media_viewer_hotkeys_context = new ComponentHotkeyContext(hotkeys_context_name);
         
             /**
              * The component hotkey context for the child Media tagger.
@@ -155,9 +167,6 @@
             /** @type {boolean} whether to show the media information panel */
             let show_media_information_panel = false;
 
-            /** @type {string} the name of the hotkeys context */
-            const hotkeys_context_name = "media_viewer";
-
             /**  @type {boolean} Whether the media viewer is currently closing. 
              */
             let media_viewer_closing = false;
@@ -213,6 +222,9 @@
             defineDesktopKeybinds();
 
             defineSubComponentsHotkeyContext();
+
+            // @ts-ignore
+            window.media_viewer_hotkey_context = media_viewer_hotkeys_context;
         }
 
         if ($current_category === null) {
@@ -855,24 +867,34 @@
              * so this just makes sure the media viewer recovers hotkey control.
              */
             const toggleMediaTaggerTool = () => {
+                if (!media_tagger_hotkeys_context || !global_hotkeys_manager) return;
+
                 const media_tagger_was_mounted = $media_tagging_tool_mounted;
+                const media_tagger_was_hidden = media_tagger_hidden;
+
+                media_tagger_hidden = !media_tagger_hidden;
 
                 if (!media_tagger_was_mounted) {
                     media_tagging_tool_mounted.set(true);
                 } else {
 
-                    if (media_tagger_hidden && the_media_tagger != null) {
+                    if (media_tagger_was_hidden && the_media_tagger != null && media_tagger_hotkeys_context) {
+                        const media_tagger_last_active_context = media_tagger_hotkeys_context.getLastActiveChildContextName();
+                        let last_context_loaded = false;
 
-                        the_media_tagger.defineDesktopKeybinds();
+                        if (global_hotkeys_manager.hasContext(media_tagger_last_active_context)) {
+                            last_context_loaded = global_hotkeys_manager.loadPastContext(media_tagger_last_active_context);
+                        }
 
-                    } else if (!media_tagger_hidden) {
+                        if (!last_context_loaded) {
+                            the_media_tagger.defineDesktopKeybinds();
+                        }
+                    } else if (!media_tagger_was_hidden) {
                         if (global_hotkeys_manager != null && global_hotkeys_manager.ContextName != hotkeys_context_name) {
                             defineDesktopKeybinds();
                         }
                     }
                 }
-
-                media_tagger_hidden = !media_tagger_hidden;
             }
 
             /* ---------------------- sub-components hotkey contex ---------------------- */
@@ -882,6 +904,7 @@
                  */
                 const defineSubComponentsHotkeyContext = () => {
                     media_tagger_hotkeys_context = defineMediaTaggerHotkeyContext();
+                    media_viewer_hotkeys_context.ChildHotkeysContexts.set(media_tagger_hotkeys_context.HotkeysContextName, media_tagger_hotkeys_context);
                 }
 
                 /**
@@ -890,19 +913,31 @@
                  * @returns {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
                  */
                 const defineMediaTaggerHotkeyContext = () => {
-                    const media_tagger_context =  generateMediaTaggerHotkeyContext();
+                    const media_tagger_context = generateMediaTaggerHotkeyContext();
 
-                    const left_right_navigation = media_tagger_context.getHotkeyAction(LEFT_RIGHT_NAVIGATION);
+                    /* -------------------------- left right navigation ------------------------- */
+                        const left_right_navigation = media_tagger_context.getHotkeyAction(LEFT_RIGHT_NAVIGATION);
 
-                    if (left_right_navigation == null) {
-                        throw Error("In MediaViewer.defineMediaTaggerHotkeyContext: the generated hotkey context for the media tagger component had no LEFT_RIGHT_NAVIGATION action.")
-                    }
+                        if (left_right_navigation == null) {
+                            throw Error("In MediaViewer.defineMediaTaggerHotkeyContext: the generated hotkey context for the media tagger component had no LEFT_RIGHT_NAVIGATION action.")
+                        }
 
-                    if (left_right_navigation.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
-                        left_right_navigation.overwriteDescription(`${common_action_groups.NAVIGATION}Navigate through the medias, A for previous, D for next`);
+                        if (left_right_navigation.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
+                            left_right_navigation.overwriteDescription(`${common_action_groups.NAVIGATION}Navigate through the medias, A for previous, D for next`);
 
-                        left_right_navigation.Callback = handleMediaNavigation;
-                    }
+                            left_right_navigation.Callback = handleMediaNavigation;
+                        }
+                    /* ---------------------------- media tagger hide --------------------------- */
+                        media_tagger_context.registerExtraHotkey({
+                            hotkey_triggers: ["t"],
+                            callback: handleShowMediaTaggerTool,
+                            options: {
+                                description: `${common_action_groups.GENERAL}Hides the media tagger without having to leave the current tagger section.`,
+                            },
+                        });
+                    /* -------------------------------------------------------------------------- */
+
+                    media_tagger_context.ParentHotkeysContext = media_viewer_hotkeys_context;
 
                     return media_tagger_context;
                 }
