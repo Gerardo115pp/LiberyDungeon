@@ -629,7 +629,8 @@ export class ComponentHotkeyContext {
 
     /**
      * Returns the hotkey context name of the last activated child hotkeys context in a Component hotkey context chain . e.g: consider a component hotkey context chain like A(active)->B(active)->C(active)->D(unactive).
-     * The method will return the hotkey context name of C because it's active but non of it's children have activated their hotkeys context. If the co
+     * The method will return the hotkey context name of C because it's active but non of it's children have activated their hotkeys context. If the component hotkey context is active but has not active childs, 
+     * then returns it's own name. If the component hotkey context is not active then it returns an empty string.
      * @returns {string}
      */
     getLastActiveChildContextName() {
