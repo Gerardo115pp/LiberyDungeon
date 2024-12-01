@@ -209,6 +209,8 @@
 
                     wrapShowHotkeysTable(hotkeys_context);
 
+                    component_hotkey_context.applyExtraHotkeys();
+
                     global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
                     
                     global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
