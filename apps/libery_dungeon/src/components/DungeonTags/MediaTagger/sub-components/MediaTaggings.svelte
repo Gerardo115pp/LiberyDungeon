@@ -336,6 +336,16 @@
         /*=====  End of Keybinds  ======*/
 
         /**
+         * Returns a version of the passed string that is safe to use as an id selector.
+         * @param {string} unsafe_string
+         * @returns {string}
+         */
+        const cleanIdSelector = unsafe_string => {
+            return unsafe_string.replace(/[^a-zA-Z0-9-_]/g, "-");
+        }
+
+
+        /**
          * Returns the tag taxonomy map from the taxonomies contained on the current category taggings. 
          * @param {import("@models/DungeonTags").DungeonTagging[]} taggings
          * @returns {Map<string, import("@models/DungeonTags").DungeonTagging[]>}
@@ -403,8 +413,15 @@
 
             const taxonomy_name = getFocusedTagTaxonomyName();
 
-            grid_selectors.grid_parent_selector = `#media-${the_active_media.uuid}-attribute-${taxonomy_name}`;
-            grid_selectors.grid_member_selector = `.${taxonomy_name}-${GRID_MOVEMENT_ITEM_CLASS}`;
+            if (taxonomy_name == null) {
+                console.error("In MediaTaggings.getFocusedTaggingsGridSelectors, taxonomy_name is null.");
+                return null;
+            }
+
+            const clean_taxonomy_name = cleanIdSelector(taxonomy_name);
+
+            grid_selectors.grid_parent_selector = `#media-${the_active_media.uuid}-attribute-${clean_taxonomy_name}`;
+            grid_selectors.grid_member_selector = `.${clean_taxonomy_name}-${GRID_MOVEMENT_ITEM_CLASS}`;
 
             return grid_selectors;
         }
@@ -554,7 +571,7 @@
         {#if tag_taxonomy_map != null && $cluster_tags.length > 0}
             {#each tag_taxonomy_map as [taxonomy_name, taxonomy_members], h}
                 {@const is_taxonomy_keyboard_focused = focused_taxonomy_index === h && component_hotkey_context.Active}
-                {@const taxonomy_members_list_id_selector = `media-${the_active_media.uuid}-attribute-${taxonomy_name}`}
+                {@const taxonomy_members_list_id_selector = `media-${the_active_media.uuid}-attribute-${cleanIdSelector(taxonomy_name)}`}
                 <ol id={taxonomy_members_list_id_selector}
                     class="current-media-attribute dungeon-tag-container"
                     class:focused-attribute={is_taxonomy_keyboard_focused}
@@ -563,7 +580,7 @@
                     {#each taxonomy_members as dungeon_tagging, k}
                         {@const is_tag_keyboard_focused = is_taxonomy_keyboard_focused && focused_tag_index === k}
                         <DeleteableItem
-                            class_selector="{taxonomy_name}-{GRID_MOVEMENT_ITEM_CLASS}"
+                            class_selector="{cleanIdSelector(taxonomy_name)}-{GRID_MOVEMENT_ITEM_CLASS}"
                             item_color={!is_tag_keyboard_focused ? "var(--grey)" : "var(--grey-8)"}
                             item_id={dungeon_tagging.Tag.Id}
                             on:item-deleted={handleCategoryTagDeleted}
