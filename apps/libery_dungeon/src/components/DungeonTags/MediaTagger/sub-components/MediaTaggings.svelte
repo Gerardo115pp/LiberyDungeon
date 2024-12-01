@@ -9,6 +9,7 @@
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     import { CursorMovementWASD, GRID_MOVEMENT_ITEM_CLASS } from "@app/common/keybinds/CursorMovement";
     import { browser } from "$app/environment";
+    import generateMediaTaggingsHotkeyContext from "./media_taggings_hotkeys";
     
     /*=============================================
     =            Properties            =
@@ -23,7 +24,11 @@
              */
             const global_hotkeys_manager = getHotkeysManager();
 
-            const hotkeys_context_name = "category_attributes";
+            /**
+             * The component hotkey context for the media taggings.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+             */
+            export let component_hotkey_context = generateMediaTaggingsHotkeyContext();
 
             /*=============================================
             =            Hotkeys state            =
@@ -130,8 +135,13 @@
             const defineDesktopKeybinds = () => {
                 if (global_hotkeys_manager == null) return;
 
-                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
-                    const hotkeys_context = new HotkeysContext();
+                if (!global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+
+                    if (component_hotkey_context.HasGeneratedHotkeysContext()) {
+                        component_hotkey_context.dropHotkeysContext();
+                    }
+
+                    const hotkeys_context = component_hotkey_context.generateHotkeysContext();
 
                     setGridNavigationWrapper(hotkeys_context);
 
@@ -143,7 +153,7 @@
                         description: "<navigation>Removes the focused attribute value from the current category.",
                     });
                     
-                    hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
+                    hotkeys_context.register(["q"], handleDropMediaTaggingsContext, {
                         description: `<${HOTKEYS_GENERAL_GROUP}>Closes the category tagger tool.`,
                         await_execution: false
                     });
@@ -152,10 +162,14 @@
                         description: `<${HOTKEYS_GENERAL_GROUP}>Opens the hotkeys cheat sheet.`
                     });
 
-                    global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                    component_hotkey_context.applyExtraHotkeys();
+                    
+                    global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
                 }
                 
-                global_hotkeys_manager.loadContext(hotkeys_context_name);
+                global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
+
+                component_hotkey_context.Active = true;
             }
 
             /**
@@ -199,9 +213,9 @@
              * Drops the component hotkey context
              */
             const dropHotkeyContext = () => {
-                if (global_hotkeys_manager == null || !global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
+                if (global_hotkeys_manager == null || !global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) return;
 
-                global_hotkeys_manager.dropContext(hotkeys_context_name);
+                global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
             }
 
             const dropGridNavigationWrapper = () => {
@@ -282,7 +296,8 @@
              * @param {KeyboardEvent} event
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
-            const handleCloseCategoryTaggerTool = (event, hotkey) => {
+            const handleDropMediaTaggingsContext = (event, hotkey) => {
+                component_hotkey_context.Active = false;
                 resetHotkeyContext();
                 emitDropHotkeyContext();
             }
@@ -299,7 +314,7 @@
              * Drops the tools hotkey contexts and loads the previous context.
              */
             const resetHotkeyContext = () => {
-                if (global_hotkeys_manager == null || global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+                if (global_hotkeys_manager == null || global_hotkeys_manager.ContextName !== component_hotkey_context.HotkeysContextName) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
             }
