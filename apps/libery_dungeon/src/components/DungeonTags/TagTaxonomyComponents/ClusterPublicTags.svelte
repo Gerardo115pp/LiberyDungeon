@@ -68,12 +68,6 @@
                     $: if (cpt_focused_tag_taxonomy_index >= 0 && component_hotkey_context.Active) {
                         ensureFocusedTagTaxonomyVisible();
                     }
-
-                    /**
-                     * Whether the focused tag taxonomy is active.
-                     * @type {boolean}
-                     */
-                    let cpt_focused_tag_taxonomy_active = false;
                 
                 /*=====  End of Hotkeys movement  ======*/
 
@@ -245,7 +239,7 @@
             const handleTagTaxonomySelection = (event, hotkey) => {
                 event.preventDefault();
 
-                cpt_focused_tag_taxonomy_active = true; 
+                taxonomy_tags_hotkeys_context.Active = true;
             }
 
             /**
@@ -273,7 +267,7 @@
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
             const handleFocusedTagTaxonomyDeletion = async (event, hotkey) => {
-                if (cpt_focused_tag_taxonomy_active) return;
+                if (taxonomy_tags_hotkeys_context.Active) return;
 
                 let focused_taxonomy = $cluster_tags[cpt_focused_tag_taxonomy_index];
 
@@ -299,7 +293,7 @@
              * Recovers the hotkeys control and deactivates the active section.
              */
             const handleRecoverHotkeysControl = () => {
-                cpt_focused_tag_taxonomy_active = false;
+                taxonomy_tags_hotkeys_context.Active = false;
             }
 
             /**
@@ -308,7 +302,7 @@
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
             const handleRenameFocusedTagTaxonomyHotkey = (event, hotkey) => {
-                if (cpt_focused_tag_taxonomy_active) return;
+                if (taxonomy_tags_hotkeys_context.Active) return;
 
                 cpt_focused_tag_taxonomy_rename_mode = true;
             }
@@ -498,7 +492,7 @@
                 {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && component_hotkey_context.Active}
                 <li  class="cpt-ttm-taxonomy"
                     class:keyboard-focused={is_keyboard_focused}
-                    class:has-hotkey-control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
+                    class:has-hotkey-control={is_keyboard_focused && taxonomy_tags_hotkeys_context.Active}
                 >
                     {#if is_keyboard_focused && cpt_focused_tag_taxonomy_rename_mode}
                         <input class="rename-input cpt-ttm-taxonomy-name"
@@ -530,7 +524,7 @@
             {@const is_keyboard_focused = cpt_focused_tag_taxonomy_index === h && component_hotkey_context.Active}
             <TaxonomyTags 
                 taxonomy_tags={taxonomy_tags}
-                has_hotkey_control={is_keyboard_focused && cpt_focused_tag_taxonomy_active}
+                has_hotkey_control={is_keyboard_focused && taxonomy_tags_hotkeys_context.Active}
                 is_keyboard_focused={is_keyboard_focused}
                 component_hotkey_context={taxonomy_tags_hotkeys_context}
                 ui_entity_reference={ui_entity_reference}
