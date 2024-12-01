@@ -360,6 +360,13 @@ export class HotkeyAction {
 }
 
 /**
+ * A callback for when the ComponentHotkeyContext.active property changes.
+* @callback ActiveChangeCallback
+ * @param {boolean} active
+ * @returns {void}
+*/
+
+/**
  * A wrapper class for the HotkeysContext. It's purpose is for components to expose the hotkeys it handles and allow a parent component to register over them or request a given action is taken when a hotkey triggers.
  * Whether an action handler gets replaced, wrapped or ignored is up to the actual component. For most cases, HotkeysContext is a better choice than ComponentHotkeyContext. ComponentHotkeyContext is a specialized version 
  * of HotkeysContext created for cases when you need to grant hotkey control to deeply nested child components and the hotkey action requires data from more than one component.
@@ -435,9 +442,9 @@ export class ComponentHotkeyContext {
 
     /**
      * A callback triggered whenever the #active property changes.
-     * @type {(active: boolean) => void}
+     * @type {ActiveChangeCallback[]}
      */
-    #active_state_change_callback;
+    #active_state_change_callbacks;
 
     /**
      * @param {string} hotkeys_context_name
@@ -451,7 +458,7 @@ export class ComponentHotkeyContext {
         this.#hotkeys_context_name = hotkeys_context_name;
         this.#final = false;
         this.#active = false;
-        this.#active_state_change_callback = (a) => {};
+        this.#active_state_change_callbacks = [];
     }
 
     /**
@@ -469,8 +476,13 @@ export class ComponentHotkeyContext {
      * @param {boolean} active
      */
     set Active(active) {
+        if (this.#active === active) return;
+
         this.#active = active;
-        this.#active_state_change_callback(active);
+        
+        for (const callback of this.#active_state_change_callbacks) {
+            callback(active);
+        }
     }
 
     /**
@@ -781,7 +793,14 @@ export class ComponentHotkeyContext {
      * @param {(active: boolean) => void} callback
      */
     onActiveChange(callback) {
-        this.#active_state_change_callback = callback;
+        for (const c of this.#active_state_change_callbacks) {
+            if (c === callback) {
+                console.warn("In ComponentHotkeyContext.onActiveChange: Attempted to add the same callback twice.");
+                return;
+            }
+        }
+
+        this.#active_state_change_callbacks.push(callback);
     }
 
     /**
@@ -882,6 +901,14 @@ export class ComponentHotkeyContext {
      */
     registerExtraHotkey(hotkey_params) {
         this.#extra_hotkeys.push(hotkey_params);
+    }
+
+    /**
+     * Removes a on active change callback.
+     * @param {ActiveChangeCallback} callback
+     */
+    removeOnActiveChange(callback) {
+        this.#active_state_change_callbacks = this.#active_state_change_callbacks.filter(c => c !== callback);
     }
 
     /**
