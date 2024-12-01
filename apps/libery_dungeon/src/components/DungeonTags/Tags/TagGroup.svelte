@@ -185,6 +185,16 @@
         }
 
         /**
+         * Returns the html element corresponding to keyboard_focused tag or null.
+         * @returns {HTMLElement | null}
+         */
+        export function getFocusedTagElement() {
+            if (!enable_keyboard_selection) return null;
+
+            return document.getElementById(`tag-${dungeon_tags[focused_tag_index].Id}`);
+        }
+
+        /**
          * Handles the keydown event on the tag creator input.
          * @param {KeyboardEvent} event
          */
@@ -345,6 +355,7 @@
             <DeleteableItem 
                 item_color={!is_keyboard_selected ? tag_group_color : "var(--main-dark-transparent)"}
                 item_id={tag.Id}
+                id_selector="tag-{tag.Id}"
                 item_highlight_color="var(--accent-t)"
                 is_highlighted={!is_keyboard_selected && highlighted_tag_ids != null && highlighted_tag_ids.has(tag.Id)}
                 on:item-selected={handleTagSelection}

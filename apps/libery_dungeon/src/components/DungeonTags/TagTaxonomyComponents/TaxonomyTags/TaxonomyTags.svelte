@@ -1,20 +1,24 @@
 <script>
-    import { createDungeonTag, deleteDungeonTag, renameDungeonTag } from "@models/DungeonTags";
-    import TagGroup from "../../Tags/TagGroup.svelte";
-    import { LabeledError,  VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
-    import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
-    import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
-    import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
-    import generateTaxonomyTagsHotkeysContext, { taxonomy_tags_actions } from "./taxonomy_tags_hotkeys";
-    import { browser } from "$app/environment";
-    import { CursorMovementWASD } from "@common/keybinds/CursorMovement";
-    import { SearchResultsWrapper } from "@app/common/keybinds/CommonActionWrappers";
-    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
-    import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
-    import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
-    import { last_keyboard_focused_tag } from "./taxonomy_tags_store";
-    import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
-    import { writable } from "svelte/store";
+    /*=============================================
+    =            Imports            =
+    =============================================*/
+        import { createDungeonTag, deleteDungeonTag, renameDungeonTag } from "@models/DungeonTags";
+        import TagGroup from "../../Tags/TagGroup.svelte";
+        import { LabeledError,  VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
+        import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
+        import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+        import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
+        import generateTaxonomyTagsHotkeysContext, { taxonomy_tags_actions } from "./taxonomy_tags_hotkeys";
+        import { browser } from "$app/environment";
+        import { CursorMovementWASD } from "@common/keybinds/CursorMovement";
+        import { SearchResultsWrapper } from "@app/common/keybinds/CommonActionWrappers";
+        import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
+        import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
+        import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+        import { last_keyboard_focused_tag } from "./taxonomy_tags_store";
+        import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
+        import { writable } from "svelte/store";
+    /*=====  End of Imports  ======*/
 
     /*=============================================
     =            Properties            =
@@ -81,7 +85,7 @@
              */
             export let is_keyboard_focused = false;
             $: if (is_keyboard_focused) {
-                ensureTaxonomyTagVisible();
+                ensureTagTaxonomyVisible();
             }
 
         /*=====  End of Hotkeys  ======*/
@@ -344,6 +348,8 @@
 
                 last_keyboard_focused_tag.set(focused_tag);
 
+                ensureFocusedTagVisible();
+
                 return false;
             }
 
@@ -537,12 +543,27 @@
         /**
          * Ensures that if the element is keyboard focused, it is visible in the scroll container.
          */
-        const ensureTaxonomyTagVisible = async () => {
+        const ensureTagTaxonomyVisible = async () => {
             await tick();
 
             if (!the_taxonomy_tags_section || !is_keyboard_focused) return;
 
             the_taxonomy_tags_section.scrollIntoView({behavior: "smooth", block: "center"});
+        }
+
+        /**
+         * Ensures the visibility of the taxonomy tag focused by the keyboard cursor.
+         */
+        const ensureFocusedTagVisible = async () => {
+            await tick();
+
+            if (!the_tag_group_component || !is_keyboard_focused) return;
+
+            const focused_tag = the_tag_group_component.getFocusedTagElement();
+
+            if (focused_tag == null) return;
+
+            focused_tag.scrollIntoView({behavior: "smooth", block: "center"});
         }
 
         /**
