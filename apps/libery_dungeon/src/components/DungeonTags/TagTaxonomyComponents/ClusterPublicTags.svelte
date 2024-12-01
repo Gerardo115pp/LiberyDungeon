@@ -257,8 +257,6 @@
                 let navigation_step = event.key === "w" ? -1 : 1;
 
                 new_cpt_focused_tag_taxonomy_index = linearCycleNavigationWrap(new_cpt_focused_tag_taxonomy_index, $cluster_tags.length - 1, navigation_step).value;
-                console.log("new_cpt_focused_tag_taxonomy_index:", new_cpt_focused_tag_taxonomy_index);
-                console.log("$cluster_tags.length:", $cluster_tags.length);
 
                 cpt_focused_tag_taxonomy_index = new_cpt_focused_tag_taxonomy_index;
             }
