@@ -149,12 +149,6 @@
             let mt_focused_section = 0;
 
             /**
-             * Whether the focused section is active.
-             * @type {boolean}
-             */
-            let mt_focused_section_active = false;
-
-            /**
              * Sub-component sections.
              * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext[]}
              */

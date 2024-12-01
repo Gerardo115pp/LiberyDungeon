@@ -20,6 +20,7 @@
         import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
         import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+        import generateCategoryTaggerHotkeyContext, { category_tagger_child_contexts } from "./category_tagger_hotkeys";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -35,7 +36,12 @@
              */
             const global_hotkeys_manager = getHotkeysManager();
 
-            const hotkeys_context_name = "category-tagger-tool";
+            /**
+             * the component hotkey context for the categories tagger component
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+             */
+            export let component_hotkey_context = generateCategoryTaggerHotkeyContext();
+
 
             /* -------------------------- sub-component context -------------------------- */
 
@@ -44,7 +50,34 @@
                  * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
                  */
                 let taxonomy_tags_hotkeys_context = null;
-        
+
+                /**
+                 * The component hotkey context for the tag taxonomy creator.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
+                 */
+                let tag_taxonomy_creator_hotkeys_context = component_hotkey_context.ChildHotkeysContexts.get(category_tagger_child_contexts.TAG_TAXONOMY_CREATOR) ?? null;
+                if (tag_taxonomy_creator_hotkeys_context == null) {
+                    throw new Error("In CategoryTagger, invalid component_hotkey_context: TagTaxonomyCreator hotkeys context was not defined as a child context of the CategoryTagger context.");
+                }
+
+                /**
+                 * The component hotkey context for the category taggings component.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
+                 */
+                let category_taggings_hotkeys_context = component_hotkey_context.ChildHotkeysContexts.get(category_tagger_child_contexts.CATEGORY_TAGGINGS) ?? null;
+                if (category_taggings_hotkeys_context == null) {
+                    throw new Error("In CategoryTagger, invalid component_hotkey_context: CategoryTaggings hotkeys context was not defined as a child context of the CategoryTagger context.");
+                }
+
+                /**
+                 * The component hotkey context for the cluster public tags component.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
+                 */
+                let cluster_public_tags_hotkeys_context = component_hotkey_context.ChildHotkeysContexts.get(category_tagger_child_contexts.CLUSTER_PUBLIC_TAGS) ?? null;
+                if (cluster_public_tags_hotkeys_context == null) {
+                    throw new Error("In CategoryTagger, invalid component_hotkey_context: ClusterPublicTags hotkeys context was not defined as a child context of the CategoryTagger context.");
+                }
+
         /*=====  End of Hotkeys  ======*/
     
         /**
@@ -64,9 +97,8 @@
          * @type {HTMLDialogElement | null}
          */
         let the_category_tagger_tool = null;
-
-
         
+
         /*----------  UI references  ----------*/
         
             /**
@@ -104,10 +136,14 @@
             let ct_focused_section = 0;
 
             /**
-             * Section active.
-             * @type {boolean}
+             * Sub-component sections.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext[]}
              */
-            let ct_section_active = false;
+            const sub_component_sections = [
+                tag_taxonomy_creator_hotkeys_context,
+                category_taggings_hotkeys_context,
+                cluster_public_tags_hotkeys_context
+            ];
 
         let current_cluster_unsubscriber = () => {};
         let current_category_unsubscriber = () => {};
@@ -163,11 +199,15 @@
                     return;
                 };
 
-                if (global_hotkeys_manager.hasContext(hotkeys_context_name)) {
-                    global_hotkeys_manager.dropContext(hotkeys_context_name);
+                if (global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+                    global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
                 }
 
-                const hotkeys_context = new HotkeysContext();
+                if (component_hotkey_context.HasGeneratedHotkeysContext()) {
+                    component_hotkey_context.dropHotkeysContext();
+                }
+
+                const hotkeys_context = component_hotkey_context.generateHotkeysContext();
 
                 hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
                     description: `<${HOTKEYS_GENERAL_GROUP}>Closes the category tagger tool.`,
@@ -186,9 +226,9 @@
 
                 wrapShowHotkeysTable(hotkeys_context);
 
-                global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
 
-                global_hotkeys_manager.loadContext(hotkeys_context_name);
+                global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
             }
 
             /**
@@ -207,7 +247,7 @@
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
              */
             const handleSectionFocusNavigation = (event, hotkey) => {
-                if (ct_section_active) return;
+                if (sub_component_sections[ct_focused_section].Active) return;
 
                 let new_focused_section = ct_focused_section;
 
@@ -232,14 +272,14 @@
             const handleSectionSelection = (event, hotkey) => {
                 event.preventDefault();
 
-                ct_section_active = true;
+                sub_component_sections[ct_focused_section].Active = true;
             }
 
             /**
              * Recovers the hotkeys control and deactivates the active section.
              */
             const handleRecoverHotkeysControl = () => {
-                ct_section_active = false;
+                sub_component_sections[ct_focused_section].Active = false;
             }
 
             /**
@@ -248,7 +288,7 @@
             const resetHotkeyContext = () => {
                 if (global_hotkeys_manager == null) return;
 
-                if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+                if (global_hotkeys_manager.ContextName !== component_hotkey_context.HotkeysContextName) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
             }
@@ -627,7 +667,7 @@
 
 <dialog open id="dungeon-category-tagger-tool"
     bind:this={the_category_tagger_tool}
-    class:section-activated={ct_section_active}
+    class:section-activated={sub_component_sections[ct_focused_section].Active}
     class="libery-dungeon-window"
 >
     <section id="tag-taxonomy-creator-section" 
@@ -635,9 +675,9 @@
         class:focused-section={ct_focused_section === 0}
     >
         <TagTaxonomyCreator
+            component_hotkey_context={tag_taxonomy_creator_hotkeys_context}
             ui_entity_reference={ui_entity_reference}
             ui_taxonomy_reference={ui_taxonomy_reference}
-            has_hotkey_control={ct_focused_section === 0 && ct_section_active}
             on:tag-taxonomy-created={handleTagTaxonomyCreated}
             on:drop-hotkeys-control={handleRecoverHotkeysControl}
         />
@@ -647,7 +687,7 @@
         class:focused-section={ct_focused_section === 1}
     >
         <CategoryTaggings 
-            has_hotkey_control={ct_focused_section === 1 && ct_section_active}
+            component_hotkey_context={category_taggings_hotkeys_context}
             current_category_taggings={current_category_taggings}
             on:remove-category-tag={handleRemoveCategoryTag}
             on:drop-hotkeys-control={handleRecoverHotkeysControl}
@@ -659,7 +699,8 @@
     >
         {#if cluster_tags_checked && taxonomy_tags_hotkeys_context != null}
             <ClusterPublicTags 
-                has_hotkey_control={ct_focused_section === 2 && ct_section_active}
+                component_hotkey_context={cluster_public_tags_hotkeys_context}
+                has_hotkey_control={cluster_public_tags_hotkeys_context.Active}
                 ui_entity_reference={ui_entity_reference}
                 ui_taxonomy_reference={ui_taxonomy_reference}
                 ui_tag_reference={ui_tag_reference}
