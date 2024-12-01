@@ -501,6 +501,16 @@ export class ComponentHotkeyContext {
     }
 
     /**
+     * Copies all the extra hotkey registered on this component hotkey context to another.
+     * @param {ComponentHotkeyContext} other
+     */
+    cloneExtraHotkeys(other) {
+        for (let h = 0; h < this.#extra_hotkeys.length; h++) {
+            other.registerExtraHotkey(this.#extra_hotkeys[h]);
+        }
+    }
+
+    /**
      * Returns the overwriting behavior for a given action name. If the action does not exist, it returns undefined.
      * @param {Symbol} action_name
      * @returns {Symbol | undefined}
@@ -685,6 +695,15 @@ export class ComponentHotkeyContext {
      */
     HasGeneratedHotkeysContext() {
         return this.#hotkeys_context != null;
+    }
+
+    /**
+     * Passed down the extra hotkeys to all the child hotkey contexts.
+     */
+    inheritExtraHotkeys() {
+        for (const [child_context_name, child_context] of this.#child_hotkeys_contexts) {
+            this.cloneExtraHotkeys(child_context);
+        }
     }
 
     /**
