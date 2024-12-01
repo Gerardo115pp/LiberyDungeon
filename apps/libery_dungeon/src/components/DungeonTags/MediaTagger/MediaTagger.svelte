@@ -206,11 +206,14 @@
                     await_execution: false
                 });
 
+                component_hotkey_context.applyExtraHotkeys();
+
                 wrapShowHotkeysTable(hotkeys_context);
 
                 global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
 
                 global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
+                component_hotkey_context.Active = true;
             }
 
             /**
@@ -307,7 +310,11 @@
                  */
                 const defineSubComponentsHotkeysContext = () => {   
                     taxonomy_tags_hotkeys_context = defineTaxonomyTagsHotkeysContext();
+                    
                     cluster_public_tags_hotkeys_context = defineClusterPublicTagsHotkeysContext();
+                    component_hotkey_context.addChildContext(cluster_public_tags_hotkeys_context);
+
+                    component_hotkey_context.inheritExtraHotkeys();
                 }
 
                 /**
