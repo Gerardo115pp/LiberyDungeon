@@ -790,7 +790,7 @@ export class ComponentHotkeyContext {
 
     /**
      * Set a callback to be triggered whenever the component's active state changes.
-     * @param {(active: boolean) => void} callback
+     * @param {ActiveChangeCallback} callback
      */
     onActiveChange(callback) {
         for (const c of this.#active_state_change_callbacks) {
