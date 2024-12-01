@@ -8,14 +8,14 @@ import { global_hotkey_action_triggers, global_hotkey_movement_triggers } from "
  * The name of the hotkey context for the media taggings component.
  * @type {string}
  */
-export const media_taggings_hotkey_context = "media-taggings";
+export const media_taggings_hotkey_context_name = "media-taggings";
 
 /**
  * Generates a component hotkey context for the media taggings.
  * @returns {ComponentHotkeyContext}
  */
 const generateMediaTaggingsHotkeyContext = () => {
-    const media_taggings_context = new ComponentHotkeyContext(media_taggings_hotkey_context);
+    const media_taggings_context = new ComponentHotkeyContext(media_taggings_hotkey_context_name);
 
     media_taggings_context.SetFinal();
 

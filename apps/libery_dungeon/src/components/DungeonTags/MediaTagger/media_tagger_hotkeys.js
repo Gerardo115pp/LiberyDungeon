@@ -3,6 +3,8 @@ import { HOTKEY_NULL_DESCRIPTION, HOTKEY_NULLISH_HANDLER } from "@libs/LiberyHot
 import * as common_hotkey_actions  from "@common/keybinds/CommonActionsName";
 import { global_hotkey_action_triggers, global_hotkey_movement_triggers } from "@config/hotkeys_config";
 import generateClusterPublicTagsHotkeyContext, { cluster_public_tags_context_name } from "../TagTaxonomyComponents/cluster_public_tags_hotkeys";
+import generateTagTaxonomyCreatorHotkeyContext, { tag_taxonomy_creator_context_name } from "../TagTaxonomyComponents/tag_taxonomy_creator_hotkeys";
+import generateMediaTaggingsHotkeyContext, { media_taggings_hotkey_context_name } from "./sub-components/media_taggings_hotkeys";
 
 /**
  * The name of the hotkey context for the media tagger component.
@@ -22,6 +24,8 @@ export const media_tagger_actions = {
  * The child hotkey context of the media tagger component.
  */
 export const media_tagger_child_contexts = {
+    TAG_TAXONOMY_CREATOR: tag_taxonomy_creator_context_name,
+    MEDIA_TAGGINGS: media_taggings_hotkey_context_name,
     CLUSTER_PUBLIC_TAGS: cluster_public_tags_context_name,
 }
 
@@ -55,10 +59,16 @@ const generateMediaTaggerHotkeyContext = () => {
         }
     });
 
+    const tag_taxonomy_creator_context = generateTagTaxonomyCreatorHotkeyContext();
+    const media_taggings_context = generateMediaTaggingsHotkeyContext();
     const cluster_public_tags_context = generateClusterPublicTagsHotkeyContext();
 
+    tag_taxonomy_creator_context.ParentHotkeysContext = media_tagger_hotkeys;
+    media_taggings_context.ParentHotkeysContext = media_tagger_hotkeys;
     cluster_public_tags_context.ParentHotkeysContext = media_tagger_hotkeys;
 
+    media_tagger_hotkeys.addChildContext(tag_taxonomy_creator_context);
+    media_tagger_hotkeys.addChildContext(media_taggings_context);
     media_tagger_hotkeys.addChildContext(cluster_public_tags_context);
 
     media_tagger_hotkeys.SetFinal();
