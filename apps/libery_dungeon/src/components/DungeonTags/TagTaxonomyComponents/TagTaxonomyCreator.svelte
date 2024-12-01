@@ -7,10 +7,10 @@
     import { createEventDispatcher, onDestroy, onMount } from "svelte";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
-    import { toggleHotkeysSheet } from "@stores/layout";
     import { browser } from "$app/environment";
-    import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
+    import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
     import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
+    import generateTagTaxonomyCreatorHotkeyContext from "./tag_taxonomy_creator_hotkeys";
     
     /*=============================================
     =            Properties            =
@@ -26,7 +26,11 @@
              */ 
             const global_hotkeys_manager = getHotkeysManager();
 
-            const hotkeys_context_name = "tag-taxonomy-creator";
+            /**
+             * The tag taxonomy creator component hotkey context.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+             */
+            export let component_hotkey_context = generateTagTaxonomyCreatorHotkeyContext();
         
         /*=====  End of Hotkeys  ======*/
         
@@ -119,20 +123,27 @@
             const defineDesktopKeybinds = () => {
                 if (!global_hotkeys_manager) return;
 
-                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
-                    const hotkeys_context = new HotkeysContext();
+                if (!global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+
+                    if (component_hotkey_context.HasGeneratedHotkeysContext()) {
+                        component_hotkey_context.dropHotkeysContext();
+                    }
+
+                    const hotkeys_context = component_hotkey_context.generateHotkeysContext();
     
-                    hotkeys_context.register(["q", "t"], handleCloseCategoryTaggerTool, {
-                        description: `<${HOTKEYS_GENERAL_GROUP}>Deselect the ${ui_entity_reference.EntityNamePlural} ${ui_taxonomy_reference.EntityName} creator.`,
+                    hotkeys_context.register(["q"], handleCloseCategoryTaggerTool, {
+                        description: `${common_action_groups.GENERAL}Deselect the ${ui_entity_reference.EntityNamePlural} ${ui_taxonomy_reference.EntityName} creator.`,
                         await_execution: false
                     });
     
                     wrapShowHotkeysTable(hotkeys_context);
+
+                    component_hotkey_context.applyExtraHotkeys();
                     
-                    global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                    global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
                 }
 
-                global_hotkeys_manager.loadContext(hotkeys_context_name);
+                global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
             }
 
             /**
@@ -141,9 +152,9 @@
             const dropHotkeyContext = () => {
                 if (!global_hotkeys_manager) return;
 
-                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) return;
+                if (!global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) return;
 
-                global_hotkeys_manager.dropContext(hotkeys_context_name);
+                global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
             }
 
             /**
@@ -169,7 +180,7 @@
             const resetHotkeyContext = () => {
                 if (!global_hotkeys_manager) return;
 
-                if (global_hotkeys_manager.ContextName !== hotkeys_context_name) return; 
+                if (global_hotkeys_manager.ContextName !== component_hotkey_context.HotkeysContextName) return; 
 
                 global_hotkeys_manager.loadPreviousContext();
             }
