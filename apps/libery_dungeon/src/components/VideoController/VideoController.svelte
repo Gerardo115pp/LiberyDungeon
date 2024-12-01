@@ -726,7 +726,7 @@
         }
 
         function toggleMute() {
-            video_muted = !video_muted;
+            video_muted = !the_video_element.muted;
 
             automute_enabled.set(video_muted); // Muted value of the video element is reactive to this store
         }
