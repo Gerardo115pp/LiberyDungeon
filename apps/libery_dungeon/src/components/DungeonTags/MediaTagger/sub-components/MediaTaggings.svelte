@@ -1,6 +1,6 @@
 <script>
     import { cluster_tags } from "@stores/dungeons_tags";
-    import { createEventDispatcher, onDestroy, onMount } from "svelte";
+    import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
     import DeleteableItem from "@components/ListItems/DeleteableItem.svelte";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import { toggleHotkeysSheet } from "@stores/layout";
@@ -521,8 +521,10 @@
         /**
          * Updates the selectors for the wasd cursor movement wrapper.
          */
-        const updateWasdGridSelectors = () => {
+        const updateWasdGridSelectors = async () => {
             if (the_wasd_keybind_wrapper == null) return;
+
+            await tick();
 
             const grid_selectors = getFocusedTaggingsGridSelectors();
 
