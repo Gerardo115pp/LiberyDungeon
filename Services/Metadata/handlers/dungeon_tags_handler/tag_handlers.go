@@ -198,11 +198,24 @@ func getEntitiesWithTagsHandler(response http.ResponseWriter, request *http.Requ
 		return
 	}
 
+	var entities_by_type map[string][]string = make(map[string][]string)
+
+	for _, entity := range entities {
+		entities_of_type, list_exists := entities_by_type[entity.EntityType]
+
+		if !list_exists {
+			entities_of_type = make([]string, 0)
+		}
+
+		entities_of_type = append(entities_of_type, entity.TaggedEntityUUID)
+		entities_by_type[entity.EntityType] = entities_of_type
+	}
+
 	response.Header().Add("Content-Type", "application/json")
 
 	response.WriteHeader(200)
 
-	json.NewEncoder(response).Encode(entities)
+	json.NewEncoder(response).Encode(entities_by_type)
 }
 
 func postTagHandler(response http.ResponseWriter, request *http.Request) {
