@@ -34,8 +34,8 @@ type DungeonTagsRepository interface {
 	GetTagTaxonomy(taxonomy_uuid string) (service_models.TagTaxonomy, error)
 	GetEntityTaggingsCTX(ctx context.Context, entity_uuid, cluster_domain string) ([]service_models.DungeonTagging, error)
 	GetEntityTaggings(entity_uuid, cluster_domain string) ([]service_models.DungeonTagging, error)
-	GetEntitiesWithTaggingsCTX(ctx context.Context, tags []int) ([]string, error)
-	GetEntitiesWithTaggings(tags []int) ([]string, error)
+	GetEntitiesWithTaggingsCTX(ctx context.Context, tags []int) ([]service_models.DungeonTaggingCompact, error)
+	GetEntitiesWithTaggings(tags []int) ([]service_models.DungeonTaggingCompact, error)
 	RemoveTagFromEntityCTX(ctx context.Context, tag_id int, entity_uuid string) error
 	RemoveTagFromEntity(tag_id int, entity_uuid string) error
 	RemoveTagFromEntitiesCTX(ctx context.Context, tag_id int, entities_uuids []string) error

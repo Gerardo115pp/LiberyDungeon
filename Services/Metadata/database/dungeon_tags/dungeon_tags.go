@@ -388,21 +388,23 @@ func (dt_db *DungeonTagsDB) GetEntityTaggings(entity_uuid, cluster_domain string
 	return dt_db.GetEntityTaggingsCTX(context.Background(), entity_uuid, cluster_domain)
 }
 
-func (dt_db *DungeonTagsDB) GetEntitiesWithTaggingsCTX(ctx context.Context, tags []int) ([]string, error) {
-	var entity_uuids []string = make([]string, 0)
+// returns a map of taggable entities that are tagged by all the provided tags. The taggable entities are grouped by entity type
+func (dt_db *DungeonTagsDB) GetEntitiesWithTaggingsCTX(ctx context.Context, tags []int) ([]service_models.DungeonTaggingCompact, error) {
+	var matching_entities []service_models.DungeonTaggingCompact = make([]service_models.DungeonTaggingCompact, 0)
 
 	if len(tags) == 0 {
-		return entity_uuids, nil
+		return matching_entities, nil
 	}
 
 	var stmt_placeholder string = dungeon_helpers.GetPreparedListPlaceholders(len(tags))
 
 	sql_query := fmt.Sprintf(`
-		SELECT t.taggable_id
+		SELECT t.taggable_id, t.entity_type
 		FROM taggings t
 		WHERE t.tag IN (%s)
 		GROUP BY t.taggable_id
 		HAVING COUNT(DISTINCT t.tag) = %d
+		ORDER BY rowid
 	`, stmt_placeholder, len(tags))
 
 	stmt, err := dt_db.db_conn.PrepareContext(ctx, sql_query)
@@ -423,19 +425,20 @@ func (dt_db *DungeonTagsDB) GetEntitiesWithTaggingsCTX(ctx context.Context, tags
 	defer rows.Close()
 
 	for rows.Next() {
-		var entity_uuid string
-		err = rows.Scan(&entity_uuid)
+		compact_tagging := new(service_models.DungeonTaggingCompact)
+
+		err = rows.Scan(&compact_tagging.TaggedEntityUUID, &compact_tagging.EntityType)
 		if err != nil {
 			return nil, err
 		}
 
-		entity_uuids = append(entity_uuids, entity_uuid)
+		matching_entities = append(matching_entities, *compact_tagging)
 	}
 
-	return entity_uuids, nil
+	return matching_entities, nil
 }
 
-func (dt_db *DungeonTagsDB) GetEntitiesWithTaggings(tags []int) ([]string, error) {
+func (dt_db *DungeonTagsDB) GetEntitiesWithTaggings(tags []int) ([]service_models.DungeonTaggingCompact, error) {
 	return dt_db.GetEntitiesWithTaggingsCTX(context.Background(), tags)
 }
 
