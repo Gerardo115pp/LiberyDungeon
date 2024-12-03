@@ -10,7 +10,7 @@ import generateMediaTaggingsHotkeyContext, { media_taggings_hotkey_context_name 
  * The name of the hotkey context for the media tagger component.
  * @type {string}
  */
-export const media_tagger_tool_context_name = "active-media-tagger-tool";
+export const media_tagger_tool_context_name = "media-tagger-tool";
 
 /**
  * The actions the media tagger exposes. the media tagger may have more actions than this, but these are the ones that needs to coordinate with other components.
