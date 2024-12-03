@@ -256,13 +256,15 @@
             categories_tree.set(new_category_tree);
         }
 
-        empty_categories_subscriber = current_category.subscribe(handleEmptyCategories); // this has to run after defining the desktop keybinds.
 
         filtered_category_selected_unsubscriber = current_category.subscribe(resetCategoryFiltersOnCategoryChange);
 
         if (!$layout_properties.IS_MOBILE) {
             defineDesktopKeybinds();
         }
+
+
+        empty_categories_subscriber = current_category.subscribe(handleEmptyCategories); // this has to run after defining the desktop keybinds.
 
         definePlatformEventHandlers();
 
