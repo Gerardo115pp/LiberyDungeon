@@ -24,9 +24,23 @@ message AllPrivateClustersResponse {
     repeated string private_clusters = 1;
 }
 
+message TagList {
+    repeated int32 tag_id = 1;
+}
+
+message EntitiesByType {
+    map<string, EntityList> entities_by_type = 1;
+}
+
+message EntityList {
+    repeated string entities_uuids = 1;
+}
+
+
 service MetadataService {
     rpc CheckClusterPrivate(IsClusterPrivate) returns (BooleanResponse);
     rpc GetAllPrivateClusters(google.protobuf.Empty) returns (AllPrivateClustersResponse);
     rpc TagEntities(TaggableEntities) returns (BooleanResponse);
     rpc UntagEntities(TaggableEntities) returns (BooleanResponse);
+    rpc GetEntitiesWithTaggings(TagList) returns (EntitiesByType);
 }

@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17metadata_requests.proto\x12\x10metadata_service\x1a\x1bgoogle/protobuf/empty.proto\"(\n\x10IsClusterPrivate\x12\x14\n\x0c\x63luster_uuid\x18\x01 \x01(\t\"O\n\x10TaggableEntities\x12\x16\n\x0e\x65ntities_uuids\x18\x01 \x03(\t\x12\x0e\n\x06tag_id\x18\x02 \x01(\x05\x12\x13\n\x0b\x65ntity_type\x18\x03 \x01(\t\"#\n\x0f\x42ooleanResponse\x12\x10\n\x08response\x18\x01 \x01(\x08\"6\n\x1a\x41llPrivateClustersResponse\x12\x18\n\x10private_clusters\x18\x01 \x03(\t2\xfc\x02\n\x0fMetadataService\x12\\\n\x13\x43heckClusterPrivate\x12\".metadata_service.IsClusterPrivate\x1a!.metadata_service.BooleanResponse\x12]\n\x15GetAllPrivateClusters\x12\x16.google.protobuf.Empty\x1a,.metadata_service.AllPrivateClustersResponse\x12T\n\x0bTagEntities\x12\".metadata_service.TaggableEntities\x1a!.metadata_service.BooleanResponse\x12V\n\rUntagEntities\x12\".metadata_service.TaggableEntities\x1a!.metadata_service.BooleanResponseBTZRgithub.com/Gerardo115pp/libery-dungeon/libery_metadata_service;metadata_service_pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17metadata_requests.proto\x12\x10metadata_service\x1a\x1bgoogle/protobuf/empty.proto\"(\n\x10IsClusterPrivate\x12\x14\n\x0c\x63luster_uuid\x18\x01 \x01(\t\"O\n\x10TaggableEntities\x12\x16\n\x0e\x65ntities_uuids\x18\x01 \x03(\t\x12\x0e\n\x06tag_id\x18\x02 \x01(\x05\x12\x13\n\x0b\x65ntity_type\x18\x03 \x01(\t\"#\n\x0f\x42ooleanResponse\x12\x10\n\x08response\x18\x01 \x01(\x08\"6\n\x1a\x41llPrivateClustersResponse\x12\x18\n\x10private_clusters\x18\x01 \x03(\t\"\x19\n\x07TagList\x12\x0e\n\x06tag_id\x18\x01 \x03(\x05\"\xb5\x01\n\x0e\x45ntitiesByType\x12N\n\x10\x65ntities_by_type\x18\x01 \x03(\x0b\x32\x34.metadata_service.EntitiesByType.EntitiesByTypeEntry\x1aS\n\x13\x45ntitiesByTypeEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12+\n\x05value\x18\x02 \x01(\x0b\x32\x1c.metadata_service.EntityList:\x02\x38\x01\"$\n\nEntityList\x12\x16\n\x0e\x65ntities_uuids\x18\x01 \x03(\t2\xd4\x03\n\x0fMetadataService\x12\\\n\x13\x43heckClusterPrivate\x12\".metadata_service.IsClusterPrivate\x1a!.metadata_service.BooleanResponse\x12]\n\x15GetAllPrivateClusters\x12\x16.google.protobuf.Empty\x1a,.metadata_service.AllPrivateClustersResponse\x12T\n\x0bTagEntities\x12\".metadata_service.TaggableEntities\x1a!.metadata_service.BooleanResponse\x12V\n\rUntagEntities\x12\".metadata_service.TaggableEntities\x1a!.metadata_service.BooleanResponse\x12V\n\x17GetEntitiesWithTaggings\x12\x19.metadata_service.TagList\x1a .metadata_service.EntitiesByTypeBTZRgithub.com/Gerardo115pp/libery-dungeon/libery_metadata_service;metadata_service_pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,6 +33,8 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'metadata_requests_pb2', _gl
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'ZRgithub.com/Gerardo115pp/libery-dungeon/libery_metadata_service;metadata_service_pb'
+  _globals['_ENTITIESBYTYPE_ENTITIESBYTYPEENTRY']._loaded_options = None
+  _globals['_ENTITIESBYTYPE_ENTITIESBYTYPEENTRY']._serialized_options = b'8\001'
   _globals['_ISCLUSTERPRIVATE']._serialized_start=74
   _globals['_ISCLUSTERPRIVATE']._serialized_end=114
   _globals['_TAGGABLEENTITIES']._serialized_start=116
@@ -41,6 +43,14 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_BOOLEANRESPONSE']._serialized_end=232
   _globals['_ALLPRIVATECLUSTERSRESPONSE']._serialized_start=234
   _globals['_ALLPRIVATECLUSTERSRESPONSE']._serialized_end=288
-  _globals['_METADATASERVICE']._serialized_start=291
-  _globals['_METADATASERVICE']._serialized_end=671
+  _globals['_TAGLIST']._serialized_start=290
+  _globals['_TAGLIST']._serialized_end=315
+  _globals['_ENTITIESBYTYPE']._serialized_start=318
+  _globals['_ENTITIESBYTYPE']._serialized_end=499
+  _globals['_ENTITIESBYTYPE_ENTITIESBYTYPEENTRY']._serialized_start=416
+  _globals['_ENTITIESBYTYPE_ENTITIESBYTYPEENTRY']._serialized_end=499
+  _globals['_ENTITYLIST']._serialized_start=501
+  _globals['_ENTITYLIST']._serialized_end=537
+  _globals['_METADATASERVICE']._serialized_start=540
+  _globals['_METADATASERVICE']._serialized_end=1008
 # @@protoc_insertion_point(module_scope)

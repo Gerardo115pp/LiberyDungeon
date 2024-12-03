@@ -20,10 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	MetadataService_CheckClusterPrivate_FullMethodName   = "/metadata_service.MetadataService/CheckClusterPrivate"
-	MetadataService_GetAllPrivateClusters_FullMethodName = "/metadata_service.MetadataService/GetAllPrivateClusters"
-	MetadataService_TagEntities_FullMethodName           = "/metadata_service.MetadataService/TagEntities"
-	MetadataService_UntagEntities_FullMethodName         = "/metadata_service.MetadataService/UntagEntities"
+	MetadataService_CheckClusterPrivate_FullMethodName     = "/metadata_service.MetadataService/CheckClusterPrivate"
+	MetadataService_GetAllPrivateClusters_FullMethodName   = "/metadata_service.MetadataService/GetAllPrivateClusters"
+	MetadataService_TagEntities_FullMethodName             = "/metadata_service.MetadataService/TagEntities"
+	MetadataService_UntagEntities_FullMethodName           = "/metadata_service.MetadataService/UntagEntities"
+	MetadataService_GetEntitiesWithTaggings_FullMethodName = "/metadata_service.MetadataService/GetEntitiesWithTaggings"
 )
 
 // MetadataServiceClient is the client API for MetadataService service.
@@ -34,6 +35,7 @@ type MetadataServiceClient interface {
 	GetAllPrivateClusters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AllPrivateClustersResponse, error)
 	TagEntities(ctx context.Context, in *TaggableEntities, opts ...grpc.CallOption) (*BooleanResponse, error)
 	UntagEntities(ctx context.Context, in *TaggableEntities, opts ...grpc.CallOption) (*BooleanResponse, error)
+	GetEntitiesWithTaggings(ctx context.Context, in *TagList, opts ...grpc.CallOption) (*EntitiesByType, error)
 }
 
 type metadataServiceClient struct {
@@ -80,6 +82,15 @@ func (c *metadataServiceClient) UntagEntities(ctx context.Context, in *TaggableE
 	return out, nil
 }
 
+func (c *metadataServiceClient) GetEntitiesWithTaggings(ctx context.Context, in *TagList, opts ...grpc.CallOption) (*EntitiesByType, error) {
+	out := new(EntitiesByType)
+	err := c.cc.Invoke(ctx, MetadataService_GetEntitiesWithTaggings_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MetadataServiceServer is the server API for MetadataService service.
 // All implementations must embed UnimplementedMetadataServiceServer
 // for forward compatibility
@@ -88,6 +99,7 @@ type MetadataServiceServer interface {
 	GetAllPrivateClusters(context.Context, *emptypb.Empty) (*AllPrivateClustersResponse, error)
 	TagEntities(context.Context, *TaggableEntities) (*BooleanResponse, error)
 	UntagEntities(context.Context, *TaggableEntities) (*BooleanResponse, error)
+	GetEntitiesWithTaggings(context.Context, *TagList) (*EntitiesByType, error)
 	mustEmbedUnimplementedMetadataServiceServer()
 }
 
@@ -106,6 +118,9 @@ func (UnimplementedMetadataServiceServer) TagEntities(context.Context, *Taggable
 }
 func (UnimplementedMetadataServiceServer) UntagEntities(context.Context, *TaggableEntities) (*BooleanResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UntagEntities not implemented")
+}
+func (UnimplementedMetadataServiceServer) GetEntitiesWithTaggings(context.Context, *TagList) (*EntitiesByType, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEntitiesWithTaggings not implemented")
 }
 func (UnimplementedMetadataServiceServer) mustEmbedUnimplementedMetadataServiceServer() {}
 
@@ -192,6 +207,24 @@ func _MetadataService_UntagEntities_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MetadataService_GetEntitiesWithTaggings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TagList)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetadataServiceServer).GetEntitiesWithTaggings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetadataService_GetEntitiesWithTaggings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetadataServiceServer).GetEntitiesWithTaggings(ctx, req.(*TagList))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MetadataService_ServiceDesc is the grpc.ServiceDesc for MetadataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -214,6 +247,10 @@ var MetadataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UntagEntities",
 			Handler:    _MetadataService_UntagEntities_Handler,
+		},
+		{
+			MethodName: "GetEntitiesWithTaggings",
+			Handler:    _MetadataService_GetEntitiesWithTaggings_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

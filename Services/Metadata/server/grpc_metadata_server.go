@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"libery-dungeon-libs/metadata_service_pb"
 	"libery-metadata-service/repository"
@@ -45,6 +46,48 @@ func (ms *MetadataGrpcServer) GetAllPrivateClusters(ctx context.Context, duh *em
 	response.PrivateClusters = private_cluster_uuids
 
 	return response, nil
+}
+
+func (ms *MetadataGrpcServer) GetEntitiesWithTaggings(ctx context.Context, tag_list *metadata_service_pb.TagList) (*metadata_service_pb.EntitiesByType, error) {
+	tag_ids := make([]int, len(tag_list.TagId))
+	for h, tag_id := range tag_list.TagId {
+		tag_ids[h] = int(tag_id)
+	}
+
+	if len(tag_ids) == 0 {
+		return nil, errors.New("No tags provided")
+	}
+
+	entities, err := repository.DungeonTagsRepo.GetEntitiesWithTaggingsCTX(ctx, tag_ids)
+	if err != nil {
+		return nil, err
+	}
+
+	var entities_by_type map[string][]string = make(map[string][]string)
+	entities_by_type_message := &metadata_service_pb.EntitiesByType{
+		EntitiesByType: make(map[string]*metadata_service_pb.EntityList),
+	}
+
+	for _, entity := range entities {
+		entities_of_type, list_exist := entities_by_type[entity.EntityType]
+
+		if !list_exist {
+			entities_of_type = make([]string, 0)
+		}
+
+		entities_of_type = append(entities_of_type, entity.TaggedEntityUUID)
+		entities_by_type[entity.EntityType] = entities_of_type
+	}
+
+	for entity_type, entities := range entities_by_type {
+		var entity_list *metadata_service_pb.EntityList = new(metadata_service_pb.EntityList)
+
+		entity_list.EntitiesUuids = entities
+
+		entities_by_type_message.EntitiesByType[entity_type] = entity_list
+	}
+
+	return entities_by_type_message, nil
 }
 
 func (ms *MetadataGrpcServer) TagEntities(ctx context.Context, request *metadata_service_pb.TaggableEntities) (*metadata_service_pb.BooleanResponse, error) {

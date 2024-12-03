@@ -60,6 +60,11 @@ class MetadataServiceStub(object):
                 request_serializer=metadata__requests__pb2.TaggableEntities.SerializeToString,
                 response_deserializer=metadata__requests__pb2.BooleanResponse.FromString,
                 _registered_method=True)
+        self.GetEntitiesWithTaggings = channel.unary_unary(
+                '/metadata_service.MetadataService/GetEntitiesWithTaggings',
+                request_serializer=metadata__requests__pb2.TagList.SerializeToString,
+                response_deserializer=metadata__requests__pb2.EntitiesByType.FromString,
+                _registered_method=True)
 
 
 class MetadataServiceServicer(object):
@@ -89,6 +94,12 @@ class MetadataServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetEntitiesWithTaggings(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MetadataServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -111,6 +122,11 @@ def add_MetadataServiceServicer_to_server(servicer, server):
                     servicer.UntagEntities,
                     request_deserializer=metadata__requests__pb2.TaggableEntities.FromString,
                     response_serializer=metadata__requests__pb2.BooleanResponse.SerializeToString,
+            ),
+            'GetEntitiesWithTaggings': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetEntitiesWithTaggings,
+                    request_deserializer=metadata__requests__pb2.TagList.FromString,
+                    response_serializer=metadata__requests__pb2.EntitiesByType.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -221,6 +237,33 @@ class MetadataService(object):
             '/metadata_service.MetadataService/UntagEntities',
             metadata__requests__pb2.TaggableEntities.SerializeToString,
             metadata__requests__pb2.BooleanResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetEntitiesWithTaggings(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/metadata_service.MetadataService/GetEntitiesWithTaggings',
+            metadata__requests__pb2.TagList.SerializeToString,
+            metadata__requests__pb2.EntitiesByType.FromString,
             options,
             channel_credentials,
             insecure,
