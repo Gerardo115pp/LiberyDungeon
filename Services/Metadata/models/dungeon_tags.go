@@ -34,7 +34,7 @@ type DungeonTagging struct {
 	TaggedEntityUUID string      `json:"tagged_entity_uuid"`
 }
 
-type TaggedEntity struct {
+type DungeonTaggingCompact struct {
 	TaggedEntityUUID string `json:"tagged_entity_uuid"`
 	EntityType       string `json:"entity_type"`
 }

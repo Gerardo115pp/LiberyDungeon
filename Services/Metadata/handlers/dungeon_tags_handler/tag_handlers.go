@@ -52,6 +52,8 @@ func getTagHandler(response http.ResponseWriter, request *http.Request) {
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonClusterNonInternalTaxonomiesHandler)
 	case "/dungeon-tags/tags/matching-entities":
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getEntitiesWithTagsHandler)
+	case "/dungeon-tags/tags/paginated/matching-entities":
+		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getEntitiesWithTagsPaginatedHandler)
 	}
 
 	handler_func(response, request)
@@ -216,6 +218,86 @@ func getEntitiesWithTagsHandler(response http.ResponseWriter, request *http.Requ
 	response.WriteHeader(200)
 
 	json.NewEncoder(response).Encode(entities_by_type)
+}
+
+func getEntitiesWithTagsPaginatedHandler(response http.ResponseWriter, request *http.Request) {
+	var page_num int
+	var page_size int
+
+	var query_param string = request.URL.Query().Get("page")
+
+	if query_param == "" {
+		echo.Echo(echo.RedFG, "In getEntitiesWithTagsPaginatedHandler, page query parameter is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	page_num, err := strconv.Atoi(query_param)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsPaginatedHandler, while converting page query parameter to int: %s\n", err))
+		response.WriteHeader(400)
+		return
+	}
+
+	query_param = request.URL.Query().Get("page_size")
+
+	if query_param == "" {
+		echo.Echo(echo.RedFG, "In getEntitiesWithTagsPaginatedHandler, page_size query parameter is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	page_size, err = strconv.Atoi(query_param)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsPaginatedHandler, while converting page_size query parameter to int: %s\n", err))
+		response.WriteHeader(400)
+		return
+	}
+
+	var tag_ids []int
+
+	tag_ids, err = dungeon_helpers.ParseQueryParameterAsIntSlice(request, "tags")
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsHandler, while parsing tags query parameter: %s\n", err))
+		response.WriteHeader(400)
+	}
+
+	entities, err := repository.DungeonTagsRepo.GetEntitiesWithTaggingsCTX(request.Context(), tag_ids)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsHandler, while getting entities with taggings: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	starting_index := page_size * (page_num - 1)
+	max_index := page_size * page_num
+
+	if len(entities) < starting_index {
+		echo.Echo(echo.RedFG, "In getEntitiesWithTagsPaginatedHandler, more content than whats available\n")
+		response.WriteHeader(404)
+		return
+	}
+
+	var entities_by_type map[string][]string = make(map[string][]string)
+
+	var entity_iterator int = starting_index
+
+	for entity_iterator < max_index && entity_iterator < len(entities) {
+		var entity service_models.DungeonTaggingCompact = entities[entity_iterator]
+		entity_iterator++
+
+		entities_of_type, list_exists := entities_by_type[entity.EntityType]
+
+		if !list_exists {
+			entities_of_type = make([]string, 0)
+		}
+
+		entities_of_type = append(entities_of_type, entity.TaggedEntityUUID)
+		entities_by_type[entity.EntityType] = entities_of_type
+	}
+
+	dungeon_helpers.WritePaginatedResponse(response, entities_by_type, page_num, page_size, len(entities)/page_size)
+	return
 }
 
 func postTagHandler(response http.ResponseWriter, request *http.Request) {

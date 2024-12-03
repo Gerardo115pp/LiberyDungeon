@@ -53,8 +53,8 @@
         import { SearchResultsWrapper, wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
         import { use_category_folder_thumbnails } from "@app/config/ui_design";
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
-    import ExplorerBillboard from "./sub-components/ExplorerBillboard/ExplorerBillboard.svelte";
-    import CategoryConfiguration from "@components/Categories/CategoryFolder/sub-components/CategoryConfiguration.svelte";
+        import ExplorerBillboard from "./sub-components/ExplorerBillboard/ExplorerBillboard.svelte";
+        import CategoryConfiguration from "@components/Categories/CategoryFolder/sub-components/CategoryConfiguration.svelte";
 
     /*=====  End of Imports  ======*/
   
