@@ -2,6 +2,7 @@ package service_clients
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"libery-dungeon-libs/metadata_service_pb"
 	"net/http"
@@ -87,6 +88,39 @@ func (metadata_client MetadataServiceClient) GetAllPrivateClusters() ([]string, 
 	private_clusters = clusters_response.PrivateClusters
 
 	return private_clusters, nil
+}
+
+func (metadata_client MetadataServiceClient) GetEntitiesWithTaggings(tag_list []int) (entities_by_type map[string][]string, err error) {
+	conn, err := grpc.Dial(metadata_client.GrpcAddress, grpc.WithTransportCredentials(metadata_client.GrpcTransport))
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	metadata_grpc_client := metadata_service_pb.NewMetadataServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	tag_list32 := make([]int32, len(tag_list))
+	for h, v := range tag_list {
+		tag_list32[h] = int32(v)
+	}
+
+	message := metadata_service_pb.TagList{
+		TagId: tag_list32,
+	}
+
+	entities_by_type_response, err := metadata_grpc_client.GetEntitiesWithTaggings(ctx, &message)
+	if err != nil {
+		return nil, errors.Join(err, fmt.Errorf("In Communication/MetadataService.GetEntitiesWithTaggings, while calling metadata_grpc_client.GetEntitiesWithTaggings"))
+	}
+
+	for entity_type, entities_list := range entities_by_type_response.EntitiesByType {
+		entities_by_type[entity_type] = entities_list.EntitiesUuids
+	}
+
+	return
 }
 
 func (metadata_client MetadataServiceClient) TagEntities(tag_id int, entities_uuids []string, entity_type string) (bool, error) {
