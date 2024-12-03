@@ -30,6 +30,13 @@ type singleIntResponse struct {
 	Response int `json:"response"`
 }
 
+type PaginatedResponse[T any] struct {
+	Page       int
+	PageSize   int
+	TotalPages int
+	Content    T
+}
+
 func createRejection(code int, message string) *httpRejection {
 	var rejection *httpRejection = new(httpRejection)
 	rejection.Code = code
