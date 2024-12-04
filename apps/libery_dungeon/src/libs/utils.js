@@ -340,10 +340,20 @@ export const videoDurationToString = (duration, is_seconds = true) => {
      * @template T
      */
     export class Stack {
-        /** @type {StackNode<T> | null} */
+        /** 
+         * @type {StackNode<T> | null} 
+         */
         #top;
+
+        /**
+         * The count of the elements in the stack
+         * @type {number}
+         */
+        #size;
+
         constructor() {
             this.#top = null;
+            this.#size = 0;
         }
 
         /**
@@ -353,6 +363,7 @@ export const videoDurationToString = (duration, is_seconds = true) => {
             let new_node = new StackNode(value);
             new_node.Next = this.#top;
             this.#top = new_node;
+            this.#size++;
         }
 
         /**
@@ -361,6 +372,7 @@ export const videoDurationToString = (duration, is_seconds = true) => {
         */
         Clear() {
             this.#top = null;
+            this.#size = 0;
         }
 
         /**
@@ -383,6 +395,10 @@ export const videoDurationToString = (duration, is_seconds = true) => {
             let top_node = this.#top;
 
             this.#top = this.#top?.Next ?? null;
+
+            if (top_node !== null) {
+                this.#size--;
+            }
             
             return top_node?.Value ?? null;
         }
@@ -391,7 +407,13 @@ export const videoDurationToString = (duration, is_seconds = true) => {
             return this.#top === null;
         }
 
-
+        /**
+         * The count of the elements in the stack
+         * @type {number}
+         */
+        get Size() {
+            return this.#size;
+        }
 
     }
 
