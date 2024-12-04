@@ -762,6 +762,13 @@
                     return;
                 }
 
+                if ($random_media_navigation) {
+                    let labeled_err = new LabeledError("Accidental action protection", "Cannot reject media while random navigation is enabled.", lf_errors.ERR_ACCIDENTAL_ACTION_PROTACTION);
+
+                    labeled_err.alert();
+                    return;
+                }
+
                 let feedback_message;
                 
                 const current_media = $current_category.content[$active_media_index];
