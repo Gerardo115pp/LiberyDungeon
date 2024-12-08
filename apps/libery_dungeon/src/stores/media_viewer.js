@@ -2,6 +2,7 @@ import { writable } from "svelte/store";
 import { media_change_types } from "@models/WorkManagers";
 import { MediaChangesManager } from "@models/WorkManagers";
 import { InnerCategory } from "@models/Categories";
+import { Stack, StackBuffer } from "@libs/utils";
 
 /**
  * The index corresponding to the active media on stores/categories_tree.current_category.content array of Medias
@@ -23,12 +24,27 @@ export const random_media_navigation = writable(false);
 export let skip_deleted_medias = writable(true);
 
 /**
+ * Used in non-linear navigation or in modes where media navigation is not dependent on the current category contents. These are the medias that have been visited in the past
+ * @type {import('svelte/store').Writable<StackBuffer<string>>}
+*/
+export const previous_medias = writable(new StackBuffer(200));
+
+/**
+ * These are medias that were popped from the previous_medias stack, and are used to go back to the already visited 'next' medias. for example, on random navigation, the user goes back to the previous media. this pops an
+ * element from the previous_medias stack and adds it to this stack, so that when the user goes forward again, he/she can see the same 'next' medias until this stack is empty again(when element of this stack are popped in
+ * random mode, they are added back to the previous_medias stack)
+ * @type {import('svelte/store').Writable<Stack<string>>}
+ */
+export const static_next_medias = writable(new Stack()); 
+
+/** */
+
+/**
  * The previous media index, used to go back to the previous media when random navigation is enabled
  * @type {import('svelte/store').Writable<number>}
  * @default 0
-*/
+ */
 export const previous_media_index = writable(0);
-
 
 
 /**
