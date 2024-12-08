@@ -509,7 +509,7 @@
     }
 
     .libery-dungeon-window {
-        background: var(--grey-9);
+        background: var(---body-bg-color);
         border-radius: var(--border-radius);
         border: 1px solid var(--main-dark);
     }
