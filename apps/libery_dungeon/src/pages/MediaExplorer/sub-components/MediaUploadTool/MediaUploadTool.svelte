@@ -43,10 +43,16 @@
 
         /*=====  End of Styles  ======*/
         
-    
+        
+        /*----------  Event handlers  ----------*/
+        
+            /**
+             * An event handler that is called when the tool should be closed
+             * @type {() => void}
+             */ 
+            export let onClose;
     
     /*=====  End of Properties  ======*/
-    
     
     /*=============================================
     =            Methods            =
@@ -154,7 +160,7 @@
 
         
         const endUpload = async () => {
-            media_upload_tool_mounted.set(false);
+            onClose();
         }
 
         const uploadFiles = async () => {

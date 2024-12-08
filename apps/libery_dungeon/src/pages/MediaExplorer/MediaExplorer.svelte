@@ -530,9 +530,7 @@
              * @returns {void}
              */            
             const handleToggleMediaUploadsTool = () => {
-                media_upload_tool_mounted.set(!$media_upload_tool_mounted);
-                navbar_solid.set($media_upload_tool_mounted);
-
+                toggleMediaUploadTool();
             }
 
             /**
@@ -587,96 +585,6 @@
              */
             const handleEnableCategoryTaggerTool = (event, hotkey) => {
                 category_tagger_tool_mounted.set(true);
-            }
-
-            /**
-             * Handle the category name filter. Note, the category search feature and category name filter are different. the first one checks with metaphones and other string differentiation 
-             * techniques to find the category that matches the search term and is handled by the Backend. The category name filter is much simpler, it filters the categories in the current category
-             * by a string which is matched with the start of the category name.
-             * 
-             * The feature works as follows, we first of all create a new hotkey context that responds to all ascii characters, the callback for all of these hotkeys registers the key pressed
-             * and appends it to the category search term. Also at the end we register an interval that checks if the user has stopped typing for an amount of time, if so
-             * we load the previous hotkey context and remove the interval
-             */
-            // const handleCategoryNameFilter = () => {
-            //     if (global_hotkeys_manager == null) return;
-
-            //     resetCategoryFiltersState(true);
-
-            //     if (!global_hotkeys_manager.hasContext(filter_hotkeys_context_name)) {
-            //         const filter_hotkeys_context = new HotkeysContext();
-
-            //         /**
-            //          * @param {KeyboardEvent} e
-            //          * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
-            //          */
-            //         const handleAllLetters = (e, hotkey) => {
-            //             category_name_filter += e.key.toLowerCase();
-                        
-            //             last_typing_time = Date.now();
-            //             category_filter_changed = true;
-            //         }
-
-            //         filter_hotkeys_context.register(["\\l"], handleAllLetters, {
-            //                 description: `<${HOTKEYS_HIDDEN_GROUP}>used for typing category name filter`,
-            //         });
-
-            //         filter_hotkeys_context.register(["backspace"], () => {
-            //                 category_name_filter = category_name_filter.slice(0, -1);
-
-            //                 last_typing_time = Date.now();
-            //                 category_filter_changed = true;
-            //             }, {
-            //                 description: `<${HOTKEYS_HIDDEN_GROUP}>used for deleting category name filter`,
-            //         });
-
-            //         filter_hotkeys_context.register(["enter"], () => {
-            //                 filterCategoriesByName();
-            //                 resetCategoryFiltersState(false);
-            //             }, {
-            //                 description: `<media_movements>Apply category name filter`,
-            //         });
-
-            //         global_hotkeys_manager.declareContext(filter_hotkeys_context_name, filter_hotkeys_context);
-            //         global_hotkeys_manager.loadContext(filter_hotkeys_context_name);
-
-            //         category_name_filter_interval_id = setInterval(() => {
-
-            //             let current_time = Date.now();
-
-            //             filterCategoriesByName();
-
-            //             if (category_name_filter !== "" && (current_time - last_typing_time) > category_name_filter_interval) {
-            //                 resetCategoryFiltersState(false);
-            //             }
-
-            //             category_filter_changed = false;
-            //         }, Math.max(category_name_filter_interval/3, 300));
-            //     }
-            // }
-
-            /**
-             * Set keyboard_focused_category to the first category that starts with the entered character.
-             * @param {KeyboardEvent} e
-             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
-             * @returns {void}
-             */
-            const handleFindStartsWith = (e, hotkey) => {
-                if ($current_category == null) {
-                    console.error("In MediaExplorer.handleFindStartsWith , current_category is null");
-                    return;
-                }
-                
-                const initial_character = e.key;
-
-                for (let h = 0; h < $current_category.InnerCategories.length; h++) {
-                    let lower_case_name = $current_category.InnerCategories[h].name.toLowerCase();
-
-                    if (lower_case_name.startsWith(initial_character)) {
-                        setKeyboardFocusedCategory(h);
-                        return;
-                    }
-                }
             }
 
             /**
@@ -1163,6 +1071,14 @@
         }
 
         /**
+         * Handles the close event of the media upload tool.
+         * @returns {void}
+         */
+        const handleMediaUploadToolClose = () => {
+            toggleMediaUploadTool(false);
+        }
+
+        /**
          * Handles close-category-tagger event emitted by the CategoryTagger component.
          */
         const handleCategoryTaggerClose = () => {
@@ -1427,6 +1343,18 @@
             }
         }
 
+        /**
+         * Toggle media upload tool visibility
+         * @param {boolean} [force_state]
+         * @returns {void}
+         */
+        const toggleMediaUploadTool = force_state => {
+            const media_upload_visible = force_state ?? !$media_upload_tool_mounted;
+
+            media_upload_tool_mounted.set(media_upload_visible);
+            navbar_solid.set(media_upload_visible);
+        }
+
         /* ------------------------ Keyboard focuse save/load ----------------------- */
 
             /**
@@ -1508,7 +1436,9 @@
     {/if}
     {#if $media_upload_tool_mounted}
         <div class="fullwidth-modals" id="media-upload-component-wrapper">
-            <MediaUploadTool />
+            <MediaUploadTool
+                onClose={handleMediaUploadToolClose}
+            />
         </div>
     {/if}
     {#if $media_transactions_tool_mounted}
