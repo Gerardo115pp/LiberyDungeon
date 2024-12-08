@@ -415,6 +415,24 @@ export const videoDurationToString = (duration, is_seconds = true) => {
             return this.#size;
         }
 
+        /**
+         * Returns a human readable string of the stack. Mainly intended for debugging.
+         * @returns {string}
+         */
+        toString() {
+            let current_node = this.#top;
+            let stack_str = "";
+
+            while (current_node !== null) {
+                stack_str += `${current_node.Value} -> `;
+                current_node = current_node.Next;
+            }
+
+            stack_str += "null";
+
+            return stack_str;
+        }
+
     }
 
     /**
@@ -636,6 +654,24 @@ export const videoDurationToString = (duration, is_seconds = true) => {
          */
         get Size() {
             return this.#size;
+        }
+
+        /**
+         * Returns a human readable string of the stack. Mainly intended for debugging.
+         * @returns {string}
+         */
+        toString() {
+            let current_node = this.#top;
+            let stack_str = "";
+
+            while (current_node !== null) {
+                stack_str += `${current_node.Value} -> `;
+                current_node = current_node.Next;
+            }
+
+            stack_str += "null";
+
+            return stack_str;
         }
 
         /**
