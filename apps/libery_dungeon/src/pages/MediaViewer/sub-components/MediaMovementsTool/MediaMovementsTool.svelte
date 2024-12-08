@@ -488,7 +488,7 @@
 {#if show_quick_move_tool}
     <QuickMovementsTools used_categories={$media_changes_manager.UsedCategories} {quick_selected_category_index}/>
 {/if}
-<div id="mv-category-tree-model" class:adebug={false} class="dungeon-scroll libery-dungeon-window" style:visibility={is_component_visible ? "visible" : "hidden"}>
+<div id="mv-category-tree-model" class:adebug={false} class="dungeon-scroll libery-dungeon-window-transparent" style:visibility={is_component_visible ? "visible" : "hidden"}>
     <div class="mv-ctm-category" id="mv-ctm-searh-bar-section">
         <div id="mv-ctm-search-bar-wrapper">
             {#if is_component_visible}
@@ -564,7 +564,7 @@
         border-radius: var(--border-radius);
     }
 
-    #mv-category-tree-model ul {
+    #mv-category-tree-model ul#categories-tree-root {
         list-style: none;
         margin: 0;
     }

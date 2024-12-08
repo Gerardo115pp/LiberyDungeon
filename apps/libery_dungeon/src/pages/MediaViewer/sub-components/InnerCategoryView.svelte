@@ -92,7 +92,17 @@
          * @param {string} category_name
          */
         const createSubCategory = async category_name => {
+            if ($categories_tree == null) {
+                console.error("In InnerCategoryView.createSubCategory: categories_tree is null");
+                return;
+            }
+            
             let category_complete_data = await getCategory(category.uuid);
+
+            if (category_complete_data == null) {
+                console.error("Category not found from MediaMovementsTool/InnerCategoryView.svelte", category.uuid);
+                return;
+            }
         
             let new_category = await createCategory(category_complete_data.UUID, category_complete_data.FullPath, category_name, $current_cluster.UUID);
             console.debug("New subcategory created from MediaMovementsTool/InnerCategoryView.svelte", new_category);
@@ -193,7 +203,6 @@
     
 </script>
 
-
 <li id="inner-category-{category.uuid}" class="inner-category" class:keyboard-selected={is_keyboard_selected}>
     <div class="inner-category-wrapper" class:is-light={is_light} on:click={toggleInnerCategories}>
         {#if show_create_subcategory_input}
@@ -248,14 +257,14 @@
         flex-direction: column;
         align-items: flex-start;
         justify-content: flex-start;
-        background: var(--grey-8);
+        background: var(--grey);
         padding: var(--vspacing-2) var(--vspacing-3);
         gap: var(--vspacing-1);
         transition: background 0.2s ease-in;
     }
 
     .inner-category-wrapper.is-light {
-        background: var(--grey-6);
+        background: var(--grey-9);
     }
 
     .keyboard-selected {    
@@ -308,5 +317,6 @@
         list-style: none;
         padding: 0;
         margin: 0;
+        border-block: 1px solid var(--main-dark-color-6);
     }
 </style>
