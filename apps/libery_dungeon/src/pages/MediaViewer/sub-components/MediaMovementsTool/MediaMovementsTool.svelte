@@ -73,6 +73,11 @@
     /*=====  End of Properties  ======*/
     
     onMount(async () => {
+        if ($current_category == null) {
+            console.error("MediaMovementsTool: current category is null");
+            return;
+        }
+        
         console.log("MediaMovementsTool mounted");
 
         root_short_categories = await getShortCategoryTree($current_cluster.RootCategoryID, $current_category.ClusterUUID);
@@ -272,6 +277,11 @@
          * @property {boolean} shift_key
          */
         const handleCategoryItemSelected = async event => {
+            if ($current_category == null) {
+                console.error("In MediaMovementsTool.handleCategoryItemSelected: current category is null");
+                return;
+            }
+            
             event.stopPropagation();
 
             let moved_to_category = event.detail.category;
@@ -385,6 +395,11 @@
          * @param {InnerCategory} selected_category
          */
         const stageMediaMoved = async selected_category => {
+            if ($current_category == null) {
+                console.error("In MediaMovementsTool.stageMediaMoved: current category is null");
+                return;
+            }
+            
             if (selected_category === undefined || selected_category === null) return;
 
             let current_media = $current_category.content[$active_media_index];
