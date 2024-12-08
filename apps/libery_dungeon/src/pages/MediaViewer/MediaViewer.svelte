@@ -25,12 +25,16 @@
             active_media_change,
             media_changes_manager,
             random_media_navigation,
+            previous_medias,
             previous_media_index,
             skip_deleted_medias,
             auto_move_on,
             auto_move_category,
             media_viewer_hotkeys_context_name,
-            automute_enabled
+            automute_enabled,
+
+            static_next_medias
+
         } from "@stores/media_viewer";
         import { current_cluster, loadCluster } from "@stores/clusters";
         import MediaInformationPanel from "./sub-components/MediaInformation/MediaInformationPanel.svelte";
@@ -613,22 +617,88 @@
                     console.error("In MediaViewer.handleRandomMediaNavigation: $current_category is null.");
                     return;
                 }
+
+                const direction_forward = key_combo === "d";
+
+                if (!direction_forward && $previous_medias.Size <= 1) {
+                    let error_feedback = "Cannot go back to previous media. No previous media to go back to.";
+
+                    if ($active_media_index > 0) {
+                        error_feedback += " Try disabling random navigation.";
+                    }
+
+                    let labeled_err = new LabeledError("Human error", error_feedback, lf_errors.ERR_HUMAN_ERROR);
+
+                    labeled_err.alert();
+                    return;
+                }
                 
                 let new_index = $active_media_index;
 
-                new_index = Math.floor(Math.random() * $current_category.content.length);
+                // If the stack is not empty and the key_combo is "d" then has gone back to the previous medias and is now going forward again.
+                const skip_random_generation = !$static_next_medias.IsEmpty() && direction_forward;
 
-                while (new_index === $active_media_index) {
+                if (skip_random_generation) {
+                    console.log("Random media navigation: skipping random generation casue statci_next_medias stack is not empty.");
+                    let last_media_uuid = /** @type {string} */ ($static_next_medias.Pop());
+
+                    if (!$static_next_medias.IsEmpty()) {
+                        $previous_medias.Add(last_media_uuid);
+                    }
+                    
+                    // @ts-ignore - we just checked that the stack is not empty. so last_media_uuid is not null.
+                    new_index = getMediaIndexByUUID(last_media_uuid);
+                } else if (direction_forward) {
                     new_index = Math.floor(Math.random() * $current_category.content.length);
+
+                    while (new_index === $active_media_index) {
+                        console.log("Random media navigation: same index, trying again");
+                        new_index = Math.floor(Math.random() * $current_category.content.length);
+                    }
                 }
 
-                if (key_combo === "a") {
-                    new_index = $previous_media_index;
-                }
+                const active_media = getActiveMedia();
 
-                previous_media_index.set($active_media_index);
+                if (!direction_forward) { // Navigating back
+
+                    if ($previous_medias.Size > 1) {
+                        const top_media_uuid = $previous_medias.Pop();
+
+                        if (top_media_uuid != null && top_media_uuid !== $static_next_medias.Peek()) {
+                            $static_next_medias.Add(top_media_uuid);
+                        }
+                    }
+
+                    let previous_media_uuid = $previous_medias.Peek();
+
+                    if (previous_media_uuid !== null) {
+                        new_index = getMediaIndexByUUID(previous_media_uuid);
+                    }
+                } else { // If navigating forward but not on the already static next medias
+                    const next_media = getDisplayedMediaByIndex(new_index);
+
+                    if ($previous_medias.IsEmpty()) { 
+                        $previous_medias.Add(active_media.uuid);
+                    }
+
+                    if (next_media.uuid !== $previous_medias.Peek()) {
+                        $previous_medias.Add(next_media.uuid);
+                    }
+                }
 
                 active_media_index.set(new_index);
+
+                // TODO: Remove these debug logs.
+                // console.log("Random media navigation - previous medias: ", $previous_medias);
+                // console.log(`previous_medias: ${$previous_medias.toString()}`);
+                // // @ts-ignore - we can add antyhing we like to the window object. whether ts likes it or not.
+                // window.previous_medias = $previous_medias;
+                // console.log("Random media navigation - static next medias: ", $static_next_medias);
+                // console.log(`static_next_medias: ${$static_next_medias.toString()}`);
+                // // @ts-ignore - we can add antyhing we like to the window object. whether ts likes it or not.
+                // window.static_next_medias = $static_next_medias;
+
+
                 replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
 
                 await tick();
@@ -860,6 +930,8 @@
             const toggleRandomMediaNavigationHotkey = key_event => {
                 key_event.preventDefault();
                 random_media_navigation.set(!$random_media_navigation);
+
+                resetRandomNavigationState();
 
                 let feedback_message = $random_media_navigation ? "random navigation: on" : "random navigation: off";
 
@@ -1124,6 +1196,18 @@
         }
 
         /**
+         * Returns the medias been displayed in the media viewer.
+         * @returns {import('@models/Medias').Media[]}
+         */
+        const getDisplayedMedias = () => {
+            if ($current_category == null) {
+                throw Error("In MediaViewer.getDisplayedMedias: $current_category is null.");
+            }
+            
+            return $current_category.content;
+        }
+
+        /**
          * Returns the display item for medias regardless of the type of media.
          * @returns {HTMLMediaElement | null}
          */
@@ -1136,13 +1220,30 @@
          * @returns {import('@models/Medias').Media}
          */
         const getActiveMedia = () => {
-            if ($current_category == null) {
-                throw Error("In MediaViewer.getActiveMedia: $current_category is null.");
-            }
-            
-            return $current_category.content[$active_media_index];
+            return getDisplayedMediaByIndex($active_media_index);
         }
 
+        /**
+         * Returns a displayed media by it's index.
+         * @param {number} index
+         * @returns {import('@models/Medias').Media}
+         */
+        const getDisplayedMediaByIndex = index => {
+            const displayed_medias = getDisplayedMedias();
+
+            return displayed_medias[index];
+        }
+
+        /**
+         * Returns a media index by its uuid.
+         * @param {string} media_uuid
+         * @returns {number}
+         */
+        const getMediaIndexByUUID = media_uuid => {
+            const displayed_medias = getDisplayedMedias();
+
+            return displayed_medias.findIndex(media => media.uuid === media_uuid);
+        }
 
         /**
          * @param {CustomEvent<import('@models/Medias').Media>} event
@@ -1188,6 +1289,7 @@
             }
 
             resetMediaViewerPageStore();
+            resetRandomNavigationState();
         }
 
         const resetComponentSettings = () => {
@@ -1196,6 +1298,16 @@
             auto_move_category.set(null);
 
             applyMediaModifiersConfig(true);
+        }
+
+        /**
+         * Resest the random navigation state.
+         * @returns {void}
+         */
+        const resetRandomNavigationState = () => {
+            previous_media_index.set($active_media_index);
+            $previous_medias.Clear();
+            $static_next_medias.Clear();
         }
 
         /**
