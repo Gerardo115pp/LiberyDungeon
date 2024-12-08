@@ -56,7 +56,9 @@
     Media -> Media
  -->
 
-<article id="mv-medias-information-panel">
+<article id="mv-medias-information-panel"
+    class="libery-dungeon-window"
+>
     <div id="mv-mip-content-wrapper">
         <hgroup id="mv-mip-media-information" class="mv-mip-media-information-section">
             <h3 class="mv-mip-section-name">
@@ -141,8 +143,7 @@
 
 <style>
     article#mv-medias-information-panel {
-        --mv-mip-background-color: var(--grey-8);
-        --mv-mip-border-color: var(--main-8);
+        --mv-mip-background-color: var(--body-bg-color);
         --mv-mip-titles-color: var(--main-dark);
         --mv-mip-content-color: var(--grey-1);
 
@@ -150,7 +151,6 @@
         height: 100cqh;
         background: var(--mv-mip-background-color);
         border-radius: var(--border-radius);
-        border: 0.2px solid var(--mv-mip-border-color);
         padding: var(--vspacing-2);
 
         & ul {
@@ -186,8 +186,7 @@
 
     @supports (color: rgb( from white r g b / 1)) {
         article#mv-medias-information-panel {
-            --mv-mip-background-color: hsl(from var(--grey) h s calc(l * 1.5) / 0.9);
-            --mv-mip-border-color: hsl(from var(--main-8) h calc(s * 0.4) calc(l * 0.8) / 1);
+            --mv-mip-background-color: hsl(from var(--body-bg-color) h s calc(l * 1.5) / 0.9);
             --mv-mip-titles-color: var(--main-dark);
             --mv-mip-content-color: var(--grey-1);
         }
