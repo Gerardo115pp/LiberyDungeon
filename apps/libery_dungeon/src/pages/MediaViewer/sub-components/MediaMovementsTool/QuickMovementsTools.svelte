@@ -19,7 +19,9 @@
 
 </script>
 
-<div id="quick-media-movement-tool">
+<div id="quick-media-movement-tool"
+    class="libery-dungeon-window"
+>
     {#if used_categories.length !== 0}
         <ol id="qmmt-used-categories">
             {#each used_categories as uc, h}
@@ -41,8 +43,6 @@
         top: 50%;
         left: -150%;
         padding: var(--vspacing-3);
-        background: var(--grey-7);
-        border-radius: var(--border-radius);
         transform: translate(-50%, -50%);
     }
 
@@ -59,7 +59,7 @@
 
     .qmmt-uc-category-item {
         padding: var(--vspacing-1) var(--vspacing-2);
-        background: var(--grey-5);
+        background: var(--grey-9);
         color: var(--grey-1);
         border-radius: var(--border-radius);
         margin: var(--vspacing-1);
