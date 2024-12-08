@@ -37,8 +37,109 @@ func categoryTagsHandler(response http.ResponseWriter, request *http.Request) {
 }
 
 func getCategoryTagsHandler(response http.ResponseWriter, request *http.Request) {
-	response.WriteHeader(http.StatusMethodNotAllowed)
-	return
+	var resource string = request.URL.Path
+	var handler_func http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
+	echo.Echo(echo.GreenFG, "In getCategoryTagsHandler\n")
+
+	switch resource {
+	case "/categories/tags/content-tagged":
+		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getTaggedCategoryContent)
+	}
+
+	handler_func(response, request)
+}
+
+// Returns a paginated response with the medias tagged with the provided tag list.
+func getTaggedCategoryContent(response http.ResponseWriter, request *http.Request) {
+	var page_num int
+	var page_size int
+
+	var query_param string = request.URL.Query().Get("page")
+
+	if query_param == "" {
+		echo.Echo(echo.RedFG, "In getEntitiesWithTagsPaginatedHandler, page query parameter is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	page_num, err := strconv.Atoi(query_param)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsPaginatedHandler, while converting page query parameter to int: %s\n", err))
+		response.WriteHeader(400)
+		return
+	}
+
+	query_param = request.URL.Query().Get("page_size")
+
+	if query_param == "" {
+		echo.Echo(echo.RedFG, "In getEntitiesWithTagsPaginatedHandler, page_size query parameter is empty\n")
+		response.WriteHeader(400)
+		return
+	}
+
+	page_size, err = strconv.Atoi(query_param)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsPaginatedHandler, while converting page_size query parameter to int: %s\n", err))
+		response.WriteHeader(400)
+		return
+	}
+
+	var tag_ids []int
+
+	tag_ids, err = dungeon_helpers.ParseQueryParameterAsIntSlice(request, "tags")
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsHandler, while parsing tags query parameter: %s\n", err))
+		response.WriteHeader(400)
+	}
+
+	var medias []dungeon_models.MediaIdentity = make([]dungeon_models.MediaIdentity, 0)
+
+	tagged_content, err := communication.Metadata.GetEntitiesWithTaggings(tag_ids)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsPaginatedHandler, while getting entities with taggings: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	tagged_medias_uuids := tagged_content[dungeon_models.ENTITY_TYPE_MEDIA]
+
+	medias, err = repository.CategoriesRepo.GetMediaIdentityList(request.Context(), tagged_medias_uuids)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsPaginatedHandler, while getting media identities: %s\n", err))
+		response.WriteHeader(500)
+		return
+	}
+
+	tagged_categories_uuids := tagged_content[dungeon_models.ENTITY_TYPE_CATEGORY]
+
+	for _, category_uuid := range tagged_categories_uuids {
+		category_media_identities, err := repository.CategoriesRepo.GetCategoryMediaIdentities(request.Context(), category_uuid)
+		if err != nil {
+			echo.Echo(echo.RedFG, fmt.Sprintf("In getEntitiesWithTagsPaginatedHandler, while getting category media identities: %s\n", err))
+			response.WriteHeader(500)
+			return
+		}
+
+		medias = append(medias, category_media_identities...)
+	}
+
+	var starting_index int = (page_num - 1) * page_size
+	var ending_index int = starting_index + page_size
+	var total_pages int = len(medias) / page_size
+
+	requested_media_identities := make([]dungeon_models.MediaIdentity, page_size)
+
+	if starting_index > len(medias) {
+		dungeon_helpers.WritePaginatedResponse(response, make([]dungeon_models.MediaIdentity, 0), page_num, page_size, total_pages)
+		return
+	}
+
+	for starting_index <= ending_index && starting_index < len(medias) {
+		requested_media_identities[starting_index%page_size] = medias[starting_index]
+		starting_index++
+	}
+
+	dungeon_helpers.WritePaginatedResponse(response, requested_media_identities, page_num, page_size, total_pages)
 }
 
 func postCategoryTagsHandler(response http.ResponseWriter, request *http.Request) {

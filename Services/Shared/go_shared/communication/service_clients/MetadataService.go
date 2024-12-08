@@ -91,6 +91,8 @@ func (metadata_client MetadataServiceClient) GetAllPrivateClusters() ([]string, 
 }
 
 func (metadata_client MetadataServiceClient) GetEntitiesWithTaggings(tag_list []int) (entities_by_type map[string][]string, err error) {
+	entities_by_type = make(map[string][]string)
+
 	conn, err := grpc.Dial(metadata_client.GrpcAddress, grpc.WithTransportCredentials(metadata_client.GrpcTransport))
 	if err != nil {
 		return nil, err
