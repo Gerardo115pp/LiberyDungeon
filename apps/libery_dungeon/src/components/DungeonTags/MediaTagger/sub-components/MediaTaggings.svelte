@@ -9,6 +9,7 @@
     import { CursorMovementWASD, GRID_MOVEMENT_ITEM_CLASS } from "@app/common/keybinds/CursorMovement";
     import { browser } from "$app/environment";
     import generateMediaTaggingsHotkeyContext from "./media_taggings_hotkeys";
+    import { ensureElementVisible } from "@libs/utils";
     
     /*=============================================
     =            Properties            =
@@ -271,7 +272,7 @@
              * @param {KeyboardEvent} event 
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey 
              */
-            const handleTagTaxonomyNavigation = (event, hotkey) => {
+            const handleTagTaxonomyNavigation = async (event, hotkey) => {
                 if (tag_taxonomy_map == null || tag_taxonomy_map.size === 0) return;
                 
 
@@ -284,6 +285,14 @@
                 console.log(`new_focused_taxonomy_index: ${new_focused_taxonomy_index}`);
 
                 focused_taxonomy_index = new_focused_taxonomy_index;
+
+                await tick();
+
+                const focused_tag_element = getFocusedTagElement();
+
+                if (focused_tag_element != null) {
+                    ensureElementVisible(focused_tag_element);
+                }
 
                 changeTaxonomyGrid();
             }
@@ -342,6 +351,15 @@
          */
         const cleanIdSelector = unsafe_string => {
             return unsafe_string.replace(/[^a-zA-Z0-9-_]/g, "-");
+        }
+
+
+        /**
+         * Returns a selector for the selected tag.
+         * @returns {string}
+         */
+        const getSelectedTagSelector = () => {
+            return ".cma-attribute-name-wrapper.focused-attribute";
         }
 
 
@@ -457,6 +475,23 @@
             const [taxonomy_name, current_category_taggings] = [...tag_taxonomy_map][focused_taxonomy_index];
 
             return taxonomy_name;
+        }
+
+        /**
+         * Returns the focused tag element.
+         * @returns {HTMLElement | null}
+         */
+        const getFocusedTagElement = () => {
+            const focused_tag_selector = getSelectedTagSelector();
+
+            const focused_tag_element = document.querySelector(focused_tag_selector);
+
+            if (!(focused_tag_element instanceof HTMLElement)) {
+                console.error("In MediaTaggings.getFocusedTagElement: Using selector '${focused_tag_selector}', we were not able to find the focused tag element.");
+                return null;
+            }
+
+            return focused_tag_element;
         }
 
         /**
@@ -586,7 +621,9 @@
                             on:item-deleted={handleCategoryTagDeleted}
                             squared_style
                         >
-                            <p class="cma-attribute-name-wrapper">
+                            <p class="cma-attribute-name-wrapper"
+                                class:focused-attribute={is_tag_keyboard_focused}
+                            >
                                 <i>
                                     {k + 1}
                                 </i>
