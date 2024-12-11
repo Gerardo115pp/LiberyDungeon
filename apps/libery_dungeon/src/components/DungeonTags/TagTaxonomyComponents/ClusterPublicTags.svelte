@@ -162,6 +162,10 @@
                         await_execution: false,
                     });
 
+                    hotkeys_context.register(["shift+w", "shift+s"], handleTagTaxonomyTopBottomNavigation, {
+                        description: "<navigation>Sets the focused attribute to the top/bottom.",
+                    });
+
                     hotkeys_context.register(["c c"], handleRenameFocusedTagTaxonomyHotkey, {
                         description: "<content>Renames the focused attribute.",
                         await_execution: false,
@@ -257,6 +261,21 @@
                 let navigation_step = event.key === "w" ? -1 : 1;
 
                 new_cpt_focused_tag_taxonomy_index = linearCycleNavigationWrap(new_cpt_focused_tag_taxonomy_index, $cluster_tags.length - 1, navigation_step).value;
+
+                cpt_focused_tag_taxonomy_index = new_cpt_focused_tag_taxonomy_index;
+            }
+
+            /**
+             * Handles the top/bottom navigation of the tag taxonomies.
+             * @param {KeyboardEvent} event
+             * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
+             */
+            const handleTagTaxonomyTopBottomNavigation = (event, hotkey) => {
+                if ($cluster_tags?.length === 0) return;
+
+                let new_cpt_focused_tag_taxonomy_index = cpt_focused_tag_taxonomy_index;
+
+                new_cpt_focused_tag_taxonomy_index = event.key.toLowerCase() === "w" ? 0 : $cluster_tags.length - 1;
 
                 cpt_focused_tag_taxonomy_index = new_cpt_focused_tag_taxonomy_index;
             }
