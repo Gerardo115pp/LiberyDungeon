@@ -14,6 +14,12 @@ export const cluster_tags = writable([]);
 export const last_cluster_domain = writable("");
 
 /**
+ * Whether the cluster_tags correctness with respect to the current_cluster has been checked.
+ * @type {import('svelte/store').Writable<boolean>}
+ */ 
+export let cluster_tags_checked = writable(false);
+
+/**
 * Refreshes the `cluster_tags` store with the given cluster_uuid. If the cluster_uuid is the same as `tags_cluster_domain` then the store is not refreshed.
 * Unless `force` is passed and set to true. Returns whether the operation was successful or not(the cluster had at least one TaxonomyTags object).
  * @param {string} cluster_uuid
@@ -39,12 +45,25 @@ export const refreshClusterTagsNoCheck = async (cluster_uuid) => {
     const new_taxonomy_tags = await getClusterUserDefinedTags(cluster_uuid);
 
     if (new_taxonomy_tags.length === 0) {
+        cluster_tags_checked.set(false);
         return false;
     }
+
+    cluster_tags_checked.set(true);
     
     last_cluster_domain.set(cluster_uuid);
 
     cluster_tags.set(new_taxonomy_tags);
 
     return true;
+}
+
+/**
+ * Resets the state of the dungeon_tags store.
+ * @returns {void}
+ */
+export const resetDungeonTagsStore = () => {
+    cluster_tags.set([]);
+    last_cluster_domain.set("");
+    cluster_tags_checked.set(false);
 }
