@@ -12,6 +12,13 @@ export const create_subcategory = writable(false);
  */
 export const media_tagging_tool_mounted = writable(false);
 
+/**
+ * Whether the tagged medias tool is mounted or not.
+ * @type {import('svelte/store').Writable<boolean>}
+ * @default true
+ */
+export const tagged_medias_tool_mounted = writable(false);
+
 export const resetMediaViewerPageStore = () => {
     create_subcategory.set(false);
     media_tagging_tool_mounted.set(false);
