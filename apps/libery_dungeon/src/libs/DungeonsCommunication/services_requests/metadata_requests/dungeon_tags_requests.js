@@ -1,4 +1,4 @@
-import { HttpResponse, attributesToJson } from "../../base";
+import { HttpResponse, arrayToParam, attributesToJson } from "../../base";
 import { metadata_server, categories_server } from "../../services"
 
 /**
@@ -917,5 +917,69 @@ export class DeleteUntagCategoryContentRequest {
         untagged = response?.status === 200;
 
         return new HttpResponse(response, untagged);
+    }
+}
+
+/**
+ * Returns all the medias that have been tagged with a list of tag ids
+ */
+export class GetContentTaggedRequest {
+
+    static endpoint = `${categories_server}/categories/tags/content-tagged`;
+
+    /**
+     * @param {number[]} tag_ids
+     * @param {number} [page]
+     * @param {number} [page_size]
+     */
+    constructor(tag_ids, page, page_size) {
+        if (page == null) {
+            page = 1;
+        }
+
+        if (page_size == null) {
+            page_size = 100;
+        }
+
+        this.page = page;
+        this.page_size = page_size;
+        this.tags = arrayToParam(tag_ids);
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import("@libs/DungeonsCommunication/dungeon_communication").PaginatedResponse<import('@models/Medias').MediaIdentityParams> | null>>}
+     */
+    do = async () => {
+        const url = new URL(`${GetContentTaggedRequest.endpoint}`, globalThis.location.origin);
+
+        url.searchParams.append("tags", this.tags);
+        url.searchParams.append("page", this.page.toString());
+        url.searchParams.append("page_size", this.page_size.toString());
+
+        /**
+         * @type {import('@libs/DungeonsCommunication/dungeon_communication').PaginatedResponse<import('@models/Medias').MediaIdentityParams> | null}
+         */
+        let tagged_content = null;
+
+        /**
+         * @type {Response | null}
+         */
+        let response = null;
+
+        try {
+            response = await fetch(url);
+
+            if (response.ok) {
+                tagged_content = await response.json();
+            }
+        } catch (error) {
+            console.error("Error getting tagged content: ", error);
+
+            throw error;
+        }
+
+        return new HttpResponse(response, tagged_content);
     }
 }
