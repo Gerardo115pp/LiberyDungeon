@@ -2,7 +2,6 @@
     /*=============================================
     =            Imports            =
     =============================================*/
-    
         import VideoController from "@components/VideoController/VideoController.svelte";
         import { MediaChangesManager, media_change_types } from "@models/WorkManagers";
         import MediaMovementsTool from "./sub-components/MediaMovementsTool/MediaMovementsTool.svelte";
@@ -19,7 +18,7 @@
         import { getMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
         import { replaceState } from "$app/navigation";
         import { media_types } from "@models/Medias";
-        import { resetMediaViewerPageStore } from "./app_page_store";
+        import { resetMediaViewerPageStore, tagged_medias_tool_mounted } from "./app_page_store";
         import { 
             active_media_index, 
             active_media_change,
@@ -39,6 +38,7 @@
         import { current_cluster, loadCluster } from "@stores/clusters";
         import MediaInformationPanel from "./sub-components/MediaInformation/MediaInformationPanel.svelte";
         import MediaTagger from "@components/DungeonTags/MediaTagger/MediaTagger.svelte";
+        import TaggedMedias from "@components/DungeonTags/TaggedMedias/TaggedMedias.svelte";
         import { media_tagging_tool_mounted } from "./app_page_store";
         import { goto } from "$app/navigation";
         import { page } from "$app/stores";
@@ -51,9 +51,16 @@
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
         import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
         import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
-    import generateMediaTaggerHotkeyContext from "@components/DungeonTags/MediaTagger/media_tagger_hotkeys";
-    import { LEFT_RIGHT_NAVIGATION }  from "@common/keybinds/CommonActionsName";
-    
+        import generateMediaTaggerHotkeyContext from "@components/DungeonTags/MediaTagger/media_tagger_hotkeys";
+        import { LEFT_RIGHT_NAVIGATION }  from "@common/keybinds/CommonActionsName";
+        import {
+            active_tag_content_media_index,
+            changeFilteringTags,
+            mv_tag_mode_enabled,
+            mv_tagged_content,
+        } from "@stores/media_viewer_tag_mode";
+    import generateTaggedMediasHotkeyContext from "@components/DungeonTags/TaggedMedias/tagged_medias_hotkeys";
+
     /*=====  End of Imports  ======*/
      
     /*=============================================
@@ -120,9 +127,21 @@
              */
             let media_tagger_hotkeys_context = null;
 
+            /**
+             * The component hotkey context for the child TaggedMedias.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
+             */
+            let tagged_medias_hotkeys_context = null;
+
         /*=============================================
         =            State            =
         =============================================*/
+
+            /**
+             * The active media.
+             * @type {import('@models/Medias').Media | null}
+             */
+            let active_media = null;
 
             /** 
              * Whether the value for active_media_index has been determined. if this is false, any value active_media_index cannot
@@ -132,9 +151,16 @@
              */
             let active_media_index_determined = false;
 
-            /** @type {number} on each movement event, the medias will move by media_movement_factor * media_height */
+            /**
+             * @type {number}
+             * on each movement event, the medias will move by media_movement_factor * media_height 
+             */
             let media_movement_factor = 0.2;
-            /** @type {number} the medias can only move an amount equal to media_movement_threshold * media_height*/
+
+            /**
+             * @type {number}
+             * the medias can only move an amount equal to media_movement_threshold * media_height
+             */
             let media_movement_threshold = 2;
 
             let media_zoom = 1;
@@ -162,16 +188,27 @@
              */
             let page_reader_mode = false;
 
-            /** @type {boolean} whether to show the media movement manager */
+            /**
+             * @type {boolean}
+             * whether to show the media movement manager 
+             */
             let show_media_movement_manager = false;
 
-            /** @type {boolean} whether to show the media gallery */
+            /**
+             * whether to show the media gallery 
+             * @type {boolean}
+             */
             let show_media_gallery = false;
 
-            /** @type {boolean} whether to show the media information panel */
+            /**
+             * whether to show the media information panel 
+             * @type {boolean}
+             */
             let show_media_information_panel = false;
 
-            /**  @type {boolean} Whether the media viewer is currently closing. 
+            /**
+             * Whether the media viewer is currently closing. 
+             *  @type {boolean}
              */
             let media_viewer_closing = false;
 
@@ -200,6 +237,20 @@
                      */
                     let media_tagger_hidden = true;
                 
+                /*----------  Tagged Medias  ----------*/
+                
+                    /**
+                     * The TaggedMedias component instance.
+                     * @type {TaggedMedias | null}
+                     */ 
+                    let the_tagged_medias = null;
+
+                    /**
+                     * Whether the tagged medias component should be hidden.
+                     * @type {boolean}
+                     */
+                    let tagged_medias_hidden = false;
+
                 /*----------  Video Controller  ----------*/
                 
                     /**
@@ -266,7 +317,9 @@
 
             let media_change = $media_changes_manager.getMediaChangeType($current_category.content[new_index].uuid);
             active_media_change.set(media_change);
-        })
+        });
+
+        tagged_medias_tool_mounted.set(true);
     });
 
     onDestroy(() => {
@@ -984,6 +1037,9 @@
                 const defineSubComponentsHotkeyContext = () => {
                     media_tagger_hotkeys_context = defineMediaTaggerHotkeyContext();
                     media_viewer_hotkeys_context.ChildHotkeysContexts.set(media_tagger_hotkeys_context.HotkeysContextName, media_tagger_hotkeys_context);
+
+                    tagged_medias_hotkeys_context = defineTaggedMediasHotkeyContext();
+                    media_viewer_hotkeys_context.ChildHotkeysContexts.set(tagged_medias_hotkeys_context.HotkeysContextName, tagged_medias_hotkeys_context);
                 }
 
                 /**
@@ -1019,6 +1075,19 @@
                     media_tagger_context.ParentHotkeysContext = media_viewer_hotkeys_context;
 
                     return media_tagger_context;
+                }
+
+                /**
+                 * defines the hotkey context for the tagged medias component.
+                 * @requires generateTaggedMediasHotkeyContext
+                 * @returns {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+                 */
+                const defineTaggedMediasHotkeyContext = () => {
+                    tagged_medias_hotkeys_context = generateTaggedMediasHotkeyContext();
+
+                    tagged_medias_hotkeys_context.ParentHotkeysContext = media_viewer_hotkeys_context;
+
+                    return tagged_medias_hotkeys_context;
                 }
         
         /*=====  End of Keybinding  ======*/
@@ -1275,6 +1344,24 @@
             toggleMediaTaggerTool();
         }
 
+        /**
+         * Handles the close event of the tagged medias component.
+         */
+        const handleTaggedMediasClose = () => {
+            tagged_medias_hidden = true;
+        }
+
+        /**
+         * Handles the change of tag filters for medias content
+         * @type {import('@components/DungeonTags/TaggedMedias/tagged_medias').MediaTagsChangedCallback}
+         */
+        const handleFilteringMediasChange = async tags => {
+            await changeFilteringTags(tags);
+
+            console.log("Filtered medias:", $mv_tagged_content);
+
+        }
+
         function onComponentExit() {        
             if (category_cache != null) {
                 category_cache.addCategoryIndex(url_category_id, $active_media_index);
@@ -1516,12 +1603,16 @@
     {#if $current_category !== null && active_media_index_determined && $current_category.content[$active_media_index] !== undefined}
         <div id="media-wrapper">
             {#if $current_category.content[$active_media_index].type === media_types.IMAGE}
-                <img class="mw-media-element-display" src="{getMediaUrl($current_category.FullPath, $current_category.content[$active_media_index].name)}" alt="displayed media">
+                <img
+                    class="mw-media-element-display"
+                    src="{$mv_tag_mode_enabled ? $mv_tagged_content[$active_tag_content_media_index].Media.Url : $current_category.content[$active_media_index].Url}"
+                    alt="displayed media"
+                >
             {:else}
                 <video 
                     class="mw-media-element-display"
                     bind:this={video_element}  
-                    src="{$current_category.content[$active_media_index].Url}" 
+                    src="{$mv_tag_mode_enabled ? $mv_tagged_content[$active_tag_content_media_index].Media.Url : $current_category.content[$active_media_index].Url}" 
                     muted={$automute_enabled}
                     autoplay 
                     loop
@@ -1567,6 +1658,18 @@
                 />
             {/if}
         </div>
+        <div id="ldmv-tagged-medias-tool"
+            class:media-viewer-tool-hidden={tagged_medias_hidden}
+        >
+            {#if $tagged_medias_tool_mounted && tagged_medias_hotkeys_context != null}
+                <TaggedMedias
+                    component_hotkey_context={tagged_medias_hotkeys_context}
+                    background_alpha={0.5}
+                    onFilterTagsChange={handleFilteringMediasChange}
+                    onClose={handleTaggedMediasClose}
+                />
+            {/if}
+        </div>
         {#if $current_category?.content.length > 0 && show_media_gallery}            
             <div id="ldmv-media-gallery-wrapper">
                 <MediasGallery on:thumbnail-click={handleThumbnailClick} all_available_medias={$current_category.content} category_path={$current_category.FullPath}/>
@@ -1604,6 +1707,12 @@
     }
 
     /* -------------------------- Media viewer - tools -------------------------- */
+
+        .media-viewer-tool-hidden {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+        }
 
         #mw-video-controller-wrapper {
             position: absolute;
@@ -1651,6 +1760,22 @@
             }
         
         /*=====  End of Media tagger  ======*/
+
+        
+        /*=============================================
+        =            Tagged Medias            =
+        =============================================*/
+        
+            #ldmv-tagged-medias-tool {
+                position: absolute;
+                width: max(350px, 33dvw);
+                height: calc(calc(100dvh * .99) - var(--navbar-height)); 
+                inset: var(--navbar-height) 0 auto auto;
+            }
+        
+        /*=====  End of Tagged Medias  ======*/
+        
+        
         
         
 

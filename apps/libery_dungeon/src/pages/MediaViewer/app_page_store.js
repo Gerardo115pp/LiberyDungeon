@@ -1,4 +1,5 @@
 import { writable } from "svelte/store";
+import { current_category } from "@stores/categories_tree";
 
 /**
  * @type {import('svelte/store').Writable<boolean>} the name of a category been created, if the value is n null then no category is being created

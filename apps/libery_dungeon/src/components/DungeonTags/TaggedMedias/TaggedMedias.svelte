@@ -79,6 +79,12 @@
          * @type {import('./tagged_medias').MediaTagsChangedCallback}
          */
         export let onFilterTagsChange = (tags) => {};
+
+        /**
+         * A callback called when the component is closed(but not unmounted).
+         * @type {() => void}
+         */
+        export let onClose = () => {};
         
         /*----------  Style  ----------*/
         
@@ -105,7 +111,9 @@
 
         defineSubComponentsHotkeysContext();
 
-        defineDesktopKeybinds();
+        component_hotkey_context.onActiveChange(handleComponentActiveState);
+
+        component_hotkey_context.Active = true;
     });
     
     /*=============================================
@@ -116,27 +124,54 @@
         =            Hotkeys            =
         =============================================*/
 
-            /**
-             * Defines the tool's hotkeys.
-             */ 
-            const defineDesktopKeybinds = () => {
-                if (global_hotkeys_manager == null) {
-                    console.error("Hotkeys manager not available.");
-                    return;
-                };
+            /* ------------------------------ hotkey setup ------------------------------ */
 
-                if (global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
-                    global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
+                /**
+                 * Defines the tool's hotkeys.
+                 */ 
+                const defineDesktopKeybinds = () => {
+                    if (global_hotkeys_manager == null) {
+                        console.error("Hotkeys manager not available.");
+                        return;
+                    };
+
+                    if (global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+                        global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
+                    }
+
+                    if (component_hotkey_context.HasGeneratedHotkeysContext()) {
+                        component_hotkey_context.dropHotkeysContext();
+                    }
+
+                    const hotkeys_context = preparePublicHotkeysActions(component_hotkey_context); // Not using the TaggedMedias HotkeyContext right now.
+
+                    cluster_public_tags_hotkey_context.Active = true;
                 }
 
-                if (component_hotkey_context.HasGeneratedHotkeysContext()) {
-                    component_hotkey_context.dropHotkeysContext();
+                /**
+                 * Handles the active state change of the component hotkey context.
+                 * @param {boolean} active
+                 */
+                const handleComponentActiveState = active => {
+                    if (global_hotkeys_manager == null) {
+                        console.error("In TaggedMedias.handleComponentActiveState: Hotkeys manager not available.");
+                        return;
+                    }
+                    
+
+                    if (active) {
+                        defineDesktopKeybinds();
+                        return;
+                    }
+
+                    if (component_hotkey_context.ParentHotkeysContext != null) {
+                        global_hotkeys_manager.loadPastContext(component_hotkey_context.ParentHotkeysContext.HotkeysContextName);
+                    } else {
+                        global_hotkeys_manager.loadPreviousContext();
+                    }
                 }
 
-                const hotkeys_context = preparePublicHotkeysActions(component_hotkey_context); // Not using the TaggedMedias HotkeyContext right now.
 
-                cluster_public_tags_hotkey_context.Active = true;
-            }
 
             /**
              * Handles the delete focused tag action from the TagTaxonomy component.
@@ -158,6 +193,9 @@
              */
             const handleRecoverHotkeysControl = () => {
                 sub_component_sections[focused_section_index].Active = false;
+                component_hotkey_context.Active = false;
+
+                onClose();
             }
 
             /**
