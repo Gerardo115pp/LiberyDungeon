@@ -4,6 +4,7 @@ import {
     PatchRenameMediasRequest,
     GetMediaIdentityByUUIDRequest
 } from "@libs/DungeonsCommunication/services_requests/media_requests";
+import { GetContentTaggedRequest } from "@libs/DungeonsCommunication/services_requests/metadata_requests/dungeon_tags_requests";
 
 const DEFAULT_IMAGE_WIDTH = 307;
 
@@ -471,6 +472,39 @@ export const getMediaIdentityByUUID = async (media_uuid) => {
     }
 
     return media_identity;
+}
+
+/**
+ * Returns a list of media identites that matcha given list of tags by their ids. Returns a paginated response. Optionally a page and page_size parameters can be passed.
+ * @param {number[]} tag_ids
+ * @param {number} [page]
+ * @param {number} [page_size]
+ * @returns {Promise<import('@libs/DungeonsCommunication/dungeon_communication').PaginatedResponse<MediaIdentity> | null>}
+ */
+export const getTaggedMedias = async (tag_ids, page, page_size) => {
+    const request = new GetContentTaggedRequest(tag_ids, page, page_size);
+
+    /**
+     * @type {import('@libs/DungeonsCommunication/dungeon_communication').PaginatedResponse<MediaIdentity> | null}
+     */    
+    let paginated_response = null;
+
+    try {
+        const response = await request.do();
+
+        if (response.Ok && response.data != null) {
+            const media_identities = response.data.content.map(media_identity_params => new MediaIdentity(media_identity_params))
+
+            paginated_response = {
+                ...response.data,
+                content: media_identities
+            }
+        } 
+    } catch (error) {
+        console.error(`In @models/Medias/getTaggedMedias: while fetching tagged medias got ${error}`);
+    }
+
+    return paginated_response;
 }
 
 /*=====  End of Model actions  ======*/
