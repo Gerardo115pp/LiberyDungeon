@@ -91,7 +91,7 @@ const generateTaxonomyTagsHotkeysContext = () => {
     });
 
     taxonomy_tags_hotkeys.registerHotkeyAction(taxonomy_tags_actions.DELETE_FOCUSED_TAG, {
-        overwrite_behavior: ComponentHotkeyContext.OVERRIDE_BEHAVIOR_IGNORE,
+        overwrite_behavior: ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE,
         hotkey_register_params: {
             hotkey_triggers: global_hotkey_action_triggers.ITEM_DELETION_NON_IMPERATIVE,
             callback: HOTKEY_NULLISH_HANDLER,

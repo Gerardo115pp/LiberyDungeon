@@ -284,7 +284,10 @@
 
                             const delete_focused_tag_action = component_hotkey_context.getHotkeyActionOrPanic(taxonomy_tags_actions.DELETE_FOCUSED_TAG);
 
-                            delete_focused_tag_action.Callback = handleDeleteFocusedTag;
+                            if (delete_focused_tag_action.HasNullishCallback()) {
+                                delete_focused_tag_action.Callback = handleDeleteFocusedTag;
+                            }
+
 
                             if (delete_focused_tag_action.HasNullishDescription()) {
                                 delete_focused_tag_action.overwriteDescription(`<content>Deletes the focused ${ui_tag_reference.EntityName}.`);
