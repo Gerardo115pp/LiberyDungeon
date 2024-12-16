@@ -237,6 +237,15 @@ export class TaxonomyTags {
     }
 
     /**
+     * Finds a dungeon tag by it's tag id.
+     * @param {number} tag_id
+     * @returns {DungeonTag | undefined}
+     */
+    findTagByID(tag_id) {
+        return this.#tags.find(tag => tag.Id === tag_id);
+    }
+
+    /**
      * The taxonomy.
      * @type {TagTaxonomy}
      */
