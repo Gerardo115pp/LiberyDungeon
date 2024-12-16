@@ -95,3 +95,21 @@ export function attributesToJsonExclusive() {
 
     return JSON.stringify(json_data);
 }
+
+/**
+ * Converts an array of stringable elements to an http array param compatible with the dungeon api. e.g: [1,2,3] -> '1,2,3'
+ * @param {import('./dungeon_communication').Stringable[]} elements
+ * @returns {string}
+ */
+export const arrayToParam = elements => {
+    let string_param = ""
+
+    for (let h = 0; h < elements.length; h++) {
+        string_param += elements[h].toString();
+        if (h < (elements.length - 1)) {
+            string_param += ","
+        }
+    }
+
+    return string_param;
+}
