@@ -9,7 +9,7 @@
     import { CursorMovementWASD, GRID_MOVEMENT_ITEM_CLASS } from "@app/common/keybinds/CursorMovement";
     import { browser } from "$app/environment";
     import generateMediaTaggingsHotkeyContext from "./media_taggings_hotkeys";
-    import { ensureElementVisible } from "@libs/utils";
+    import { ensureElementVisible, cleanIdSelector } from "@libs/utils";
     
     /*=============================================
     =            Properties            =
@@ -343,15 +343,6 @@
             }
 
         /*=====  End of Keybinds  ======*/
-
-        /**
-         * Returns a version of the passed string that is safe to use as an id selector.
-         * @param {string} unsafe_string
-         * @returns {string}
-         */
-        const cleanIdSelector = unsafe_string => {
-            return unsafe_string.replace(/[^a-zA-Z0-9-_]/g, "-");
-        }
 
 
         /**

@@ -228,6 +228,15 @@ export const cleanFilenameString = (new_filename, lower_case=true) => {
 }
 
 /**
+ * Returns a version of the passed string that is safe to use as an id selector.
+ * @param {string} unsafe_string
+ * @returns {string}
+ */
+export const cleanIdSelector = unsafe_string => {
+    return unsafe_string.replace(/[^a-zA-Z0-9-_]/g, "-");
+}
+
+/**
  * Converts a duration in seconds to a string. if the video is longer than an hour, it will be formatted as HH:MM:SS, otherwise it will be MM:SS
  * It expects the duration to be in seconds but is_seconds can be set to false to treat the duration as milliseconds.
  * @param {number} duration - the duration of the video in seconds
