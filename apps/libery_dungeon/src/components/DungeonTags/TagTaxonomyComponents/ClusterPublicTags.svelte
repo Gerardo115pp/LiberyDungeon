@@ -120,6 +120,10 @@
         component_hotkey_context.onActiveChange(handleComponentActiveState);
 
         defineSubComponentsHotkeysContext();
+
+        if (component_hotkey_context.Active) { // Support cases where the component hotkey context is immediately activated.
+            defineDesktopKeybinds();
+        }
     });
 
     onDestroy(() => {
