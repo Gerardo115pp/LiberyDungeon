@@ -17,7 +17,6 @@
     /*=============================================
     =            Properties            =
     =============================================*/
-
         
         /*=============================================
         =            Hotkeys            =
@@ -74,6 +73,12 @@
          * @type {import('@models/DungeonTags').DungeonTag[]}
          */
         let filtering_dungeon_tags = [];
+
+        /**
+         * A callback called when event the filtering tags change.
+         * @type {import('./tagged_medias').MediaTagsChangedCallback}
+         */
+        export let onFilterTagsChange = (tags) => {};
         
         /*----------  Style  ----------*/
         
@@ -240,6 +245,8 @@
             }
 
             filtering_dungeon_tags = [...filtering_dungeon_tags, new_filtering_tag];
+
+            onFilterTagsChange(filtering_dungeon_tags);
         }
 
         /**
@@ -259,6 +266,8 @@
          */
         const removeFilteringTag = tag_id => {
             filtering_dungeon_tags = filtering_dungeon_tags.filter(tag => tag.Id !== tag_id);
+
+            onFilterTagsChange(filtering_dungeon_tags);
         }
 
         /**
