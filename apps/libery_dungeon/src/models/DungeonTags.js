@@ -19,6 +19,7 @@ import {
     PostTagCategoryContentRequest,
     DeleteUntagCategoryContentRequest,
 } from '@libs/DungeonsCommunication/services_requests/metadata_requests/dungeon_tags_requests'
+import { arrayToParam } from '@libs/DungeonsCommunication/base'
 import { lf_errors } from '@libs/LiberyFeedback/lf_errors'
 import { LabeledError, VariableEnvironmentContextError } from '@libs/LiberyFeedback/lf_models'
 
@@ -331,6 +332,17 @@ export class DungeonTagging {
     get TaggedEntityUUID() {
         return this.#tagged_entity_uuid;
     }
+}
+
+/**
+ * returns the dungeon tags as string formed by a comma separated list of dungeon tag id's
+ * @param {DungeonTag[]} dungeon_tags
+ * @returns {string}
+ */
+export const stringifyDungeonTags = (dungeon_tags) => {
+    const dungeon_tags_ids = arrayToParam(dungeon_tags.map(dt => dt.Id));
+
+    return dungeon_tags_ids;
 }
 
 /*=============================================
