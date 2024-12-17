@@ -91,7 +91,7 @@
     </li>
     <li id="mvnw-media-counter">
         {#if $current_category !== null}
-            <h2><span>{$active_media_index+1}</span> of <span>{$current_category.content.length}</span></h2>
+            <h2><span>{$mv_tag_mode_enabled ? $active_tag_content_media_index+1 : $active_media_index+1}</span> of <span>{$mv_tag_mode_enabled ? $mv_tagged_content.length : $current_category.content.length}</span></h2>
         {/if}
     </li>
 </ul>

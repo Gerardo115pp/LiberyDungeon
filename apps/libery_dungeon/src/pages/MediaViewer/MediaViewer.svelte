@@ -305,6 +305,8 @@
         active_media_index.set(determined_index);
         active_media_index_determined = true;
 
+        active_media = getActiveMedia();
+
         console.log("Opening media viewer")
 
         // Sets the active media change every time the active media index changes
@@ -319,7 +321,7 @@
             active_media_change.set(media_change);
         });
 
-        tagged_medias_tool_mounted.set(true);
+        // tagged_medias_tool_mounted.set(true);
     });
 
     onDestroy(() => {
@@ -396,6 +398,10 @@
                             description: "<viewer_configuration>Toggle dark mode.",
                             consider_time_in_sequence: true,
                         });
+
+                        // hotkeys_context.register(["; t"], handleShowTaggedMediasTool, {
+                        //     description: `${common_action_groups.CONTENT}Opens up the tool to filter ${ui_core_dungeon_references.MEDIA.EntityNamePlural} by ${ui_pandasworld_tag_references.TAG_TAXONOMY.EntityName} ${ui_pandasworld_tag_references.TAG.EntityNamePlural}.`
+                        // });
                     // End 
 
                     hotkeys_context.register(["q", "esc"], handleGoBack, {
@@ -465,17 +471,7 @@
              * @param {number} new_index
              */
             const changeDisplayedMedia = new_index => {
-                if ($current_category == null) {
-                    console.error("In MediaViewer.changeDisplayedMedia: $current_category is null.");
-                    return;
-                }
-                
-                if (new_index < 0 || new_index >= $current_category.content.length) {
-                    return;
-                }
-
-                active_media_index.set(new_index);
-                replaceState(`/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
+                setActiveMediaIndex(new_index);
             }
 
             /**
@@ -578,19 +574,24 @@
                 }
                 
                 let key_combo = hotkey.KeyCombo.toLowerCase();
+
+                const displayed_medias = getDisplayedMedias();
                 
                 if ($random_media_navigation) {
                     return handleRandomMediaNavigation(key_event, key_combo);
                 }
 
-                let new_index = $active_media_index;
+                const active_media_index = getActiveMediaIndex();
+                let new_index = active_media_index;
 
                 new_index += key_combo === "a" ? -1 : 1;
-                new_index = Math.max(0, Math.min(new_index, $current_category.content.length - 1));
+                new_index = Math.max(0, Math.min(new_index, displayed_medias.length - 1));
 
-                if(media_change_types.DELETED === $media_changes_manager.getMediaChangeType($current_category.content[new_index].uuid) && $skip_deleted_medias) {
+                const new_active_media = displayed_medias[new_index];
+
+                if(media_change_types.DELETED === $media_changes_manager.getMediaChangeType(new_active_media.uuid) && $skip_deleted_medias) {
                     let not_deleted_new_index = getNextNotDeletedMediaIndex(new_index, key_combo !== "a");
-                    new_index = (not_deleted_new_index === new_index) ? $active_media_index : not_deleted_new_index;
+                    new_index = (not_deleted_new_index === new_index) ? active_media_index : not_deleted_new_index;
                 }
 
                 automoveMedia();
@@ -826,6 +827,14 @@
                 toggleMediaTaggerTool();
             }
 
+            /**
+             * Toggles the tagged media tool.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleShowTaggedMediasTool = (event, hotkey) => {
+                toggleTaggedMediasTool();
+            }
+
             const handleGoBack = async () => {
                 if ($current_category == null) {
                     console.error("In MediaViewer.handleGoBack: $current_category is null.");
@@ -1026,6 +1035,23 @@
                             defineDesktopKeybinds();
                         }
                     }
+                }
+            }
+
+            /**
+             * Toggles the state of the tagged medias tool.
+             */
+            const toggleTaggedMediasTool = async () => {
+                if (!$tagged_medias_tool_mounted) {
+                    tagged_medias_tool_mounted.set(true);
+                    tagged_medias_hidden = false;
+                    return
+                }
+
+                tagged_medias_hidden = !tagged_medias_hidden;
+
+                if (tagged_medias_hotkeys_context) {
+                    tagged_medias_hotkeys_context.Active = !tagged_medias_hidden;
                 }
             }
 
@@ -1269,9 +1295,13 @@
          * @returns {import('@models/Medias').Media[]}
          */
         const getDisplayedMedias = () => {
+            if ($mv_tag_mode_enabled) {
+                return $mv_tagged_content.map(media_identity => media_identity.Media);
+            }
+
             if ($current_category == null) {
                 throw Error("In MediaViewer.getDisplayedMedias: $current_category is null.");
-            }
+            }  
             
             return $current_category.content;
         }
@@ -1289,7 +1319,9 @@
          * @returns {import('@models/Medias').Media}
          */
         const getActiveMedia = () => {
-            return getDisplayedMediaByIndex($active_media_index);
+            let media_index = getActiveMediaIndex();
+
+            return getDisplayedMediaByIndex(media_index);
         }
 
         /**
@@ -1312,6 +1344,14 @@
             const displayed_medias = getDisplayedMedias();
 
             return displayed_medias.findIndex(media => media.uuid === media_uuid);
+        }
+
+        /**
+         * Returns the value of the active media index depending on the current display state.
+         * @returns {number}
+         */
+        const getActiveMediaIndex = () => {
+            return $mv_tag_mode_enabled ? $active_tag_content_media_index : $active_media_index;
         }
 
         /**
@@ -1359,6 +1399,8 @@
             await changeFilteringTags(tags);
 
             console.log("Filtered medias:", $mv_tagged_content);
+
+            active_media = getActiveMedia();
 
         }
 
@@ -1439,6 +1481,25 @@
             }
             
             replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
+        }
+
+        /**
+         * Sets the active media index.
+         * @param {number} new_index
+         */
+        const setActiveMediaIndex = new_index => {
+            if (!$mv_tag_mode_enabled) {
+                active_media_index.set(new_index);
+                saveActiveMediaToRoute();
+
+                
+            } else {
+                new_index = Math.max(0, Math.min(new_index, $mv_tagged_content.length - 1));
+
+                active_tag_content_media_index.set(new_index);
+            }
+
+            active_media = getActiveMedia();
         }
 
         /**
@@ -1600,19 +1661,19 @@
     style:position="relative"
     class:cinema-mode={cinema_mode}
 >
-    {#if $current_category !== null && active_media_index_determined && $current_category.content[$active_media_index] !== undefined}
+    {#if $current_category !== null && active_media_index_determined && active_media}
         <div id="media-wrapper">
-            {#if $current_category.content[$active_media_index].type === media_types.IMAGE}
+            {#if active_media.type === media_types.IMAGE}
                 <img
                     class="mw-media-element-display"
-                    src="{$mv_tag_mode_enabled ? $mv_tagged_content[$active_tag_content_media_index].Media.Url : $current_category.content[$active_media_index].Url}"
+                    src="{active_media.Url}"
                     alt="displayed media"
                 >
             {:else}
                 <video 
                     class="mw-media-element-display"
                     bind:this={video_element}  
-                    src="{$mv_tag_mode_enabled ? $mv_tagged_content[$active_tag_content_media_index].Media.Url : $current_category.content[$active_media_index].Url}" 
+                    src="{active_media.Url}" 
                     muted={$automute_enabled}
                     autoplay 
                     loop
