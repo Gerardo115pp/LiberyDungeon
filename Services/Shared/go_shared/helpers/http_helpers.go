@@ -34,22 +34,24 @@ type PaginatedResponse[T any] struct {
 	Page       int `json:"page"`
 	PageSize   int `json:"page_size"`
 	TotalPages int `json:"total_pages"`
-	Content    T   `json:"content"`
+	TotalItems int `json:"total_items"`
+	Content    []T `json:"content"`
 }
 
-func createPaginatedResponse[T any](content T, page, page_size, total_pages int) *PaginatedResponse[T] {
+func createPaginatedResponse[T any](content []T, page, total_pages, total_items int) *PaginatedResponse[T] {
 	var paginated *PaginatedResponse[T] = new(PaginatedResponse[T])
 
 	paginated.Page = page
-	paginated.PageSize = page_size
+	paginated.PageSize = len(content)
 	paginated.TotalPages = total_pages
+	paginated.TotalItems = total_items
 	paginated.Content = content
 
 	return paginated
 }
 
-func WritePaginatedResponse[T any](response http.ResponseWriter, content T, page, page_size, total_pages int) {
-	paginated_response := createPaginatedResponse(content, page, page_size, total_pages)
+func WritePaginatedResponse[T any](response http.ResponseWriter, content []T, page, total_pages, total_items int) {
+	paginated_response := createPaginatedResponse(content, page, total_pages, total_items)
 
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(200)
