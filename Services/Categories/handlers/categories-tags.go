@@ -7,6 +7,7 @@ import (
 	dungeon_helpers "libery-dungeon-libs/helpers"
 	dungeon_models "libery-dungeon-libs/models"
 	"libery_categories_service/repository"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -123,14 +124,23 @@ func getTaggedCategoryContent(response http.ResponseWriter, request *http.Reques
 		medias = append(medias, category_media_identities...)
 	}
 
+	var medias_length int = len(medias)
+
+	var medias_in_page int = page_size
+
 	var starting_index int = (page_num - 1) * page_size
 	var ending_index int = starting_index + page_size
-	var total_pages int = len(medias) / page_size
+	if ending_index > medias_length {
+		ending_index = medias_length - 1
+		medias_in_page = medias_length - starting_index
+	}
 
-	requested_media_identities := make([]dungeon_models.MediaIdentity, page_size)
+	var total_pages int = int(math.Ceil(float64(len(medias)) / float64(page_size)))
+
+	requested_media_identities := make([]dungeon_models.MediaIdentity, medias_in_page)
 
 	if starting_index > len(medias) {
-		dungeon_helpers.WritePaginatedResponse(response, make([]dungeon_models.MediaIdentity, 0), page_num, page_size, total_pages)
+		dungeon_helpers.WritePaginatedResponse(response, make([]dungeon_models.MediaIdentity, 0), page_num, total_pages, len(medias))
 		return
 	}
 
@@ -139,7 +149,7 @@ func getTaggedCategoryContent(response http.ResponseWriter, request *http.Reques
 		starting_index++
 	}
 
-	dungeon_helpers.WritePaginatedResponse(response, requested_media_identities, page_num, page_size, total_pages)
+	dungeon_helpers.WritePaginatedResponse(response, requested_media_identities, page_num, total_pages, len(medias))
 }
 
 func postCategoryTagsHandler(response http.ResponseWriter, request *http.Request) {
