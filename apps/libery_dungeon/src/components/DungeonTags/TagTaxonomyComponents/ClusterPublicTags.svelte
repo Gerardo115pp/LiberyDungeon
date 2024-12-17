@@ -149,39 +149,41 @@
                     return;
                 }
 
-                if (!global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
-                    const hotkeys_context = preparePublicHotkeyActions(component_hotkey_context);
-
-                    hotkeys_context.register(["q"], handleDropHotkeyControl, {
-                        description: `<${HOTKEYS_GENERAL_GROUP}>Deselects the Category tagger section.`,
-                        await_execution: false
-                    });
-
-                    hotkeys_context.register(["e"], handleTagTaxonomySelection, {
-                        description: "<navigation>Selects the focused attribute.",
-                    });
-
-                    hotkeys_context.register(["x"], handleFocusedTagTaxonomyDeletion, {
-                        description: "<content>Deletes the focused attribute.",
-                        await_execution: false,
-                    });
-
-                    hotkeys_context.register(["shift+w", "shift+s"], handleTagTaxonomyTopBottomNavigation, {
-                        description: "<navigation>Sets the focused attribute to the top/bottom.",
-                    });
-
-                    hotkeys_context.register(["c c"], handleRenameFocusedTagTaxonomyHotkey, {
-                        description: "<content>Renames the focused attribute.",
-                        await_execution: false,
-                        mode: "keyup"
-                    });
-
-                    wrapShowHotkeysTable(hotkeys_context);
-
-                    component_hotkey_context.applyExtraHotkeys();
-
-                    global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
+                if (global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+                    global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
                 }
+
+                const hotkeys_context = preparePublicHotkeyActions(component_hotkey_context);
+
+                hotkeys_context.register(["q"], handleDropHotkeyControl, {
+                    description: `<${HOTKEYS_GENERAL_GROUP}>Deselects the Category tagger section.`,
+                    await_execution: false
+                });
+
+                hotkeys_context.register(["e"], handleTagTaxonomySelection, {
+                    description: "<navigation>Selects the focused attribute.",
+                });
+
+                hotkeys_context.register(["x"], handleFocusedTagTaxonomyDeletion, {
+                    description: "<content>Deletes the focused attribute.",
+                    await_execution: false,
+                });
+
+                hotkeys_context.register(["shift+w", "shift+s"], handleTagTaxonomyTopBottomNavigation, {
+                    description: "<navigation>Sets the focused attribute to the top/bottom.",
+                });
+
+                hotkeys_context.register(["c c"], handleRenameFocusedTagTaxonomyHotkey, {
+                    description: "<content>Renames the focused attribute.",
+                    await_execution: false,
+                    mode: "keyup"
+                });
+
+                wrapShowHotkeysTable(hotkeys_context);
+
+                component_hotkey_context.applyExtraHotkeys();
+
+                global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
                 
                 global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
             }
