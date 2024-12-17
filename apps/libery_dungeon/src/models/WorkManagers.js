@@ -4,6 +4,7 @@ import {
 } from "@libs/DungeonsCommunication/services_requests/categories_requests";
 import { PutResyncClusterBranchRequest } from "@libs/DungeonsCommunication/services_requests/categories_cluster_requests";
 import { Media } from "./Medias";
+import { stringifyDungeonTags } from "@models/DungeonTags";
 import { Category, InnerCategory } from "./Categories";
 
 /*=============================================
@@ -501,29 +502,29 @@ import { Category, InnerCategory } from "./Categories";
 =            Category Search            =
 =============================================*/
 
-/**
- * Searches for categories based on the query
- * @param {string} query the query to search for
- * @param {string} cluster_id the cluster id to search in
- * @param {string} [ignore] an optional parameter to ignore a category by its uuid
- * @returns {Promise<import('@models/Categories').Category[]>} the response of the request
- */
-export const searchCategories = async (query, cluster_id, ignore="") => {
     /**
-     * @type {import('@models/Categories').Category[]}
+     * Searches for categories based on the query
+     * @param {string} query the query to search for
+     * @param {string} cluster_id the cluster id to search in
+     * @param {string} [ignore] an optional parameter to ignore a category by its uuid
+     * @returns {Promise<import('@models/Categories').Category[]>} the response of the request
      */
-    let category_search_results = [];
+    export const searchCategories = async (query, cluster_id, ignore="") => {
+        /**
+         * @type {import('@models/Categories').Category[]}
+         */
+        let category_search_results = [];
 
-    const request = new GetCategorySearchResultsRequest(query, cluster_id, ignore);
+        const request = new GetCategorySearchResultsRequest(query, cluster_id, ignore);
 
-    let response = await request.do();
+        let response = await request.do();
 
-    if (response.Ok && response.data !== null) {
-        category_search_results = response.data.map(category_params => new Category(category_params))
+        if (response.Ok && response.data !== null) {
+            category_search_results = response.data.map(category_params => new Category(category_params))
+        }
+
+        return category_search_results;
     }
-
-    return category_search_results;
-}
 
 /*=====  End of Category Search  ======*/
 
@@ -545,4 +546,208 @@ export const resyncClusterBranch = async (category_uuid, cluster_id) => {
 
     return sync_success;
 }
+
+
+/*=============================================
+=            Tagged Content Catcher            =
+=============================================*/
+
+    /**
+     * Caches the paginated content returned for fixed set of dungeon tags and a fixed page_size
+     */
+    export class TaggedContentCacher {
+        
+        /**
+         * The dungeon tags the content is tagged with.
+         * @type {import('@models/DungeonTags').DungeonTag[]}
+         */
+        #content_tags;
+
+        /**
+         * A cache for fetched pages. Key is the page num and the value is the list of media identities that the server returned for that page.
+         * @type {Map<number, import('@models/Medias').MediaIdentity[]>}
+         */
+        #page_cache;
+
+        /**
+         * The total number of media identities.
+         * @type {number}
+         */
+        #total_medias;
+
+        /**
+         * The page size used by the content cacher. All paginated responses must use the same page size, otherwise the caches would not be reliable. This cannot be enforced by the content cacher as the PaginatedResponse.page_size
+         * is the amount of medias that were available in that page. not the actual page_size parameter requested by the api caller.
+         * @type {number}
+         */
+        #page_size
+
+        /**
+         * The content page that was cached.
+         * @type {number}
+         */
+        #last_cached_page;
+
+        /**
+         * @param {import('@models/DungeonTags').DungeonTag[]} content_tags
+         * @param {import("@libs/DungeonsCommunication/dungeon_communication").PaginatedResponse<import('@models/Medias').MediaIdentity>} paginated_response
+         */
+        constructor(content_tags, paginated_response) {
+            this.#content_tags = content_tags;
+            this.#page_cache = new Map();
+
+            this.#total_medias = paginated_response.total_items;
+            this.#page_size = paginated_response.page_size;
+            this.#last_cached_page = 0;
+
+            if (paginated_response.page !== 1) {
+                console.warn("In WorkManager.TaggedContentCacher.constructor: you are creating a Cached with a paginated response that is not for the first page. this could make the page size attribute for the TaggeContentCacher unreliable.")
+            }
+
+            this.catchPaginatedResponse(paginated_response);
+        }
+
+        /**
+         * Catches a paginated response page's content.
+         * @param {import("@libs/DungeonsCommunication/dungeon_communication").PaginatedResponse<import('@models/Medias').MediaIdentity>} paginated_response
+         * @returns {void}
+         */
+        catchPaginatedResponse = paginated_response => {
+            this.#last_cached_page = paginated_response.page;
+
+            this.#page_cache.set(paginated_response.page, paginated_response.content)
+        }
+
+        /**
+         * Returns whether the cache has all the pages using the current page size.
+         * @returns {boolean}
+         */
+        complete = () => {
+            const all_pages = this.TotalPages;
+
+            return all_pages >= this.#page_cache.size;
+        }
+
+        /**
+         * returns the dungeon tags as string formed by a comma separated list of dungeon tag id's
+         * @type {string}
+         */
+        get ContentTagsString() {
+            return stringifyDungeonTags(this.#content_tags);
+        }
+
+        /**
+         * The dungeon tags that tag the content this cache is for.
+         * @type {import('@models/DungeonTags').DungeonTag[]}
+         */
+        get ContentTags () {
+            return this.#content_tags;
+        }
+
+        /**
+         * Returns all the cached content a list of medias
+         * @returns {Media[]}
+         */
+        getAllContent = () => {
+            /**
+             * @type {Media[]}
+             */
+            const all_content = [];
+
+            for (const [_, cached_content] of this.#page_cache) {
+                cached_content.forEach(media_identity => {
+                    all_content.push(media_identity.Media);
+                });
+            }
+
+            return all_content; 
+        }
+
+        /**
+         * Returns a boolean indicating whether the requested page is in the cache.
+         * @param {number} page
+         * @returns {boolean}
+         */
+        hasPage(page) {
+            return this.#page_cache.has(page);
+        }
+
+        /**
+         * The last page that was cached.
+         * @type {number}
+         */
+        get LastCachedPage() {
+            return this.#last_cached_page;
+        }
+        
+        /**
+         * Returns the total amount of pages.
+         * @type {number}
+         */
+        get TotalPages() {
+            let total_pages = Math.ceil(this.#total_medias / this.#page_size);
+
+            return total_pages;
+        }
+
+        /**
+         * Returns the amount of medias that are tagged by the content_tags.
+         * @type {number}
+         */
+        get TotalMedias() {
+            return this.#total_medias;
+        }
+    }
+
+    /**
+     * Manages caches for different associated with different lists of dungeon tags.
+     */
+    export class TagContentCache {
+        /**
+         * Associates a list of dungeon tags to TaggedContentCacher.
+         * @type {Map<string, TaggedContentCacher>}
+         */
+        #content_cache;
+
+        constructor() {
+            this.#content_cache = new Map();
+        }
+
+        /**
+         * Creates a cache for a given set of dungeon tags.
+         * @param {import('@models/DungeonTags').DungeonTag[]} dungeon_tags
+         * @param {import("@libs/DungeonsCommunication/dungeon_communication").PaginatedResponse<import('@models/Medias').MediaIdentity>} first_page_response
+         * @returns {TaggedContentCacher}
+         */
+        createTagContentCacher = (dungeon_tags, first_page_response) => {
+            const new_content_cacher = new TaggedContentCacher(dungeon_tags, first_page_response);
+
+            const dungeon_tags_signature = new_content_cacher.ContentTagsString
+
+            this.#content_cache.set(dungeon_tags_signature, new_content_cacher);
+
+            return new_content_cacher;
+        }
+
+        /**
+         * Returns an existent content cacher for the given set of dungeon_tags, or undefined if there is non. In the latter case, use createTagContentCacher. But you will need an initial paginated response to do so.
+         * @param {import('@models/DungeonTags').DungeonTag[]} dungeon_tags
+         * @returns {TaggedContentCacher | undefined}
+         */
+        getTagContentCacher = dungeon_tags => {
+            const dungeon_tags_signature = stringifyDungeonTags(dungeon_tags);
+
+            return this.#content_cache.get(dungeon_tags_signature);
+        }
+
+        /**
+         * Cleans the content cache.
+         * @returns {void}
+         */
+        resetCache() {
+            this.#content_cache.clear();
+        }
+    }
+
+/*=====  End of Tagged Content Catcher  ======*/
 
