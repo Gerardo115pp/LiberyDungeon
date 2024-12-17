@@ -55,11 +55,16 @@
         import { LEFT_RIGHT_NAVIGATION }  from "@common/keybinds/CommonActionsName";
         import {
             active_tag_content_media_index,
-            changeFilteringTags,
+            tagMode_changeFilteringTags,
+            tagMode_disableTagMode,
             mv_tag_mode_enabled,
             mv_tagged_content,
-        } from "@stores/media_viewer_tag_mode";
+            mv_tag_mode_total_content,
+            tagMode_setActiveMediaIndex,
+            tagMode_resetTaggedContentMode,
+        } from "@pages/MediaViewer/features_wrappers/media_viewer_tag_mode";
     import generateTaggedMediasHotkeyContext from "@components/DungeonTags/TaggedMedias/tagged_medias_hotkeys";
+    import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
 
     /*=====  End of Imports  ======*/
      
@@ -321,7 +326,7 @@
             active_media_change.set(media_change);
         });
 
-        // tagged_medias_tool_mounted.set(true);
+        tagged_medias_tool_mounted.set(true);
     });
 
     onDestroy(() => {
@@ -399,9 +404,9 @@
                             consider_time_in_sequence: true,
                         });
 
-                        // hotkeys_context.register(["; t"], handleShowTaggedMediasTool, {
-                        //     description: `${common_action_groups.CONTENT}Opens up the tool to filter ${ui_core_dungeon_references.MEDIA.EntityNamePlural} by ${ui_pandasworld_tag_references.TAG_TAXONOMY.EntityName} ${ui_pandasworld_tag_references.TAG.EntityNamePlural}.`
-                        // });
+                        hotkeys_context.register(["; t"], handleShowTaggedMediasTool, {
+                            description: `${common_action_groups.CONTENT}Opens up the tool to filter ${ui_core_dungeon_references.MEDIA.EntityNamePlural} by ${ui_pandasworld_tag_references.TAG_TAXONOMY.EntityName} ${ui_pandasworld_tag_references.TAG.EntityNamePlural}.`
+                        });
                     // End 
 
                     hotkeys_context.register(["q", "esc"], handleGoBack, {
@@ -464,14 +469,6 @@
                 $media_changes_manager.clearMediaChanges(current_media.uuid);
 
                 active_media_change.set(media_change_types.NORMAL);
-            }
-
-            /**
-             * Changes the displayed media based on a new given index. 
-             * @param {number} new_index
-             */
-            const changeDisplayedMedia = new_index => {
-                setActiveMediaIndex(new_index);
             }
 
             /**
@@ -574,8 +571,6 @@
                 }
                 
                 let key_combo = hotkey.KeyCombo.toLowerCase();
-
-                const displayed_medias = getDisplayedMedias();
                 
                 if ($random_media_navigation) {
                     return handleRandomMediaNavigation(key_event, key_combo);
@@ -583,11 +578,14 @@
 
                 const active_media_index = getActiveMediaIndex();
                 let new_index = active_media_index;
+                const max_index = getMaxMediaIndex();
+                const index_increment = key_combo === "d" ? 1 : -1;
 
-                new_index += key_combo === "a" ? -1 : 1;
-                new_index = Math.max(0, Math.min(new_index, displayed_medias.length - 1));
+                new_index = linearCycleNavigationWrap(active_media_index, max_index, index_increment).value;
 
-                const new_active_media = displayed_medias[new_index];
+                await setActiveMediaIndex(new_index);
+
+                const new_active_media = getActiveMedia();
 
                 if(media_change_types.DELETED === $media_changes_manager.getMediaChangeType(new_active_media.uuid) && $skip_deleted_medias) {
                     let not_deleted_new_index = getNextNotDeletedMediaIndex(new_index, key_combo !== "a");
@@ -596,7 +594,7 @@
 
                 automoveMedia();
 
-                changeDisplayedMedia(new_index);
+                await changeDisplayedMedia(new_index);
 
                 await tick();
                 
@@ -1291,22 +1289,6 @@
         }
 
         /**
-         * Returns the medias been displayed in the media viewer.
-         * @returns {import('@models/Medias').Media[]}
-         */
-        const getDisplayedMedias = () => {
-            if ($mv_tag_mode_enabled) {
-                return $mv_tagged_content.map(media_identity => media_identity.Media);
-            }
-
-            if ($current_category == null) {
-                throw Error("In MediaViewer.getDisplayedMedias: $current_category is null.");
-            }  
-            
-            return $current_category.content;
-        }
-
-        /**
          * Returns the display item for medias regardless of the type of media.
          * @returns {HTMLMediaElement | null}
          */
@@ -1314,45 +1296,166 @@
             return document.querySelector(".mw-media-element-display");
         }
 
-        /**
-         * Returns the current active media.
-         * @returns {import('@models/Medias').Media}
-         */
-        const getActiveMedia = () => {
-            let media_index = getActiveMediaIndex();
+        
+        /*=============================================
+        =            Active media state modifiers            =
+        =============================================*/
 
-            return getDisplayedMediaByIndex(media_index);
-        }
+            /**
+             * Changes the displayed media based on a new given index. 
+             * @param {number} new_index
+             */
+            const changeDisplayedMedia = async new_index => {
+                const active_media_index = getActiveMediaIndex();
 
-        /**
-         * Returns a displayed media by it's index.
-         * @param {number} index
-         * @returns {import('@models/Medias').Media}
-         */
-        const getDisplayedMediaByIndex = index => {
-            const displayed_medias = getDisplayedMedias();
+                if (new_index === active_media_index) return;
 
-            return displayed_medias[index];
-        }
+                await setActiveMediaIndex(new_index);
+            }
+        
+            /**
+             * Returns the current active media.
+             * @returns {import('@models/Medias').Media}
+             */
+            const getActiveMedia = () => {
+                let media_index = getActiveMediaIndex();
 
-        /**
-         * Returns a media index by its uuid.
-         * @param {string} media_uuid
-         * @returns {number}
-         */
-        const getMediaIndexByUUID = media_uuid => {
-            const displayed_medias = getDisplayedMedias();
+                return getDisplayedMediaByIndex(media_index);
+            }
 
-            return displayed_medias.findIndex(media => media.uuid === media_uuid);
-        }
+            /**
+             * Returns the medias been displayed in the media viewer.
+             * @returns {import('@models/Medias').Media[]}
+             */
+            const getDisplayedMedias = () => {
+                if ($mv_tag_mode_enabled) {
+                    return $mv_tagged_content;
+                }
 
-        /**
-         * Returns the value of the active media index depending on the current display state.
-         * @returns {number}
-         */
-        const getActiveMediaIndex = () => {
-            return $mv_tag_mode_enabled ? $active_tag_content_media_index : $active_media_index;
-        }
+                if ($current_category == null) {
+                    throw Error("In MediaViewer.getDisplayedMedias: $current_category is null.");
+                }  
+                
+                return $current_category.content;
+            }
+
+            /**
+             * Returns a displayed media by it's index.
+             * @param {number} index
+             * @returns {import('@models/Medias').Media}
+             */
+            const getDisplayedMediaByIndex = index => {
+                const displayed_medias = getDisplayedMedias();
+
+                return displayed_medias[index];
+            }
+
+            /**
+             * Returns a media index by its uuid.
+             * @param {string} media_uuid
+             * @returns {number}
+             */
+            const getMediaIndexByUUID = media_uuid => {
+                const displayed_medias = getDisplayedMedias();
+
+                return displayed_medias.findIndex(media => media.uuid === media_uuid);
+            }
+
+            /**
+             * Returns the value of the active media index depending on the current display state.
+             * @returns {number}
+             */
+            const getActiveMediaIndex = () => {
+                return $mv_tag_mode_enabled ? $active_tag_content_media_index : $active_media_index;
+            }
+
+            /**
+             * Returns the max value the active media index can have.
+             * @returns {number}
+             */
+            const getMaxMediaIndex = () => {
+                let max_media_index = 0;
+
+                if ($mv_tag_mode_enabled) {
+                    max_media_index = $mv_tag_mode_total_content - 1;
+                } else if ($current_category != null) {
+                    max_media_index = $current_category.content.length - 1;
+                }
+
+                return max_media_index;
+            }
+
+            /**
+             * Recalculates the new active media index subtracting from it the amount of medias that are removed from the category(delete and moved medias) and are
+             * before the current active media index. If the current active media index is one of the removed or moved medias, it will first update this index until it finds a valid one.
+             * if the amount of removed medias is greater or equal to total medias, then the new active media index will be 0.
+             * @param {MediaChangesManager} changes_manager
+             * @param {number} current_active_index
+             * @param {import('@models/Medias').Media[]} all_medias
+             * @returns {number}
+             */
+            const resolveNewMediaIndex = (changes_manager, current_active_index, all_medias) => {
+                let new_index = current_active_index;
+                let removed_medias = changes_manager.DeletedMediasMap;
+                let moved_medias = changes_manager.MovedMediasMap;
+
+                let is_active_media_removed = changes_manager.getMediaChangeType(all_medias[current_active_index].uuid) !== media_change_types.NORMAL;
+
+                if (is_active_media_removed) {
+                    new_index = getNextNotDeletedMediaIndex(current_active_index, true, true);
+                    if (new_index === current_active_index) {
+                        return current_active_index;
+                    }
+                }
+
+                for (let h = 0; h < current_active_index; h++) {
+                    let media_uuid = all_medias[h].uuid;
+                    let media_change = changes_manager.getMediaChangeType(media_uuid);
+
+                    if (media_change !== media_change_types.NORMAL) {
+                        new_index--;
+                    }
+                }
+
+                return new_index;
+            }
+
+            const saveActiveMediaToRoute = () => {
+                if ($current_category == null) {
+                    console.error("In MediaViewer.saveActiveMediaToRoute: $current_category is null.");
+                    return;
+                }
+                
+                replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
+            }
+
+            /**
+             * Sets the active media index.
+             * @param {number} new_index
+             */
+            const setActiveMediaIndex = async new_index => {
+                if (!$mv_tag_mode_enabled) {
+                    active_media_index.set(new_index);
+                    saveActiveMediaToRoute();
+                } else {
+                    console.log("Setting active media index in tag mode");
+                    const was_set = await tagMode_setActiveMediaIndex(new_index);
+
+                    if (!was_set) return;
+                }
+
+                active_media = getActiveMedia();
+            }
+
+            /**
+             * Updates the active media reference.
+             * @returns {void}
+             */
+            const updateActiveMedia = () => {
+                active_media = getActiveMedia();
+            }
+        
+        /*=====  End of Active media state modifiers  ======*/
 
         /**
          * @param {CustomEvent<import('@models/Medias').Media>} event
@@ -1396,12 +1499,17 @@
          * @type {import('@components/DungeonTags/TaggedMedias/tagged_medias').MediaTagsChangedCallback}
          */
         const handleFilteringMediasChange = async tags => {
-            await changeFilteringTags(tags);
+            if (tags.length === 0) {
+                tagMode_disableTagMode();
+                updateActiveMedia();
+                return;
+            }
+            
+            await tagMode_changeFilteringTags(tags);
 
             console.log("Filtered medias:", $mv_tagged_content);
 
-            active_media = getActiveMedia();
-
+            updateActiveMedia();
         }
 
         function onComponentExit() {        
@@ -1419,6 +1527,7 @@
 
             resetMediaViewerPageStore();
             resetRandomNavigationState();
+            tagMode_resetTaggedContentMode();
         }
 
         const resetComponentSettings = () => {
@@ -1437,69 +1546,6 @@
             previous_media_index.set($active_media_index);
             $previous_medias.Clear();
             $static_next_medias.Clear();
-        }
-
-        /**
-         * Recalculates the new active media index subtracting from it the amount of medias that are removed from the category(delete and moved medias) and are
-         * before the current active media index. If the current active media index is one of the removed or moved medias, it will first update this index until it finds a valid one.
-         * if the amount of removed medias is greater or equal to total medias, then the new active media index will be 0.
-         * @param {MediaChangesManager} changes_manager
-         * @param {number} current_active_index
-         * @param {import('@models/Medias').Media[]} all_medias
-         * @returns {number}
-         */
-        const resolveNewMediaIndex = (changes_manager, current_active_index, all_medias) => {
-            let new_index = current_active_index;
-            let removed_medias = changes_manager.DeletedMediasMap;
-            let moved_medias = changes_manager.MovedMediasMap;
-
-            let is_active_media_removed = changes_manager.getMediaChangeType(all_medias[current_active_index].uuid) !== media_change_types.NORMAL;
-
-            if (is_active_media_removed) {
-                new_index = getNextNotDeletedMediaIndex(current_active_index, true, true);
-                if (new_index === current_active_index) {
-                    return current_active_index;
-                }
-            }
-
-            for (let h = 0; h < current_active_index; h++) {
-                let media_uuid = all_medias[h].uuid;
-                let media_change = changes_manager.getMediaChangeType(media_uuid);
-
-                if (media_change !== media_change_types.NORMAL) {
-                    new_index--;
-                }
-            }
-
-            return new_index;
-        }
-
-        const saveActiveMediaToRoute = () => {
-            if ($current_category == null) {
-                console.error("In MediaViewer.saveActiveMediaToRoute: $current_category is null.");
-                return;
-            }
-            
-            replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
-        }
-
-        /**
-         * Sets the active media index.
-         * @param {number} new_index
-         */
-        const setActiveMediaIndex = new_index => {
-            if (!$mv_tag_mode_enabled) {
-                active_media_index.set(new_index);
-                saveActiveMediaToRoute();
-
-                
-            } else {
-                new_index = Math.max(0, Math.min(new_index, $mv_tagged_content.length - 1));
-
-                active_tag_content_media_index.set(new_index);
-            }
-
-            active_media = getActiveMedia();
         }
 
         /**
@@ -1652,6 +1698,7 @@
 
             media_uploader.startUpload($current_category.uuid);
         }
+
     
     /*=====  End of Methods  ======*/
 
