@@ -88,6 +88,7 @@ export const changeFilteringTags = async new_tag_group  => {
 
     last_paginated_response = paginated_tagged_content;
 
+    active_tag_content_media_index.set(0);
     mv_tagged_content.set(paginated_tagged_content.content);
     mv_tag_mode_enabled.set(true);
 }
