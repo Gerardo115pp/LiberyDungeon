@@ -10,6 +10,11 @@
         auto_move_category,
         auto_move_on
     } from "@stores/media_viewer";
+    import { 
+        mv_tag_mode_enabled, 
+        mv_tagged_content,
+        active_tag_content_media_index
+    } from "@stores/media_viewer_tag_mode";
 
     
     /*=============================================
@@ -19,14 +24,18 @@
         /**
          * get the new category name if a media has been moved
          * @param {string} media_uuid
-         * @param {"Moved" | "Deleted" | "Normal"} current_change
+         * @param {import('@models/WorkManagers').MediaChangeType} current_change
          */
         const getMediaNewCategory = (media_uuid, current_change) => {
+            if ($current_category == null) {
+                console.error("In MediasViewerNP.getMediaNewCategory: current_category is null");
+                return;
+            }
+
             console.log("getMediaNewCategory called");
             if (current_change !== media_change_types.MOVED) return;
 
             let displayed_media = $current_category.content[$active_media_index];
-
             
             let new_category = $media_changes_manager.getMediaNewCategory(media_uuid);
             
@@ -49,7 +58,11 @@
 
 <ul class="page-nav-menu" id="media-viewer-navmenu-wrapper" class:adebug={false}>
     <li class="mvnw-category-name">
-        {#if $current_category !== null}
+        {#if $mv_tag_mode_enabled}
+            <span class="category-name">
+                filtered content
+            </span>
+        {:else if $current_category !== null}
             {#if $active_media_change !== media_change_types.MOVED}
                 <span class="category-name">{$current_category.name}</span>
             {:else if $active_media_index < $current_category.content.length && $active_media_index >= 0}
@@ -58,7 +71,7 @@
             {/if}
         {/if}
     </li>
-    <li class="mvnw-media-change">
+    <li class:mv-np-disabled-field={$mv_tag_mode_enabled} class="mvnw-media-change">
         <span class="media-change" 
             class:media-change-moved={$active_media_change === media_change_types.MOVED}
             class:media-change-deleted={$active_media_change === media_change_types.DELETED}
@@ -70,10 +83,10 @@
     <li id="mvnw-random-navegation-state">
         <span class="mvnw-rns-label">random navigation: <span class="mvnw-rns-state">{$random_media_navigation ? 'on' : 'off'}</span></span>
     </li>
-    <li id="mvnw-skip-deleted-state">
+    <li class:mv-np-disabled-field={$mv_tag_mode_enabled} id="mvnw-skip-deleted-state">
         <span class="mvnw-sds-label">skip deleted: <span class="mvnw-sds-state">{$skip_deleted_medias ? 'on' : 'off'}</span></span>
     </li>
-    <li id="mvnw-auto-move-state">
+    <li class:mv-np-disabled-field={$mv_tag_mode_enabled} id="mvnw-auto-move-state">
         <span class="mvnw-ams-label">auto moving to: {$auto_move_on ? $auto_move_category?.name : "disabled"}</span>
     </li>
     <li id="mvnw-media-counter">
@@ -111,5 +124,9 @@
 
     .media-change-deleted {
         color: var(--danger);
+    }
+
+    .mv-np-disabled-field {
+        display: none;
     }
 </style>
