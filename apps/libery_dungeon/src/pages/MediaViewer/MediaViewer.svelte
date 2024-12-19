@@ -62,6 +62,7 @@
             mv_tag_mode_total_content,
             tagMode_setActiveMediaIndex,
             tagMode_resetTaggedContentMode,
+            mv_filtering_tags,
         } from "@pages/MediaViewer/features_wrappers/media_viewer_tag_mode";
     import generateTaggedMediasHotkeyContext from "@components/DungeonTags/TaggedMedias/tagged_medias_hotkeys";
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
@@ -326,7 +327,7 @@
             active_media_change.set(media_change);
         });
 
-        tagged_medias_tool_mounted.set(true);
+        // tagged_medias_tool_mounted.set(true);
     });
 
     onDestroy(() => {
@@ -485,7 +486,9 @@
                 }
                 
                 let next_index = from_index;
-                const media_count = $current_category.content.length;
+                const displayed_medias = getDisplayedMedias();
+                const media_count = displayed_medias.length;
+                const max_index = media_count - 1;
                 let media_change;
                 let media_uuid;
 
@@ -511,8 +514,8 @@
                     stop_loop = media_change !== media_change_types.DELETED && (!skip_moved || media_change !== media_change_types.MOVED);
                 } while(!stop_loop);
 
-                next_index = Math.max(0, Math.min(next_index, media_count - 1));
-                media_uuid = $current_category.content[next_index]?.uuid;
+                next_index = Math.max(0, Math.min(next_index, max_index));
+                media_uuid = displayed_medias[next_index].uuid;
                 media_change = $media_changes_manager.getMediaChangeType(media_uuid);
 
                 return media_change === media_change_types.DELETED || (media_change === media_change_types.MOVED && skip_moved) ? from_index : next_index;
@@ -812,7 +815,7 @@
                 setDiscreteFeedbackMessage(feedback_message);
             }
 
-            const handleShowMediaInformationPanel = () => {
+            const handleShowMediaInformationPanel = () => { 
                 show_media_information_panel = !show_media_information_panel;
             }
 
@@ -821,7 +824,18 @@
              * hotkey context.
              * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
-            const handleShowMediaTaggerTool = (event, hotkey) => {
+            const handleShowMediaTaggerTool = async (event, hotkey) => {
+                if ($tagged_medias_tool_mounted) {
+                    tagged_medias_tool_mounted.set(false);
+                    await tick();
+
+                    // FIXME: Hotfix to prevent two instances of ClusterPublicTags from being present in the DOM. Both the TaggedMedias and MediaTagger components
+                    // use it and two instances is messing with the navigation wasd wrapper cause this is based on id selectors to define MutationObservers to define a naviagtion grid. which means
+                    // and if we have two instances of the this component, because the id will be the same, the CursorWASDNavigaitonWrapper will detect the conflict and panic.
+                    // NOTE: The ideal solution would be to customize instance ids maybe through parent selector detection or directly passing a customization prop from the MediaTagger and TaggedMedias components.
+                }
+                    
+
                 toggleMediaTaggerTool();
             }
 
@@ -829,7 +843,16 @@
              * Toggles the tagged media tool.
              * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
-            const handleShowTaggedMediasTool = (event, hotkey) => {
+            const handleShowTaggedMediasTool = async (event, hotkey) => {
+                if ($media_tagging_tool_mounted) {
+                    media_tagging_tool_mounted.set(false);
+                    await tick();
+                    // FIXME: Hotfix to prevent two instances of ClusterPublicTags from being present in the DOM. Both the TaggedMedias and MediaTagger components
+                    // use it and two instances is messing with the navigation wasd wrapper cause this is based on id selectors to define MutationObservers to define a naviagtion grid. which means
+                    // and if we have two instances of the this component, because the id will be the same, the CursorWASDNavigaitonWrapper will detect the conflict and panic.
+                    // NOTE: The ideal solution would be to customize instance ids maybe through parent selector detection or directly passing a customization prop from the MediaTagger and TaggedMedias components.
+                }
+
                 toggleTaggedMediasTool();
             }
 
@@ -892,6 +915,18 @@
                     return;
                 }
 
+                if (active_media == null) {
+                    console.error("In MediaViewer.rejectMedia: active_media is null.");
+                    return;
+                }
+
+                if ($mv_tag_mode_enabled) {
+                    let labeled_err = new LabeledError("Accidental action protection", "Cannot reject media while tagging mode is enabled.", lf_errors.ERR_ACCIDENTAL_ACTION_PROTACTION);
+
+                    labeled_err.alert();
+                    return;
+                }
+
                 if ($random_media_navigation) {
                     let labeled_err = new LabeledError("Accidental action protection", "Cannot reject media while random navigation is enabled.", lf_errors.ERR_ACCIDENTAL_ACTION_PROTACTION);
 
@@ -901,21 +936,22 @@
 
                 let feedback_message;
                 
-                const current_media = $current_category.content[$active_media_index];
-                let not_deleted_media_index = $active_media_index;
+                const current_media = active_media;
+                const current_media_index = getActiveMediaIndex();
+                let not_deleted_media_index = current_media_index;
 
                 if ($active_media_change !== media_change_types.DELETED) {
                     $media_changes_manager.stageMediaDeletion(current_media);
-                    not_deleted_media_index = getNextNotDeletedMediaIndex($active_media_index, true);
+                    not_deleted_media_index = getNextNotDeletedMediaIndex(current_media_index, true);
                     feedback_message = "stage for deletion";
                 } else {
                     $media_changes_manager.unstageMediaDeletion(current_media.uuid);
                     feedback_message = "unstaged for deletion";
                 }
                 
-                if (not_deleted_media_index !== $active_media_index) {
-                    active_media_index.set(not_deleted_media_index);
-                    replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
+                if (not_deleted_media_index !== current_media_index) {
+                    changeDisplayedMedia(not_deleted_media_index);
+                    saveActiveMediaToRoute();
                 } else {
                     active_media_change.set($media_changes_manager.getMediaChangeType(current_media.uuid));
                 }
@@ -1760,7 +1796,7 @@
                 <MediaTagger 
                     bind:this={the_media_tagger}
                     component_hotkey_context={media_tagger_hotkeys_context}
-                    the_active_media={$current_category.content[$active_media_index]} 
+                    the_active_media={active_media} 
                     background_alpha={0.8}
                     on:close-medias-tagger={handleMediaTaggerClose}
                 />
@@ -1771,6 +1807,7 @@
         >
             {#if $tagged_medias_tool_mounted && tagged_medias_hotkeys_context != null}
                 <TaggedMedias
+                    filtering_dungeon_tags={$mv_filtering_tags}
                     component_hotkey_context={tagged_medias_hotkeys_context}
                     background_alpha={0.5}
                     onFilterTagsChange={handleFilteringMediasChange}
