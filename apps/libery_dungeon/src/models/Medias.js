@@ -425,6 +425,40 @@ export const sequenceRenameMedias = async (sequence_map, category_uuid) => {
     return renamed;
 }
 
+/* ----------------------------- Nullish models ----------------------------- */
+
+export const NULLISH_MEDIA = new Media({
+    uuid: "",
+    name: "",
+    last_seen: "",
+    main_category: "",
+    type: "",
+    downloaded_from: NaN
+});
+
+/**
+ * Whether a media object is nullish.
+ * @param {Media} media
+ */
+export const isNullishMedia = (media) => {
+    return Object.is(media, NULLISH_MEDIA);
+}
+
+export const NULLISH_MEDIA_IDENTITY = new MediaIdentity({
+    media: NULLISH_MEDIA,
+    category_path: "",
+    category_uuid: "",
+    cluster_path: "",
+    cluster_uuid: ""
+});
+
+/**
+ * Whether a media identity object is nullish.
+ * @param {MediaIdentity} media_identity
+ */
+export const isNullishMediaIdentity = (media_identity) => {
+    return Object.is(media_identity, NULLISH_MEDIA_IDENTITY);
+}
 
 /*=============================================
 =            Model actions            =
