@@ -673,6 +673,8 @@
                     return;
                 }
 
+                const displayed_medias = getDisplayedMedias();
+
                 const direction_forward = key_combo === "d";
 
                 if (!direction_forward && $previous_medias.Size <= 1) {
@@ -688,7 +690,8 @@
                     return;
                 }
                 
-                let new_index = $active_media_index;
+                const current_index = getActiveMediaIndex();
+                let new_index = current_index;
 
                 // If the stack is not empty and the key_combo is "d" then has gone back to the previous medias and is now going forward again.
                 const skip_random_generation = !$static_next_medias.IsEmpty() && direction_forward;
@@ -704,11 +707,11 @@
                     // @ts-ignore - we just checked that the stack is not empty. so last_media_uuid is not null.
                     new_index = getMediaIndexByUUID(last_media_uuid);
                 } else if (direction_forward) {
-                    new_index = Math.floor(Math.random() * $current_category.content.length);
+                    new_index = Math.floor(Math.random() * displayed_medias.length);
 
-                    while (new_index === $active_media_index) {
+                    while (new_index === current_index) {
                         console.log("Random media navigation: same index, trying again");
-                        new_index = Math.floor(Math.random() * $current_category.content.length);
+                        new_index = Math.floor(Math.random() * displayed_medias.length);
                     }
                 }
 
@@ -741,7 +744,8 @@
                     }
                 }
 
-                active_media_index.set(new_index);
+                await setActiveMediaIndex(new_index);
+
 
                 // TODO: Remove these debug logs.
                 // console.log("Random media navigation - previous medias: ", $previous_medias);
@@ -752,9 +756,6 @@
                 // console.log(`static_next_medias: ${$static_next_medias.toString()}`);
                 // // @ts-ignore - we can add antyhing we like to the window object. whether ts likes it or not.
                 // window.static_next_medias = $static_next_medias;
-
-
-                replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
 
                 await tick();
                 
