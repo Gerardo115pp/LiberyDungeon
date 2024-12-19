@@ -6,6 +6,7 @@ import { PutResyncClusterBranchRequest } from "@libs/DungeonsCommunication/servi
 import { Media } from "./Medias";
 import { stringifyDungeonTags } from "@models/DungeonTags";
 import { Category, InnerCategory } from "./Categories";
+import { NULLISH_MEDIA } from "./Medias";
 
 /*=============================================
 =            Media Changes            =
@@ -553,6 +554,64 @@ export const resyncClusterBranch = async (category_uuid, cluster_id) => {
 =============================================*/
 
     /**
+     * Represents the state of a paginated response.
+     */
+    export class TaggedContentPageState {
+        /**
+         * Whether the page is in the TaggedContentCacher cache.
+         * @type {boolean}
+         */
+        #cached;
+
+        /**
+         * The first tagged content index that is in the page.
+         * @type {number}
+         */
+        #first_index;
+
+        /**
+         * The last tagged content index that is in the page.
+         * @type {number}
+         */
+        #last_index;
+
+        /**
+         * @param {boolean} cached 
+         * @param {number} first_index 
+         * @param {number} last_index 
+         */
+        constructor(cached, first_index, last_index) {
+            this.#cached = cached;
+            this.#first_index = first_index;
+            this.#last_index = last_index;
+        }
+
+        /**
+         * Whether the page is in the TaggedContentCacher cache.
+         * @type {boolean}
+         */
+        get Cached() {
+            return this.#cached;
+        }
+
+        /**
+         * The first tagged content index that is in the page.
+         * @type {number}
+         */
+        get FirstIndex() {
+            return this.#first_index;
+        }
+
+        /**
+         * The last tagged content index that is in the page.
+         * @type {number}
+         */
+        get LastIndex() {
+            return this.#last_index;
+        }
+    }
+
+    /**
      * Caches the paginated content returned for fixed set of dungeon tags and a fixed page_size
      */
     export class TaggedContentCacher {
@@ -664,6 +723,72 @@ export const resyncClusterBranch = async (category_uuid, cluster_id) => {
         }
 
         /**
+         * Returns all the content in order. E.g: If the cache has page 1 and 3 but not 2 it will return a list of content with the real content of page 1, then will fill the content that the page
+         * 2 would have with nullish content, and then will add the content of page 3.
+         * @returns {Media[]}
+         */
+        getSequentialContent = () => {
+            /**
+             * @type {Media[]}
+             */
+            const sequential_content = Array(this.#total_medias).fill(NULLISH_MEDIA);
+            const available_pages = this.#page_cache.size;
+            let added_pages = 0;
+            let page_iterator = 1;
+            let h = 0;
+
+            let infinite_loop_guard = 0;
+
+            while (added_pages < available_pages || h > this.#total_medias) {
+                if (infinite_loop_guard > (1.5 * this.#total_medias)) {
+                    throw new Error("In WorkManagers.TaggedContentCacher.getSequentialContent: Infinite loop detected. This should not happen. Check the code.");
+                }
+                infinite_loop_guard++;
+
+                let page_content = this.#page_cache.get(page_iterator);
+                page_iterator++;
+
+                if (page_content !== undefined) {
+                    added_pages++;
+
+                    page_content.forEach(media_identity => {
+                        sequential_content[h] = media_identity.Media;
+                        h++;
+                    });
+                } else {
+                    h += this.#page_size;
+                }
+            }
+
+            return sequential_content;
+        }
+
+        /**
+         * Returns the cached content for a given page.
+         * @param {number} page
+         * @returns {import('@models/Medias').MediaIdentity[] | undefined}
+         */
+        getContentForPage = page => {
+            return this.#page_cache.get(page);
+        }
+
+        /**
+         * Returns the page state of the given page num. If 0 > page | page > TotalPages, it returns undefined.
+         * @param {number} page
+         * @returns {TaggedContentPageState | undefined}
+         */
+        getPageState = page => {
+            if (page < 1 || page > this.TotalPages) return undefined;
+
+            const cached = this.hasPage(page);
+            const first_index = (page - 1) * this.#page_size;
+            const last_index = first_index + this.#page_size - 1;
+
+            return new TaggedContentPageState(cached, first_index, last_index);
+
+        }
+
+        /**
          * Returns a boolean indicating whether the requested page is in the cache.
          * @param {number} page
          * @returns {boolean}
@@ -678,6 +803,28 @@ export const resyncClusterBranch = async (category_uuid, cluster_id) => {
          */
         get LastCachedPage() {
             return this.#last_cached_page;
+        }
+
+        /**
+         * Returns the page number where the given content index is/would be. If the index is out of bounds, it returns NaN.
+         * @param {number} content_index
+         * @return {number}
+         */
+        pageForContentIndex = content_index => {
+            if (content_index < 0 || content_index >= this.#total_medias) {
+                return NaN;
+            }
+
+            return Math.ceil((content_index + 1) / this.#page_size);
+        }
+
+        /**
+         * Returns whether a given page is in range.
+         * @param {number} page
+         * @returns {boolean}
+         */
+        isPageInRange = page => {
+            return page >= 1 && page <= this.TotalPages;
         }
         
         /**
