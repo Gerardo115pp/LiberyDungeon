@@ -23,4 +23,5 @@ export const tagged_medias_tool_mounted = writable(false);
 export const resetMediaViewerPageStore = () => {
     create_subcategory.set(false);
     media_tagging_tool_mounted.set(false);
+    tagged_medias_tool_mounted.set(false);
 }
