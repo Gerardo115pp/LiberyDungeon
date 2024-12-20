@@ -1,4 +1,8 @@
 DUNGEON_ROOT_DIR=/home/el_maligno/SoftwareProjects/LiberyDungeon
+DUNGEON_SERVER_DIR=/var/www/libery-dungeon/server
+DUNGEON_TMUX="dungeons"
+
+
 
 function run_frontend {
     local frontend_dir=$DUNGEON_ROOT_DIR/apps/libery_dungeon
@@ -268,4 +272,24 @@ function run_services {
     run_users &
     run_downloads &
     run_collect
+}
+
+function run_layout {
+    cd "$DUNGEON_ROOT_DIR";
+    
+    tmux split-window -v -c "$DUNGEON_SERVER_DIR" 'docker compose --profile development -p libery_dungeon up';
+    tmux set-option -p remain-on-exit off \; split-window -h -c "$DUNGEON_ROOT_DIR" 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_frontend';
+    tmux rename-window dungeons
+
+    tmux new-window -n services 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_JD';
+    sleep 2;
+    tmux set-option -p remain-on-exit on \; split-window -v -c "$DUNGEON_ROOT_DIR" 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_medias';
+    tmux set-option -p remain-on-exit on \; split-window -h -c "$DUNGEON_ROOT_DIR" -l 75% 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_downloads';
+    tmux set-option -p remain-on-exit on \; split-window -h -c "$DUNGEON_ROOT_DIR" -l 50% 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_users';
+    tmux select-pane -t 1;
+    tmux set-option -p remain-on-exit on \; split-window -h -c "$DUNGEON_ROOT_DIR" -l 75% 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_categories';
+    tmux set-option -p remain-on-exit on \; split-window -h -c "$DUNGEON_ROOT_DIR" -l 50% 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_collect';
+
+    tmux new-window -n metadata 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_metadata';
+    tmux split-window -h -c "$DUNGEON_ROOT_DIR"
 }
