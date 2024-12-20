@@ -72,7 +72,7 @@
          * The list of tags that medias must be tagged with.
          * @type {import('@models/DungeonTags').DungeonTag[]}
          */
-        let filtering_dungeon_tags = [];
+        export let filtering_dungeon_tags = [];
 
         /**
          * A callback called when event the filtering tags change.
