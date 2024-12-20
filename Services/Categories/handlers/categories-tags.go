@@ -94,6 +94,7 @@ func getTaggedCategoryContent(response http.ResponseWriter, request *http.Reques
 	}
 
 	var medias []dungeon_models.MediaIdentity = make([]dungeon_models.MediaIdentity, 0)
+	var added_medias_uuids map[string]struct{} = make(map[string]struct{})
 
 	tagged_content, err := communication.Metadata.GetEntitiesWithTaggings(tag_ids)
 	if err != nil {
@@ -102,6 +103,7 @@ func getTaggedCategoryContent(response http.ResponseWriter, request *http.Reques
 		return
 	}
 
+	// Medias tagged directly
 	tagged_medias_uuids := tagged_content[dungeon_models.ENTITY_TYPE_MEDIA]
 
 	medias, err = repository.CategoriesRepo.GetMediaIdentityList(request.Context(), tagged_medias_uuids)
@@ -111,6 +113,11 @@ func getTaggedCategoryContent(response http.ResponseWriter, request *http.Reques
 		return
 	}
 
+	for _, media := range medias {
+		added_medias_uuids[media.Media.Uuid] = struct{}{}
+	}
+
+	// Medias tagged through categories
 	tagged_categories_uuids := tagged_content[dungeon_models.ENTITY_TYPE_CATEGORY]
 
 	for _, category_uuid := range tagged_categories_uuids {
@@ -121,7 +128,12 @@ func getTaggedCategoryContent(response http.ResponseWriter, request *http.Reques
 			return
 		}
 
-		medias = append(medias, category_media_identities...)
+		for _, media_identity := range category_media_identities {
+			if _, exists := added_medias_uuids[media_identity.Media.Uuid]; !exists {
+				medias = append(medias, media_identity)
+				added_medias_uuids[media_identity.Media.Uuid] = struct{}{}
+			}
+		}
 	}
 
 	var medias_length int = len(medias)
