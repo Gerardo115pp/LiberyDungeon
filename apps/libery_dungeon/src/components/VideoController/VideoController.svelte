@@ -23,7 +23,10 @@
         export let media_uuid;
 
 
-        /** @type {boolean} wheter the component should disappear when the mouse is not over it */
+        /**
+         * Whether the component should disappear when the mouse is not over it 
+         * @type {boolean}
+         */
         export let auto_hide = true;
 
         /**
@@ -165,28 +168,52 @@
         =            State            =
         =============================================*/
         
-            /** @type {boolean} whether the parent component has position: absolute set, mainly used for styling */
+            /**
+             * Whether the parent component has position: absolute set, mainly used for styling 
+             * @type {boolean}
+             */
             let controller_floating = false;
 
-            /** @type {boolean} whether the controller is visible or not*/
+            /**
+             * Whether the controller is visible or not
+             * @type {boolean}
+             */
             let controller_visible = !auto_hide;
 
-            /** @type {boolean} whether the mouse is over the component or not*/
+            /**
+             * Whether the mouse is over the component or not
+             * @type {boolean}
+             */
             let mouse_over_controller = false;
 
-            /** @type {number | null} the timeout id for the controller visibility timeout */
+            /**
+             * The timeout id for the controller visibility timeout 
+             * @type {number | null}
+             */
             let controller_visibility_interval_id = null;
 
-            /** @type {number} the opacity of the controller, managed by the controller visibility timeout */
+            /**
+             * The opacity of the controller, managed by the controller visibility timeout 
+             * @type {number}
+             */
             let controller_opacity = auto_hide ? 0 : 0.8;
 
-            /** @type {boolean} whether the video is currently paused */
+            /**
+             * Whether the video is currently paused 
+             * @type {boolean}
+             */
             let video_paused = false;
 
-            /** @type {boolean} whether the video is muted */
+            /**
+             * Whether the video is muted 
+             * @type {boolean}
+             */
             let video_muted = true;
 
-            /** @type {number} video progress percentage */    
+            /**
+             * Video progress percentage 
+             * @type {number}
+             */    
             let video_progress = 0;
 
             /**
