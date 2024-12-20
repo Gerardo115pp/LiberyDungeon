@@ -1,8 +1,12 @@
 import { get, writable } from 'svelte/store';
-import { getTaggedMedias } from '@models/Medias';
+import { 
+    getTaggedMedias,
+    NULLISH_MEDIA,
+    isNullishMedia
+} from '@models/Medias';
 import { TagContentCache } from '@models/WorkManagers';
 
-const TAGGED_CONTENT_PAGE_SIZE = 10;
+const TAGGED_CONTENT_PAGE_SIZE = 5;
 
 
 /*=============================================
@@ -69,6 +73,8 @@ const TAGGED_CONTENT_PAGE_SIZE = 10;
 /*=============================================
 =            Methods            =
 =============================================*/
+    // functions that start with 'tagMode_' were thought to be exported even if they are currently not. If you want to export a function that doesn't start with 'tagMode_', 
+    // Create a wrapper function that calls the function you want to export. DO NOT EXPORT FUNCTIONS THAT DON'T START WITH 'tagMode_'
 
     /**
      * Sets a TaggerContentCacher as active setting all necessary variables and stores to the appropriate values from the given cacher.
@@ -80,7 +86,7 @@ const TAGGED_CONTENT_PAGE_SIZE = 10;
 
         if (cacher_filtering_tags.length === 0) return;
 
-        const new_tagged_content = cacher.getAllContent();
+        const new_tagged_content = cacher.getSequentialContent();
 
         console.log("new_tagged_content:", new_tagged_content);
 
@@ -91,6 +97,11 @@ const TAGGED_CONTENT_PAGE_SIZE = 10;
         mv_current_tagged_content_loaded = new_tagged_content.length;
         mv_tag_mode_enabled.set(true);
         active_tag_content_media_index.set(0);
+
+        // @ts-ignore
+        globalThis.content_cacher = cacher;
+        // @ts-ignore
+        globalThis.loadRandomTaggedContentPage = loadRandomTaggedContentPage;
     }
 
     /**
@@ -111,8 +122,8 @@ const TAGGED_CONTENT_PAGE_SIZE = 10;
             return tagMode_activateContentCacher(content_cacher);
         }
 
-
         const paginated_tagged_content = await getTaggedContentPage(new_tag_group, 1);
+        console.log("paginated_tagged_content:", paginated_tagged_content);
 
         if (paginated_tagged_content === null || paginated_tagged_content.content.length < 1) {
             console.error("In media_viewer_tag_mode.changeFilteringTags: The paginated tagged content was null for: ");
@@ -123,6 +134,32 @@ const TAGGED_CONTENT_PAGE_SIZE = 10;
         content_cacher = tag_mode_content_cache.createTagContentCacher(new_tag_group, paginated_tagged_content);
 
         tagMode_activateContentCacher(content_cacher);
+    }
+
+    /**
+     * Stores in active cache the given content page. Returns whether the content is now available on the active cache(filtering_medias_content_cacher).
+     * If the page is already cached, it doesn't retrieve it again, just returns true immediately.
+     * @param {number} page
+     * @returns {Promise<boolean>}
+     */
+    const cacheTaggedContentPage = async page => {
+        if (filtering_medias_content_cacher === null) return false;
+
+        if (page > filtering_medias_content_cacher.TotalPages) return false;
+
+        if (filtering_medias_content_cacher.hasPage(page)) return true;
+
+        const paginated_tagged_content = await getTaggedContentPage(filtering_medias_content_cacher.ContentTags, page);
+
+        if (paginated_tagged_content === null || paginated_tagged_content.content.length < 1) {
+            console.error("In media_viewer_tag_mode.loadNextTaggedContentPage: The paginated tagged content was null for: ");
+            console.log(filtering_medias_content_cacher.ContentTags);
+            return false;
+        }
+
+        filtering_medias_content_cacher.catchPaginatedResponse(paginated_tagged_content);
+
+        return true;
     }
 
     /**
@@ -160,6 +197,19 @@ const TAGGED_CONTENT_PAGE_SIZE = 10;
         return tagged_content.length > 0;
     }
 
+    /**
+     * Whether the given content index is loaded.
+     * @param {number} content_index
+     * @param {import('@models/Medias').Media[]} [tagged_content] - To avoid having to call 'get' you can pass the tagged content array directly.
+     * @returns {boolean}
+     */
+    const isContentIndexLoaded = (content_index, tagged_content) => {
+        if (tagged_content == null) {
+            tagged_content = get(mv_tagged_content);
+        }
+
+        return tagged_content[content_index] !== undefined && !isNullishMedia(tagged_content[content_index]);
+    }
 
     /**
      * Loads the next tagged content page. Returns a true if successful
@@ -183,15 +233,12 @@ const TAGGED_CONTENT_PAGE_SIZE = 10;
             return false;
         }
 
-        const paginated_tagged_content = await getTaggedContentPage(filtering_medias_content_cacher.ContentTags, next_page);
+        const cached_successfully = await cacheTaggedContentPage(next_page);
 
-        if (paginated_tagged_content === null || paginated_tagged_content.content.length < 1) {
-            console.error("In media_viewer_tag_mode.loadNextTaggedContentPage: The paginated tagged content was null for: ");
-            console.log(filtering_medias_content_cacher.ContentTags);
+        if (!cached_successfully) {
+            console.error("In media_viewer_tag_mode.loadNextTaggedContentPage: The next tagged content page couldn't be cached");
             return false;
         }
-
-        filtering_medias_content_cacher.catchPaginatedResponse(paginated_tagged_content);
 
         const new_tagged_content = filtering_medias_content_cacher.getAllContent();
 
@@ -199,6 +246,71 @@ const TAGGED_CONTENT_PAGE_SIZE = 10;
         mv_current_tagged_content_loaded = new_tagged_content.length;
 
         return true;
+    }
+
+    /**
+     * Loads a random tagged content page. Returns a true if successful. By random we are not talking about an unknown page, but any page event if it's not sequential. if there are gaps then the missing pages are
+     * filled with NULLISH_MEDIA.
+     * @param {number} page
+     * @returns {Promise<boolean>}
+     */
+    const loadRandomTaggedContentPage = async page => {
+        if (filtering_medias_content_cacher === null) {
+            console.error("In media_viewer_tag_mode.loadRandomTaggedContentPage: The filtering medias content cacher is null");
+            return false;
+        }
+
+        if (page > filtering_medias_content_cacher.TotalPages) {
+            console.error("In media_viewer_tag_mode.loadRandomTaggedContentPage: The page is out of bounds");
+            return false;
+        }
+
+        const page_state = filtering_medias_content_cacher.getPageState(page);
+
+        if (page_state == null) {
+            console.error("In media_viewer_tag_mode.loadRandomTaggedContentPage: The page state was null. which happens when the page num is out of bounds");
+            return false;
+        }
+
+        const current_tagged_content = get(mv_tagged_content);
+        let new_mv_tagged_content;
+
+        if (filtering_medias_content_cacher.hasPage(page)) {
+
+            if (isContentIndexLoaded(page_state.FirstIndex) && isContentIndexLoaded(page_state.LastIndex)) {
+                return true
+            };
+        } else { // the pages is not on the cache.
+            const cached_successfully = await cacheTaggedContentPage(page);
+
+            if (!cached_successfully) {
+                console.error("In media_viewer_tag_mode.loadRandomTaggedContentPage: The page couldn't be cached");
+                return false;
+            }
+        }
+
+        updateLoadedContent(); 
+
+        // @ts-ignore
+        globalThis.mv_tagged_content = new_mv_tagged_content; // TODO: Remove this line
+
+        return true;
+    }
+
+    /**
+     * Use when you cache a new page. just sets the new content on the mv_tagged_content array.
+     * @returns {void}
+     */
+    const updateLoadedContent = () => {
+        if (filtering_medias_content_cacher === null) {
+            console.error("In media_viewer_tag_mode.updateLoadedContent: The filtering medias content cacher is null");
+            return;
+        }
+
+        const new_mv_tagged_content = filtering_medias_content_cacher.getSequentialContent();
+
+        mv_tagged_content.set(new_mv_tagged_content);
+        mv_current_tagged_content_loaded = new_mv_tagged_content.length;
     }
 
     /**
@@ -231,13 +343,15 @@ const TAGGED_CONTENT_PAGE_SIZE = 10;
 
         console.log(`new_media_index<${new_media_index}> > mv_current_tagged_content_loaded<${mv_current_tagged_content_loaded}>: ${new_media_index > mv_current_tagged_content_loaded}`);
 
-        while (new_media_index >= mv_current_tagged_content_loaded) {
-            console.log("Loading next tagged content page");
-            try {
-                await loadNextTaggedContentPage();
-            } catch (error) {
-                console.error("In media_viewer_tag_mode.setActiveMediaIndex: Error while loading next tagged content page");
-                console.error(error);
+        const current_tagged_content = filtering_medias_content_cacher.getSequentialContent();
+
+        if (!isContentIndexLoaded(new_media_index, current_tagged_content)) {
+            const page_with_content_index = filtering_medias_content_cacher.pageForContentIndex(new_media_index);
+            
+            const loaded_successfully = await loadRandomTaggedContentPage(page_with_content_index);
+
+            if (!loaded_successfully) {
+                console.error("In media_viewer_tag_mode.setActiveMediaIndex: The page couldn't be loaded");
                 return false;
             }
         }
@@ -247,6 +361,6 @@ const TAGGED_CONTENT_PAGE_SIZE = 10;
         return true;
     }
 
-
+    
 /*=====  End of Methods  ======*/
 
