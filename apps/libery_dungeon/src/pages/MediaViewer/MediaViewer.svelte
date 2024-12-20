@@ -147,7 +147,7 @@
              * The active media.
              * @type {import('@models/Medias').Media | null}
              */
-            let active_media = null;
+            let the_active_media = null;
 
             /** 
              * Whether the value for active_media_index has been determined. if this is false, any value active_media_index cannot
@@ -311,7 +311,7 @@
         active_media_index.set(determined_index);
         active_media_index_determined = true;
 
-        active_media = getActiveMedia();
+        the_active_media = getActiveMedia();
 
         console.log("Opening media viewer")
 
@@ -631,9 +631,11 @@
 
                 let move_position = motion_value - 1; // convert to zreo based index
 
-                move_position = Math.max(0, Math.min(move_position, $current_category.content.length - 1));
+                const displayed_medias = getDisplayedMedias();
 
-                changeDisplayedMedia(move_position);
+                move_position = Math.max(0, Math.min(move_position, displayed_medias.length - 1));
+
+                await changeDisplayedMedia(move_position);
 
                 await tick();
 
@@ -648,6 +650,13 @@
             const handleMediaMovementToggle = (event, hotkey) => {
                 if (global_hotkeys_manager == null) {
                     console.error("The global hotkeys manager is null");
+                    return;
+                }
+
+                if ($mv_tag_mode_enabled) {
+                    let labeled_err = new LabeledError("Accidental action protection", `Cannot move ${ui_core_dungeon_references.MEDIA.EntityNamePlural} to another ${ui_core_dungeon_references.CATEGORY.EntityName}. This is just to prevent an accidental action.`, lf_errors.ERR_ACCIDENTAL_ACTION_PROTECTION);
+                    labeled_err.alert();
+
                     return;
                 }
 
@@ -916,20 +925,20 @@
                     return;
                 }
 
-                if (active_media == null) {
+                if (the_active_media == null) {
                     console.error("In MediaViewer.rejectMedia: active_media is null.");
                     return;
                 }
 
                 if ($mv_tag_mode_enabled) {
-                    let labeled_err = new LabeledError("Accidental action protection", "Cannot reject media while tagging mode is enabled.", lf_errors.ERR_ACCIDENTAL_ACTION_PROTACTION);
+                    let labeled_err = new LabeledError("Accidental action protection", "Cannot reject media while tagging mode is enabled.", lf_errors.ERR_ACCIDENTAL_ACTION_PROTECTION);
 
                     labeled_err.alert();
                     return;
                 }
 
                 if ($random_media_navigation) {
-                    let labeled_err = new LabeledError("Accidental action protection", "Cannot reject media while random navigation is enabled.", lf_errors.ERR_ACCIDENTAL_ACTION_PROTACTION);
+                    let labeled_err = new LabeledError("Accidental action protection", "Cannot reject media while random navigation is enabled.", lf_errors.ERR_ACCIDENTAL_ACTION_PROTECTION);
 
                     labeled_err.alert();
                     return;
@@ -937,7 +946,7 @@
 
                 let feedback_message;
                 
-                const current_media = active_media;
+                const current_media = the_active_media;
                 const current_media_index = getActiveMediaIndex();
                 let not_deleted_media_index = current_media_index;
 
@@ -1481,7 +1490,7 @@
                     if (!was_set) return;
                 }
 
-                active_media = getActiveMedia();
+                the_active_media = getActiveMedia();
             }
 
             /**
@@ -1489,7 +1498,7 @@
              * @returns {void}
              */
             const updateActiveMedia = () => {
-                active_media = getActiveMedia();
+                the_active_media = getActiveMedia();
             }
         
         /*=====  End of Active media state modifiers  ======*/
@@ -1745,19 +1754,19 @@
     style:position="relative"
     class:cinema-mode={cinema_mode}
 >
-    {#if $current_category !== null && active_media_index_determined && active_media}
+    {#if $current_category !== null && active_media_index_determined && the_active_media}
         <div id="media-wrapper">
-            {#if active_media.type === media_types.IMAGE}
+            {#if the_active_media.type === media_types.IMAGE}
                 <img
                     class="mw-media-element-display"
-                    src="{active_media.Url}"
+                    src="{the_active_media.Url}"
                     alt="displayed media"
                 >
             {:else}
                 <video 
                     class="mw-media-element-display"
                     bind:this={video_element}  
-                    src="{active_media.Url}" 
+                    src="{the_active_media.Url}" 
                     muted={$automute_enabled}
                     autoplay 
                     loop
@@ -1770,7 +1779,7 @@
             <div id="mw-video-controller-wrapper">
                 <VideoController 
                     the_video_element={video_element} 
-                    media_uuid={$current_category.content[$active_media_index].uuid}
+                    media_uuid={the_active_media.uuid}
                     bind:auto_hide={auto_hide_video_controller}
                     on:capture-frame={captureVideoFrame}
                 />
@@ -1786,7 +1795,7 @@
                 <MediaInformationPanel 
                     current_category_information={$current_category} 
                     current_cluster_information={$current_cluster} 
-                    current_media_information={$current_category.content[$active_media_index]}
+                    current_media_information={the_active_media}
                 />
             {/if}
         </div>
@@ -1797,7 +1806,7 @@
                 <MediaTagger 
                     bind:this={the_media_tagger}
                     component_hotkey_context={media_tagger_hotkeys_context}
-                    the_active_media={active_media} 
+                    the_active_media={the_active_media} 
                     background_alpha={0.8}
                     on:close-medias-tagger={handleMediaTaggerClose}
                 />
