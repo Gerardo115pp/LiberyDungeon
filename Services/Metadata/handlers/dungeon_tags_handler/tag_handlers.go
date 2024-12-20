@@ -296,7 +296,9 @@ func getEntitiesWithTagsPaginatedHandler(response http.ResponseWriter, request *
 		entities_by_type[entity.EntityType] = entities_of_type
 	}
 
-	dungeon_helpers.WritePaginatedResponse(response, entities_by_type, page_num, page_size, len(entities)/page_size)
+	var entites_count int = len(entities)
+
+	dungeon_helpers.WritePaginatedResponse(response, entities_by_type, page_num, entites_count/page_size, entites_count)
 	return
 }
 

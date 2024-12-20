@@ -50,12 +50,7 @@
             return category_name;
         }
             
-    /*=====  End of Methods  ======*/
-    
-    
-
-
-    
+    /*=====  End of Methods  ======*/ 
 
 </script>
 

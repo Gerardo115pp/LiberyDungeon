@@ -140,7 +140,7 @@ func getTaggedCategoryContent(response http.ResponseWriter, request *http.Reques
 	requested_media_identities := make([]dungeon_models.MediaIdentity, medias_in_page)
 
 	if starting_index > len(medias) {
-		dungeon_helpers.WritePaginatedResponse(response, make([]dungeon_models.MediaIdentity, 0), page_num, total_pages, len(medias))
+		dungeon_helpers.WritePaginatedResponseList(response, make([]dungeon_models.MediaIdentity, 0), page_num, total_pages, len(medias))
 		return
 	}
 
@@ -149,7 +149,7 @@ func getTaggedCategoryContent(response http.ResponseWriter, request *http.Reques
 		starting_index++
 	}
 
-	dungeon_helpers.WritePaginatedResponse(response, requested_media_identities, page_num, total_pages, len(medias))
+	dungeon_helpers.WritePaginatedResponseList(response, requested_media_identities, page_num, total_pages, len(medias))
 }
 
 func postCategoryTagsHandler(response http.ResponseWriter, request *http.Request) {

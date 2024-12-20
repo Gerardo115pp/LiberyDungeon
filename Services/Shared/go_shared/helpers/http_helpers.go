@@ -30,7 +30,7 @@ type singleIntResponse struct {
 	Response int `json:"response"`
 }
 
-type PaginatedResponse[T any] struct {
+type PaginatedResponseList[T any] struct {
 	Page       int `json:"page"`
 	PageSize   int `json:"page_size"`
 	TotalPages int `json:"total_pages"`
@@ -38,8 +38,16 @@ type PaginatedResponse[T any] struct {
 	Content    []T `json:"content"`
 }
 
-func createPaginatedResponse[T any](content []T, page, total_pages, total_items int) *PaginatedResponse[T] {
-	var paginated *PaginatedResponse[T] = new(PaginatedResponse[T])
+type PaginatedResponse[T any] struct {
+	Page       int `json:"page"`
+	PageSize   int `json:"page_size"`
+	TotalPages int `json:"total_pages"`
+	TotalItems int `json:"total_items"`
+	Content    T   `json:"content"`
+}
+
+func createPaginatedResponseList[T any](content []T, page, total_pages, total_items int) *PaginatedResponseList[T] {
+	var paginated *PaginatedResponseList[T] = new(PaginatedResponseList[T])
 
 	paginated.Page = page
 	paginated.PageSize = len(content)
@@ -50,7 +58,28 @@ func createPaginatedResponse[T any](content []T, page, total_pages, total_items 
 	return paginated
 }
 
-func WritePaginatedResponse[T any](response http.ResponseWriter, content []T, page, total_pages, total_items int) {
+func createPaginatedResponse[T any](content T, page, total_pages, total_items int) *PaginatedResponse[T] {
+	var paginated *PaginatedResponse[T] = new(PaginatedResponse[T])
+
+	paginated.Page = page
+	paginated.PageSize = 1
+	paginated.TotalPages = total_pages
+	paginated.TotalItems = total_items
+	paginated.Content = content
+
+	return paginated
+}
+
+func WritePaginatedResponseList[T any](response http.ResponseWriter, content []T, page, total_pages, total_items int) {
+	paginated_response := createPaginatedResponseList(content, page, total_pages, total_items)
+
+	response.Header().Set("Content-Type", "application/json")
+	response.WriteHeader(200)
+
+	json.NewEncoder(response).Encode(paginated_response)
+}
+
+func WritePaginatedResponse[T any](response http.ResponseWriter, content T, page, total_pages, total_items int) {
 	paginated_response := createPaginatedResponse(content, page, total_pages, total_items)
 
 	response.Header().Set("Content-Type", "application/json")
