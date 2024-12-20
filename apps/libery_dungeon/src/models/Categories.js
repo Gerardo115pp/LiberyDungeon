@@ -593,6 +593,21 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
         }
 
         /**
+         * Converts a CategoryLeaf to a Category.
+         * @returns {Category}
+         */
+        asCategory = () => {
+            return new Category({
+                name: this.name,
+                uuid: this.uuid,
+                parent: this.parent,
+                fullpath: this.#fullpath,
+                cluster: this.#cluster,
+                category_thumbnail: this.#category_thumbnail
+            });
+        }
+
+        /**
          * @returns {CategoryLeaf[]} the inner categories of this category that have been loaded
          */
         getLeafs = () => {
