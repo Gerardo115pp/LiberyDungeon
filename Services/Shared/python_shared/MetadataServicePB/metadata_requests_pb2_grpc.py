@@ -6,10 +6,8 @@ import warnings
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 import MetadataServicePB.metadata_requests_pb2 as metadata__requests__pb2
 
-GRPC_GENERATED_VERSION = '1.65.5'
+GRPC_GENERATED_VERSION = '1.67.1'
 GRPC_VERSION = grpc.__version__
-EXPECTED_ERROR_RELEASE = '1.66.0'
-SCHEDULED_RELEASE_DATE = 'August 6, 2024'
 _version_not_supported = False
 
 try:
@@ -19,15 +17,12 @@ except ImportError:
     _version_not_supported = True
 
 if _version_not_supported:
-    warnings.warn(
+    raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
         + f' but the generated code in metadata_requests_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
-        + f' This warning will become an error in {EXPECTED_ERROR_RELEASE},'
-        + f' scheduled for release on {SCHEDULED_RELEASE_DATE}.',
-        RuntimeWarning
     )
 
 
@@ -65,6 +60,11 @@ class MetadataServiceStub(object):
                 request_serializer=metadata__requests__pb2.TagList.SerializeToString,
                 response_deserializer=metadata__requests__pb2.EntitiesByType.FromString,
                 _registered_method=True)
+        self.DeleteEntitiesTaggings = channel.unary_unary(
+                '/metadata_service.MetadataService/DeleteEntitiesTaggings',
+                request_serializer=metadata__requests__pb2.EntityList.SerializeToString,
+                response_deserializer=metadata__requests__pb2.BooleanResponse.FromString,
+                _registered_method=True)
 
 
 class MetadataServiceServicer(object):
@@ -100,6 +100,12 @@ class MetadataServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def DeleteEntitiesTaggings(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MetadataServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -127,6 +133,11 @@ def add_MetadataServiceServicer_to_server(servicer, server):
                     servicer.GetEntitiesWithTaggings,
                     request_deserializer=metadata__requests__pb2.TagList.FromString,
                     response_serializer=metadata__requests__pb2.EntitiesByType.SerializeToString,
+            ),
+            'DeleteEntitiesTaggings': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteEntitiesTaggings,
+                    request_deserializer=metadata__requests__pb2.EntityList.FromString,
+                    response_serializer=metadata__requests__pb2.BooleanResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -264,6 +275,33 @@ class MetadataService(object):
             '/metadata_service.MetadataService/GetEntitiesWithTaggings',
             metadata__requests__pb2.TagList.SerializeToString,
             metadata__requests__pb2.EntitiesByType.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteEntitiesTaggings(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/metadata_service.MetadataService/DeleteEntitiesTaggings',
+            metadata__requests__pb2.EntityList.SerializeToString,
+            metadata__requests__pb2.BooleanResponse.FromString,
             options,
             channel_credentials,
             insecure,

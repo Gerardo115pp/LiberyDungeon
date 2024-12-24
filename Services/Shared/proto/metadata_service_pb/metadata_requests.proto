@@ -43,4 +43,5 @@ service MetadataService {
     rpc TagEntities(TaggableEntities) returns (BooleanResponse);
     rpc UntagEntities(TaggableEntities) returns (BooleanResponse);
     rpc GetEntitiesWithTaggings(TagList) returns (EntitiesByType);
+    rpc DeleteEntitiesTaggings(EntityList) returns (BooleanResponse);
 }
