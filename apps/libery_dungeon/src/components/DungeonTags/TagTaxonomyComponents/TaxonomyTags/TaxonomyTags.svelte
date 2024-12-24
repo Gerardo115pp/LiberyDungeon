@@ -142,6 +142,16 @@
             the_dungeon_tag_search_results_wrapper.updateSearchPool(taxonomy_tags.Tags);
         }
         
+        
+        /*----------  Selectors  ----------*/
+        
+            /**
+             * A prefix for the CursorMovementWASD selector, by default an empty string is used.
+             * @type {string}
+             * @default ''
+             */
+            export let selector_prefix = '';
+        
         /*----------  User feedback  ----------*/
         
             /**
@@ -326,6 +336,17 @@
             }
 
             /**
+             * Returns the grid selector for the TaxonomyTags component.
+             * @returns {import('@common/interfaces/common_actions').GridSelectors}
+             */
+            const getGridSelectors = () => {
+                return {
+                    grid_parent_selector: `#${selector_prefix}-taxonomy-tags-${taxonomy_tags.Taxonomy.UUID} ol#tag-group-${taxonomy_tags.Taxonomy.UUID}`,
+                    grid_member_selector: 'li:not(:has(input))',
+                }
+            }
+
+            /**
              * Handles the Cursor update event emitted by the_grid_navigation_wrapper.
              * @type {import("@common/keybinds/CursorMovement").CursorPositionCallback}
              */
@@ -485,20 +506,19 @@
                     the_grid_navigation_wrapper.destroy();
                 }
 
+                const grid_selectors = getGridSelectors();
 
-                const tags_parent_selector = `#taxonomy-tags-${taxonomy_tags.Taxonomy.UUID} ol#tag-group-${taxonomy_tags.Taxonomy.UUID}`;
-
-                const matching_elements_count = document.querySelectorAll(tags_parent_selector).length;
+                const matching_elements_count = document.querySelectorAll(grid_selectors.grid_parent_selector).length;
                 if (matching_elements_count !== 1) {
-                    throw new Error(`tag parent selector '${tags_parent_selector}' returned ${matching_elements_count}, expected exactly 1`);
+                    throw new Error(`tag parent selector '${grid_selectors.grid_parent_selector}' returned ${matching_elements_count}, expected exactly 1`);
                 }
 
 
-                the_grid_navigation_wrapper = new CursorMovementWASD(tags_parent_selector, handleCursorUpdate, {
+                the_grid_navigation_wrapper = new CursorMovementWASD(grid_selectors.grid_parent_selector, handleCursorUpdate, {
                     initial_cursor_position: focused_tag_index,
                     sequence_item_name: ui_tag_reference.EntityName,
                     sequence_item_name_plural: ui_tag_reference.EntityNamePlural,
-                    grid_member_selector: 'li:not(:has(input))',
+                    grid_member_selector: grid_selectors.grid_member_selector,
                 });
                 the_grid_navigation_wrapper.setup(hotkeys_context);
                 
@@ -725,7 +745,7 @@
 
 <section class="dungeon-taxonomy-content"
     bind:this={the_taxonomy_tags_section}
-    id="taxonomy-tags-{taxonomy_tags.Taxonomy.UUID}"
+    id="{selector_prefix}-taxonomy-tags-{taxonomy_tags.Taxonomy.UUID}"
     class:is-keyboard-focused={is_keyboard_focused}
     class:hotkey-control={has_hotkey_control}
 >

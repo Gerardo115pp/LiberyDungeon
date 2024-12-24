@@ -353,7 +353,6 @@
             return ".cma-attribute-name-wrapper.focused-attribute";
         }
 
-
         /**
          * Returns the tag taxonomy map from the taxonomies contained on the current category taggings. 
          * @param {import("@models/DungeonTags").DungeonTagging[]} taggings
@@ -418,7 +417,6 @@
                 grid_parent_selector: "",
                 grid_member_selector: "",
             }
-
 
             const taxonomy_name = getFocusedTagTaxonomyName();
 
@@ -578,8 +576,6 @@
 
             the_wasd_keybind_wrapper.changeGridContainer(grid_selectors.grid_parent_selector, grid_selectors.grid_member_selector);
         }
-
-    
 
     /*=====  End of Methods  ======*/
     

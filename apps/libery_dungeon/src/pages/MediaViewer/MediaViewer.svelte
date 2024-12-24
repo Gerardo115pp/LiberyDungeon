@@ -836,7 +836,7 @@
              */
             const handleShowMediaTaggerTool = async (event, hotkey) => {
                 if ($tagged_medias_tool_mounted) {
-                    tagged_medias_tool_mounted.set(false);
+                    // tagged_medias_tool_mounted.set(false);
                     await tick();
 
                     // FIXME: Hotfix to prevent two instances of ClusterPublicTags from being present in the DOM. Both the TaggedMedias and MediaTagger components
@@ -855,7 +855,7 @@
              */
             const handleShowTaggedMediasTool = async (event, hotkey) => {
                 if ($media_tagging_tool_mounted) {
-                    media_tagging_tool_mounted.set(false);
+                    // media_tagging_tool_mounted.set(false);
                     await tick();
                     // FIXME: Hotfix to prevent two instances of ClusterPublicTags from being present in the DOM. Both the TaggedMedias and MediaTagger components
                     // use it and two instances is messing with the navigation wasd wrapper cause this is based on id selectors to define MutationObservers to define a naviagtion grid. which means

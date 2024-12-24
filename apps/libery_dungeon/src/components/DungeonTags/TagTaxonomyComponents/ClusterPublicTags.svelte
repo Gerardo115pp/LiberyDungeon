@@ -90,6 +90,14 @@
             let taxonomy_renamer_is_ready = false;
 
 
+        /*----------  Selectors  ----------*/
+
+            /**
+             * This is a selector prefix used to prevent conflicts with other instances of ClusterPublicTags. The conflicts arise from the usage of CursorMovementWASD.
+             * @type {string}
+             */
+            export let instance_selector_prefix = `cluster-public-tags-${crypto.randomUUID()}`;
+
         /*----------  User feedback  ----------*/
         
             /**
@@ -561,6 +569,7 @@
                 has_hotkey_control={is_keyboard_focused && taxonomy_tags_hotkeys_context.Active}
                 is_keyboard_focused={is_keyboard_focused}
                 component_hotkey_context={taxonomy_tags_hotkeys_context}
+                selector_prefix={instance_selector_prefix}
                 ui_entity_reference={ui_entity_reference}
                 ui_taxonomy_reference={ui_taxonomy_reference}
                 ui_tag_reference={ui_tag_reference}
