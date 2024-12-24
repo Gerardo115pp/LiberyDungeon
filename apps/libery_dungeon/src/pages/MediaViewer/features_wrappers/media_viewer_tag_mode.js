@@ -105,13 +105,14 @@ const TAGGED_CONTENT_PAGE_SIZE = 100;
     }
 
     /**
-     * Changes the tagged content using a new group of tags.
+     * Changes the tagged content using a new group of tags. Returns whether it found any media for the given set of dungeon tags.
      * @param {import('@models/DungeonTags').DungeonTag[]} new_tag_group 
-     * @returns {Promise<void>}
+     * @returns {Promise<boolean>}
      */
     export const tagMode_changeFilteringTags = async new_tag_group  => {
         if (new_tag_group.length === 0) {
-            return tagMode_disableTagMode();
+            tagMode_disableTagMode();
+            return false
         }
 
         mv_filtering_tags.set(new_tag_group);
@@ -119,7 +120,8 @@ const TAGGED_CONTENT_PAGE_SIZE = 100;
         let content_cacher = tag_mode_content_cache.getTagContentCacher(new_tag_group);
 
         if (content_cacher !== undefined) {
-            return tagMode_activateContentCacher(content_cacher);
+            tagMode_activateContentCacher(content_cacher);
+            return mv_current_tagged_content_loaded > 0
         }
 
         const paginated_tagged_content = await getTaggedContentPage(new_tag_group, 1);
@@ -128,12 +130,14 @@ const TAGGED_CONTENT_PAGE_SIZE = 100;
         if (paginated_tagged_content === null || paginated_tagged_content.content.length < 1) {
             console.error("In media_viewer_tag_mode.changeFilteringTags: The paginated tagged content was null for: ");
             console.log(new_tag_group);
-            return;
+            return false;
         }
 
         content_cacher = tag_mode_content_cache.createTagContentCacher(new_tag_group, paginated_tagged_content);
 
         tagMode_activateContentCacher(content_cacher);
+
+        return true
     }
 
     /**
