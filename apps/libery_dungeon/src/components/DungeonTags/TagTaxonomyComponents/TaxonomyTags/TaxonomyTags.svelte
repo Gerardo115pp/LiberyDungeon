@@ -210,6 +210,11 @@
                     if (global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
                         global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
                     }
+                    
+                    // Ensure the binding function for the component hotkey context references the last activated instance.
+                    if (component_hotkey_context.BindingFunction !== defineDesktopKeybinds) { 
+                        component_hotkey_context.BindingFunction = defineDesktopKeybinds;
+                    }
 
                     if (component_hotkey_context.HasGeneratedHotkeysContext()) {
                         component_hotkey_context.dropHotkeysContext();

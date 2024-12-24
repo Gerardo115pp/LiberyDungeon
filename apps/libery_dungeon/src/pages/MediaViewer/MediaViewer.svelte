@@ -835,17 +835,6 @@
              * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
             const handleShowMediaTaggerTool = async (event, hotkey) => {
-                if ($tagged_medias_tool_mounted) {
-                    // tagged_medias_tool_mounted.set(false);
-                    await tick();
-
-                    // FIXME: Hotfix to prevent two instances of ClusterPublicTags from being present in the DOM. Both the TaggedMedias and MediaTagger components
-                    // use it and two instances is messing with the navigation wasd wrapper cause this is based on id selectors to define MutationObservers to define a naviagtion grid. which means
-                    // and if we have two instances of the this component, because the id will be the same, the CursorWASDNavigaitonWrapper will detect the conflict and panic.
-                    // NOTE: The ideal solution would be to customize instance ids maybe through parent selector detection or directly passing a customization prop from the MediaTagger and TaggedMedias components.
-                }
-                    
-
                 toggleMediaTaggerTool();
             }
 
@@ -854,15 +843,6 @@
              * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
             const handleShowTaggedMediasTool = async (event, hotkey) => {
-                if ($media_tagging_tool_mounted) {
-                    // media_tagging_tool_mounted.set(false);
-                    await tick();
-                    // FIXME: Hotfix to prevent two instances of ClusterPublicTags from being present in the DOM. Both the TaggedMedias and MediaTagger components
-                    // use it and two instances is messing with the navigation wasd wrapper cause this is based on id selectors to define MutationObservers to define a naviagtion grid. which means
-                    // and if we have two instances of the this component, because the id will be the same, the CursorWASDNavigaitonWrapper will detect the conflict and panic.
-                    // NOTE: The ideal solution would be to customize instance ids maybe through parent selector detection or directly passing a customization prop from the MediaTagger and TaggedMedias components.
-                }
-
                 toggleTaggedMediasTool();
             }
 
@@ -1064,11 +1044,18 @@
                 } else {
 
                     if (media_tagger_was_hidden && the_media_tagger != null && media_tagger_hotkeys_context) {
-                        const media_tagger_last_active_context = media_tagger_hotkeys_context.getLastActiveChildContextName();
+                        const media_tagger_last_active_context = media_tagger_hotkeys_context.getLastActiveChild();
                         let last_context_loaded = false;
 
-                        if (global_hotkeys_manager.hasContext(media_tagger_last_active_context)) {
-                            last_context_loaded = global_hotkeys_manager.loadPastContext(media_tagger_last_active_context);
+                        if (media_tagger_last_active_context != null) {
+
+                            if (media_tagger_last_active_context.hasBindingFunction()) {
+                                media_tagger_last_active_context.bindContext()
+                                last_context_loaded = true;
+                            } else if (global_hotkeys_manager.hasContext(media_tagger_last_active_context.HotkeysContextName)) {
+                                last_context_loaded = global_hotkeys_manager.loadPastContext(media_tagger_last_active_context.HotkeysContextName);
+                            }
+
                         }
 
                         if (!last_context_loaded) {
