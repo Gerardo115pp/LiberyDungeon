@@ -1791,11 +1791,11 @@
             {/if}
         </div>
         <div id="ldmv-media-information-panel-wrapper">
-            {#if show_media_information_panel}
+            {#if show_media_information_panel && the_active_media && $current_cluster}
                 <MediaInformationPanel 
-                    current_category_information={$current_category} 
                     current_cluster_information={$current_cluster} 
                     current_media_information={the_active_media}
+                    media_in_current_category={!$mv_tag_mode_enabled}
                 />
             {/if}
         </div>
