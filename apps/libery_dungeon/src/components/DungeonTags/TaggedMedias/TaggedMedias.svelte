@@ -13,6 +13,7 @@
     import SelectedTags from "../Tags/SelectedTags.svelte";
     import { last_keyboard_focused_tag } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_store";
     import { ComponentHotkeyContext } from "@libs/LiberyHotkeys/hotkeys_context";
+    import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
     
     /*=============================================
     =            Properties            =
@@ -39,10 +40,7 @@
                  * The component hotkey context for the cluster public tags component that is a child of this component.
                  * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
                  */
-                let cluster_public_tags_hotkey_context = component_hotkey_context.ChildHotkeysContexts.get(tagged_medias_child_contexts.CLUSTER_PUBLIC_TAGS) ?? null;
-                if (cluster_public_tags_hotkey_context == null) {
-                    throw new Error("In TaggedMedias, invalid component_hotkey_context: ClusterPublicTags hotkey context was not defined as a child context of the TaggedMedias hotkey context.");
-                }
+                let cluster_public_tags_hotkey_context = null;
 
                 /**
                  * The component hotkeys context for the child taxonomy tags components.
@@ -63,7 +61,6 @@
                  * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext[]}
                  */
                 const sub_component_sections = [
-                    cluster_public_tags_hotkey_context,
                 ];
         
         /*=====  End of Hotkeys  ======*/
@@ -143,9 +140,11 @@
                         component_hotkey_context.dropHotkeysContext();
                     }
 
-                    const hotkeys_context = preparePublicHotkeysActions(component_hotkey_context); // Not using the TaggedMedias HotkeyContext right now.
+                    const hotkey_context = preparePublicHotkeysActions(component_hotkey_context); // Not using the TaggedMedias HotkeyContext right now.
 
-                    cluster_public_tags_hotkey_context.Active = true;
+                    if (cluster_public_tags_hotkey_context !== null) {
+                        cluster_public_tags_hotkey_context.Active = true;
+                    }
                 }
 
                 /**
@@ -204,6 +203,21 @@
              * @returns {import('@libs/LiberyHotkeys/hotkeys_context').default}
              */
             const preparePublicHotkeysActions = new_component_hotkey_context => {
+                cluster_public_tags_hotkey_context = component_hotkey_context.ChildHotkeysContexts.get(tagged_medias_child_contexts.CLUSTER_PUBLIC_TAGS) ?? null;
+                if (cluster_public_tags_hotkey_context == null) {
+                    throw new Error("In TaggedMedias, invalid component_hotkey_context: ClusterPublicTags hotkey context was not defined as a child context of the TaggedMedias hotkey context.");
+                }
+
+                cluster_public_tags_hotkey_context.registerExtraHotkey({
+                    hotkey_triggers: ["r"],
+                    callback: handleClearFilteringTags,
+                    options: {
+                        description: `${common_action_groups.CONTENT} Removes all the filtering ${ui_pandasworld_tag_references.TAG_TAXONOMY.EntityName} ${ui_pandasworld_tag_references.TAG.EntityNamePlural}`,
+                    }
+                });
+
+                sub_component_sections.push(cluster_public_tags_hotkey_context);
+
                 const hotkey_context = new_component_hotkey_context.generateHotkeysContext();
 
                 return hotkey_context;
@@ -288,6 +302,15 @@
         }
 
         /**
+         * Clears the filtering tags.
+         * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+         */
+        const handleClearFilteringTags = () => {
+            filtering_dungeon_tags = [];
+            onFilterTagsChange(filtering_dungeon_tags);
+        }
+
+        /**
          * Handles the tag-selected event from the ClusterPublicTags component.
          * @param {CustomEvent<{tag_id: number}>} event
          */
@@ -355,7 +378,7 @@
     <div id=dtmt-cluster-public-tags-section
         class="dtmt-section"
     >
-        {#if $cluster_tags_checked && taxonomy_tags_hotkeys_context != null}
+        {#if $cluster_tags_checked && taxonomy_tags_hotkeys_context != null && cluster_public_tags_hotkey_context != null}
             <ClusterPublicTags 
                 has_hotkey_control={cluster_public_tags_hotkey_context.Active}
                 ui_entity_reference={ui_core_dungeon_references.MEDIA}
