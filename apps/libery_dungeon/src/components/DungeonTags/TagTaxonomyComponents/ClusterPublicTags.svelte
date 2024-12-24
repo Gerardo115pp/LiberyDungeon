@@ -2,9 +2,7 @@
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import TaxonomyTags from "./TaxonomyTags/TaxonomyTags.svelte";
     import { cluster_tags } from "@stores/dungeons_tags";
-    import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
     import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
-    import { toggleHotkeysSheet } from "@stores/layout";
     import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
     import { browser } from "$app/environment";
     import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
