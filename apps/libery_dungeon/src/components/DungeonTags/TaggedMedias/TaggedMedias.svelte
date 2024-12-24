@@ -209,7 +209,7 @@
                 }
 
                 cluster_public_tags_hotkey_context.registerExtraHotkey({
-                    hotkey_triggers: ["r"],
+                    hotkey_triggers: ["n"],
                     callback: handleClearFilteringTags,
                     options: {
                         description: `${common_action_groups.CONTENT} Removes all the filtering ${ui_pandasworld_tag_references.TAG_TAXONOMY.EntityName} ${ui_pandasworld_tag_references.TAG.EntityNamePlural}`,
