@@ -447,6 +447,12 @@ export class ComponentHotkeyContext {
     #active_state_change_callbacks;
 
     /**
+     * An optional function set by the component to bind the hotkey context to the hotkey binder.
+     * @type {Function | null}
+     */
+    #hotkey_context_binding_function;
+
+    /**
      * @param {string} hotkeys_context_name
      */
     constructor(hotkeys_context_name) {
@@ -459,6 +465,7 @@ export class ComponentHotkeyContext {
         this.#final = false;
         this.#active = false;
         this.#active_state_change_callbacks = [];
+        this.#hotkey_context_binding_function = null;
     }
 
     /**
@@ -513,6 +520,22 @@ export class ComponentHotkeyContext {
     }
 
     /**
+     * The binding function of the component to bind the hotkeys context to the hotkey binder.
+     * @type {Function | null}
+     */
+    get BindingFunction() {
+        return this.#hotkey_context_binding_function;
+    }
+
+    /**
+     * The binding function of the component to bind the hotkeys context to the hotkey binder.
+     * @param {Function} new_binding_function
+     */
+    set BindingFunction(new_binding_function) {
+        this.#hotkey_context_binding_function = new_binding_function;
+    }
+
+    /**
      * Copies all the extra hotkey registered on this component hotkey context to another.
      * @param {ComponentHotkeyContext} other
      */
@@ -555,6 +578,18 @@ export class ComponentHotkeyContext {
         }
 
         this.#hotkeys_context = null;
+    }
+
+    /**
+     * Uses the function provided by the component to bind the hotkey context. if the component did not provided the binding function or the hotkey context has not been generated, this function will panic.
+     * @returns {void}
+     */
+    bindContext = () => {
+        if (!this.HasGeneratedHotkeysContext() || this.#hotkey_context_binding_function === null) {
+            throw new Error(`In hotkeys_context.ComponentHotkeyContext: The ComponentHotkeyContext '${this.#hotkeys_context_name}' has not generated its hotkeys context or did not provide a binding function.`);
+        }
+
+        this.#hotkey_context_binding_function();
     }
 
     /**
@@ -650,24 +685,45 @@ export class ComponentHotkeyContext {
     }
 
     /**
+     * DEPRECATED: This function is now just an alias for getLastActiveChild().HotkeysContextName;
      * Returns the hotkey context name of the last activated child hotkeys context in a Component hotkey context chain . e.g: consider a component hotkey context chain like A(active)->B(active)->C(active)->D(unactive).
      * The method will return the hotkey context name of C because it's active but non of it's children have activated their hotkeys context. If the component hotkey context is active but has not active childs, 
      * then returns it's own name. If the component hotkey context is not active then it returns an empty string.
+     * @deprecated
      * @returns {string}
      */
     getLastActiveChildContextName() {
-        if (!this.#active) return "";
+        const last_active_child = this.getLastActiveChild();
 
-        let active_child_context_name = this.#hotkeys_context_name;
+        return last_active_child != null ? last_active_child.HotkeysContextName : "";
+    }
+
+    /**
+     * Returns the component hotkey context of the last activated child in a Component hotkey context chain . e.g: consider a component hotkey context chain like A(active)->B(active)->C(active)->D(unactive).
+     * The method will return the component hotkey context of C because it's active but non of it's children have activated their hotkeys context. If the component hotkey context is active but has not active childs, 
+     * then returns itself. If the component hotkey context is not active then it returns null.
+     * @returns {ComponentHotkeyContext | null}
+     */
+    getLastActiveChild = () => {
+        /**
+         * @type {ComponentHotkeyContext | null}
+         */
+        let last_active_child = null;
+
+        if (!this.Active) {
+            return last_active_child;
+        }
+
+        last_active_child = this;
 
         for (const [child_context_name, child_context] of this.#child_hotkeys_contexts) {
             if (child_context.Active) {
-                active_child_context_name = child_context.getLastActiveChildContextName();
+                last_active_child = child_context.getLastActiveChild();
                 break
             }
         }
 
-        return active_child_context_name;
+        return last_active_child;
     }
    
     /**
@@ -707,6 +763,14 @@ export class ComponentHotkeyContext {
      */
     HasGeneratedHotkeysContext() {
         return this.#hotkeys_context != null;
+    }
+    
+    /**
+     * Whether the component has provided a binding function for the hotkeys context.
+     * @returns {this is { #hotkey_context_binding_function: function }}
+     */
+    hasBindingFunction() {
+        return this.#hotkey_context_binding_function !== null;
     }
 
     /**
