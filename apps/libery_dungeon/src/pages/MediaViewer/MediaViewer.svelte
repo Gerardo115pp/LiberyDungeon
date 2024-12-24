@@ -1532,13 +1532,29 @@
          * @type {import('@components/DungeonTags/TaggedMedias/tagged_medias').MediaTagsChangedCallback}
          */
         const handleFilteringMediasChange = async tags => {
+            const tag_mode_was_active = $mv_tag_mode_enabled;
+
             if (tags.length === 0) {
                 tagMode_disableTagMode();
                 updateActiveMedia();
                 return;
             }
             
-            await tagMode_changeFilteringTags(tags);
+            const had_content = await tagMode_changeFilteringTags(tags);
+
+            if (!had_content) {
+                tagMode_disableTagMode(true);
+
+                if (tag_mode_was_active) {
+                    updateActiveMedia();
+                }
+
+                const labeled_err = new LabeledError("In MediaViewer.handleFilteringMediasChange", `No ${ui_core_dungeon_references.MEDIA.EntityNamePlural} found for the selected filter ${ui_pandasworld_tag_references.TAG.EntityNamePlural}`, lf_errors.ERR_NO_CONTENT);
+
+                labeled_err.alert();
+
+                return;
+            }
 
             console.log("Filtered medias:", $mv_tagged_content);
 

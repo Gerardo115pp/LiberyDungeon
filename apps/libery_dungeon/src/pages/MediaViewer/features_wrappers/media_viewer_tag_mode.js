@@ -168,9 +168,16 @@ const TAGGED_CONTENT_PAGE_SIZE = 100;
 
     /**
      * resets the state of the media viewer tag mode but doesn't destroy the loaded cache.
+     * @param {boolean} [keep_filtering_tags]
      */
-    export const tagMode_disableTagMode = () => {
-        mv_filtering_tags.set([]);
+    export const tagMode_disableTagMode = (keep_filtering_tags) => {
+        if (keep_filtering_tags === undefined) {
+            keep_filtering_tags = false
+        }
+
+        if (!keep_filtering_tags) {
+            mv_filtering_tags.set([]);
+        }
         mv_tag_mode_enabled.set(false);
         mv_tagged_content.set([]);
         mv_tag_mode_total_content.set(NaN);
