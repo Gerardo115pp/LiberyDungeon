@@ -6,7 +6,7 @@ import {
 } from '@models/Medias';
 import { TagContentCache } from '@models/WorkManagers';
 
-const TAGGED_CONTENT_PAGE_SIZE = 5;
+const TAGGED_CONTENT_PAGE_SIZE = 100;
 
 
 /*=============================================
