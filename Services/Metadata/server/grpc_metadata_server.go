@@ -123,6 +123,23 @@ func (ms *MetadataGrpcServer) UntagEntities(ctx context.Context, request *metada
 	return response, nil
 }
 
+func (ms *MetadataGrpcServer) DeleteEntitiesTaggings(ctx context.Context, request *metadata_service_pb.EntityList) (*metadata_service_pb.BooleanResponse, error) {
+	var response *metadata_service_pb.BooleanResponse = new(metadata_service_pb.BooleanResponse)
+	entity_uuids := request.EntitiesUuids
+
+	response.Response = true
+
+	err := repository.DungeonTagsRepo.RemoveAllTaggingsForEntitiesCTX(ctx, entity_uuids)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("Error while deleting taggings for %d entities"))
+		err = errors.Join(fmt.Errorf("In server/grpc_metadata_server.DeleteEntitiesTaggings: Error while calling repository.DungeonTagsRepo.RemoveAllTaggingsForEntitiesCTX"), err)
+		echo.EchoErr(err)
+		response.Response = false
+	}
+
+	return response, err
+}
+
 func (ms *MetadataGrpcServer) Connect() error {
 	listener, err := net.Listen("tcp", ms.port)
 	if err != nil {

@@ -169,3 +169,24 @@ func (metadata_client MetadataServiceClient) UntagEntities(tag_id int, entities_
 
 	return boolean_response.Response, err
 }
+
+func (metadata_client MetadataServiceClient) RemoveAllTaggingsForEntities(entities []string) (bool, error) {
+	conn, err := grpc.Dial(metadata_client.GrpcAddress, grpc.WithTransportCredentials(metadata_client.GrpcTransport))
+	if err != nil {
+		return false, err
+	}
+	defer conn.Close()
+
+	metadata_grpc_client := metadata_service_pb.NewMetadataServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	message := metadata_service_pb.EntityList{
+		EntitiesUuids: entities,
+	}
+
+	boolean_response, err := metadata_grpc_client.DeleteEntitiesTaggings(ctx, &message)
+
+	return boolean_response.Response, err
+}

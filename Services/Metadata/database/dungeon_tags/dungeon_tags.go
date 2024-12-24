@@ -484,6 +484,35 @@ func (dt_db *DungeonTagsDB) RemoveTagFromEntities(tag_id int, entities_uuids []s
 	return dt_db.RemoveTagFromEntitiesCTX(context.Background(), tag_id, entities_uuids)
 }
 
+func (dt_db *DungeonTagsDB) RemoveAllTaggingsForEntitiesCTX(ctx context.Context, entity_uuids []string) error {
+	tx, err := dt_db.db_conn.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Join(fmt.Errorf("In database/dungeon_tags.RemoveTagFromEntitiesCTX: Failed to begin transaction"), err)
+	}
+
+	stmt, err := tx.PrepareContext(ctx, "DELETE FROM `taggings` WHERE `taggable_id` = ?")
+	if err != nil {
+		return errors.Join(fmt.Errorf("In database/dungeon_tags.RemoveTagFromEntitiesCTX: Failed to prepare statement"), err)
+	}
+	defer stmt.Close()
+
+	for _, entity_uuid := range entity_uuids {
+		_, err = stmt.ExecContext(ctx, entity_uuid)
+		if err != nil {
+			tx.Rollback()
+			return errors.Join(fmt.Errorf("In database/dungeon_tags.RemoveTagFromEntitiesCTX: Failed to execute statement"), err)
+		}
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (dt_db *DungeonTagsDB) RemoveAllTaggingsForEntities(entity_uuids []string) error {
+	return dt_db.RemoveAllTaggingsForEntitiesCTX(context.Background(), entity_uuids)
+}
+
 func (dt_db *DungeonTagsDB) TagEntityCTX(ctx context.Context, tag_id int, entity_uuid, entity_type string) (int64, error) {
 	stmt, err := dt_db.db_conn.PrepareContext(ctx, "INSERT INTO `taggings`(`tag`, `taggable_id`, `entity_type`) VALUES (?, ?, ?)")
 	if err != nil {
