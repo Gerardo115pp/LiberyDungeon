@@ -497,6 +497,18 @@
 
                 if (global_hotkeys_manager.ContextName !== component_hotkey_context.HotkeysContextName) return; 
 
+                const parent_context = component_hotkey_context.ParentHotkeysContext;
+
+                if (parent_context != null && global_hotkeys_manager.hasContext(parent_context.HotkeysContextName)) {
+                    const was_loaded = global_hotkeys_manager.loadPastContext(parent_context.HotkeysContextName);
+
+                    if (was_loaded) return;
+
+                    if (parent_context.hasBindingFunction()) {
+                        return parent_context.bindContext();
+                    }
+                } // If every better attempt to load the parent context fails, then and only then load the previous context.
+
                 global_hotkeys_manager.loadPreviousContext();
             }
 
