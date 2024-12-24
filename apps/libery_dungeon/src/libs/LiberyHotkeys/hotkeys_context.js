@@ -512,10 +512,11 @@ export class ComponentHotkeyContext {
     }
 
     /**
-     * Adds a child hotkeys context to the ComponentHotkeyContext.
+     * Adds a child hotkeys context to the ComponentHotkeyContext. It also points the child's parent context reference to this ComponentHotkeyContext instance.
      * @param {ComponentHotkeyContext} child_hotkeys_context
      */
     addChildContext(child_hotkeys_context) {
+        child_hotkeys_context.ParentHotkeysContext = this;
         this.#child_hotkeys_contexts.set(child_hotkeys_context.HotkeysContextName, child_hotkeys_context);
     }
 
