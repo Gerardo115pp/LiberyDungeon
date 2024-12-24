@@ -326,6 +326,8 @@ func patchCategoryContentHandler(response http.ResponseWriter, request *http.Req
 		echo.Echo(echo.YellowFG, fmt.Sprintf("Error emitting category changes event: %s", err.Error()))
 	}
 
+	go workflows.ProcessDeletedMedias(rejected_medias)
+
 	response.WriteHeader(200)
 }
 
