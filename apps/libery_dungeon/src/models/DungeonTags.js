@@ -123,6 +123,19 @@ export class DungeonTag {
     }
 
     /**
+     * Converts the DungeonTag to DungeonTagParams.
+     * @returns {DungeonTagParams}
+     */
+    toParams() {
+        return {
+            id: this.#id,
+            name: this.#name,
+            taxonomy: this.#taxonomy,
+            name_taxonomy: this.#name_taxonomy
+        }
+    }
+
+    /**
      * Handles type coercion for DungeonTag instances.
      * @param {string} hint
      * @returns {string | number}
