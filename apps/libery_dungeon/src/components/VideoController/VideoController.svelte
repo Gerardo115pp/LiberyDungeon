@@ -6,10 +6,17 @@
     import { layout_properties } from "@stores/layout";
     import { browser } from "$app/environment";
     import { videoDurationToString } from "@libs/utils";
+    import generateVideoControllerContext from "./video_controller_hotkeys";
     
     /*=============================================
     =            Properties            =
     =============================================*/
+
+        /**
+         * The video controller component hotkey context.
+         * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+         */
+        export let component_hotkey_context = generateVideoControllerContext();
     
         /** @type {HTMLVideoElement} the video element that will be controlled */
         export let the_video_element;
@@ -294,15 +301,35 @@
                     return;
                 }
 
+                const parent_context = component_hotkey_context.ParentHotkeysContext;
+
+                if (parent_context == null) return;
+
+                if (!parent_context.HasGeneratedHotkeysContext()) {
+                    console.warn("In video_controller/video_controller.defineVideoControllerKeybinds: parent has not generated a hotkey context yet. aborting");
+                    return;
+                }
+
+                const parent_hotkey_context = /** @type {import('@libs/LiberyHotkeys/hotkeys_context').default} */ (parent_context.HotkeysContext);
                 
                 if ($layout_properties.IS_MOBILE || !browser || !global_hotkeys_manager.hasLoadedContext()) return;
+
 
                 const video_controls_description_group = "<video_controls>";
 
                 Object.values(keybinds).forEach(keybind => {
                     keybind.options.description = `${video_controls_description_group} ${keybind.options.description ?? "Empty description"}`;
-                    global_hotkeys_manager.registerHotkeyOnContext(keybind.key_combo, keybind.handler, keybind.options);
-                })
+
+                    if (!parent_hotkey_context.hasHotkeyTrigger(keybind.key_combo)) {
+                        parent_hotkey_context.register(keybind.key_combo, keybind.handler, keybind.options);
+                    } else {
+                        console.warn(`In video_controller/video_controller.defineVideoControllerKeybinds: keybind ${keybind.key_combo} already exists in the parent context`);
+                    }
+                });
+
+                if (global_hotkeys_manager.ContextName === parent_context.HotkeysContextName) {
+                    global_hotkeys_manager.reloadCurrentContext();
+                }
             }
 
             const removeVideoControllerKeybinds = () => {
@@ -311,11 +338,32 @@
                     return;
                 }
 
+
+                const parent_context = component_hotkey_context.ParentHotkeysContext;
+
+                if (parent_context == null) return;
+
+                if (!parent_context.HasGeneratedHotkeysContext()) {
+                    console.warn("In video_controller/video_controller.removeVideoControllerKeybinds: parent has not generated a hotkey context yet. aborting");
+                    return;
+                }
+
+                const parent_hotkey_context = /** @type {import('@libs/LiberyHotkeys/hotkeys_context').default} */ (parent_context.HotkeysContext);
+
+
                 if ($layout_properties.IS_MOBILE || !global_hotkeys_manager.hasLoadedContext()) return;
 
                 Object.values(keybinds).forEach(keybind => {
-                    global_hotkeys_manager.unregisterHotkeyFromContext(keybind.key_combo, "keydown");
+                    if (parent_hotkey_context.hasHotkeyTrigger(keybind.key_combo)) {
+                        parent_hotkey_context.unregister(keybind.key_combo, keybind.options.mode ?? "keydown");
+                    } else {
+                        console.warn(`In video_controller/video_controller.removeVideoControllerKeybinds: keybind ${keybind.key_combo} doesn't exist in the parent context`);
+                    }
                 });
+
+                if (global_hotkeys_manager.ContextName === parent_context.HotkeysContextName) {
+                    global_hotkeys_manager.reloadCurrentContext();
+                }
             }
 
             function handleVideoBackwardPercentageHotkey() {

@@ -64,8 +64,9 @@
             tagMode_resetTaggedContentMode,
             mv_filtering_tags,
         } from "@pages/MediaViewer/features_wrappers/media_viewer_tag_mode";
-    import generateTaggedMediasHotkeyContext from "@components/DungeonTags/TaggedMedias/tagged_medias_hotkeys";
-    import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+        import generateTaggedMediasHotkeyContext from "@components/DungeonTags/TaggedMedias/tagged_medias_hotkeys";
+        import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+    import generateMediaViewerContext, { media_viewer_child_contexts } from "./media_viewer_hotkeys";
 
     /*=====  End of Imports  ======*/
      
@@ -116,16 +117,10 @@
         /*----------  hotkeys contexts  ----------*/
 
             /**
-             * @type {string}
-             * the name of the hotkeys context
-             */
-            const hotkeys_context_name = "media_viewer";
-
-            /**
              * The media viewer component hotkey context.
              * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
              */
-            const media_viewer_hotkeys_context = new ComponentHotkeyContext(hotkeys_context_name);
+            const component_hotkey_context = generateMediaViewerContext();
         
             /**
              * The component hotkey context for the child Media tagger.
@@ -138,6 +133,15 @@
              * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
              */
             let tagged_medias_hotkeys_context = null;
+
+            /**
+             * The component hotkey context for video controller component.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext | null}
+             */
+            let vide_controller_context = component_hotkey_context.ChildHotkeysContexts.get(media_viewer_child_contexts.VIDEO_CONTROLLER) ?? null;
+            if (vide_controller_context == null) {
+                throw new Error("In MediaTagger, invalid component_hotkey_context: ClusterPublicTags hotkeys context was not defined as a child context of the MediaTagger context.");
+            }
 
         /*=============================================
         =            State            =
@@ -285,7 +289,7 @@
             defineSubComponentsHotkeyContext();
 
             // @ts-ignore
-            window.media_viewer_hotkey_context = media_viewer_hotkeys_context;
+            window.media_viewer_hotkey_context = component_hotkey_context;
         }
 
         if ($current_category === null) {
@@ -354,8 +358,8 @@
                     return;
                 }
 
-                if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
-                    const hotkeys_context = new HotkeysContext();
+                if (!global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+                    const hotkeys_context = component_hotkey_context.generateHotkeysContext();
 
                     hotkeys_context.register(["a", "d"], handleMediaNavigation, {
                         description: "<navigate>Navigate through the medias, A for previous, D for next", 
@@ -449,12 +453,12 @@
                         description: `<${HOTKEYS_GENERAL_GROUP}>Toggle the hotkeys cheatsheet.`,
                     });
 
-                    global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
+                    global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
 
-                    media_viewer_hotkeys_context_name.set(hotkeys_context_name);
+                    media_viewer_hotkeys_context_name.set(component_hotkey_context.HotkeysContextName);
                 }
 
-                global_hotkeys_manager.loadContext(hotkeys_context_name);            
+                global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);            
             }
             
             const clearActiveMediaChanges = () => {
@@ -1062,7 +1066,7 @@
                             the_media_tagger.defineDesktopKeybinds();
                         }
                     } else if (!media_tagger_was_hidden) {
-                        if (global_hotkeys_manager != null && global_hotkeys_manager.ContextName != hotkeys_context_name) {
+                        if (global_hotkeys_manager != null && global_hotkeys_manager.ContextName != component_hotkey_context.HotkeysContextName) {
                             defineDesktopKeybinds();
                         }
                     }
@@ -1093,10 +1097,10 @@
                  */
                 const defineSubComponentsHotkeyContext = () => {
                     media_tagger_hotkeys_context = defineMediaTaggerHotkeyContext();
-                    media_viewer_hotkeys_context.ChildHotkeysContexts.set(media_tagger_hotkeys_context.HotkeysContextName, media_tagger_hotkeys_context);
+                    component_hotkey_context.ChildHotkeysContexts.set(media_tagger_hotkeys_context.HotkeysContextName, media_tagger_hotkeys_context);
 
                     tagged_medias_hotkeys_context = defineTaggedMediasHotkeyContext();
-                    media_viewer_hotkeys_context.ChildHotkeysContexts.set(tagged_medias_hotkeys_context.HotkeysContextName, tagged_medias_hotkeys_context);
+                    component_hotkey_context.ChildHotkeysContexts.set(tagged_medias_hotkeys_context.HotkeysContextName, tagged_medias_hotkeys_context);
                 }
 
                 /**
@@ -1129,7 +1133,7 @@
                         });
                     /* -------------------------------------------------------------------------- */
 
-                    media_tagger_context.ParentHotkeysContext = media_viewer_hotkeys_context;
+                    media_tagger_context.ParentHotkeysContext = component_hotkey_context;
 
                     return media_tagger_context;
                 }
@@ -1142,7 +1146,7 @@
                 const defineTaggedMediasHotkeyContext = () => {
                     tagged_medias_hotkeys_context = generateTaggedMediasHotkeyContext();
 
-                    tagged_medias_hotkeys_context.ParentHotkeysContext = media_viewer_hotkeys_context;
+                    tagged_medias_hotkeys_context.ParentHotkeysContext = component_hotkey_context;
 
                     return tagged_medias_hotkeys_context;
                 }
@@ -1571,7 +1575,7 @@
             active_media_index_unsubscriber();
 
             if (global_hotkeys_manager != null) {
-                global_hotkeys_manager.dropContext(hotkeys_context_name);
+                global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
             }
 
             resetMediaViewerPageStore();
@@ -1781,6 +1785,7 @@
         {#if video_element !== undefined && video_element !== null}
             <div id="mw-video-controller-wrapper">
                 <VideoController 
+                    component_hotkey_context={vide_controller_context}
                     the_video_element={video_element} 
                     media_uuid={the_active_media.uuid}
                     bind:auto_hide={auto_hide_video_controller}
