@@ -1463,7 +1463,7 @@
                     return;
                 }
                 
-                replaceState(`#/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
+                replaceState(`/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
             }
 
             /**
