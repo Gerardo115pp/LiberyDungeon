@@ -36,10 +36,24 @@ message EntityList {
     repeated string entities_uuids = 1;
 }
 
+message Entity {
+    string entity_uuid = 1;
+    string cluster_domain = 2;
+}
+
+message CopyEntityTags {
+    string source_entity = 1;
+    repeated string entities = 2;
+    string cluster_domain = 3;
+    string entities_type = 4;
+}
+
 
 service MetadataService {
     rpc CheckClusterPrivate(IsClusterPrivate) returns (BooleanResponse);
+    rpc CopyEntityTagsToEntityList(CopyEntityTags) returns (BooleanResponse);
     rpc GetAllPrivateClusters(google.protobuf.Empty) returns (AllPrivateClustersResponse);
+    rpc GetEntityTags(Entity) returns (TagList);
     rpc TagEntities(TaggableEntities) returns (BooleanResponse);
     rpc UntagEntities(TaggableEntities) returns (BooleanResponse);
     rpc GetEntitiesWithTaggings(TagList) returns (EntitiesByType);

@@ -40,10 +40,20 @@ class MetadataServiceStub(object):
                 request_serializer=metadata__requests__pb2.IsClusterPrivate.SerializeToString,
                 response_deserializer=metadata__requests__pb2.BooleanResponse.FromString,
                 _registered_method=True)
+        self.CopyEntityTagsToEntityList = channel.unary_unary(
+                '/metadata_service.MetadataService/CopyEntityTagsToEntityList',
+                request_serializer=metadata__requests__pb2.CopyEntityTags.SerializeToString,
+                response_deserializer=metadata__requests__pb2.BooleanResponse.FromString,
+                _registered_method=True)
         self.GetAllPrivateClusters = channel.unary_unary(
                 '/metadata_service.MetadataService/GetAllPrivateClusters',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=metadata__requests__pb2.AllPrivateClustersResponse.FromString,
+                _registered_method=True)
+        self.GetEntityTags = channel.unary_unary(
+                '/metadata_service.MetadataService/GetEntityTags',
+                request_serializer=metadata__requests__pb2.Entity.SerializeToString,
+                response_deserializer=metadata__requests__pb2.TagList.FromString,
                 _registered_method=True)
         self.TagEntities = channel.unary_unary(
                 '/metadata_service.MetadataService/TagEntities',
@@ -76,7 +86,19 @@ class MetadataServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def CopyEntityTagsToEntityList(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetAllPrivateClusters(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetEntityTags(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -114,10 +136,20 @@ def add_MetadataServiceServicer_to_server(servicer, server):
                     request_deserializer=metadata__requests__pb2.IsClusterPrivate.FromString,
                     response_serializer=metadata__requests__pb2.BooleanResponse.SerializeToString,
             ),
+            'CopyEntityTagsToEntityList': grpc.unary_unary_rpc_method_handler(
+                    servicer.CopyEntityTagsToEntityList,
+                    request_deserializer=metadata__requests__pb2.CopyEntityTags.FromString,
+                    response_serializer=metadata__requests__pb2.BooleanResponse.SerializeToString,
+            ),
             'GetAllPrivateClusters': grpc.unary_unary_rpc_method_handler(
                     servicer.GetAllPrivateClusters,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                     response_serializer=metadata__requests__pb2.AllPrivateClustersResponse.SerializeToString,
+            ),
+            'GetEntityTags': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetEntityTags,
+                    request_deserializer=metadata__requests__pb2.Entity.FromString,
+                    response_serializer=metadata__requests__pb2.TagList.SerializeToString,
             ),
             'TagEntities': grpc.unary_unary_rpc_method_handler(
                     servicer.TagEntities,
@@ -178,6 +210,33 @@ class MetadataService(object):
             _registered_method=True)
 
     @staticmethod
+    def CopyEntityTagsToEntityList(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/metadata_service.MetadataService/CopyEntityTagsToEntityList',
+            metadata__requests__pb2.CopyEntityTags.SerializeToString,
+            metadata__requests__pb2.BooleanResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def GetAllPrivateClusters(request,
             target,
             options=(),
@@ -194,6 +253,33 @@ class MetadataService(object):
             '/metadata_service.MetadataService/GetAllPrivateClusters',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             metadata__requests__pb2.AllPrivateClustersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetEntityTags(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/metadata_service.MetadataService/GetEntityTags',
+            metadata__requests__pb2.Entity.SerializeToString,
+            metadata__requests__pb2.TagList.FromString,
             options,
             channel_credentials,
             insecure,

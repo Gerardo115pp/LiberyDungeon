@@ -66,6 +66,33 @@ func (metadata_client MetadataServiceClient) CheckClusterPrivate(cluster_uuid st
 	return boolean_response.Response, err
 }
 
+func (metadata_client MetadataServiceClient) CopyEntityTagsToEntities(source_entity, cluster_domain, entities_type string, entities_uuids []string) (bool, error) {
+	conn, err := grpc.Dial(metadata_client.GrpcAddress, grpc.WithTransportCredentials(metadata_client.GrpcTransport))
+	if err != nil {
+		return false, err
+	}
+	defer conn.Close()
+
+	metadata_grpc_client := metadata_service_pb.NewMetadataServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	message := metadata_service_pb.CopyEntityTags{
+		SourceEntity:  source_entity,
+		ClusterDomain: cluster_domain,
+		EntitiesType:  entities_type,
+		Entities:      entities_uuids,
+	}
+
+	response, err := metadata_grpc_client.CopyEntityTagsToEntityList(ctx, &message)
+	if err != nil {
+		return false, errors.Join(err, fmt.Errorf("In Communication/MetadataService.CopyEntityTagsToEntities, while calling metadata_grpc_client.CopyEntityTagsToEntityList"))
+	}
+
+	return response.Response, nil
+}
+
 func (metadata_client MetadataServiceClient) GetAllPrivateClusters() ([]string, error) {
 	var private_clusters []string = make([]string, 0)
 
@@ -123,6 +150,36 @@ func (metadata_client MetadataServiceClient) GetEntitiesWithTaggings(tag_list []
 	}
 
 	return
+}
+
+func (metadata_client MetadataServiceClient) GetEntityTags(entity_uuid, cluster_domain string) ([]int, error) {
+	conn, err := grpc.Dial(metadata_client.GrpcAddress, grpc.WithTransportCredentials(metadata_client.GrpcTransport))
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	metadata_grpc_client := metadata_service_pb.NewMetadataServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	message := metadata_service_pb.Entity{
+		EntityUuid:    entity_uuid,
+		ClusterDomain: cluster_domain,
+	}
+
+	response, err := metadata_grpc_client.GetEntityTags(ctx, &message)
+	if err != nil {
+		return nil, err
+	}
+
+	tag_list := make([]int, len(response.TagId))
+	for h, tag_id := range response.TagId {
+		tag_list[h] = int(tag_id)
+	}
+
+	return tag_list, err
 }
 
 func (metadata_client MetadataServiceClient) TagEntities(tag_id int, entities_uuids []string, entity_type string) (bool, error) {

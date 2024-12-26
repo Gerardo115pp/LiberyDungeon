@@ -20,12 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	MetadataService_CheckClusterPrivate_FullMethodName     = "/metadata_service.MetadataService/CheckClusterPrivate"
-	MetadataService_GetAllPrivateClusters_FullMethodName   = "/metadata_service.MetadataService/GetAllPrivateClusters"
-	MetadataService_TagEntities_FullMethodName             = "/metadata_service.MetadataService/TagEntities"
-	MetadataService_UntagEntities_FullMethodName           = "/metadata_service.MetadataService/UntagEntities"
-	MetadataService_GetEntitiesWithTaggings_FullMethodName = "/metadata_service.MetadataService/GetEntitiesWithTaggings"
-	MetadataService_DeleteEntitiesTaggings_FullMethodName  = "/metadata_service.MetadataService/DeleteEntitiesTaggings"
+	MetadataService_CheckClusterPrivate_FullMethodName        = "/metadata_service.MetadataService/CheckClusterPrivate"
+	MetadataService_CopyEntityTagsToEntityList_FullMethodName = "/metadata_service.MetadataService/CopyEntityTagsToEntityList"
+	MetadataService_GetAllPrivateClusters_FullMethodName      = "/metadata_service.MetadataService/GetAllPrivateClusters"
+	MetadataService_GetEntityTags_FullMethodName              = "/metadata_service.MetadataService/GetEntityTags"
+	MetadataService_TagEntities_FullMethodName                = "/metadata_service.MetadataService/TagEntities"
+	MetadataService_UntagEntities_FullMethodName              = "/metadata_service.MetadataService/UntagEntities"
+	MetadataService_GetEntitiesWithTaggings_FullMethodName    = "/metadata_service.MetadataService/GetEntitiesWithTaggings"
+	MetadataService_DeleteEntitiesTaggings_FullMethodName     = "/metadata_service.MetadataService/DeleteEntitiesTaggings"
 )
 
 // MetadataServiceClient is the client API for MetadataService service.
@@ -33,7 +35,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MetadataServiceClient interface {
 	CheckClusterPrivate(ctx context.Context, in *IsClusterPrivate, opts ...grpc.CallOption) (*BooleanResponse, error)
+	CopyEntityTagsToEntityList(ctx context.Context, in *CopyEntityTags, opts ...grpc.CallOption) (*BooleanResponse, error)
 	GetAllPrivateClusters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AllPrivateClustersResponse, error)
+	GetEntityTags(ctx context.Context, in *Entity, opts ...grpc.CallOption) (*TagList, error)
 	TagEntities(ctx context.Context, in *TaggableEntities, opts ...grpc.CallOption) (*BooleanResponse, error)
 	UntagEntities(ctx context.Context, in *TaggableEntities, opts ...grpc.CallOption) (*BooleanResponse, error)
 	GetEntitiesWithTaggings(ctx context.Context, in *TagList, opts ...grpc.CallOption) (*EntitiesByType, error)
@@ -57,9 +61,27 @@ func (c *metadataServiceClient) CheckClusterPrivate(ctx context.Context, in *IsC
 	return out, nil
 }
 
+func (c *metadataServiceClient) CopyEntityTagsToEntityList(ctx context.Context, in *CopyEntityTags, opts ...grpc.CallOption) (*BooleanResponse, error) {
+	out := new(BooleanResponse)
+	err := c.cc.Invoke(ctx, MetadataService_CopyEntityTagsToEntityList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *metadataServiceClient) GetAllPrivateClusters(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AllPrivateClustersResponse, error) {
 	out := new(AllPrivateClustersResponse)
 	err := c.cc.Invoke(ctx, MetadataService_GetAllPrivateClusters_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *metadataServiceClient) GetEntityTags(ctx context.Context, in *Entity, opts ...grpc.CallOption) (*TagList, error) {
+	out := new(TagList)
+	err := c.cc.Invoke(ctx, MetadataService_GetEntityTags_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +129,9 @@ func (c *metadataServiceClient) DeleteEntitiesTaggings(ctx context.Context, in *
 // for forward compatibility
 type MetadataServiceServer interface {
 	CheckClusterPrivate(context.Context, *IsClusterPrivate) (*BooleanResponse, error)
+	CopyEntityTagsToEntityList(context.Context, *CopyEntityTags) (*BooleanResponse, error)
 	GetAllPrivateClusters(context.Context, *emptypb.Empty) (*AllPrivateClustersResponse, error)
+	GetEntityTags(context.Context, *Entity) (*TagList, error)
 	TagEntities(context.Context, *TaggableEntities) (*BooleanResponse, error)
 	UntagEntities(context.Context, *TaggableEntities) (*BooleanResponse, error)
 	GetEntitiesWithTaggings(context.Context, *TagList) (*EntitiesByType, error)
@@ -122,8 +146,14 @@ type UnimplementedMetadataServiceServer struct {
 func (UnimplementedMetadataServiceServer) CheckClusterPrivate(context.Context, *IsClusterPrivate) (*BooleanResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckClusterPrivate not implemented")
 }
+func (UnimplementedMetadataServiceServer) CopyEntityTagsToEntityList(context.Context, *CopyEntityTags) (*BooleanResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CopyEntityTagsToEntityList not implemented")
+}
 func (UnimplementedMetadataServiceServer) GetAllPrivateClusters(context.Context, *emptypb.Empty) (*AllPrivateClustersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllPrivateClusters not implemented")
+}
+func (UnimplementedMetadataServiceServer) GetEntityTags(context.Context, *Entity) (*TagList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEntityTags not implemented")
 }
 func (UnimplementedMetadataServiceServer) TagEntities(context.Context, *TaggableEntities) (*BooleanResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TagEntities not implemented")
@@ -168,6 +198,24 @@ func _MetadataService_CheckClusterPrivate_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MetadataService_CopyEntityTagsToEntityList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CopyEntityTags)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetadataServiceServer).CopyEntityTagsToEntityList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetadataService_CopyEntityTagsToEntityList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetadataServiceServer).CopyEntityTagsToEntityList(ctx, req.(*CopyEntityTags))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MetadataService_GetAllPrivateClusters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -182,6 +230,24 @@ func _MetadataService_GetAllPrivateClusters_Handler(srv interface{}, ctx context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MetadataServiceServer).GetAllPrivateClusters(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MetadataService_GetEntityTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Entity)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetadataServiceServer).GetEntityTags(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MetadataService_GetEntityTags_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetadataServiceServer).GetEntityTags(ctx, req.(*Entity))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -270,8 +336,16 @@ var MetadataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MetadataService_CheckClusterPrivate_Handler,
 		},
 		{
+			MethodName: "CopyEntityTagsToEntityList",
+			Handler:    _MetadataService_CopyEntityTagsToEntityList_Handler,
+		},
+		{
 			MethodName: "GetAllPrivateClusters",
 			Handler:    _MetadataService_GetAllPrivateClusters_Handler,
+		},
+		{
+			MethodName: "GetEntityTags",
+			Handler:    _MetadataService_GetEntityTags_Handler,
 		},
 		{
 			MethodName: "TagEntities",

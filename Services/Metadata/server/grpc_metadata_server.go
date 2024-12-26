@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"libery-dungeon-libs/metadata_service_pb"
 	"libery-metadata-service/repository"
+	"libery-metadata-service/workflows"
 	"net"
 
 	"github.com/Gerardo115pp/patriots_lib/echo"
@@ -35,6 +36,20 @@ func (ms *MetadataGrpcServer) CheckClusterPrivate(ctx context.Context, request *
 	response.Response = is_private
 
 	return response, nil
+}
+
+func (ms *MetadataGrpcServer) CopyEntityTagsToEntityList(ctx context.Context, request *metadata_service_pb.CopyEntityTags) (*metadata_service_pb.BooleanResponse, error) {
+	err := workflows.CopyEntityTagsToTagListCTX(ctx, request.SourceEntity, request.Entities, request.ClusterDomain, request.EntitiesType)
+
+	if err != nil {
+		echo.Echo(echo.RedFG, "In server/grpc_metadata_server.CopyEntityTagsToEntityList:\n\n%s", err)
+	}
+
+	response := &metadata_service_pb.BooleanResponse{
+		Response: err == nil,
+	}
+
+	return response, err
 }
 
 func (ms *MetadataGrpcServer) GetAllPrivateClusters(ctx context.Context, duh *emptypb.Empty) (*metadata_service_pb.AllPrivateClustersResponse, error) {
@@ -88,6 +103,25 @@ func (ms *MetadataGrpcServer) GetEntitiesWithTaggings(ctx context.Context, tag_l
 	}
 
 	return entities_by_type_message, nil
+}
+
+func (ms *MetadataGrpcServer) GetEntityTags(ctx context.Context, entity *metadata_service_pb.Entity) (*metadata_service_pb.TagList, error) {
+	tags, err := repository.DungeonTagsRepo.GetEntityTaggings(entity.EntityUuid, entity.ClusterDomain)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In server/grpc_metadata_server.GetEntityTags: could not get entity taggings:\n\n%s", err))
+		return nil, err
+	}
+
+	tags_list := make([]int32, len(tags))
+	for h, dungeon_tag := range tags {
+		tags_list[h] = int32(dungeon_tag.Tag.ID)
+	}
+
+	response := metadata_service_pb.TagList{
+		TagId: tags_list,
+	}
+
+	return &response, nil
 }
 
 func (ms *MetadataGrpcServer) TagEntities(ctx context.Context, request *metadata_service_pb.TaggableEntities) (*metadata_service_pb.BooleanResponse, error) {

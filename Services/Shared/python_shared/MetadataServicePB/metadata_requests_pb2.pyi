@@ -58,3 +58,23 @@ class EntityList(_message.Message):
     ENTITIES_UUIDS_FIELD_NUMBER: _ClassVar[int]
     entities_uuids: _containers.RepeatedScalarFieldContainer[str]
     def __init__(self, entities_uuids: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class Entity(_message.Message):
+    __slots__ = ("entity_uuid", "cluster_domain")
+    ENTITY_UUID_FIELD_NUMBER: _ClassVar[int]
+    CLUSTER_DOMAIN_FIELD_NUMBER: _ClassVar[int]
+    entity_uuid: str
+    cluster_domain: str
+    def __init__(self, entity_uuid: _Optional[str] = ..., cluster_domain: _Optional[str] = ...) -> None: ...
+
+class CopyEntityTags(_message.Message):
+    __slots__ = ("source_entity", "entities", "cluster_domain", "entities_type")
+    SOURCE_ENTITY_FIELD_NUMBER: _ClassVar[int]
+    ENTITIES_FIELD_NUMBER: _ClassVar[int]
+    CLUSTER_DOMAIN_FIELD_NUMBER: _ClassVar[int]
+    ENTITIES_TYPE_FIELD_NUMBER: _ClassVar[int]
+    source_entity: str
+    entities: _containers.RepeatedScalarFieldContainer[str]
+    cluster_domain: str
+    entities_type: str
+    def __init__(self, source_entity: _Optional[str] = ..., entities: _Optional[_Iterable[str]] = ..., cluster_domain: _Optional[str] = ..., entities_type: _Optional[str] = ...) -> None: ...
