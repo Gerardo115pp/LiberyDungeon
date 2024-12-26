@@ -55,6 +55,18 @@ export default class HotkeysContext {
     }
 
     /**
+     * returns true if any of the hotkeys provided is registered on the context
+     * @param {string[]} hotkeys
+     * @param {"keydown"|"keyup"} mode
+     * @returns {boolean}
+     */
+    hasHotkeys(hotkeys, mode="keydown") {
+        let mode_hotkeys = this.#modeHotkeys(mode)
+
+        return hotkeys.some(hotkey => mode_hotkeys.has(hotkey));
+    }
+
+    /**
      * Returns if a hotkey trigger is registered on the context. different from hasHotkey, this handles strings and arrays of strings.
      * The method returns true if and only if all the hotkey combos are not registered on the context. 
      * @param {string | string[]} hotkey_trigger
