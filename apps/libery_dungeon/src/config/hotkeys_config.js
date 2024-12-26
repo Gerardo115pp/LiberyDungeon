@@ -13,6 +13,9 @@
         ITEM_DELETION_NON_IMPERATIVE: ["x"],
         ITEM_DELETION_IMPERATIVE: ["del"],
         ITEM_RENAMING: ["c c"],
+        ITEM_YANKING: ["y y"],
+        ITEM_PASTING: ["p"],
+        REGISTER_CHANGE: ["\""],
         NAVIGATION_ITEM_GOTO_FINALIZER: ["g"],
     }
 
