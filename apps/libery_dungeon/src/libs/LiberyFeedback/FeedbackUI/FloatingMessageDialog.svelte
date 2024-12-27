@@ -75,7 +75,7 @@
 
 <dialog open={dialog_visible} id="libery-feedback-floating-message-dialog" class:float-at-top={float_at_top}>
     <h3 id="lffed-message">
-        {received_message}
+        {@html received_message}
     </h3>
 </dialog>
 
