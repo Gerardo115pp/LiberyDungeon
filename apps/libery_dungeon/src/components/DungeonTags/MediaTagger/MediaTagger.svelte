@@ -250,6 +250,10 @@
                     description: `<registries>Shows the current registry information.`,
                 });
 
+                hotkeys_context.register(["y shift+i"], handleShowAllRegistries, {
+                    description: `<registries>Shows all the registries content.`,
+                });
+
                 hotkeys_context.register(["y n"], handleClearAllRegistries, {
                     description: `<registries>Clears all the registries.`,
                 });
@@ -449,6 +453,14 @@
              */
             const handleShowRegistryInformation = (event, hotkey) => {
                 printCurrentDTClipboardRegistry();
+            }
+
+            /**
+             * Show all the registries with content.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleShowAllRegistries = (event, hotkey) => {
+                printAllRegistries();
             }
 
             /**
@@ -720,6 +732,37 @@
         }
 
         /**
+         * Returns an inline string with the contents of a registry.
+         * @param {string} registry_name
+         * @returns {string}
+         */
+        const getRegisterInlineString = (registry_name) => {
+            const registry_content = dungeon_tags_clipboard.readRegisterByName(registry_name);
+
+            if (registry_content == null) {
+                return "Empty";
+            }
+
+            let feedback_message = `<i>${registry_name}</i>: `;
+
+            let h = 0;
+
+            for (let tag of registry_content.Content.DungeonTags) {
+                feedback_message += `<b>${tag.Name}</b>`
+
+                if (h === registry_content.Content.DungeonTags.length - 1) {
+                    feedback_message += ".";
+                } else {
+                    feedback_message += ", ";
+                }
+
+                h++;
+            }
+
+            return feedback_message;
+        }
+
+        /**
          * Handles the remove-media-tag event emitted by the MediaTaggings component.
          * @param {CustomEvent<{removed_tag: number}>} event
          */
@@ -854,6 +897,27 @@
 
             emitPlatformMessage(feedback_message);
         }
+
+        /**
+         * All the content of the active registries.
+         * @returns {void}
+         */
+        const printAllRegistries = () => {
+            const all_registries_names = dungeon_tags_clipboard.getAllRegistryNames();
+
+            if (all_registries_names.length === 0) return;
+
+            let feedback_message = `<b>${all_registries_names.length}</b> registries with:<br><br>`
+
+            for (let registry_name of all_registries_names) {
+                const registry_inline_content = getRegisterInlineString(registry_name);
+
+                feedback_message += `${registry_inline_content}<br>`;
+            }
+
+            emitPlatformMessage(feedback_message);
+        }
+
 
         /**
          * Refreshes the current media taggings and sets them on active_media_taggings property.
