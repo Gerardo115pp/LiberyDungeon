@@ -18,7 +18,7 @@
         import { last_keyboard_focused_tag } from "./taxonomy_tags_store";
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
         import { writable } from "svelte/store";
-    import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+        import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     /*=====  End of Imports  ======*/
 
     /*=============================================
@@ -252,6 +252,16 @@
                     }
 
                     const hotkeys_context = preparePublicHotkeyActions(component_hotkey_context);
+                    
+                    hotkeys_context.register(["b"], handleBackwardPreviouslySelectedIndex, {
+                        description: `${common_action_groups.NAVIGATION}Sets the focus to a previously selected ${ui_tag_reference.EntityName}`,
+                    });
+
+                    hotkeys_context.register(["shift+b"], handleForwardPreviouslySelectedIndex, {
+                        description: `${common_action_groups.NAVIGATION}Sets the focus to a previously selected ${ui_tag_reference.EntityName}`,
+                    });
+
+                   
 
                     setGridNavigationWrapper(hotkeys_context);
 
@@ -414,6 +424,38 @@
             }
 
             /**
+             * Handles the forward navigation of the previously selected index iterator.
+             * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+             */
+            const handleForwardPreviouslySelectedIndex = () => {
+               
+                if (the_grid_navigation_wrapper === null) return; 
+
+                const previous_index = changePreviouslySelectedIndex(true);
+
+                if (previous_index === undefined) return;
+
+                the_grid_navigation_wrapper.updateCursorPosition(previous_index);
+
+            }
+
+            /**
+             * Handles the backward navigation of the previously selected index iterator.
+             * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+             */
+            const handleBackwardPreviouslySelectedIndex = () => {
+                if (the_grid_navigation_wrapper === null) return;
+
+                const previous_index = getPreviouslySelectedIndex();
+
+                if (previous_index === undefined) return;
+
+                the_grid_navigation_wrapper.updateCursorPosition(previous_index);
+
+                changePreviouslySelectedIndex(false);
+            }
+
+            /**
              * Handles the tag renamer hotkey.
              * @param {KeyboardEvent} event
              * @param {import("@libs/LiberyHotkeys/hotkeys").HotkeyData} hotkey
@@ -481,6 +523,8 @@
                 if (focused_tag_id == null) return;
 
                 the_tag_group_component.emitTagSelected(focused_tag_id);
+
+                addPreviousSelectedIndex(focused_tag_index);
             }
 
             /**
@@ -589,7 +633,6 @@
             }
 
         /*=====  End of Keybinds  ======*/
-
         
         /*=============================================
         =            Previously selected indexes            =
@@ -606,6 +649,35 @@
                 }
 
                 previous_selected_tag_indexes.push(new_index);
+                
+                resetPreviouslySelectedIndexesIterator()
+            }
+
+            /**
+             * Changes the previously_selected_indexes_iterator to the next available value using the provided navigation direction.
+             * Returns the new previously_selected_index that corresponds to the iterator value.
+             * @param {boolean} direction_forward
+             * @returns {number | undefined}
+             */
+            const changePreviouslySelectedIndex = direction_forward => {
+                if (previous_selected_tag_indexes.length === 0) {
+                    return undefined;
+                }
+
+                const next_iterator_value = getNextPreviouslySelectedIndexIterator(direction_forward);
+
+                if (next_iterator_value === undefined) return undefined;
+
+                previously_selected_indexes_iterator = next_iterator_value;
+
+                return getPreviouslySelectedIndex();
+            }
+            
+            /**
+             * Returns a previously selected index. To iterate over use
+             */
+            const getPreviouslySelectedIndex = () => {
+                return previous_selected_tag_indexes[previously_selected_indexes_iterator];
             }
 
             /**
@@ -613,35 +685,33 @@
              * @param {boolean} direction_forward
              * @returns {number | undefined}
              */
-            const getPreviouslySelectedIndex = (direction_forward) => {
+            const getNextPreviouslySelectedIndexIterator = (direction_forward) => {
                 if (previous_selected_tag_indexes.length === 0) {
                     return undefined;
                 }
 
-                const max_iterator_value = previous_selected_tag_indexes.length;
+                const max_iterator_value = previous_selected_tag_indexes.length - 1;
 
                 const iterator_step = direction_forward ? 1 : -1;
 
                 const next_iterator_value = linearCycleNavigationWrap(previously_selected_indexes_iterator, max_iterator_value, iterator_step).value;
 
-                return max_iterator_value;
+                return next_iterator_value;
             }
 
             /**
-             * Sets the value of the previously selected index to the next available value.
+             * Resets the previously selected indexes iterator.
              * @returns {void}
              */
-            const setNextAvailablePreviouslySelectedIndex = () => {
-                const next_iterator_value = getPreviouslySelectedIndex(true);
-
-                if (next_iterator_value == null) return;
-
-                previously_selected_indexes_iterator = next_iterator_value;
+            const resetPreviouslySelectedIndexesIterator = () => {
+                if (previous_selected_tag_indexes.length <= 1) {
+                    previously_selected_indexes_iterator = 0;
+                } else {
+                    previously_selected_indexes_iterator = previous_selected_tag_indexes.length - 1;
+                }
             }
         
         /*=====  End of Previously selected indexes  ======*/
-        
-        
 
         /**
          * Drops the grid navigation wrapper if it exists.
@@ -809,8 +879,6 @@
             }
 
             setTagRenamerState(false);
-
-            console.log(`Renaming tag '${tag_name}' to '${new_name}'`);
 
             const tag_renamed = await renameDungeonTag(tag_id, new_name);
 
