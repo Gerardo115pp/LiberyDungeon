@@ -1816,6 +1816,7 @@
                     component_hotkey_context={media_tagger_hotkeys_context}
                     the_active_media={the_active_media} 
                     background_alpha={0.8}
+                    getTaggbleMedias={getDisplayedMedias}
                     on:close-medias-tagger={handleMediaTaggerClose}
                 />
             {/if}
