@@ -30,12 +30,12 @@
         
         /**
          * The message question to confirm.
-         * @type {import('../lf_models').ConfirmMessage}
+         * @type {import('../lf_models').ConfirmMessage | null}
          * @default null
          */
         export let the_message = null;
 
-        let global_hotkeys_manager = getHotkeysManager();
+        let global_hotkeys_manager = /** @type {import('@libs/LiberyHotkeys/libery_hotkeys').HotkeyContextManager} */ (getHotkeysManager());
 
         /**
          * The response of the confirm dialog.
@@ -185,7 +185,7 @@
 
             /**
              * Handles new confirm message.
-             * @param {import('../lf_models').ConfirmMessage} new_message
+             * @param {import('../lf_models').ConfirmMessage | null} new_message
              */
             const handleNewMessage = (new_message) => {
                 const is_message_null = new_message === null;
@@ -203,9 +203,17 @@
              * @param {MouseEvent} event
              */
             const handleChoiceClick = (event) => {
-                let choice = event.currentTarget.dataset.choice;
+                if (event.currentTarget == null) return;
 
-                choice = parseInt(choice);  
+                /**
+                 * @type {HTMLButtonElement}
+                 */
+                let button_element = /** @type {HTMLButtonElement} */  (event.currentTarget);
+                let choice_string = button_element.dataset.choice;
+
+                if (choice_string == null) return;
+
+                let choice = parseInt(choice_string);  
 
                 setFinalChoice(choice);
             }
@@ -269,7 +277,7 @@
                 </h2>
             </header>
             <p class="lffcmd-the-question">
-                {the_message.QuestionMessage}
+                {@html the_message.QuestionMessage}
             </p>
             <menu class="lffcmd-the-awnsers">
                 {#if the_message.CancelLabel !== ""}
