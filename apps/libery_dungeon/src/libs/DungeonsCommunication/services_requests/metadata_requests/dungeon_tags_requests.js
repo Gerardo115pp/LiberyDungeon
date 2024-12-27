@@ -688,6 +688,65 @@ export class PostTagEntityRequest {
 }
 
 /**
+ * Applies a tag to a list of entities.
+ */
+export class PostTagEntitiesRequest {
+    
+    static endpoint = `${metadata_server}/dungeon-tags/tag-entities`;
+
+    /**
+     * @param {number} tag_id
+     * @param {string} entity_type
+     * @param {string[]} entities_uuids
+     */
+    constructor(tag_id, entity_type, entities_uuids) {
+        this.tag_id = tag_id;
+        this.entity_type = entity_type;
+        this.entities_uuids = entities_uuids;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     *  @returns {Promise<HttpResponse<import("../../base").BooleanResponse>>}
+     */
+    do = async () => {
+        const url = PostTagEntitiesRequest.endpoint;
+
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        /**
+         * @type {import("../../base").BooleanResponse}
+         */
+        let tagged = { response: false };
+
+        try {
+            response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: this.toJson()
+            });
+
+        } catch (error) {
+            console.error("Error tagging entities: ", error);
+
+            throw error;
+        }
+
+        if (response?.status === 201) {
+            tagged = await response.json();
+        }
+
+        return new HttpResponse(response, tagged);
+    }
+}
+
+/**
  * Removes a tag from an entity identifier. Takes the same parameters as PostTagEntityRequest.
  */
 export class DeleteUntagEntityRequest {
