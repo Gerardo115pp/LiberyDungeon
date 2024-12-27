@@ -36,6 +36,10 @@ type DungeonTagsRepository interface {
 	GetEntityTaggings(entity_uuid, cluster_domain string) ([]service_models.DungeonTagging, error)
 	GetEntitiesWithTaggingsCTX(ctx context.Context, tags []int) ([]service_models.DungeonTaggingCompact, error)
 	GetEntitiesWithTaggings(tags []int) ([]service_models.DungeonTaggingCompact, error)
+	MultiTagEntityCTX(ctx context.Context, tag_ids []int, entity_uuid string, entity_type string) error
+	MultiTagEntity(tag_ids []int, entity_uuid string, entity_type string) error
+	MultiTagEntitiesCTX(ctx context.Context, tag_ids []int, entities_uuids []string, entity_type string) error
+	MultiTagEntities(tag_ids []int, entities_uuids []string, entity_type string) error
 	RemoveTagFromEntityCTX(ctx context.Context, tag_id int, entity_uuid string) error
 	RemoveTagFromEntity(tag_id int, entity_uuid string) error
 	RemoveTagFromEntitiesCTX(ctx context.Context, tag_id int, entities_uuids []string) error

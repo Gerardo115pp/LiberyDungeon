@@ -442,6 +442,84 @@ func (dt_db *DungeonTagsDB) GetEntitiesWithTaggings(tags []int) ([]service_model
 	return dt_db.GetEntitiesWithTaggingsCTX(context.Background(), tags)
 }
 
+func (dt_db *DungeonTagsDB) MultiTagEntityCTX(ctx context.Context, tag_ids []int, entity_uuid string, entity_type string) error {
+	tx, err := dt_db.db_conn.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare("INSERT INTO `taggings`(`tag`, `taggable_id`, `entity_type`) VALUES (?, ?, ?) ON CONFLICT DO NOTHING")
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	for _, tag_id := range tag_ids {
+		_, err = stmt.Exec(tag_id, entity_uuid, entity_type)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (dt_db *DungeonTagsDB) MultiTagEntity(tag_ids []int, entity_uuid string, entity_type string) error {
+	return dt_db.MultiTagEntityCTX(context.Background(), tag_ids, entity_uuid, entity_type)
+}
+
+func (dt_db *DungeonTagsDB) MultiTagEntitiesCTX(ctx context.Context, tag_ids []int, entities_uuids []string, entity_type string) error {
+	sql_stmt_builder := strings.Builder{}
+	sql_stmt_builder.WriteString("INSERT INTO `taggings`(`tag`, `taggable_id`, `entity_type`) VALUES ")
+	values := make([]interface{}, 0, len(tag_ids)*(len(entities_uuids)*3))
+
+	for h := 0; h < len(tag_ids); h++ {
+		for k := 0; k < len(entities_uuids); k++ {
+			sql_stmt_builder.WriteString("(?, ?, ?)")
+
+			if h < len(tag_ids)-1 || k < len(entities_uuids)-1 {
+				sql_stmt_builder.WriteString(", ")
+			}
+
+			values = append(values, tag_ids[h], entities_uuids[k], entity_type)
+		}
+	}
+
+	sql_stmt_builder.WriteString(" ON CONFLICT DO NOTHING")
+
+	sql_stmt := sql_stmt_builder.String()
+
+	tx, err := dt_db.db_conn.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Join(fmt.Errorf("In database/dungeon_tags/dungeon_tags.MultiTagEntitiesCTX: Failed to begin transaction"), err)
+	}
+
+	stmt, err := tx.Prepare(sql_stmt)
+	if err != nil {
+		tx.Rollback()
+		return errors.Join(fmt.Errorf("In database/dungeon_tags/dungeon_tags.MultiTagEntitiesCTX: Failed to prepare statement"), err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, values...)
+	if err != nil {
+		tx.Rollback()
+		return errors.Join(fmt.Errorf("In database/dungeon_tags/dungeon_tags.MultiTagEntitiesCTX: Failed to execute statement"), err)
+	}
+
+	tx.Commit()
+
+	return nil
+}
+
+func (dt_db *DungeonTagsDB) MultiTagEntities(tag_ids []int, entities_uuids []string, entity_type string) error {
+	return dt_db.MultiTagEntitiesCTX(context.Background(), tag_ids, entities_uuids, entity_type)
+}
+
 // TODO: Implement GetEntityWithTaggingsByType. Same as GetEntityWithTaggings but with an additional filter for the entity type.
 
 func (dt_db *DungeonTagsDB) RemoveTagFromEntityCTX(ctx context.Context, tag_id int, entity_uuid string) error {
