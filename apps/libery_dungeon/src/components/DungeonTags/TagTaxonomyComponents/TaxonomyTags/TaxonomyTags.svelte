@@ -62,7 +62,7 @@
                  */ 
                 export let has_hotkey_control = false;
                 $: if (has_hotkey_control && has_taxonomy_tag_mounted) {
-                    defineDesktopKeybinds();
+                    setupTaxonomyTagComponentState();
                 }
         
             /*=====  End of Hotkeys state  ======*/
@@ -782,6 +782,8 @@
         
         /*=====  End of Previously selected indexes  ======*/
 
+
+
         /**
          * Drops the grid navigation wrapper if it exists.
          */
@@ -975,6 +977,19 @@
          */
         const setTagRenamerState = state => {
             renaming_focused_tag = state;
+        }
+
+        /**
+         * Sets up the taxonomy tags state when the component gains hotkey control.
+         */
+        const setupTaxonomyTagComponentState = () => {
+            const focused_tag = getFocusedTag();
+
+            if (focused_tag != null) {
+                last_keyboard_focused_tag.set(focused_tag);
+            }
+
+            defineDesktopKeybinds();
         }
 
         /**
