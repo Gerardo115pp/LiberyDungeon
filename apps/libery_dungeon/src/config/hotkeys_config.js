@@ -15,7 +15,7 @@
         ITEM_RENAMING: ["c c"],
         ITEM_YANKING: ["y y"],
         ITEM_PASTING: ["p"],
-        REGISTER_CHANGE: ["` \\l"],
+        REGISTER_CHANGE: ["` \\c"],
         NAVIGATION_ITEM_GOTO_FINALIZER: ["g"],
     }
 
