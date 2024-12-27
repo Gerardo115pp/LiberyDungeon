@@ -633,6 +633,26 @@
         }
     }
 
+    
+    /*=============================================
+    =            Color highligthed text            =
+    =============================================*/
+    
+        .text-highlight--main {
+            color: var(--main);
+            font-weight: 600;
+        }
+
+        .text-highlight--main-dark {
+            color: var(--main-dark);
+            font-weight: bolder;
+        }
+
+    
+    /*=====  End of Color highligthed text  ======*/
+    
+    
+
     .highlight-text--CTA {
         font-family: var(--font-titles);
         font-size: var(--font-size-CTA-1);

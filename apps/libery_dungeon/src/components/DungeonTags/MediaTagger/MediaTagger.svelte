@@ -734,16 +734,23 @@
         /**
          * Returns an inline string with the contents of a registry.
          * @param {string} registry_name
+         * @param {boolean} [highlight]
          * @returns {string}
          */
-        const getRegisterInlineString = (registry_name) => {
+        const getRegisterInlineString = (registry_name, highlight=false) => {
             const registry_content = dungeon_tags_clipboard.readRegisterByName(registry_name);
 
             if (registry_content == null) {
                 return "Empty";
             }
 
-            let feedback_message = `<i>${registry_name}</i>: `;
+            let feedback_message;
+            
+            if (highlight) {
+                feedback_message = `<i class=text-highlight--main-dark>${registry_name}</i>: `;
+            } else {
+                feedback_message = `<i>${registry_name}</i>: `;
+            }
 
             let h = 0;
 
@@ -907,10 +914,12 @@
 
             if (all_registries_names.length === 0) return;
 
+            const current_registry_name = dungeon_tags_clipboard.getCurrentRegister();
+
             let feedback_message = `<b>${all_registries_names.length}</b> registries with:<br><br>`
 
             for (let registry_name of all_registries_names) {
-                const registry_inline_content = getRegisterInlineString(registry_name);
+                const registry_inline_content = getRegisterInlineString(registry_name, registry_name === current_registry_name);
 
                 feedback_message += `${registry_inline_content}<br>`;
             }
