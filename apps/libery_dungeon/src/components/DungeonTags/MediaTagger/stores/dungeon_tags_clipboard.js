@@ -130,6 +130,17 @@ import { DungeonTag } from '@models/DungeonTags';
 =            Methods            =
 =============================================*/
 
+
+
+    /**
+     * Changes the current register.
+     * @param {string} register_name
+     * @returns {void}
+     */
+    const changeCurrentRegister = (register_name) => {
+        current_register = register_name;
+    }
+
     /**
      * Returns the name of the current registry
      * @returns {string}
@@ -139,12 +150,25 @@ import { DungeonTag } from '@models/DungeonTags';
     }
 
     /**
-     * Changes the current register.
-     * @param {string} register_name
-     * @returns {void}
+     * Returns all the registries names in the dungeon tags clipboard.
+     * @return {string[]}
      */
-    const changeCurrentRegister = (register_name) => {
-        current_register = register_name;
+    const getAllRegistryNames = () => {
+        /**
+         * the names of all registries with content.
+         * @type {string[]}
+         */
+        const registries_with_content = [];
+
+        for (let registry_name of dungeon_tags_registries.keys()) {
+            const content = dungeon_tags_registries.get(registry_name);
+
+            if (content instanceof ClipboardContent) {
+                registries_with_content.push(registry_name);
+            }
+        }
+
+        return registries_with_content;
     }
 
     /**
@@ -216,8 +240,9 @@ import { DungeonTag } from '@models/DungeonTags';
      * All the public methods of the dungeon tag clipboard store.
      */
     const dungeon_tags_clipboard = {
-        getCurrentRegister,
         changeCurrentRegister,
+        getCurrentRegister,
+        getAllRegistryNames,
         readRegisterByName,
         readRegister,
         readClipboard,
