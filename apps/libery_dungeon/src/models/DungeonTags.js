@@ -8,6 +8,7 @@ import {
     GetClusterTagsRequest,
     GetClusterUserTagsRequest,
     GetTaxonomyTagsRequest,
+    PostTagEntitiesRequest,
     PostMultiTagEntity,
     PostMultiTagEntities,
     PostTagTaxonomyRequest,
@@ -647,6 +648,28 @@ export const stringifyDungeonTags = (dungeon_tags) => {
     }
 
     /**
+     * Applies a single tag to multiple entities. Returns whether all tags were applied successfully
+     * @param {string[]} entities_uuids
+     * @param {number} tag_id
+     * @param {string} entity_type
+     * @returns {Promise<boolean>}
+     */
+    export const tagEntities = async (entities_uuids, tag_id, entity_type) => {
+        /** @type {boolean} */
+        let success = false;
+
+        const request = new PostTagEntitiesRequest(tag_id, entity_type, entities_uuids);
+
+        const response = await request.do();
+
+        if (response.Ok) {
+            success = response.data.response;
+        }
+
+        return success;
+    }
+
+    /**
      * applies multiple tags to an entity. Returns whether all tags were applied successfully
      * @param {number[]} tags
      * @param {string} entity_uuid
@@ -796,6 +819,17 @@ export const tagCategory = async (category_uuid, tag_id) => {
  */
 export const tagMedia = async (media_uuid, tag_id) => {
     return tagEntity(media_uuid, tag_id, MEDIA_ENTITY_TYPE);
+}
+
+/**
+ * Tags multiple medias with a tag by the tag id. Returns whether it was successful or not.
+ * @param {import('@models/Medias').Media[]} medias
+ * @param {number} tag_id
+ * @returns {Promise<boolean>}
+ */
+export const tagMedias = async (medias, tag_id) => {
+    const medias_uuids = medias.map(media => media.uuid);
+    return tagEntities(medias_uuids, tag_id, MEDIA_ENTITY_TYPE);
 }
 
 /**
