@@ -117,6 +117,18 @@
              * @type {import('@libs/LiberyFeedback/lf_models').UIReference}
              */
             export let ui_tag_reference;
+
+            /**
+             * A function to send text as feedback to the user.
+             * @type {null | import('@libs/LiberyHotkeys/hotkeys').HotkeyCaptureCallback}
+             */
+            export let textMessage = null;
+
+            /**
+             * A function to clear a feedback message.
+             * @type {(() => void) | null}
+             */
+            export let clearMessage = null;
         
         const dispatch = createEventDispatcher();
     
@@ -574,6 +586,8 @@
                 ui_taxonomy_reference={ui_taxonomy_reference}
                 ui_tag_reference={ui_tag_reference}
                 enable_tag_creation
+                textMessage={textMessage}
+                clearMessage={clearMessage}
                 on:tag-selected
                 on:taxonomy-content-change
                 on:drop-hotkeys-control={handleRecoverHotkeysControl}

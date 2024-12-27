@@ -9,6 +9,7 @@ import { global_hotkey_action_triggers, global_hotkey_movement_triggers } from "
 export const taxonomy_tags_actions = {
     DROP_HOTKEY_CONTEXT: common_hotkey_actions.DROP_HOTKEY_CONTEXT,
     WASD_NAVIGATION: common_hotkey_actions.WASD_NAVIGATION,
+    SEARCH_DUNGEON_TAGS: Symbol("SEARCH_DUNGEON_TAGS"),
     FOCUS_TAG_CREATOR: Symbol("FOCUS_TAG_CREATOR"),
     RENAME_FOCUSED_TAG: Symbol("RENAME_FOCUSED_TAG"),
     SELECT_FOCUSED_TAG: Symbol("SELECT_FOCUSED_TAG"),
@@ -40,6 +41,17 @@ const generateTaxonomyTagsHotkeysContext = () => {
                 await_execution: false,
                 description: HOTKEY_NULL_DESCRIPTION,
             },
+        }
+    });
+
+    taxonomy_tags_hotkeys.registerHotkeyAction(taxonomy_tags_actions.SEARCH_DUNGEON_TAGS, {
+        overwrite_behavior: ComponentHotkeyContext.OVERRIDE_BEHAVIOR_IGNORE,
+        hotkey_register_params: {
+            hotkey_triggers: ["f"],
+            callback: HOTKEY_NULLISH_HANDLER,
+            options: {
+                description: HOTKEY_NULL_DESCRIPTION,
+            }
         }
     });
 

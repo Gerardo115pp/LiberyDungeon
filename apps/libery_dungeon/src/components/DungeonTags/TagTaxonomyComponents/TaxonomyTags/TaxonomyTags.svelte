@@ -203,6 +203,17 @@
              */
             export let ui_tag_reference;
         
+            /**
+             * A function to send text as feedback to the user.
+             * @type {null | import('@libs/LiberyHotkeys/hotkeys').HotkeyCaptureCallback}
+             */
+            export let textMessage = null;
+
+            /**
+             * A function to clear a feedback message.
+             * @type {(() => void) | null}
+             */
+            export let clearMessage = null;
 
         const dispatch = createEventDispatcher();
 
@@ -261,7 +272,6 @@
                         description: `${common_action_groups.NAVIGATION}Sets the focus to a previously selected ${ui_tag_reference.EntityName}`,
                     });
 
-                   
 
                     setGridNavigationWrapper(hotkeys_context);
 
@@ -496,6 +506,10 @@
                 if ((the_dungeon_tag_search_results_wrapper.SearchResults.length ?? 0) > 0) {
                     search_results_ids = new Set(the_dungeon_tag_search_results_wrapper.SearchResults.map(tag => tag.Id));
                 }
+
+                if (clearMessage != null) {
+                    clearMessage();
+                }
             }
 
             /**
@@ -505,7 +519,7 @@
             const handleSearchQueryUpdate = (event, captured_string) => {
                 if (!has_hotkey_control) return;
 
-                search_query.set(captured_string);
+                updateSearchQuery(captured_string);
             }
 
             /**
@@ -624,10 +638,19 @@
              * @param {import("@libs/LiberyHotkeys/hotkeys_context").default} hotkeys_context
              */
             const setSearchResultsWrapper = (hotkeys_context) => {
+
+                if (textMessage === null) {
+                    textMessage = handleSearchQueryUpdate
+                }
+
+                if (clearMessage === null) {
+                    clearMessage = () => updateSearchQuery("");
+                }
+
                 the_dungeon_tag_search_results_wrapper = new SearchResultsWrapper(hotkeys_context, taxonomy_tags.Tags, handleFocusSearchMatch, {
                     search_hotkey: ["f"],
                     ui_search_result_reference: ui_tag_reference,
-                    search_typing_hotkey_handler: handleSearchQueryUpdate,
+                    search_typing_hotkey_handler: textMessage,
                     minimum_similarity: 0.8,
                 });
             }
@@ -907,6 +930,16 @@
         const setTagRenamerState = state => {
             renaming_focused_tag = state;
         }
+
+        /**
+         * Updates the search query.
+         * @param {string} message
+         * @returns {void}
+         */
+        const updateSearchQuery = message => {
+            search_query.set(message);           
+        }
+
     
     /*=====  End of Methods  ======*/
     

@@ -271,7 +271,7 @@
                 });
 
                 hotkeys_context.register(["~ \\s"], handleChangeDungeonTagsRegistry, {
-                    description: `<registries>Apply the current registry ${ui_tag_reference.EntityNamePlural} to every ${ui_entity_reference.EntityName} loaded.`,
+                    description: `<registries>Changes the registry allowing to type a long name at the cost of having to hit ENTER(and having to type a longer name).`,
                     capture_hotkey_callback: captureHandler__registryLongName,
                 });
                
@@ -285,7 +285,6 @@
                 global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
                 component_hotkey_context.Active = true;
             }
-
             
             /*=============================================
             =            Capture callbacks            =
@@ -297,6 +296,19 @@
                  */ 
                 const captureHandler__registryLongName = (event, captured_string) => {
                     feedback_bottom_left_message = `registry name: ${captured_string}`;
+                }
+
+                /**
+                 * Handles capture progress for search queries of taxonomy tags components
+                 * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCaptureCallback}
+                 */
+                const captureHandler__taxonomyTagsSearchQuery = (event, captured_string) => {
+                    if (captured_string === "" && feedback_bottom_left_message !== "") {
+                        feedback_bottom_left_message = "";
+                        return;
+                    }
+
+                    feedback_bottom_left_message = `/${captured_string}`;
                 }
 
                 /**
@@ -597,21 +609,30 @@
                 const defineTaxonomyTagsHotkeysContext = () => {
                     const taxonomy_tags_context = generateTaxonomyTagsHotkeysContext();
 
-                    const alt_select_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_SELECT_FOCUSED_TAG);
+                    /* ----------------------------- SHARED ACTIONS ----------------------------- */
+                        
+                        /*----------  Alt select  ----------*/
+                        
+                            const alt_select_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_SELECT_FOCUSED_TAG);
 
-                    if (alt_select_focused_tag_action != null && alt_select_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
-                        alt_select_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Applies the focused ${ui_tag_reference.EntityName} to the current ${ui_entity_reference.EntityName}.`);
+                            if (alt_select_focused_tag_action != null && alt_select_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
+                                alt_select_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Applies the focused ${ui_tag_reference.EntityName} to the current ${ui_entity_reference.EntityName}.`);
 
-                        alt_select_focused_tag_action.Callback = handleApplyFocusedTagToMedia;
-                    }
+                                alt_select_focused_tag_action.Callback = handleApplyFocusedTagToMedia;
+                            }
+                        
+                        
+                        /*----------  Alt delete  ----------*/
 
-                    const alt_delete_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_DELETE_FOCUSED_TAG);
+                            const alt_delete_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_DELETE_FOCUSED_TAG);
 
-                    if (alt_delete_focused_tag_action != null && alt_delete_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
-                        alt_delete_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Removes the focused ${ui_tag_reference.EntityName} from the current ${ui_entity_reference.EntityName}.`);
+                            if (alt_delete_focused_tag_action != null && alt_delete_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
+                                alt_delete_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Removes the focused ${ui_tag_reference.EntityName} from the current ${ui_entity_reference.EntityName}.`);
 
-                        alt_delete_focused_tag_action.Callback = handleRemoveFocusedTagFromContent;
-                    }
+                                alt_delete_focused_tag_action.Callback = handleRemoveFocusedTagFromContent;
+                            }
+
+                    /* -------------------------------------------------------------------------- */
 
                     return taxonomy_tags_context;
                 }
@@ -1092,6 +1113,8 @@
                 ui_entity_reference={ui_entity_reference}
                 ui_taxonomy_reference={ui_taxonomy_reference}
                 ui_tag_reference={ui_tag_reference}
+                textMessage={captureHandler__taxonomyTagsSearchQuery}
+                clearMessage={clearFeedbackBottomLeft}
                 taxonomy_tags_hotkeys_context={taxonomy_tags_hotkeys_context}
                 component_hotkey_context={cluster_public_tags_hotkeys_context}
                 on:tag-selected={handleTagSelection}
