@@ -8,6 +8,8 @@ import {
     GetClusterTagsRequest,
     GetClusterUserTagsRequest,
     GetTaxonomyTagsRequest,
+    PostMultiTagEntity,
+    PostMultiTagEntities,
     PostTagTaxonomyRequest,
     PostDungeonTagRequest,
     PostTagEntityRequest,
@@ -645,6 +647,49 @@ export const stringifyDungeonTags = (dungeon_tags) => {
     }
 
     /**
+     * applies multiple tags to an entity. Returns whether all tags were applied successfully
+     * @param {number[]} tags
+     * @param {string} entity_uuid
+     * @param {string} entity_type
+     * @returns {Promise<boolean>}
+     */
+    export const multyTagEntity = async (tags, entity_uuid, entity_type) => {
+        /** @type {boolean} */
+        let success = false;
+
+        const request = new PostMultiTagEntity(entity_uuid, tags, entity_type);
+
+        const response = await request.do();
+
+        if (response.Ok) {
+            success = response.data.response;
+        }
+
+        return success;
+    }
+
+    /**
+     * applies multiple tags to multiple entites provided as a list of uuids. the entites must be of the same entity_type.
+     * @param {string[]} entites_uuids
+     * @param {number[]} tags
+     * @param {string} entity_type
+     */
+    export const multyTagEntities = async (entites_uuids, tags, entity_type) => {
+        /** @type {boolean} */
+        let success = false;
+
+        const request = new PostMultiTagEntities(entites_uuids, tags, entity_type);
+
+        const response = await request.do();
+
+        if (response.Ok) {
+            success = response.data.response;
+        }
+
+        return success;
+    }
+
+    /**
      * Deletes a tag taxonomy.
      * @param {string} taxonomy_uuid
      * @returns {Promise<boolean>}
@@ -793,6 +838,28 @@ export const untagCategoryContent = async (category_uuid, tag_id) => {
     }
 
     return success;
+}
+
+/**
+ * Tags a media with multiple tags.
+ * @param {import('@models/Medias').Media} media
+ * @param {number[]} tags
+ * @returns {Promise<boolean>}
+ */
+export const multiTagMedia  = async (media, tags) => {
+    return multyTagEntity(tags, media.uuid, MEDIA_ENTITY_TYPE);
+}
+
+/**
+ * Tags multiple medias with multiple tags.
+ * @param {import('@models/Medias').Media[]} medias
+ * @param {number[]} tags
+ * @returns {Promise<boolean>}
+ */
+export const multiTagMedias = async (medias, tags) => {
+    const media_uuids = medias.map(media => media.uuid);
+
+    return multyTagEntities(media_uuids, tags, MEDIA_ENTITY_TYPE);
 }
 
 /*=====  End of Known entities ======*/
