@@ -474,7 +474,7 @@ export class PostMultiTagEntities {
      * @returns {Promise<HttpResponse<import('../../base').BooleanResponse>>}
      */
     do = async () => {
-        const url = PostMultiTagEntity.endpoint;
+        const url = PostMultiTagEntities.endpoint;
 
         /**
          * @type {Response}
