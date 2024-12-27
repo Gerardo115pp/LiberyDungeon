@@ -18,6 +18,7 @@
         import { last_keyboard_focused_tag } from "./taxonomy_tags_store";
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
         import { writable } from "svelte/store";
+    import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
     /*=====  End of Imports  ======*/
 
     /*=============================================
@@ -75,6 +76,36 @@
                  * @type {number}
                  */
                 let focused_tag_index = 0;
+
+
+
+                
+                /*=============================================
+                =            Previously selected indexes            =
+                =============================================*/
+                    
+                    /**
+                     * The maximum amount of previously selected tag indexes that will be stored in the previous_selected_tag_indexes array.
+                     * @type {number}
+                     */
+                    const MAX_PREVIOUS_SELECTED_TAG_INDEXES = 20;
+
+                    /**
+                     * An array of previously selected tag indexes
+                     * @type {number[]}
+                     */
+                    const previous_selected_tag_indexes = [];
+
+                    /**
+                     * an iterator for the previously selected indexes array.
+                     * @type {number}
+                     */
+                    let previously_selected_indexes_iterator = 0; 
+                
+                /*=====  End of Previously selected indexes  ======*/
+                
+                
+
             
             /*=====  End of Hotkeys movement  ======*/
 
@@ -558,6 +589,59 @@
             }
 
         /*=====  End of Keybinds  ======*/
+
+        
+        /*=============================================
+        =            Previously selected indexes            =
+        =============================================*/
+        
+            /**
+             * Adds an index to the previously selected indexes array.
+             * @param {number} new_index
+             * @returns {void}
+             */
+            const addPreviousSelectedIndex = new_index => {
+                if (previous_selected_tag_indexes.length >= MAX_PREVIOUS_SELECTED_TAG_INDEXES) {
+                    previous_selected_tag_indexes.shift()
+                }
+
+                previous_selected_tag_indexes.push(new_index);
+            }
+
+            /**
+             * Returns a previously selected index or undefined if the previously_selected_indexes array is empty.
+             * @param {boolean} direction_forward
+             * @returns {number | undefined}
+             */
+            const getPreviouslySelectedIndex = (direction_forward) => {
+                if (previous_selected_tag_indexes.length === 0) {
+                    return undefined;
+                }
+
+                const max_iterator_value = previous_selected_tag_indexes.length;
+
+                const iterator_step = direction_forward ? 1 : -1;
+
+                const next_iterator_value = linearCycleNavigationWrap(previously_selected_indexes_iterator, max_iterator_value, iterator_step).value;
+
+                return max_iterator_value;
+            }
+
+            /**
+             * Sets the value of the previously selected index to the next available value.
+             * @returns {void}
+             */
+            const setNextAvailablePreviouslySelectedIndex = () => {
+                const next_iterator_value = getPreviouslySelectedIndex(true);
+
+                if (next_iterator_value == null) return;
+
+                previously_selected_indexes_iterator = next_iterator_value;
+            }
+        
+        /*=====  End of Previously selected indexes  ======*/
+        
+        
 
         /**
          * Drops the grid navigation wrapper if it exists.
