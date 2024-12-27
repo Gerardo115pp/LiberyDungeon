@@ -738,7 +738,7 @@ export class PostTagEntitiesRequest {
             throw error;
         }
 
-        if (response?.status === 201) {
+        if (response.ok) {
             tagged = await response.json();
         }
 
