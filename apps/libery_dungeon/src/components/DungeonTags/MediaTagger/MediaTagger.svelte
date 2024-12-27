@@ -2,7 +2,17 @@
     /*=============================================
     =            Imports            =
     =============================================*/
-        import { deleteTagTaxonomy, getEntityTaggings, getTaxonomyTagsByUUID, multiTagMedia, tagCategory, tagCategoryContent, tagMedia, untagCategoryContent, untagEntity } from "@models/DungeonTags";
+        import { 
+            deleteTagTaxonomy,
+            getEntityTaggings,
+            getTaxonomyTagsByUUID,
+            multiTagEntities,
+            multiTagMedia,
+            multiTagMedias,
+            tagMedia,
+            tagMedias,
+            untagEntity
+        } from "@models/DungeonTags";
         import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
         import { createEventDispatcher, onDestroy, onMount } from "svelte";
         import { current_cluster } from "@stores/clusters";
@@ -23,7 +33,8 @@
         import { cluster_public_tags_actions } from "../TagTaxonomyComponents/cluster_public_tags_hotkeys";
         import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
         import dungeon_tags_clipboard from "./stores/dungeon_tags_clipboard";
-    import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+        import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+    import { last_keyboard_focused_tag } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_store";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -117,7 +128,7 @@
              * A method that returns a list of taggable medias.
              * @type {() => import('@models/Medias').Media[]}
              */ 
-            export let getTaggbleMedias;
+            export let getTaggableMedias;
 
         /*----------  Hotkey state  ----------*/
         
@@ -243,7 +254,9 @@
                     description: `<registries>Clears all the registries.`,
                 });
 
-                
+                hotkeys_context.register(["y a"], handlePasteDungeonTagsInAllContent, {
+                    description: `<registries>Apply the current registry ${ui_tag_reference.EntityNamePlural} to every ${ui_entity_reference.EntityName} loaded.`,
+                });
                
 
                 component_hotkey_context.applyExtraHotkeys();
@@ -354,6 +367,61 @@
                 if (must_refresh_tags) {
                     await refreshActiveMediaTaggings(the_active_media);
                 }
+            }
+
+            /**
+             * Pastes the dungeon tags in a registry into all of the taggable medias. Doesn't filter out repeated medias. this job can be done much faster by the server.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handlePasteDungeonTagsInAllContent = async (event, hotkey) => {
+                if (getTaggableMedias == null) {
+                    console.error("In MediaTagger.handlePasteDungeonTagsInAllContent: getTaggableMedias was null. Cannot determine the media list that should get the dungeon tag applied to with out this")
+                }
+
+                const all_taggable_medias = getTaggableMedias();
+
+                if (all_taggable_medias.length === 0) return;
+
+                let registry_content = dungeon_tags_clipboard.readRegister();
+
+                if (registry_content == null) {
+                    registry_content = await dungeon_tags_clipboard.readClipboard();
+
+                    if (registry_content === null) {
+                        emitPlatformMessage(`No ${ui_taxonomy_reference.EntityName} ${ui_tag_reference.EntityNamePlural} found in registry or the clipboard.`);
+                        return;
+                    }
+                }
+
+                const tag_ids = convertDungeonTagsToIDList(registry_content.Content.DungeonTags);
+
+                if (tag_ids.length === 0) return;
+
+                const registry_report = getRegisterReportString(dungeon_tags_clipboard.getCurrentRegister());
+
+                let question_message = `Do you wanna apply all ${tag_ids.length} ${ui_tag_reference.EntityNamePlural} to ${all_taggable_medias.length} ${ui_entity_reference.EntityNamePlural}?<br>registry details, ${registry_report}`;
+
+                const user_confirmation = await confirmPlatformMessage({
+                    message_title: "Apply tags to all medias?",
+                    question_message: question_message,
+                    auto_focus_cancel: true,
+                    cancel_label: "do nothing",
+                    confirm_label: "apply to all",
+                    danger_level: 2
+                });
+
+                if (user_confirmation !== 1) return;
+
+                let successful = await multiTagMedias(all_taggable_medias, tag_ids);
+
+                if (!successful) {
+                    let labeled_err = new LabeledError(`In MediaTagger.handlePasteDungeonTagsInAllContent`, `Failed to apply ${tag_ids.length} tags to all ${ui_entity_reference.EntityNamePlural}.`, lf_errors.ERR_PROCESSING_ERROR);
+
+                    labeled_err.alert();
+                    return;
+                }
+
+                await refreshActiveMediaTaggings(the_active_media);
             }
 
             /**
@@ -523,6 +591,37 @@
                     if (getEntityTaggings == null) {
                         console.error("In MediaTagger.handleApplyFocusedTagToMedia: getEntityTaggings was null. Cannot determine the media list that should get the dungeon tag applied to with out this")
                     }
+
+                    const focused_tag = $last_keyboard_focused_tag;
+
+                    if (focused_tag == null) {
+                        console.error("In MediaTagger.handleApplyFocusedTagToMedia: focused_tag was null. Cannot apply a tag to a media without a tag.")
+                        return;
+                    }
+
+                    const all_taggable_medias = getTaggableMedias();
+
+                    const user_choice = await confirmPlatformMessage({
+                        message_title: "Apply tag to all medias?",
+                        question_message: `Do you want to apply the tag '${focused_tag.Name}' to all loaded ${ui_entity_reference.EntityNamePlural}(${all_taggable_medias.length})?`,
+                        auto_focus_cancel: true,
+                        cancel_label: "do nothing",
+                        confirm_label: "apply to all",
+                        danger_level: 0
+                    });
+
+                    if (user_choice !== 1) return;
+
+                    const successful = await tagMedias(all_taggable_medias, focused_tag.Id);
+
+                    if (!successful) {
+                        let labeled_err = new LabeledError(`In MediaTagger.handleApplyFocusedTagToMedia`, `Failed to apply ${focused_tag.Name} to all ${ui_entity_reference.EntityNamePlural}.`, lf_errors.ERR_PROCESSING_ERROR);
+
+                        labeled_err.alert();
+                        return;
+                    }
+                    
+                    await refreshActiveMediaTaggings(the_active_media);
                 }
 
                 /**
@@ -587,6 +686,37 @@
             if (new_active_media === null) return;
 
             await refreshActiveMediaTaggings(new_active_media);
+        }
+
+        /**
+         * Returns the dungeon_tags_clipboard registry report string for a give registry name.
+         * @param {string} registry_name
+         * @return {string | null}
+         */
+        const getRegisterReportString = (registry_name) => {
+            const registry_content = dungeon_tags_clipboard.readRegisterByName(registry_name);
+
+            if (registry_content == null) {
+                return null;
+            }
+
+            let feedback_message = `${registry_content.Content.DungeonTags.length} ${ui_taxonomy_reference.EntityName} ${ui_tag_reference.EntityNamePlural}:<br><br>`;
+
+            let h = 0;
+
+            for (let tag of registry_content.Content.DungeonTags) {
+                feedback_message += `<b>${tag.Name}</b>`
+
+                if (h === registry_content.Content.DungeonTags.length - 1) {
+                    feedback_message += ".";
+                } else {
+                    feedback_message += ", ";
+                }
+
+                h++;
+            }
+
+            return feedback_message;
         }
 
         /**
@@ -710,28 +840,17 @@
          * @return {void}
          */
         const printCurrentDTClipboardRegistry = () => {
-            const registry_content = dungeon_tags_clipboard.readRegister();
+            let current_registry_name = dungeon_tags_clipboard.getCurrentRegister();
 
-            if (registry_content == null) {
-                emitPlatformMessage("Registry clean.");
-                return;
+            const registry_content_reports = getRegisterReportString(current_registry_name);
+
+
+            let feedback_message = `Registry <b>${current_registry_name}</b> is empty.`;
+
+            if (registry_content_reports != null) {
+                feedback_message = `Registry '<b>${current_registry_name}</b>' with ${registry_content_reports}`;
             }
 
-            let feedback_message = `Registry '${dungeon_tags_clipboard.getCurrentRegister()}' with ${registry_content.Content.DungeonTags.length} tags: `;
-
-            let h = 0;
-
-            for (let tag of registry_content.Content.DungeonTags) {
-                feedback_message += tag.Name
-
-                if (h === registry_content.Content.DungeonTags.length - 1) {
-                    feedback_message += ".";
-                } else {
-                    feedback_message += ", ";
-                }
-
-                h++;
-            }
 
             emitPlatformMessage(feedback_message);
         }
