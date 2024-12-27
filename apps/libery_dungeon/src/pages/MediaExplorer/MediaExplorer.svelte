@@ -55,6 +55,7 @@
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
         import ExplorerBillboard from "./sub-components/ExplorerBillboard/ExplorerBillboard.svelte";
         import CategoryConfiguration from "@components/Categories/CategoryFolder/sub-components/CategoryConfiguration.svelte";
+        import state_cleaners from "@stores/store_cleaners";
 
     /*=====  End of Imports  ======*/
   
@@ -440,6 +441,9 @@
                 if ($current_category?.parent != "") {
                     return navigateToSelectedCategory($current_category.parent);
                 }
+
+                // Navigatin to parent category.                
+                state_cleaners.resetDungeonState();
 
                 goto("/");
             }
