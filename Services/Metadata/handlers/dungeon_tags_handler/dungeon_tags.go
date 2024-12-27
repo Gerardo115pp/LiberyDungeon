@@ -70,6 +70,8 @@ func postDungeonTagsHandler(response http.ResponseWriter, request *http.Request)
 
 	case "/dungeon-tags/tag-entity":
 		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsTag(postDungeonTagEntityHandler)
+	case "/dungeon-tags/tag-entities":
+		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsTag(postDungeonTagEntitiesHandler)
 	case "/dungeon-tags/multi-tag-entity":
 		handler_func = dungeon_middlewares.CheckUserCan_DungeonTagsTag(postDungeonMultiTagEntityHandler)
 	case "/dungeon-tags/multi-tag-entities":
@@ -108,6 +110,32 @@ func postDungeonTagEntityHandler(response http.ResponseWriter, request *http.Req
 	}
 
 	dungeon_helpers.WriteSingleIntResponseWithStatus(response, int(tagging_id), 201)
+}
+
+func postDungeonTagEntitiesHandler(response http.ResponseWriter, request *http.Request) {
+	var request_body *metadata_requests.TagEntitiesRequest = new(metadata_requests.TagEntitiesRequest)
+
+	err := json.NewDecoder(request.Body).Decode(request_body)
+	if err != nil {
+		echo.Echo(echo.RedFG, "In handlers/dungeon_tags.postDungeonTagEntitiesHandler: While decoding request body: %s", err)
+		dungeon_helpers.WriteRejection(response, 400, "Invalid request body")
+		return
+	}
+
+	if request_body.DungeonTagID == 0 || request_body.EntityType == "" || len(request_body.EntitiesUUIDs) == 0 {
+		echo.Echo(echo.RedFG, "In handlers/dungeon_tags.postDungeonTagEntitiesHandler: Invalid request body\n")
+		dungeon_helpers.WriteRejection(response, 400, "Invalid request body")
+		return
+	}
+
+	err = repository.DungeonTagsRepo.TagEntitiesCTX(request.Context(), request_body.DungeonTagID, request_body.EntitiesUUIDs, request_body.EntityType)
+	if err != nil {
+		echo.Echo(echo.RedFG, "In handlers/dungeon_tags.postDungeonTagEntitiesHandler: While tagging entities: %s", err)
+		dungeon_helpers.WriteRejection(response, 500, "")
+		return
+	}
+
+	dungeon_helpers.WriteBooleanResponse(response, true)
 }
 
 func postDungeonMultiTagEntityHandler(response http.ResponseWriter, request *http.Request) {

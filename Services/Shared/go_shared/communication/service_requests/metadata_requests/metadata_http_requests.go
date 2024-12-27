@@ -11,3 +11,9 @@ type MultiTagEntityRequest struct {
 	EntityUUID  string `json:"entity_uuid"`
 	EntityType  string `json:"entity_type"`
 }
+
+type TagEntitiesRequest struct {
+	DungeonTagID  int      `json:"tag_id"`
+	EntityType    string   `json:"entity_type"`
+	EntitiesUUIDs []string `json:"entities_uuids"`
+}
