@@ -392,6 +392,124 @@ export class GetTaxonomyTagsRequest {
 }
 
 /**
+ * Tags a given entity with a list of tags provided as a list of tag ids(number[])
+ */
+export class PostMultiTagEntity {
+
+    static endpoint = `${metadata_server}/dungeon-tags/multi-tag-entity`;
+
+    /**
+     * @param {string} entity_uuid
+     * @param {number[]} dungeon_tags
+     * @param {string} entity_type
+     */
+    constructor(entity_uuid, dungeon_tags, entity_type) {
+        this.entity_uuid = entity_uuid;
+        this.dungeon_tags = dungeon_tags;
+        this.entity_type = entity_type;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import('../../base').BooleanResponse>>}
+     */
+    do = async () => {
+        const url = PostMultiTagEntity.endpoint;
+
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        /**
+         * @type {import('../../base').BooleanResponse}
+         */
+        let tagged = { response: false };
+
+        try {
+            response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: this.toJson()
+            });
+
+        } catch (error) {
+            console.error("Error tagging entity: ", error);
+
+            throw error;
+        }
+
+        if (response.ok) {
+            tagged = await response.json();
+        }
+
+        return new HttpResponse(response, tagged);
+    }
+}
+
+/**
+ * Tags a given list of entities of the same type, with a list of tags provided as a list of tag ids(number[])
+ */
+export class PostMultiTagEntities {
+
+    static endpoint = `${metadata_server}/dungeon-tags/multi-tag-entities`;
+
+    /**
+     * @param {string[]} entity_uuids
+     * @param {number[]} dungeon_tags
+     * @param {string} entity_type
+     */
+    constructor(entity_uuids, dungeon_tags, entity_type) {
+        this.entity_uuids = entity_uuids;
+        this.dungeon_tags = dungeon_tags;
+        this.entity_type = entity_type;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import('../../base').BooleanResponse>>}
+     */
+    do = async () => {
+        const url = PostMultiTagEntity.endpoint;
+
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        /**
+         * @type {import('../../base').BooleanResponse}
+         */
+        let tagged = { response: false };
+
+        try {
+            response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: this.toJson()
+            });
+
+        } catch (error) {
+            console.error("Error tagging entity: ", error);
+
+            throw error;
+        }
+
+        if (response.ok) {
+            tagged = await response.json();
+        }
+
+        return new HttpResponse(response, tagged);
+    }
+}
+
+/**
  * Creates a TagTaxonomy.
  */
 export class PostTagTaxonomyRequest {
