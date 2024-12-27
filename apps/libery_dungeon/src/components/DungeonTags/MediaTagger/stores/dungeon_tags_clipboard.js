@@ -156,6 +156,15 @@ import { DungeonTag } from '@models/DungeonTags';
     }
 
     /**
+     * Returns the contents of a register by name
+     * @param {string} register_name
+     * @returns {ClipboardContent<DungeonTagList> | null}
+     */
+    const readRegisterByName = (register_name) => {
+        return dungeon_tags_registries.get(register_name) || null;
+    }
+
+    /**
      * Attempts to read the content from the clipboard. If it can parse a ClipboardContent<DungeonTagList>, it will return it. otherwise it will return null.
      * @returns {Promise<ClipboardContent<DungeonTagList> | null>}
      */
@@ -209,6 +218,7 @@ import { DungeonTag } from '@models/DungeonTags';
     const dungeon_tags_clipboard = {
         getCurrentRegister,
         changeCurrentRegister,
+        readRegisterByName,
         readRegister,
         readClipboard,
         resetMediaTaggerDungeonTagsClipboard,

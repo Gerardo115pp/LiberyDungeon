@@ -653,7 +653,7 @@ export const stringifyDungeonTags = (dungeon_tags) => {
      * @param {string} entity_type
      * @returns {Promise<boolean>}
      */
-    export const multyTagEntity = async (tags, entity_uuid, entity_type) => {
+    export const multiTagEntity = async (tags, entity_uuid, entity_type) => {
         /** @type {boolean} */
         let success = false;
 
@@ -674,7 +674,7 @@ export const stringifyDungeonTags = (dungeon_tags) => {
      * @param {number[]} tags
      * @param {string} entity_type
      */
-    export const multyTagEntities = async (entites_uuids, tags, entity_type) => {
+    export const multiTagEntities = async (entites_uuids, tags, entity_type) => {
         /** @type {boolean} */
         let success = false;
 
@@ -847,7 +847,7 @@ export const untagCategoryContent = async (category_uuid, tag_id) => {
  * @returns {Promise<boolean>}
  */
 export const multiTagMedia  = async (media, tags) => {
-    return multyTagEntity(tags, media.uuid, MEDIA_ENTITY_TYPE);
+    return multiTagEntity(tags, media.uuid, MEDIA_ENTITY_TYPE);
 }
 
 /**
@@ -859,7 +859,7 @@ export const multiTagMedia  = async (media, tags) => {
 export const multiTagMedias = async (medias, tags) => {
     const media_uuids = medias.map(media => media.uuid);
 
-    return multyTagEntities(media_uuids, tags, MEDIA_ENTITY_TYPE);
+    return multiTagEntities(media_uuids, tags, MEDIA_ENTITY_TYPE);
 }
 
 /*=====  End of Known entities ======*/
