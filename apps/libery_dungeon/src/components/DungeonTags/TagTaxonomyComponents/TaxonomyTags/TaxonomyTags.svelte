@@ -456,9 +456,15 @@
             const handleBackwardPreviouslySelectedIndex = () => {
                 if (the_grid_navigation_wrapper === null) return;
 
-                const previous_index = getPreviouslySelectedIndex();
+                let previous_index = getPreviouslySelectedIndex();
 
                 if (previous_index === undefined) return;
+
+                if (previous_index === focused_tag_index) {
+                    let new_previous_index = changePreviouslySelectedIndex(false);
+
+                    previous_index = new_previous_index != null ? new_previous_index : previous_index;
+                }
 
                 the_grid_navigation_wrapper.updateCursorPosition(previous_index);
 
@@ -667,6 +673,20 @@
              * @returns {void}
              */
             const addPreviousSelectedIndex = new_index => {
+                let index_repeated = false;
+
+                for (let h=0; h<previous_selected_tag_indexes.length; h++) {
+                    if (new_index === previous_selected_tag_indexes[h]) {
+                        index_repeated = true;
+                        break
+                    }
+                }
+
+                if (index_repeated) {
+                    resetPreviouslySelectedIndexesIterator();
+                    return;
+                }
+
                 if (previous_selected_tag_indexes.length >= MAX_PREVIOUS_SELECTED_TAG_INDEXES) {
                     previous_selected_tag_indexes.shift()
                 }
@@ -687,13 +707,39 @@
                     return undefined;
                 }
 
+                const current_index = focused_tag_index;
+
                 const next_iterator_value = getNextPreviouslySelectedIndexIterator(direction_forward);
 
                 if (next_iterator_value === undefined) return undefined;
 
                 previously_selected_indexes_iterator = next_iterator_value;
 
-                return getPreviouslySelectedIndex();
+
+
+                let previous_index = getPreviouslySelectedIndex();
+
+                let infinite_loop_detector = 0;
+
+                while (previous_index === current_index && previous_selected_tag_indexes.length > 1) {
+                    infinite_loop_detector++ 
+
+                    if (infinite_loop_detector > (2.5 * MAX_PREVIOUS_SELECTED_TAG_INDEXES)) {
+                        throw new Error(`In TaxonomyTags.changePreviouslySelectedIndex: Infinite loop detected, failed to find a different index from the current one.`);
+                    }
+
+                    const next_iterator_value = getNextPreviouslySelectedIndexIterator(direction_forward);
+
+                    if (next_iterator_value === undefined) {
+                        return previous_index;
+                    };
+
+                    previously_selected_indexes_iterator = next_iterator_value;
+
+                    previous_index = getPreviouslySelectedIndex();
+                }
+
+                return previous_index;
             }
             
             /**
