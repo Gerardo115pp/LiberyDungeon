@@ -104,10 +104,14 @@
         z-index: var(--z-index-t-7);
     }
 
-    h3#lffed-message {
+    :global(dialog#libery-feedback-floating-message-dialog h3#lffed-message) {
         font-family: var(--font-read);
         font-size: var(--font-size-2);
         color: var(--grey-1);
         text-align: center;
+
+        & b {
+            color: var(--main);
+        }
     }
 </style>

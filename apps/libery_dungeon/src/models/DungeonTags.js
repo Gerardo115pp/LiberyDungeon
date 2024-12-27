@@ -829,6 +829,7 @@ export const tagMedia = async (media_uuid, tag_id) => {
  */
 export const tagMedias = async (medias, tag_id) => {
     const medias_uuids = medias.map(media => media.uuid);
+    
     return tagEntities(medias_uuids, tag_id, MEDIA_ENTITY_TYPE);
 }
 
