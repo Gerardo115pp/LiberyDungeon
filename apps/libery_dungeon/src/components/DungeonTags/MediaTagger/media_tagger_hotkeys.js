@@ -18,12 +18,15 @@ export const media_tagger_tool_context_name = "media-tagger-tool";
 export const media_tagger_actions = {
     WS_NAVIGATION: common_hotkey_actions.UP_DOWN_NAVIGATION,
     AD_NAVIGATION: common_hotkey_actions.LEFT_RIGHT_NAVIGATION,
+    COPY_CURRENT_MEDIA_TAGS: Symbol("COPY_CURRENT_MEDIA_TAGS"),
+    CHANGE_COPY_REGISTRY: Symbol("CHANGE_COPY_REGISTRY"),
+    PASTE_DUNGEON_TAGS: Symbol("PASTE_DUNGEON_TAGS"),
 }
 
 /**
  * The child hotkey context of the media tagger component.
  */
-export const media_tagger_child_contexts = {
+export const media_tagger_child_contexts = { 
     TAG_TAXONOMY_CREATOR: tag_taxonomy_creator_context_name,
     MEDIA_TAGGINGS: media_taggings_hotkey_context_name,
     CLUSTER_PUBLIC_TAGS: cluster_public_tags_context_name,
@@ -56,6 +59,39 @@ const generateMediaTaggerHotkeyContext = () => {
                 description: HOTKEY_NULL_DESCRIPTION,
             }
 
+        }
+    });
+
+    media_tagger_hotkeys.registerHotkeyAction(media_tagger_actions.COPY_CURRENT_MEDIA_TAGS, {
+        overwrite_behavior: ComponentHotkeyContext.OVERRIDE_BEHAVIOR_IGNORE,
+        hotkey_register_params: {
+            hotkey_triggers: global_hotkey_action_triggers.ITEM_YANKING,
+            callback: HOTKEY_NULLISH_HANDLER,
+            options: {
+                description: HOTKEY_NULL_DESCRIPTION
+            }
+        }
+    });
+
+    media_tagger_hotkeys.registerHotkeyAction(media_tagger_actions.CHANGE_COPY_REGISTRY, {
+        overwrite_behavior: ComponentHotkeyContext.OVERRIDE_BEHAVIOR_IGNORE,
+        hotkey_register_params: {
+            hotkey_triggers: global_hotkey_action_triggers.REGISTER_CHANGE,
+            callback: HOTKEY_NULLISH_HANDLER,
+            options: {
+                description: HOTKEY_NULL_DESCRIPTION,
+            }
+        }
+    });
+
+    media_tagger_hotkeys.registerHotkeyAction(media_tagger_actions.PASTE_DUNGEON_TAGS, {
+        overwrite_behavior: ComponentHotkeyContext.OVERRIDE_BEHAVIOR_IGNORE,
+        hotkey_register_params: {
+            hotkey_triggers: global_hotkey_action_triggers.ITEM_PASTING,
+            callback: HOTKEY_NULLISH_HANDLER,
+            options: {
+                description: HOTKEY_NULL_DESCRIPTION
+            }
         }
     });
 
