@@ -2,7 +2,7 @@
     /*=============================================
     =            Imports            =
     =============================================*/
-        import { deleteTagTaxonomy, getEntityTaggings, getTaxonomyTagsByUUID, tagCategory, tagCategoryContent, tagMedia, untagCategoryContent, untagEntity } from "@models/DungeonTags";
+        import { deleteTagTaxonomy, getEntityTaggings, getTaxonomyTagsByUUID, multiTagMedia, tagCategory, tagCategoryContent, tagMedia, untagCategoryContent, untagEntity } from "@models/DungeonTags";
         import { cluster_tags, last_cluster_domain, refreshClusterTagsNoCheck } from "@stores/dungeons_tags";
         import { createEventDispatcher, onDestroy, onMount } from "svelte";
         import { current_cluster } from "@stores/clusters";
@@ -11,19 +11,19 @@
         import ClusterPublicTags from "../TagTaxonomyComponents/ClusterPublicTags.svelte";
         import TagTaxonomyCreator from "../TagTaxonomyComponents/TagTaxonomyCreator.svelte";
         import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
-        import HotkeysContext, { ComponentHotkeyContext } from "@libs/LiberyHotkeys/hotkeys_context";
+        import { ComponentHotkeyContext } from "@libs/LiberyHotkeys/hotkeys_context";
         import generateTaxonomyTagsHotkeysContext, { taxonomy_tags_actions } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_hotkeys";
-        import { last_keyboard_focused_tag } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_store";
         import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { wrapShowHotkeysTable } from "@app/common/keybinds/CommonActionWrappers";
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
-        import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
         import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
         import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
         import MediaTaggings from "./sub-components/MediaTaggings.svelte";
         import generateMediaTaggerHotkeyContext, { media_tagger_actions, media_tagger_child_contexts } from "./media_tagger_hotkeys";
         import { cluster_public_tags_actions } from "../TagTaxonomyComponents/cluster_public_tags_hotkeys";
         import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+        import dungeon_tags_clipboard from "./stores/dungeon_tags_clipboard";
+    import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -110,6 +110,44 @@
          */
         let the_media_tagger_tool = null;
         
+        
+        /*----------  Entities getters  ----------*/
+        
+            /**
+             * A method that returns a list of taggable medias.
+             * @type {() => import('@models/Medias').Media[]}
+             */ 
+            export let getTaggbleMedias;
+
+        /*----------  Hotkey state  ----------*/
+        
+            /**
+             * The focused section indicator.
+             * @type {number}
+             */ 
+            let mt_focused_section = 0;
+
+            /**
+             * Sub-component sections.
+             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext[]}
+             */
+            const sub_component_sections = [
+                tag_taxonomy_creator_hotkeys_context,
+                media_taggings_hotkeys_context,
+                cluster_public_tags_hotkeys_context
+            ];       
+       
+        /*----------  Style  ----------*/
+        
+            /**
+             * A number between 0 and 1 that is used for the alpha channel of the tool's background color.
+             * @type {number}
+             * @default 1
+             */
+            export let background_alpha = 1;
+                
+
+
         /*----------  UI references  ----------*/
         
             /**
@@ -130,33 +168,8 @@
              */
             const ui_tag_reference = ui_pandasworld_tag_references.TAG;
         
-        
-        /*----------  Style  ----------*/
-        
-            /**
-             * A number between 0 and 1 that is used for the alpha channel of the tool's background color.
-             * @type {number}
-             * @default 1
-             */
-            export let background_alpha = 1;
-                
-        /*----------  Hotkey state  ----------*/
-        
-            /**
-             * The focused section indicator.
-             * @type {number}
-             */ 
-            let mt_focused_section = 0;
-
-            /**
-             * Sub-component sections.
-             * @type {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext[]}
-             */
-            const sub_component_sections = [
-                tag_taxonomy_creator_hotkeys_context,
-                media_taggings_hotkeys_context,
-                cluster_public_tags_hotkeys_context
-            ];
+ 
+        /* ----------------------------------- */
 
         let current_cluster_unsubscriber = () => {};
 
@@ -222,6 +235,17 @@
                     await_execution: false
                 });
 
+                hotkeys_context.register(["y i"], handleShowRegistryInformation, {
+                    description: `<registries>Shows the current registry information.`,
+                });
+
+                hotkeys_context.register(["y n"], handleClearAllRegistries, {
+                    description: `<registries>Clears all the registries.`,
+                });
+
+                
+               
+
                 component_hotkey_context.applyExtraHotkeys();
 
                 wrapShowHotkeysTable(hotkeys_context);
@@ -249,12 +273,124 @@
                     }
 
                     up_down_navigation.Callback = handleSectionFocusNavigation
-                
+
+                /* --------------------------- Dungeon tags coping -------------------------- */
+                    
+                    const dungeon_tags_copy = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.COPY_CURRENT_MEDIA_TAGS);
+
+                    dungeon_tags_copy.Options = {
+                        description: `<registries>Copies the ${ui_taxonomy_reference.EntityNamePlural} ${ui_tag_reference.EntityNamePlural} of the current ${ui_core_dungeon_references.MEDIA.EntityName}`,
+                    }
+
+                    dungeon_tags_copy.Callback = handleCopyDungeonTags;
+
+                /* -------------------------- Dungeon tags pasting -------------------------- */
+
+                    const dungeon_tags_paste_action = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.PASTE_DUNGEON_TAGS);
+
+                    dungeon_tags_paste_action.Options = {
+                        description: `<registries>Pastes the ${ui_taxonomy_reference.EntityNamePlural} ${ui_tag_reference.EntityNamePlural} in the current registry to the current ${ui_core_dungeon_references.MEDIA.EntityName}`,
+                    }
+
+                    dungeon_tags_paste_action.Callback = handlePasteDungeonTags;
+
+                /* ----------------------------- Registry change ---------------------------- */
+
+                    const change_registry_action = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.CHANGE_COPY_REGISTRY);
+
+                    change_registry_action.Options = {
+                        description: `<registries>Changes registry where the ${ui_taxonomy_reference.EntityNamePlural} ${ui_tag_reference.EntityNamePlural} are been copied from and to.`,
+                    }
+
+                    change_registry_action.Callback = handleChangeDungeonTagsRegistry;
+
                 /* -------------------------------------------------------------------------- */
 
                 const hotkey_context = new_component_hotkey_context.generateHotkeysContext();
 
                 return hotkey_context;
+            }
+
+            /**
+             * Handles coping the current media dungeon tags.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleCopyDungeonTags = async (event, hotkey) => {
+                const media_tags = current_media_taggings.map(tagging => tagging.Tag);
+
+                dungeon_tags_clipboard.writeOnCurrentRegister(media_tags);
+
+                const content = dungeon_tags_clipboard.readRegister();
+
+                if (content != null) {
+                    try {
+                        await content.copy();
+                    } catch (error) {
+                        console.error("Failed to copy the tags to the clipboard.", error);
+                    } 
+                }
+            }
+
+            /**
+             * Applies all the tags in the dungeon tag registry to the current active media. First filters out the tags that the current media doesn't have.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handlePasteDungeonTags = async (event, hotkey) => {
+                let registry_content = dungeon_tags_clipboard.readRegister();
+
+                if (registry_content == null) {
+                    registry_content = await dungeon_tags_clipboard.readClipboard();
+
+                    if (registry_content === null) {
+                        emitPlatformMessage(`No ${ui_taxonomy_reference.EntityName} ${ui_tag_reference.EntityNamePlural} found in registry or the clipboard.`);
+                        return;
+                    }
+                };
+
+                const non_applied_tags = filterDuplicatedDungeonTags(registry_content.Content.DungeonTags);
+
+                let must_refresh_tags = await multiTagMedia(the_active_media, convertDungeonTagsToIDList(non_applied_tags));
+
+                if (must_refresh_tags) {
+                    await refreshActiveMediaTaggings(the_active_media);
+                }
+            }
+
+            /**
+             * Handles the change of the current registry
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleChangeDungeonTagsRegistry = (event, hotkey) => {
+                const new_registry_name = event.key;
+
+                dungeon_tags_clipboard.changeCurrentRegister(new_registry_name);
+
+                const new_registry_content = dungeon_tags_clipboard.readRegister();
+
+                if (!new_registry_content) {
+                    emitPlatformMessage(`Changed to clean registry: '${new_registry_name}'`);
+                    return;
+                }
+
+                printCurrentDTClipboardRegistry();
+            }
+
+            /**
+             * Shows the registry information.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleShowRegistryInformation = (event, hotkey) => {
+                printCurrentDTClipboardRegistry();
+            }
+
+            /**
+             * Clears all the registries.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleClearAllRegistries = (event, hotkey) => {
+                dungeon_tags_clipboard.resetMediaTaggerDungeonTagsClipboard();
+                emitPlatformMessage("All registries cleared.");
+            
             }
 
             /**
@@ -384,8 +520,9 @@
                  * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
                  */
                 const handleApplyFocusedTagToMedia = async (event, hotkey) => {
-                    // REFACTOR: Decide whether to remove the alt select from the medias tagger or what effect it should have in this context. Maybe apply to all it's siblings medias?
-                    console.warn("Applying focused tag to media is not implemented.");
+                    if (getEntityTaggings == null) {
+                        console.error("In MediaTagger.handleApplyFocusedTagToMedia: getEntityTaggings was null. Cannot determine the media list that should get the dungeon tag applied to with out this")
+                    }
                 }
 
                 /**
@@ -400,10 +537,41 @@
         /*=====  End of Keybinds  ======*/
         
         /**
+         * Converts a list of dungeon tags to a list of tag ids.
+         * @param {import('@models/DungeonTags').DungeonTag[]} dungeon_tags
+         * @returns {number[]}
+         */
+        const convertDungeonTagsToIDList = dungeon_tags => {
+            return dungeon_tags.map(tag => tag.Id);
+        }
+
+        /**
          * Emits an event to the parent to close the medias tagger tool.
          */
         const emitCloseMediasTagger = () => {
             dispatch("close-medias-tagger");
+        }
+
+        /**
+         * Filters out a given DungeonTag list by removing tags that are present in current_media_taggings.
+         * @param {import('@models/DungeonTags').DungeonTag[]} new_tags
+         * @returns {import('@models/DungeonTags').DungeonTag[]}
+         */
+        const filterDuplicatedDungeonTags = new_tags => {
+            const current_media_tags = new Set(current_media_taggings.map(tagging => tagging.Tag.Id));
+
+            /**
+             * @type {import('@models/DungeonTags').DungeonTag[]}
+             */
+            const non_applied_tags = [];
+
+            for (let new_tag of new_tags) {
+                if (!current_media_tags.has(new_tag.Id)) {
+                    non_applied_tags.push(new_tag)
+                }
+            }
+
+            return non_applied_tags;
         }
 
         /**
@@ -535,6 +703,37 @@
             }
 
             await refreshActiveMediaTaggings(the_active_media);
+        }
+
+        /**
+         * Prints the current dungeon_tags_clipboard registry as a platform message.
+         * @return {void}
+         */
+        const printCurrentDTClipboardRegistry = () => {
+            const registry_content = dungeon_tags_clipboard.readRegister();
+
+            if (registry_content == null) {
+                emitPlatformMessage("Registry clean.");
+                return;
+            }
+
+            let feedback_message = `Registry '${dungeon_tags_clipboard.getCurrentRegister()}' with ${registry_content.Content.DungeonTags.length} tags: `;
+
+            let h = 0;
+
+            for (let tag of registry_content.Content.DungeonTags) {
+                feedback_message += tag.Name
+
+                if (h === registry_content.Content.DungeonTags.length - 1) {
+                    feedback_message += ".";
+                } else {
+                    feedback_message += ", ";
+                }
+
+                h++;
+            }
+
+            emitPlatformMessage(feedback_message);
         }
 
         /**
