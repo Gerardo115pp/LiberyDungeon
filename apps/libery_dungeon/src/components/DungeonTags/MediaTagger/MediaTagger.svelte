@@ -34,7 +34,8 @@
         import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
         import dungeon_tags_clipboard from "./stores/dungeon_tags_clipboard";
         import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
-    import { last_keyboard_focused_tag } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_store";
+        import { last_keyboard_focused_tag } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_store";
+    import { HotkeyData } from "@libs/LiberyHotkeys/hotkeys";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -121,6 +122,13 @@
          */
         let the_media_tagger_tool = null;
         
+        /*----------  Feedback  ----------*/
+        
+            /**
+             * the contents of the feedback label on the bottom-left of the component.
+             * @type {string}
+             */
+            let feedback_bottom_left_message = "";
         
         /*----------  Entities getters  ----------*/
         
@@ -261,6 +269,11 @@
                 hotkeys_context.register(["y a"], handlePasteDungeonTagsInAllContent, {
                     description: `<registries>Apply the current registry ${ui_tag_reference.EntityNamePlural} to every ${ui_entity_reference.EntityName} loaded.`,
                 });
+
+                hotkeys_context.register(["~ \\s"], handleChangeDungeonTagsRegistry, {
+                    description: `<registries>Apply the current registry ${ui_tag_reference.EntityNamePlural} to every ${ui_entity_reference.EntityName} loaded.`,
+                    capture_hotkey_callback: captureHandler__registryLongName,
+                });
                
 
                 component_hotkey_context.applyExtraHotkeys();
@@ -272,6 +285,29 @@
                 global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
                 component_hotkey_context.Active = true;
             }
+
+            
+            /*=============================================
+            =            Capture callbacks            =
+            =============================================*/
+            
+                /**
+                 * handles capture progress for registry long names.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCaptureCallback}
+                 */ 
+                const captureHandler__registryLongName = (event, captured_string) => {
+                    feedback_bottom_left_message = `registry name: ${captured_string}`;
+                }
+
+                /**
+                 * clears the bottom left feedback label.
+                 * @returns {void}
+                 */
+                const clearFeedbackBottomLeft = () => {
+                    feedback_bottom_left_message = "";
+                }
+            
+            /*=====  End of Capture callbacks  ======*/
 
             /**
              * Prepares the public hotkey cations to generate the hotkeys context.
@@ -433,7 +469,18 @@
              * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
             const handleChangeDungeonTagsRegistry = (event, hotkey) => {
-                const new_registry_name = event.key;
+
+                if (!hotkey || hotkey.HotkeyType !== HotkeyData.HOTKEY_TYPE__CAPTURE || !hotkey.HasMatch || hotkey.MatchMetadata === null) {
+                    console.error("In MediaTagger.handleChangeDungeonTagsRegistry: hotkey was not a capture hotkey or had no match metadata.");
+                    return;
+                }
+
+                clearFeedbackBottomLeft();
+
+                /**
+                 * @type {string}
+                 */
+                const new_registry_name = hotkey.MatchMetadata.CaptureMatch;
 
                 dungeon_tags_clipboard.changeCurrentRegister(new_registry_name);
 
@@ -1005,6 +1052,11 @@
     class="libery-dungeon-window"
     style:--background-alpha={background_alpha}
 >
+    <article class="component-feedback-overlay">
+        <p class="cfo-bottom-left-label">
+            {feedback_bottom_left_message}
+        </p>
+    </article>
     <section id="dmtt-tag-taxonomy-creator-section" 
         class="dmtt-section"
         class:focused-section={mt_focused_section === 0}
@@ -1099,4 +1151,41 @@
         height: 30cqh;
         overflow: auto;
     }
+
+    
+    /*=============================================
+    =            Feedback overlay            =
+    =============================================*/
+    
+        #dungeon-medias-tagger-tool article.component-feedback-overlay {
+            position: absolute;
+            display: grid;
+            inset: 0 0 auto auto;
+            width: 100cqw;
+            height: 100cqh;
+            pointer-events: none;
+            grid-template-areas:
+            "tl tl tc tc tc tr tr"
+            "tl tl tc tc tc tr tr"
+            "cc cc cc cc cc cc cc"
+            "cc cc cc cc cc cc cc"
+            "cc cc cc cc cc cc cc"
+            "bl bl bc bc bc br br"
+            "bl bl bc bc bc br br";
+
+            & > p {
+                color: var(--main);
+                font-weight: 600;
+            }
+
+            & > p.cfo-bottom-left-label {
+                grid-area: bl;
+                justify-self: self-start;
+                align-self: self-end;
+            }
+        }
+    
+    /*=====  End of Feedback overlay  ======*/
+    
+    
 </style>
