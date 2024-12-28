@@ -35,7 +35,7 @@
         import dungeon_tags_clipboard from "./stores/dungeon_tags_clipboard";
         import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
         import { last_keyboard_focused_tag } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_store";
-    import { HotkeyData } from "@libs/LiberyHotkeys/hotkeys";
+        import { HotkeyData } from "@libs/LiberyHotkeys/hotkeys";
     /*=====  End of Imports  ======*/
     
     /*=============================================
@@ -224,67 +224,274 @@
         /*=============================================
         =            Keybinds            =
         =============================================*/
-        
-            /**
-             * Defines the tool's hotkeys.
-             */ 
-            export function defineDesktopKeybinds() {
-                if (global_hotkeys_manager == null) {
-                    console.error("Hotkeys manager not available.");
-                    return;
-                };
+            
+            /*=============================================
+            =            Hotkey setup            =
+            =============================================*/
+            
+                /**
+                 * Defines the tool's hotkeys.
+                 */ 
+                export function defineDesktopKeybinds() {
+                    if (global_hotkeys_manager == null) {
+                        console.error("Hotkeys manager not available.");
+                        return;
+                    };
 
-                if (global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
-                    global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
+                    if (global_hotkeys_manager.hasContext(component_hotkey_context.HotkeysContextName)) {
+                        global_hotkeys_manager.dropContext(component_hotkey_context.HotkeysContextName);
+                    }
+
+                    if (component_hotkey_context.HasGeneratedHotkeysContext()) {
+                        component_hotkey_context.dropHotkeysContext();
+                    }
+
+                    const hotkeys_context = preparePublicHotkeysActions(component_hotkey_context);
+
+                    hotkeys_context.register(["q"], handleCloseMediasTaggerTool, {
+                        description: `<${HOTKEYS_GENERAL_GROUP}>Closes the ${ui_entity_reference.EntityNamePlural} tagger tool.`,
+                        await_execution: false
+                    });
+
+                    hotkeys_context.register(["e"], handleSectionSelection, {
+                        description: `<navigation>Selects the current section.`,
+                        await_execution: false
+                    });
+
+                    hotkeys_context.register(["y i"], handleShowRegistryInformation, {
+                        description: `<registries>Shows the current registry information.`,
+                    });
+
+                    hotkeys_context.register(["y shift+i"], handleShowAllRegistries, {
+                        description: `<registries>Shows all the registries content.`,
+                    });
+
+                    hotkeys_context.register(["y n"], handleClearAllRegistries, {
+                        description: `<registries>Clears all the registries.`,
+                    });
+
+                    hotkeys_context.register(["y a"], handlePasteDungeonTagsInAllContent, {
+                        description: `<registries>Apply the current registry ${ui_tag_reference.EntityNamePlural} to every ${ui_entity_reference.EntityName} loaded.`,
+                    });
+
+                    hotkeys_context.register(["~ \\s"], handleChangeDungeonTagsRegistry, {
+                        description: `<registries>Changes the registry allowing to type a long name at the cost of having to hit ENTER(and having to type a longer name).`,
+                        capture_hotkey_callback: captureHandler__registryLongName,
+                    });
+                
+
+                    component_hotkey_context.applyExtraHotkeys();
+
+                    wrapShowHotkeysTable(hotkeys_context);
+
+                    global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
+
+                    global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
+                    component_hotkey_context.Active = true;
                 }
 
-                if (component_hotkey_context.HasGeneratedHotkeysContext()) {
-                    component_hotkey_context.dropHotkeysContext();
+                /**
+                 * Prepares the public hotkey cations to generate the hotkeys context.
+                 * @param {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext} new_component_hotkey_context
+                 * @returns {import('@libs/LiberyHotkeys/hotkeys_context').default}
+                 */
+                const preparePublicHotkeysActions = (new_component_hotkey_context) => {
+
+                    /* --------------------------- Up down navigation --------------------------- */
+
+                        const up_down_navigation = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.WS_NAVIGATION);
+
+                        up_down_navigation.Options = {
+                            description: `<navigation>Moves up and down through the tool's sections.`,
+                            await_execution: false
+                        }
+
+                        up_down_navigation.Callback = handleSectionFocusNavigation
+
+                    /* --------------------------- Dungeon tags coping -------------------------- */
+                        
+                        const dungeon_tags_copy = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.COPY_CURRENT_MEDIA_TAGS);
+
+                        dungeon_tags_copy.Options = {
+                            description: `<registries>Copies the ${ui_taxonomy_reference.EntityNamePlural} ${ui_tag_reference.EntityNamePlural} of the current ${ui_core_dungeon_references.MEDIA.EntityName}`,
+                        }
+
+                        dungeon_tags_copy.Callback = handleCopyDungeonTags;
+
+                    /* -------------------------- Dungeon tags pasting -------------------------- */
+
+                        const dungeon_tags_paste_action = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.PASTE_DUNGEON_TAGS);
+
+                        dungeon_tags_paste_action.Options = {
+                            description: `<registries>Pastes the ${ui_taxonomy_reference.EntityNamePlural} ${ui_tag_reference.EntityNamePlural} in the current registry to the current ${ui_core_dungeon_references.MEDIA.EntityName}`,
+                        }
+
+                        dungeon_tags_paste_action.Callback = handlePasteDungeonTags;
+
+                    /* ----------------------------- Registry change ---------------------------- */
+
+                        const change_registry_action = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.CHANGE_COPY_REGISTRY);
+
+                        change_registry_action.Options = {
+                            description: `<registries>Changes registry where the ${ui_taxonomy_reference.EntityNamePlural} ${ui_tag_reference.EntityNamePlural} are been copied from and to.`,
+                        }
+
+                        change_registry_action.Callback = handleChangeDungeonTagsRegistry;
+
+                    /* -------------------------------------------------------------------------- */
+
+                    const hotkey_context = new_component_hotkey_context.generateHotkeysContext();
+
+                    return hotkey_context;
+                }           
+
+                /**
+                 * Defines the hotkeys context for sub-components.
+                 */
+                const defineSubComponentsHotkeysContext = () => {   
+                    taxonomy_tags_hotkeys_context = defineTaxonomyTagsHotkeysContext();
+                    
+                    defineClusterPublicTagsHotkeysContext();
+
+                    component_hotkey_context.inheritExtraHotkeys();
                 }
 
-                const hotkeys_context = preparePublicHotkeysActions(component_hotkey_context);
+                /**
+                 * defines the hotkeys context for the taxonomy tags components.
+                 * @requires generateTaxonomyTagsHotkeysContext
+                 * @returns {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
+                 */
+                const defineTaxonomyTagsHotkeysContext = () => {
+                    const taxonomy_tags_context = generateTaxonomyTagsHotkeysContext();
 
-                hotkeys_context.register(["q"], handleCloseMediasTaggerTool, {
-                    description: `<${HOTKEYS_GENERAL_GROUP}>Closes the ${ui_entity_reference.EntityNamePlural} tagger tool.`,
-                    await_execution: false
-                });
+                    /* ----------------------------- SHARED ACTIONS ----------------------------- */
+                        
+                        
+                        /*----------  Delete tag  ----------*/
 
-                hotkeys_context.register(["e"], handleSectionSelection, {
-                    description: `<navigation>Selects the current section.`,
-                    await_execution: false
-                });
+                            const delete_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.DELETE_FOCUSED_TAG)
 
-                hotkeys_context.register(["y i"], handleShowRegistryInformation, {
-                    description: `<registries>Shows the current registry information.`,
-                });
+                            if (delete_tag_action !== undefined) {
+                                
+                                delete_tag_action.Callback = handleTaxonomyTag_DeleteFocusedTag;
+                                delete_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Removes the focused ${ui_tag_reference.EntityName} from the ${ui_entity_reference.EntityName}.`);
 
-                hotkeys_context.register(["y shift+i"], handleShowAllRegistries, {
-                    description: `<registries>Shows all the registries content.`,
-                });
+                            }
+                        
+                        /*----------  Alt select  ----------*/
+                        
+                            const alt_select_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_SELECT_FOCUSED_TAG);
 
-                hotkeys_context.register(["y n"], handleClearAllRegistries, {
-                    description: `<registries>Clears all the registries.`,
-                });
+                            if (alt_select_focused_tag_action != null && alt_select_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
+                                alt_select_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Applies the focused ${ui_tag_reference.EntityName} to the all loaded ${ui_entity_reference.EntityNamePlural}.`);
 
-                hotkeys_context.register(["y a"], handlePasteDungeonTagsInAllContent, {
-                    description: `<registries>Apply the current registry ${ui_tag_reference.EntityNamePlural} to every ${ui_entity_reference.EntityName} loaded.`,
-                });
+                                alt_select_focused_tag_action.Callback = handleApplyTagToAllLoadedMedias;
+                            }
+                        
+                        
+                        /*----------  Alt delete  ----------*/
 
-                hotkeys_context.register(["~ \\s"], handleChangeDungeonTagsRegistry, {
-                    description: `<registries>Changes the registry allowing to type a long name at the cost of having to hit ENTER(and having to type a longer name).`,
-                    capture_hotkey_callback: captureHandler__registryLongName,
-                });
-               
+                            // const alt_delete_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_DELETE_FOCUSED_TAG);
 
-                component_hotkey_context.applyExtraHotkeys();
+                            // if (alt_delete_focused_tag_action != null && alt_delete_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
+                            //     alt_delete_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Removes the focused ${ui_tag_reference.EntityName} from the current ${ui_entity_reference.EntityName}.`);
 
-                wrapShowHotkeysTable(hotkeys_context);
+                            //     alt_delete_focused_tag_action.Callback = handleRemoveFocusedTagFromContent;
+                            // }
 
-                global_hotkeys_manager.declareContext(component_hotkey_context.HotkeysContextName, hotkeys_context);
+                    /* -------------------------------------------------------------------------- */
 
-                global_hotkeys_manager.loadContext(component_hotkey_context.HotkeysContextName);
-                component_hotkey_context.Active = true;
-            }
+                    return taxonomy_tags_context;
+                }
+
+                /**
+                 * Defines the hotkeys context for the cluster public tags component.
+                 * @returns {void}
+                 */
+                const defineClusterPublicTagsHotkeysContext = () => {
+                    const cluster_public_tags_context = component_hotkey_context.ChildHotkeysContexts.get(media_tagger_child_contexts.CLUSTER_PUBLIC_TAGS);
+
+                    if (cluster_public_tags_context == null) {
+                        throw Error("In MediaTagger.defineClusterPublicTagsHotkeysContext: ClusterPublicTags context was not defined as a child context of the MediaTagger context.");
+                    }
+
+                    /* -------------------------- left right navigation ------------------------- */
+
+                        const component_left_right_navigation = component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.AD_NAVIGATION);
+
+                       if (!component_left_right_navigation.HasNullishCallback() && !component_left_right_navigation.HasNullishDescription()) {
+                           const child_left_right_navigation = cluster_public_tags_context.getHotkeyActionOrPanic(cluster_public_tags_actions.AD_NAVIGATION);
+
+                           child_left_right_navigation.overwriteDescription(component_left_right_navigation.Options.description);
+
+                           child_left_right_navigation.Callback = component_left_right_navigation.Callback;
+                       }
+
+                    /* -------------------------------------------------------------------------- */
+                }
+            
+            /*=====  End of Hotkey setup  ======*/
+            
+
+            
+            /*=============================================
+            =            Sub component hotkey handlers            =
+            =============================================*/
+
+                /**
+                 * Applies the focused tag on the active media.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
+                 */
+                const handleApplyTagToAllLoadedMedias = async (event, hotkey) => {
+                    if (getEntityTaggings == null) {
+                        console.error("In MediaTagger.handleApplyFocusedTagToMedia: getEntityTaggings was null. Cannot determine the media list that should get the dungeon tag applied to with out this")
+                    }
+
+                    const focused_tag = $last_keyboard_focused_tag;
+
+                    if (focused_tag == null) {
+                        console.error("In MediaTagger.handleApplyFocusedTagToMedia: focused_tag was null. Cannot apply a tag to a media without a tag.")
+                        return;
+                    }
+
+                    const all_taggable_medias = getTaggableMedias();
+
+                    const user_choice = await confirmPlatformMessage({
+                        message_title: "Apply tag to all medias?",
+                        question_message: `Do you want to apply the tag '${focused_tag.Name}' to all loaded ${ui_entity_reference.EntityNamePlural}(${all_taggable_medias.length})?`,
+                        auto_focus_cancel: true,
+                        cancel_label: "do nothing",
+                        confirm_label: "apply to all",
+                        danger_level: 0
+                    });
+
+                    if (user_choice !== 1) return;
+
+                    const successful = await tagMedias(all_taggable_medias, focused_tag.Id);
+
+                    if (!successful) {
+                        let labeled_err = new LabeledError(`In MediaTagger.handleApplyFocusedTagToMedia`, `Failed to apply ${focused_tag.Name} to all ${ui_entity_reference.EntityNamePlural}.`, lf_errors.ERR_PROCESSING_ERROR);
+
+                        labeled_err.alert();
+                        return;
+                    }
+                    
+                    await refreshActiveMediaTaggings(the_active_media);
+                }
+
+                /**
+                 * Removes the focused tag from the category content medias.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
+                 */
+                const handleRemoveFocusedTagFromContent = async (event, hotkey) => {
+                    // REFACTOR: If alt select is implemented, implement it's reverse/undo action here.
+                    console.warn("Removing focused tag from media is not implemented.");
+                }           
+            
+            /*=====  End of Sub component hotkey handlers  ======*/
+            
+            
+            
             
             /*=============================================
             =            Capture callbacks            =
@@ -322,58 +529,28 @@
             /*=====  End of Capture callbacks  ======*/
 
             /**
-             * Prepares the public hotkey cations to generate the hotkeys context.
-             * @param {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext} new_component_hotkey_context
-             * @returns {import('@libs/LiberyHotkeys/hotkeys_context').default}
+             * Handles the deletion of the focused tag from the Taxonomy Tag component.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
-            const preparePublicHotkeysActions = (new_component_hotkey_context) => {
+            const handleTaxonomyTag_DeleteFocusedTag = async (event, hotkey) => {
+                const focused_tag = $last_keyboard_focused_tag;
 
-                /* --------------------------- Up down navigation --------------------------- */
+                if (focused_tag === null) return;
 
-                    const up_down_navigation = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.WS_NAVIGATION);
+                const success = await untagEntity(the_active_media.uuid, focused_tag.Id);
 
-                    up_down_navigation.Options = {
-                        description: `<navigation>Moves up and down through the tool's sections.`,
-                        await_execution: false
-                    }
+                if (!success) {
+                    const labeled_err = new LabeledError(
+                        "In @components/DungeonTags/MediaTagger",
+                        `Failed to untag '${focused_tag.Name}' out of '${the_active_media.MediaName}'`,
+                        lf_errors.ERR_PROCESSING_ERROR,
+                    );
 
-                    up_down_navigation.Callback = handleSectionFocusNavigation
+                    labeled_err.alert();
+                    return;
+                }
 
-                /* --------------------------- Dungeon tags coping -------------------------- */
-                    
-                    const dungeon_tags_copy = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.COPY_CURRENT_MEDIA_TAGS);
-
-                    dungeon_tags_copy.Options = {
-                        description: `<registries>Copies the ${ui_taxonomy_reference.EntityNamePlural} ${ui_tag_reference.EntityNamePlural} of the current ${ui_core_dungeon_references.MEDIA.EntityName}`,
-                    }
-
-                    dungeon_tags_copy.Callback = handleCopyDungeonTags;
-
-                /* -------------------------- Dungeon tags pasting -------------------------- */
-
-                    const dungeon_tags_paste_action = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.PASTE_DUNGEON_TAGS);
-
-                    dungeon_tags_paste_action.Options = {
-                        description: `<registries>Pastes the ${ui_taxonomy_reference.EntityNamePlural} ${ui_tag_reference.EntityNamePlural} in the current registry to the current ${ui_core_dungeon_references.MEDIA.EntityName}`,
-                    }
-
-                    dungeon_tags_paste_action.Callback = handlePasteDungeonTags;
-
-                /* ----------------------------- Registry change ---------------------------- */
-
-                    const change_registry_action = new_component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.CHANGE_COPY_REGISTRY);
-
-                    change_registry_action.Options = {
-                        description: `<registries>Changes registry where the ${ui_taxonomy_reference.EntityNamePlural} ${ui_tag_reference.EntityNamePlural} are been copied from and to.`,
-                    }
-
-                    change_registry_action.Callback = handleChangeDungeonTagsRegistry;
-
-                /* -------------------------------------------------------------------------- */
-
-                const hotkey_context = new_component_hotkey_context.generateHotkeysContext();
-
-                return hotkey_context;
+                await refreshActiveMediaTaggings(the_active_media);
             }
 
             /**
@@ -588,130 +765,7 @@
                 global_hotkeys_manager.loadPreviousContext();
             }
 
-            /* --------------------- sub-components hotkeys context --------------------- */
-
-                /**
-                 * Defines the hotkeys context for sub-components.
-                 */
-                const defineSubComponentsHotkeysContext = () => {   
-                    taxonomy_tags_hotkeys_context = defineTaxonomyTagsHotkeysContext();
-                    
-                    defineClusterPublicTagsHotkeysContext();
-
-                    component_hotkey_context.inheritExtraHotkeys();
-                }
-
-                /**
-                 * defines the hotkeys context for the taxonomy tags components.
-                 * @requires generateTaxonomyTagsHotkeysContext
-                 * @returns {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext}
-                 */
-                const defineTaxonomyTagsHotkeysContext = () => {
-                    const taxonomy_tags_context = generateTaxonomyTagsHotkeysContext();
-
-                    /* ----------------------------- SHARED ACTIONS ----------------------------- */
-                        
-                        /*----------  Alt select  ----------*/
-                        
-                            const alt_select_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_SELECT_FOCUSED_TAG);
-
-                            if (alt_select_focused_tag_action != null && alt_select_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
-                                alt_select_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Applies the focused ${ui_tag_reference.EntityName} to the current ${ui_entity_reference.EntityName}.`);
-
-                                alt_select_focused_tag_action.Callback = handleApplyFocusedTagToMedia;
-                            }
-                        
-                        
-                        /*----------  Alt delete  ----------*/
-
-                            const alt_delete_focused_tag_action = taxonomy_tags_context.getHotkeyAction(taxonomy_tags_actions.ALT_DELETE_FOCUSED_TAG);
-
-                            if (alt_delete_focused_tag_action != null && alt_delete_focused_tag_action.OverwriteBehavior === ComponentHotkeyContext.OVERRIDE_BEHAVIOR_REPLACE) {
-                                alt_delete_focused_tag_action.overwriteDescription(`${common_action_groups.CONTENT}Removes the focused ${ui_tag_reference.EntityName} from the current ${ui_entity_reference.EntityName}.`);
-
-                                alt_delete_focused_tag_action.Callback = handleRemoveFocusedTagFromContent;
-                            }
-
-                    /* -------------------------------------------------------------------------- */
-
-                    return taxonomy_tags_context;
-                }
-
-                /**
-                 * Defines the hotkeys context for the cluster public tags component.
-                 * @returns {void}
-                 */
-                const defineClusterPublicTagsHotkeysContext = () => {
-                    const cluster_public_tags_context = component_hotkey_context.ChildHotkeysContexts.get(media_tagger_child_contexts.CLUSTER_PUBLIC_TAGS);
-
-                    if (cluster_public_tags_context == null) {
-                        throw Error("In MediaTagger.defineClusterPublicTagsHotkeysContext: ClusterPublicTags context was not defined as a child context of the MediaTagger context.");
-                    }
-
-                    /* -------------------------- left right navigation ------------------------- */
-
-                        const component_left_right_navigation = component_hotkey_context.getHotkeyActionOrPanic(media_tagger_actions.AD_NAVIGATION);
-
-                       if (!component_left_right_navigation.HasNullishCallback() && !component_left_right_navigation.HasNullishDescription()) {
-                           const child_left_right_navigation = cluster_public_tags_context.getHotkeyActionOrPanic(cluster_public_tags_actions.AD_NAVIGATION);
-
-                           child_left_right_navigation.overwriteDescription(component_left_right_navigation.Options.description);
-
-                           child_left_right_navigation.Callback = component_left_right_navigation.Callback;
-                       }
-
-                    /* -------------------------------------------------------------------------- */
-                }
-
-                /**
-                 * Applies the focused tag on the active media.
-                 * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
-                 */
-                const handleApplyFocusedTagToMedia = async (event, hotkey) => {
-                    if (getEntityTaggings == null) {
-                        console.error("In MediaTagger.handleApplyFocusedTagToMedia: getEntityTaggings was null. Cannot determine the media list that should get the dungeon tag applied to with out this")
-                    }
-
-                    const focused_tag = $last_keyboard_focused_tag;
-
-                    if (focused_tag == null) {
-                        console.error("In MediaTagger.handleApplyFocusedTagToMedia: focused_tag was null. Cannot apply a tag to a media without a tag.")
-                        return;
-                    }
-
-                    const all_taggable_medias = getTaggableMedias();
-
-                    const user_choice = await confirmPlatformMessage({
-                        message_title: "Apply tag to all medias?",
-                        question_message: `Do you want to apply the tag '${focused_tag.Name}' to all loaded ${ui_entity_reference.EntityNamePlural}(${all_taggable_medias.length})?`,
-                        auto_focus_cancel: true,
-                        cancel_label: "do nothing",
-                        confirm_label: "apply to all",
-                        danger_level: 0
-                    });
-
-                    if (user_choice !== 1) return;
-
-                    const successful = await tagMedias(all_taggable_medias, focused_tag.Id);
-
-                    if (!successful) {
-                        let labeled_err = new LabeledError(`In MediaTagger.handleApplyFocusedTagToMedia`, `Failed to apply ${focused_tag.Name} to all ${ui_entity_reference.EntityNamePlural}.`, lf_errors.ERR_PROCESSING_ERROR);
-
-                        labeled_err.alert();
-                        return;
-                    }
-                    
-                    await refreshActiveMediaTaggings(the_active_media);
-                }
-
-                /**
-                 * Removes the focused tag from the category content medias.
-                 * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback} 
-                 */
-                const handleRemoveFocusedTagFromContent = async (event, hotkey) => {
-                    // REFACTOR: If alt select is implemented, implement it's reverse/undo action here.
-                    console.warn("Removing focused tag from media is not implemented.");
-                }
+            
         
         /*=====  End of Keybinds  ======*/
         
