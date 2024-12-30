@@ -41,6 +41,7 @@ var MEDIAS_APP_DUNGEON_EXPLORER_ROUTE string = os.Getenv("MEDIAS_APP_DUNGEON_EXP
 var service_settings map[string]any = make(map[string]any)
 
 var LOCALTIME string = "America/Mexico_City"
+var SHARED_MEDIA_EXPIRATION_SECS int64 = 3600
 
 func VerifyConfig() {
 
@@ -144,6 +145,10 @@ func loadSettings() error {
 
 	if _, exists := service_settings["LOCALTIME"]; exists {
 		LOCALTIME = service_settings["LOCALTIME"].(string)
+	}
+
+	if _, exists := service_settings["SHARED_MEDIA_EXPIRATION_SECS"]; exists {
+		SHARED_MEDIA_EXPIRATION_SECS = int64(service_settings["SHARED_MEDIA_EXPIRATION_SECS"].(float64))
 	}
 
 	return nil
