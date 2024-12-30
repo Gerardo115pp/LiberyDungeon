@@ -34,6 +34,14 @@ func (media_identity MediaIdentity) ToWeakIdentity() *MediaWeakIdentity {
 	}
 }
 
+func (media_identity MediaIdentity) FsPath() string {
+	var media_fs_path string
+
+	media_fs_path = filepath.Join(media_identity.ClusterPath, media_identity.CategoryPath, media_identity.Media.Name)
+
+	return media_fs_path
+}
+
 type MediaWeakIdentity struct {
 	MediaUUID    string `json:"media_uuid"`
 	MediaName    string `json:"media_name"`
