@@ -26,6 +26,7 @@ import (
 )
 
 var medias_fs_route_path string = "/medias-fs.*"
+
 var MEDIAS_FS_ROUTE *patriot_router.Route = patriot_router.NewRoute(medias_fs_route_path, false)
 
 func MediasFSHandler(service_instance libery_networking.Server) http.HandlerFunc {
