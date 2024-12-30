@@ -7,6 +7,7 @@
     import { browser } from "$app/environment";
     import { videoDurationToString } from "@libs/utils";
     import generateVideoControllerContext from "./video_controller_hotkeys";
+    import VideoControllerSettings from "./stores/video_controller_settings";
     
     /*=============================================
     =            Properties            =
@@ -442,6 +443,7 @@
                 setDiscreteFeedbackMessage(feedback_message);
             }
 
+            
             function handleSpeedUpVideoHotkey() {
                 let new_playback_rate = setVideoPlaybackRate(true);
 
@@ -526,6 +528,8 @@
         
         /*=====  End of Hotkeys  ======*/
 
+        
+
         /**
          * Changes the volume of the video by the given amount
          * @param {number} amount the amount to change the volume by
@@ -570,6 +574,19 @@
             video_metadata_loaded = false;
 
             saveVideoWatchProgress();
+        }
+        
+        /**
+         * Applies the video settings to the video element when ever the video changes.
+         * @param {HTMLVideoElement} video_element
+         * @returns {void}
+         */
+        const handleVideElementChanges = (video_element) => {
+            if (VideoControllerSettings.shouldPreservePlaybackSpeed()) {
+                video_element.playbackRate = VideoControllerSettings.getPlaybackSpeed();
+            } else {
+                VideoControllerSettings.setPlaybackSpeed(1);
+            }
         }
 
         /**
@@ -624,6 +641,8 @@
 
             // @ts-ignore
             getWatchProgress.call(this);
+
+            handleVideElementChanges(this);
         }
 
         /**
@@ -704,6 +723,7 @@
             let new_playback_rate = Math.min(2, Math.max(0.25, the_video_element.playbackRate + step));
 
             the_video_element.playbackRate = new_playback_rate;
+            VideoControllerSettings.setPlaybackSpeed(new_playback_rate);
 
             return new_playback_rate;
         }
