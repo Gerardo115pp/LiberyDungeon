@@ -461,3 +461,51 @@ export class PostCreateCategoryRequest {
         return new HttpResponse(response, data);
     }
 }
+
+/**
+ * Returns a shared media token that can be used create a link for a cluster media that don't require any additional authentication. The endpoint does require the token creator to have sharing grants.
+ */
+export class GetSharedMediaTokenRequest {
+
+    static endpoint = `${categories_server}/shared-content/media-share-token`
+
+    /**
+     * @param {string} media_uuid
+     */
+    constructor(media_uuid) {
+        this.media_uuid = media_uuid;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import('../base.js').SingleStringResponse>>}
+     */
+    do = async () => {
+        const url = new URL(GetSharedMediaTokenRequest.endpoint, globalThis.location.origin);
+
+        url.searchParams.append("media_uuid", this.media_uuid);
+
+        /**
+         * @type {import('../base').SingleStringResponse}
+         */
+        let string_response = {
+            response: ""
+        }
+
+        let response;
+
+        try {
+            response = await fetch(url);
+
+            if (response.ok) {
+                string_response = await response.json();
+            }
+        } catch (error) {
+            console.error("Error while getting shared media token: ", error);
+            throw error;
+        }
+
+        return new HttpResponse(response, string_response);
+    }
+}

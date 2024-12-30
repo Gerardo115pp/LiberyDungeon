@@ -87,6 +87,15 @@ export const getRandomMediaUrl = (category_id, cluster_id, cache_seconds) => {
 export const getProxyMediaUrl = (media_url) => `${collect_server}/4chan-boards/boards/proxy-media?media_url=${media_url}`;
 
 /**
+ * Returns a link to consume a share media.
+ * @param {string} shared_media_token
+ * @returns {string}
+ */
+export const getSharedMediaLink = (shared_media_token) => {
+    return `${location.origin}/${medias_server}/shared-content/shared-media?share_token=${shared_media_token}`;
+}
+
+/**
  * Renames a sequence of medias. gets a Sequence map, which is just an object of the form {media_uuid: new_name} where new_name does not include
  * a file extension. and a category_uuid were the medias are located.
  */
