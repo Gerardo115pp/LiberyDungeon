@@ -79,3 +79,33 @@ func ParsePlatformUserClaims(token string, sk string) (*PlatformUserClaims, erro
 
 	return claims, err
 }
+
+// =========================
+// RESOURCE SHARING
+// =========================
+
+type MediaShareToken struct {
+	jwt.StandardClaims
+	MediaIdentity *MediaIdentity `json:"media_identity"`
+}
+
+func GenerateMediaShareToken(media_identity *MediaIdentity, expires_at time.Time, sk string) (string, error) {
+	claims := &MediaShareToken{
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expires_at.Unix(),
+		},
+		MediaIdentity: media_identity,
+	}
+
+	token := jwt.NewWithClaims(JwtSigningMethod, claims)
+	return token.SignedString([]byte(sk))
+}
+
+func ParseMediaShareToken(token string, sk string) (*MediaShareToken, error) {
+	claims := &MediaShareToken{}
+	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(sk), nil
+	})
+
+	return claims, err
+}
