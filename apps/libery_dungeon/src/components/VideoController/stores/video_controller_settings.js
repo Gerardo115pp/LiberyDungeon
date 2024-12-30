@@ -8,6 +8,7 @@
      */
     const video_controller_settings = {
         playback_speed: 1,
+        preserve_playback_speed: true,
     }
 
     /**
@@ -50,6 +51,14 @@
         return new_playback_speed;
     }
 
+    /**
+     * Returns whether the playback speed should be preserved between videos.
+     * @returns {boolean}
+     */
+    const shouldPreservePlaybackSpeed = () => {
+        return video_controller_settings.preserve_playback_speed;
+    }
+
 
 /*=====  End of Methods  ======*/
 
@@ -58,7 +67,8 @@
  */
 const settings_controllers = {
     getPlaybackSpeed,
-    setPlaybackSpeed
+    setPlaybackSpeed,
+    shouldPreservePlaybackSpeed
 }
 
 export default settings_controllers;
