@@ -235,7 +235,7 @@ export class Media {
      * @return {Promise<string | null>}
      */
     getSharedUrl = async () => {
-        if (this.#shared_media_token === null) {
+        if (this.#shared_media_token === "") {
             const new_shared_media_token = await this.#requestSharedMediaToken();
 
             if (new_shared_media_token === null) {
