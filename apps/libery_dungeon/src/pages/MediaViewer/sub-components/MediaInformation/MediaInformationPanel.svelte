@@ -6,6 +6,7 @@
     import { current_category } from "@stores/categories_tree";
     import CategoryThumbnailSetBtn from "./sub-components/CategoryThumbnailSetBtn.svelte";
     import { getCategory } from "@models/Categories";
+    import ShareMediaBtn from "./sub-components/ShareMediaBTN.svelte";
 
     
     /*=============================================
@@ -136,6 +137,13 @@
                         paste_on_click={can_clipboard_paste}
                     />
                 </ul>
+                <menu id="mv-mip-media-actions"
+                    class="mv-mip-action-controlles"
+                >
+                    <ShareMediaBtn 
+                        the_active_media={current_media_information}
+                    />
+                </menu>
             </hgroup>
             <hgroup id="mv-mip-category-information" class="mv-mip-media-information-section">
                 <h3 class="mv-mip-section-name">
@@ -158,7 +166,9 @@
                         paste_on_click={can_clipboard_paste}
                     />
                 </ul>
-                <menu id="mv-mip-category-actions">
+                <menu id="mv-mip-category-actions"
+                    class="mv-mip-action-controlles"
+                >
                     <CategoryThumbnailSetBtn 
                         the_current_media={current_media_information}
                     />
@@ -250,8 +260,8 @@
     /*=============================================
     =            Media section actions            =
     =============================================*/
-    
-        menu#mv-mip-category-actions {
+
+        .mv-mip-action-controlles {
             width: 100%;
             display: flex;
             justify-content: center;
