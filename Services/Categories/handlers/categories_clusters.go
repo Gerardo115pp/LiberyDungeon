@@ -45,11 +45,6 @@ func getCategoriesClustersHandler(response http.ResponseWriter, request *http.Re
 	var resource_path string = request.URL.Path
 	var handler_func http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
 
-	// if resource_path == "/clusters" {
-	// 	getAllCategoriesClustersHandler(response, request)
-	// } else if resource_path == "/clusters/sign-access" {
-	// 	getSignAccessCategoriesClustersHandler(response, request)
-	// }
 	switch resource_path {
 	case "/clusters":
 		handler_func = getAllCategoriesClustersHandler
