@@ -89,13 +89,13 @@
     }
 
     dialog#libery-feedback-floating-message-dialog {
-        --modal-position-modifier: 0.75;
+        --modal-position-modifier: 0.15;
         --modal-width: min(400px, 50vw);
 
         position: fixed;
         background: var(--grey-9);
         width: var(--modal-width);
-        inset: calc(100vh * var(--modal-position-modifier)) auto auto calc(50dvw - calc(var(--modal-width) / 2));
+        inset:  auto auto calc(100vh * var(--modal-position-modifier)) calc(50dvw - calc(var(--modal-width) / 2));
         padding: var(--vspacing-3);
         border: 1px solid var(--main-dark-color-5);
         border-radius: var(--border-radius);
