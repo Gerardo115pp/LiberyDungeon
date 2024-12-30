@@ -14,6 +14,7 @@ const (
 	PlatformGrant_DownloadFiles                string = "download_files"
 	PlatformGrant_UploadFiles                  string = "upload_files"
 	PlatformGrant_ReadPrivateFiles             string = "read_private_files"
+	PlatformGrant_ShareContent                 string = "share_content"
 	PlatformGrant_Clusters_Create              string = "clusters_create"
 	PlatformGrant_Clusters_Sync                string = "clusters_sync"
 	PlatformGrant_Clusters_Drop                string = "clusters_drop"
