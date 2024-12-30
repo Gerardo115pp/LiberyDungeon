@@ -2,9 +2,11 @@ import {
     GetMediaByUUIDRequest,
     getMediaUrl,
     PatchRenameMediasRequest,
-    GetMediaIdentityByUUIDRequest
+    GetMediaIdentityByUUIDRequest,
+    getSharedMediaLink
 } from "@libs/DungeonsCommunication/services_requests/media_requests";
 import { GetContentTaggedRequest } from "@libs/DungeonsCommunication/services_requests/metadata_requests/dungeon_tags_requests";
+import { GetSharedMediaTokenRequest } from "@libs/DungeonsCommunication/services_requests/categories_requests";
 
 const DEFAULT_IMAGE_WIDTH = 307;
 
@@ -44,6 +46,13 @@ export class Media {
     #category_path;
 
     /**
+     * A token created by the pandasworld server. Can be used to share the media outside of the category cluster or even the platform.
+     * Has to be created by a user with proper grants.
+     * @type {string}
+     */
+    #shared_media_token;
+
+    /**
      * An Dungeon media resource.
      * @param {MediaParams} param0
      */
@@ -66,6 +75,7 @@ export class Media {
         this.#media_name = "";
         this.#file_extension = "";
 
+        this.#shared_media_token = "";
 
         this.#setMediaName(name);
     }
@@ -168,6 +178,27 @@ export class Media {
     }
 
     /**
+     * Requests a shared media token from the server.
+     * @returns {Promise<string | null>}
+     */
+    #requestSharedMediaToken = async () => {
+        /**
+         * @type {string | null}
+         */
+        let shared_media_token = null;
+         
+        const request = new GetSharedMediaTokenRequest(this.uuid);
+
+        let response = await request.do();
+
+        if (response.Ok && response.data.response != "") {
+            shared_media_token = response.data.response;
+        }
+
+        return shared_media_token;
+    }
+
+    /**
      * Sets the media name and file extension.
      * @param {string} name full name of the media resource
      * @returns {void}
@@ -197,6 +228,24 @@ export class Media {
      */
     get Url() {
         return getMediaUrl(this.#category_path, this.name, false, false);
+    }
+
+    /**
+     * Returns a shared link. The first time this function is called it will need to create a shared token which involves communication with the server.
+     * @return {Promise<string | null>}
+     */
+    getSharedUrl = async () => {
+        if (this.#shared_media_token === null) {
+            const new_shared_media_token = await this.#requestSharedMediaToken();
+
+            if (new_shared_media_token === null) {
+                return null;
+            }
+
+            this.#shared_media_token = new_shared_media_token;
+        }
+
+        return getSharedMediaLink(this.#shared_media_token);
     }
 
     /**
@@ -427,38 +476,38 @@ export const sequenceRenameMedias = async (sequence_map, category_uuid) => {
 
 /* ----------------------------- Nullish models ----------------------------- */
 
-export const NULLISH_MEDIA = new Media({
-    uuid: "",
-    name: "",
-    last_seen: "",
-    main_category: "",
-    type: "",
-    downloaded_from: NaN
-});
+    export const NULLISH_MEDIA = new Media({
+        uuid: "",
+        name: "",
+        last_seen: "",
+        main_category: "",
+        type: "",
+        downloaded_from: NaN
+    });
 
-/**
- * Whether a media object is nullish.
- * @param {Media} media
- */
-export const isNullishMedia = (media) => {
-    return Object.is(media, NULLISH_MEDIA);
-}
+    /**
+     * Whether a media object is nullish.
+     * @param {Media} media
+     */
+    export const isNullishMedia = (media) => {
+        return Object.is(media, NULLISH_MEDIA);
+    }
 
-export const NULLISH_MEDIA_IDENTITY = new MediaIdentity({
-    media: NULLISH_MEDIA,
-    category_path: "",
-    category_uuid: "",
-    cluster_path: "",
-    cluster_uuid: ""
-});
+    export const NULLISH_MEDIA_IDENTITY = new MediaIdentity({
+        media: NULLISH_MEDIA,
+        category_path: "",
+        category_uuid: "",
+        cluster_path: "",
+        cluster_uuid: ""
+    });
 
-/**
- * Whether a media identity object is nullish.
- * @param {MediaIdentity} media_identity
- */
-export const isNullishMediaIdentity = (media_identity) => {
-    return Object.is(media_identity, NULLISH_MEDIA_IDENTITY);
-}
+    /**
+     * Whether a media identity object is nullish.
+     * @param {MediaIdentity} media_identity
+     */
+    export const isNullishMediaIdentity = (media_identity) => {
+        return Object.is(media_identity, NULLISH_MEDIA_IDENTITY);
+    }
 
 /*=============================================
 =            Model actions            =
