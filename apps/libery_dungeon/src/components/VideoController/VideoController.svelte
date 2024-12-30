@@ -421,7 +421,7 @@
             function handleReplayFromLastFrameSkip(event, hotkey) {
                 if (last_frame_skip_timestamp === 0) return;
 
-                setVideoDuration(last_frame_skip_timestamp);
+                setPlaybackCurrentTime(last_frame_skip_timestamp);
             }
 
             function handleSkipFrameBackwardHotkey() {
@@ -710,22 +710,22 @@
 
         /**
          * Sets the video.currentTime to the given time clamping it to the video duration and 0.
-         * if overflow_allowed is true, and, for example the new_duration is -5, the duration will be set to
-         * the video duration - 5 seconds. but if the new_duration is video.duration + 5, then the duration
+         * if overflow_allowed is true, and, for example the new_current_time is -5, the currentTime will be set to
+         * the video duration - 5 seconds. but if the current_time is video.duration + 5, then the duration
          * will be set to 0, not 5.
-         * @param {number} new_duration the new duration(in seconds) to set the video to
+         * @param {number} new_current_time the new duration(in seconds) to set the video to
          * @param {boolean} overflow_allowed whether the duration can overflow the video duration
          * @requires video_element
          * @returns {void}
-        */
-        function setVideoDuration(new_duration, overflow_allowed = false) {
-            let clamped_duration = Math.min(the_video_element.duration, Math.max(0, new_duration));
+         */
+        function setPlaybackCurrentTime(new_current_time, overflow_allowed = false) {
+            let clamped_current_time = Math.min(the_video_element.duration, Math.max(0, new_current_time));
             
-            if (overflow_allowed && clamped_duration !== new_duration) {
-                clamped_duration = new_duration < 0 ? the_video_element.duration + new_duration : 0;
+            if (overflow_allowed && clamped_current_time !== new_current_time) {
+                clamped_current_time = new_current_time < 0 ? the_video_element.duration + new_current_time : 0;
             }
 
-            the_video_element.currentTime = clamped_duration;
+            the_video_element.currentTime = clamped_current_time;
         }
 
         /**
@@ -765,7 +765,7 @@
 
             let new_time = the_video_element.currentTime + (step * video_percentage);
 
-            setVideoDuration(new_time, forward);
+            setPlaybackCurrentTime(new_time, forward);
 
             return video_percentage;
         }
@@ -778,7 +778,7 @@
             let direction_forward = seconds > 0;
             let new_time = the_video_element.currentTime + seconds;
 
-            setVideoDuration(new_time, direction_forward);
+            setPlaybackCurrentTime(new_time, direction_forward);
         }
 
         /**
@@ -797,7 +797,7 @@
                 the_video_element.pause();
             }
 
-            setVideoDuration(new_time, forward);
+            setPlaybackCurrentTime(new_time, true);
         }
 
         function toggleMute() {
