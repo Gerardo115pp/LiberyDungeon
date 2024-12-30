@@ -17,6 +17,10 @@ type Media struct {
 	DownloadedFrom int64     `json:"downloaded_from"` // Id of the thread download that created this media this media
 }
 
+func (media Media) isVideo() bool {
+	return media.Type == Video
+}
+
 type MediaIdentity struct {
 	Media        *Media `json:"media"`
 	CategoryUUID string `json:"category_uuid"`
