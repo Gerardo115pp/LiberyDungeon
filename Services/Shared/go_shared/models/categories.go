@@ -3,7 +3,7 @@ package dungeon_models
 import (
 	"cmp"
 	"fmt"
-	"libery_categories_service/helpers"
+	"libery-dungeon-libs/helpers"
 	"path"
 	"slices"
 	"strconv"
