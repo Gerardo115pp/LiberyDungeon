@@ -92,7 +92,7 @@ export const getProxyMediaUrl = (media_url) => `${collect_server}/4chan-boards/b
  * @returns {string}
  */
 export const getSharedMediaLink = (shared_media_token) => {
-    return `${location.origin}/${medias_server}/shared-content/shared-media?share_token=${shared_media_token}`;
+    return `${location.origin}${medias_server}/shared-content/shared-media?share_token=${shared_media_token}`;
 }
 
 /**
