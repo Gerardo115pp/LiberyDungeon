@@ -26,6 +26,8 @@
         import { OrderedMedia } from '@models/Medias';
         import { active_media_index } from '@stores/media_viewer';
     import SequenceCreationTool from './SequenceCreationTool.svelte';
+    import { ui_pandasworld_tag_references } from '@app/common/ui_references/dungeon_tags_references';
+    import { ui_core_dungeon_references } from '@app/common/ui_references/core_ui_references';
     
     /*=====  End of Imports  ======*/
     
@@ -151,7 +153,7 @@
 
             /**
              * Whether to use a masonry layout for the gallery.
-            */
+             */
             export let use_masonry = false;
         
 
@@ -1174,6 +1176,20 @@
             on:close-sct={handleSequenceCreationToolClose}
         />
     {:else}
+        <div id="meg-gallery-header-wrapper">
+            <header id="meg-gallery-header">
+                {#if $current_category != null}
+                    <h2 id="meg-gh-title">
+                        {ui_core_dungeon_references.CATEGORY.EntityName} gallery for
+                        <span class="meg-gh-cn-category-name">{$current_category.name}</span>     
+                    </h2>
+                    <p class="meg-gh-paragraph">―</p>
+                    <p class="meg-gh-paragraph">
+                        {$current_category.content.length} total {ui_core_dungeon_references.MEDIA.EntityNamePlural}
+                    </p>
+                {/if}
+            </header>
+        </div>
         <ul id="meg-gallery" class:masonry-layout={use_masonry}>
             {#if $me_gallery_changes_manager instanceof MediaChangesEmitter}
                 {#each active_medias as ordered_media_item, h}
@@ -1221,6 +1237,52 @@
 </div>
 
 <style>
+
+    #meg-gallery-wrapper {
+        display: flex;
+        flex-direction: column;
+        row-gap: var(--spacing-2);
+    }
+    
+    /*=============================================
+    =            Gallery Header            =
+    =============================================*/
+    
+        header#meg-gallery-header {
+            display: flex;
+            width: 100%;
+            height: 80px;
+            align-items: center;
+            padding-inline: calc(var(--common-page-inline-padding) * 1.5);
+            column-gap: var(--spacing-3);
+            
+            & h2, p {
+                line-height: 1;
+            }
+
+            & h2#meg-gh-title {
+                font-family: var(--font-read);
+                color: var(--main);
+                color: var(--grey-2);
+                font-size: var(--font-size-h3);
+            }
+
+
+            & h2#meg-gh-title::first-letter {
+                text-transform: uppercase;
+            }
+
+            & h2 span.meg-gh-cn-category-name {
+                color: var(--main);
+                font-size: calc(var(--font-size-h3) * 1.1);
+                font-style: italic;
+                font-weight: 600;
+            }
+        } 
+    
+    /*=====  End of Gallery Header  ======*/
+    
+    
 
     #meg-gallery {
         display: grid;
