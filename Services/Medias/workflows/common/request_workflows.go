@@ -106,12 +106,10 @@ func InferCategoryCluster(request *http.Request) (*dungeon_models.CategoryCluste
 }
 
 /*
-*
-
-		Returns the fs path of a media. Expects the media_path to be the full path only missing the cluster fs path.
-	 	And attempts to get the category cluster from the request. If trust is set to false, it will attempt to get
-		the category cluster from the cookie app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME. If trust is set to true,
-		it will use InferCategoryCluster to get the category cluster.
+Returns the fs path of a media. Expects the media_path to be the full path only missing the cluster fs path.
+And attempts to get the category cluster from the request. If trust is set to false, it will attempt to get
+the category cluster from the cookie app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME. If trust is set to true,
+it will use InferCategoryCluster to get the category cluster.
 */
 func GetMediaFsPathFromRequest(request *http.Request, media_path string, trust bool) (string, error) {
 	var category_cluster *dungeon_models.CategoryCluster

@@ -5,7 +5,7 @@ export class GetIsInitialSetupRequest {
     static endpoint = `${users_server}/is-initial-setup`;
 
     /**
-     * @returns {Promise<HttpResponse<import("../base").BooleanResponse>}
+     * @returns {Promise<HttpResponse<import("../base").BooleanResponse>>}
      */
     do = async () => {
         const response = await fetch(GetIsInitialSetupRequest.endpoint);
@@ -142,7 +142,7 @@ export class GetUserAccessTokenValidationRequest {
     /**
      * Requests the validation of a user access token(present as an http only cookie) the request will return 200
      * regardless of the token's validity. a boolan response indicates whether the token is valid or not.
-     * @returns {Promise<HttpResponse<import("../base").BooleanResponse>}
+     * @returns {Promise<HttpResponse<import("../base").BooleanResponse>>}
      */
     do = async () => {
         const response = await fetch(GetUserAccessTokenValidationRequest.endpoint);
