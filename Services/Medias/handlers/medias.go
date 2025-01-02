@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	medias_http_requests "libery-dungeon-libs/communication/service_requests/medias_requests"
 	"libery-dungeon-libs/dungeonsec/dungeon_middlewares"
 	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/libery_networking"
@@ -19,9 +21,9 @@ import (
 	"github.com/Gerardo115pp/patriots_lib/echo"
 )
 
-var medias_resource_path string = "/medias(/.+)?$"
+var medias_resource_path string = "/medias"
 
-var MEDIAS_ROUTE *patriot_router.Route = patriot_router.NewRoute(medias_resource_path, false)
+var MEDIAS_ROUTE *patriot_router.Route = patriot_router.NewRoute(fmt.Sprintf("%s(/.+)?$", medias_resource_path), false)
 
 func MediasHandler(service_instance libery_networking.Server) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
@@ -219,8 +221,58 @@ func postMediasHandler(response http.ResponseWriter, request *http.Request) {
 }
 
 func patchMediasHandler(response http.ResponseWriter, request *http.Request) {
-	response.WriteHeader(http.StatusMethodNotAllowed)
-	return
+	var resource_path string = request.URL.Path
+	var resource_handler http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
+
+	switch resource_path {
+	case fmt.Sprintf("%s/rename", medias_resource_path):
+		resource_handler = dungeon_middlewares.CheckUserCan_ContentAlter(patchRenameMediaHandler)
+	}
+
+	resource_handler(response, request)
+}
+
+func patchRenameMediaHandler(response http.ResponseWriter, request *http.Request) {
+	var rename_request *medias_http_requests.RenameMediaRequest = new(medias_http_requests.RenameMediaRequest)
+
+	err := json.NewDecoder(request.Body).Decode(rename_request)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/medias.pathRenameMediaHandler: Error decoding request body: %s", err.Error()))
+		response.WriteHeader(400)
+		return
+	}
+
+	if rename_request.NewName == "" {
+		echo.Echo(echo.RedFG, "In handlers/medias.pathRenameMediaHandler: Missing new name")
+		response.WriteHeader(400)
+		return
+	}
+
+	var target_media *dungeon_models.MediaIdentity
+
+	var request_context context.Context = request.Context()
+
+	target_media, err = repository.MediasRepo.GetMediaIdentity(request_context, rename_request.MediaUUID)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/medias.pathRenameMediaHandler: Error getting media by ID: %s", err.Error()))
+		response.WriteHeader(404)
+		return
+	}
+
+	if target_media.Media.Name == rename_request.NewName {
+		echo.Echo(echo.YellowFG, "In handlers/medias.pathRenameMediaHandler: New name is the same as the current name")
+		response.WriteHeader(200)
+		return
+	}
+
+	err = workflows.RenameMedia(request_context, *target_media, rename_request.NewName)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/medias.pathRenameMediaHandler: Error renaming media: %s", err.Error()))
+		response.WriteHeader(500)
+		return
+	}
+
+	response.WriteHeader(200)
 }
 
 func deleteMediasHandler(response http.ResponseWriter, request *http.Request) {
