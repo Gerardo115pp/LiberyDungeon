@@ -232,3 +232,58 @@ export class GetMediaIdentityByUUIDRequest {
         return new HttpResponse(response, media_identity);
     }
 }
+
+/**
+ * A request to rename a media resource by UUID. It takes the media uuid and the new name. if the name passed is an empty string the request class will not complain but the request will fail. if the same 
+ * name as the media currently has is passed as the new name, then the server will return a 200 will not actually process the request. The user most have content altering permission to be able use the endpoint.
+ */
+export class PatchMediaRenameRequest {
+
+    static endpoint = `${medias_server}/medias/rename`;
+
+    /**
+     * @param {string} new_name
+     * @param {string} media_uuid
+     */
+    constructor(new_name, media_uuid) {
+        this.new_name = new_name;
+        this.media_uuid = media_uuid;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import('../base').BooleanResponse>>}
+     */
+    do = async () => {
+        
+        /**
+         * @type {import('../base').BooleanResponse}
+         */
+        const response_body = {
+            response: false
+        }
+
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        try {
+            response = await fetch(PatchMediaRenameRequest.endpoint, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: this.toJson()
+            });
+
+            response_body.response = response.ok;
+        } catch(error) {
+            console.error("Error while renaming media: ", error);
+            throw error;
+        }
+
+        return new HttpResponse(response, response_body);
+    }
+}
