@@ -8,6 +8,7 @@ import {
 } from "@libs/DungeonsCommunication/services_requests/media_requests";
 import { GetContentTaggedRequest } from "@libs/DungeonsCommunication/services_requests/metadata_requests/dungeon_tags_requests";
 import { GetSharedMediaTokenRequest } from "@libs/DungeonsCommunication/services_requests/categories_requests";
+import { getFileExtension } from "@libs/utils";
 
 const DEFAULT_IMAGE_WIDTH = 307;
 
@@ -227,6 +228,15 @@ export class Media {
 
         if (new_name === "" || !new_name) {
             throw new Error(`In @models/Medias.Media.rename: tried to rename with an invalid value <${new_name}>`);
+        }
+
+        const new_name_file_extension = getFileExtension(new_name);
+
+        // Ensure file extension consistency.
+        if (new_name_file_extension === "") {
+            new_name += `.${this.#file_extension}`;
+        } else if (new_name_file_extension !== this.#file_extension) {
+            throw new Error(`In @models/Medias.Media.rename: tried to rename with a different file extension <${new_name_file_extension}> to the original file extension <${this.#file_extension}>`);
         }
 
         let successful = await renameMedia(this, new_name);
