@@ -221,22 +221,25 @@ export class Media {
     /**
      * Renames the media. This changes the media record in the server, not just this instance.
      * @param {string} new_name
+     * @param {boolean} [append_file_extension_always] whether to append the file extension even if one is parsed from the new_name.
      * @returns {Promise<boolean>}
      */
-    rename = async (new_name) => {
+    rename = async (new_name, append_file_extension_always=false) => {
         if (new_name === this.name) return true;
 
         if (new_name === "" || !new_name) {
             throw new Error(`In @models/Medias.Media.rename: tried to rename with an invalid value <${new_name}>`);
         }
 
-        const new_name_file_extension = getFileExtension(new_name);
-
-        // Ensure file extension consistency.
-        if (new_name_file_extension === "") {
+        if (append_file_extension_always) {
             new_name += `.${this.#file_extension}`;
-        } else if (new_name_file_extension !== this.#file_extension) {
-            throw new Error(`In @models/Medias.Media.rename: tried to rename with a different file extension <${new_name_file_extension}> to the original file extension <${this.#file_extension}>`);
+        } else {
+            const new_name_file_extension = getFileExtension(new_name);
+
+            // Ensure file extension consistency.
+            if (new_name_file_extension === "") {
+                new_name += `.${this.#file_extension}`;
+            }
         }
 
         let successful = await renameMedia(this, new_name);

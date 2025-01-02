@@ -58,7 +58,7 @@
                 return;
             }
 
-            let rename_successfully = await the_media.rename(new_name);
+            let rename_successfully = await the_media.rename(new_name, true);
             if (!rename_successfully) {
                 const labeled_err = new LabeledError(
                     "In @pages/MediaExplorer/sub-component/MediaExplorerGallery/MediaRenamingInput.applyMediaRename",
@@ -106,8 +106,6 @@
     
     /*=====  End of Methods  ======*/
     
-    
-    
 </script>
 
 <input class="mri-media-renaming-input"
@@ -115,7 +113,7 @@
     type="text"
     on:keyup={handleRenameInput}
     on:blur={handleRenamerInputBlur}
-    value="{the_media.name}"
+    value="{the_media.MediaName}"
 >
 
 <style>
