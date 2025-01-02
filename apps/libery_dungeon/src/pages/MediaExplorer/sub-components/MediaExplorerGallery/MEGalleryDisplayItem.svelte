@@ -1,11 +1,12 @@
 <script>
     import { LabeledError, VariableEnvironmentContextError } from '@libs/LiberyFeedback/lf_models';
-    import { me_gallery_changes_manager, me_gallery_yanked_medias } from './me_gallery_state';
+    import { me_gallery_changes_manager, me_gallery_yanked_medias, me_renaming_focused_media } from './me_gallery_state';
     import { media_change_types } from '@models/WorkManagers';
     import { onMount, onDestroy } from 'svelte';
     import { lf_errors } from '@libs/LiberyFeedback/lf_errors';
     import viewport from '@components/viewport_actions/useViewportActions';
     import { ensureElementVisible } from '@libs/utils';
+    import MediaRenamingInput from './MediaRenamingInput.svelte';
     
     /*=============================================
     =            Properties            =
@@ -48,7 +49,7 @@
              */
             export let is_keyboard_focused = false;
             $: if (is_keyboard_focused && this_dom_element != null) {
-                ensureElementIsVisible(this_dom_element);
+                handleKeyboardFocusAcquired();
             }
 
             /**
@@ -62,7 +63,7 @@
              * @type {boolean}
              * @default false
              */
-            export let enable_video_titles = false;
+            export let enable_media_titles = false;
 
             /**
              * Whether to magnify the media item when it is keyboard focused.
@@ -82,6 +83,12 @@
              * @default false
              */
             export let is_skeleton = false;
+
+            /**
+             * Whether the current media is been renamed.
+             * @type {boolean}
+             */
+            let renaming_current_media = false;
 
             /*----------  Drag operations  ----------*/
                 
@@ -172,18 +179,22 @@
         /*----------  Unsubscribers  ----------*/
         
             let yanked_medias_unsubscriber = () => {};
+
+            let renaming_focused_media_unsubscriber = () => {};
     
     /*=====  End of Properties  ======*/
 
     onMount(() => {
         suscribeToMediaChanges();
         yanked_medias_unsubscriber = me_gallery_yanked_medias.subscribe(handleYankedMediasChange);
+        renaming_focused_media_unsubscriber = me_renaming_focused_media.subscribe(handleRenamingFocusedMediaChange);
     });
 
     onDestroy(() => {
         unsuscribeFromMediaChanges();
 
         yanked_medias_unsubscriber();
+        renaming_focused_media_unsubscriber();
     });
     
     /*=============================================
@@ -203,8 +214,6 @@
 
                 // @ts-ignore - According to the MDN docs, this is not possibly null in a DragEvent for dragstart.
                 event.dataTransfer.effectAllowed = 'move';
-
-                console.log("Dragged media: ", ordered_media.Order);
             } 
 
             /**
@@ -213,12 +222,9 @@
              */
             const handleMediaItemDragEnd = event => {
                 is_dragged = false;
-                console.log(`Media item ${ordered_media.Order} drag end`);
 
                 // @ts-ignore - According to the MDN docs, this is not possibly null in a DragEvent for dragend.
                 let effect = event.dataTransfer.dropEffect;
-
-                console.log(`Drop effect: ${effect}`);
             }
 
             /**
@@ -263,8 +269,6 @@
                 event.preventDefault();
 
                 media_dragged_over = false;
-
-                console.log("Inserting medias before media: ", ordered_media.Order);
             }
         
         /*=====  End of Drag handlers  ======*/
@@ -287,9 +291,9 @@
             let element_rect = this_dom_element.getBoundingClientRect();
 
             const width_distance_threshold = element_rect.width * 0.9;
-            console.log("Width distance threshold: ", width_distance_threshold);
+            
             const height_distance_threshold = element_rect.height * 0.9;
-            console.log("Height distance threshold: ", height_distance_threshold);
+            
 
             is_on_top = (element_rect.top - container_rect.top) <= height_distance_threshold;
             is_on_bottom = (container_rect.bottom + height_distance_threshold) <= element_rect.bottom;
@@ -358,6 +362,17 @@
         }
 
         /**
+         * Handles the acquisition of keyboard focus.
+         */
+        function handleKeyboardFocusAcquired() {
+            ensureElementIsVisible(this_dom_element);
+
+            if ($me_renaming_focused_media) {
+                renaming_current_media = true;
+            }
+        }
+
+        /**
          * handles a media change that sets the media item normal.
          */
         const handleMediaChangeToNormal = () => {
@@ -413,6 +428,25 @@
         }
 
         /**
+         * handles the change of state of the renaming focused media store. automatically ignores the event if the media item doesn't hold the focused media.
+         * @param {boolean} new_state
+         */
+        const handleRenamingFocusedMediaChange = new_state => {
+            if (!is_keyboard_focused) return;
+
+            renaming_current_media = new_state;
+        }
+
+        /**
+         * Handles the media renamed event emited by the MediaRenamingInput
+         * @param {boolean} renamed_successfully
+         * @returns {void}
+         */
+        const handleMediaRenamed = renamed_successfully => {
+            me_renaming_focused_media.set(false);
+        }
+
+        /**
          * Cancels current media changes suscription and creates a new one.
          * @requires me_gallery_changes_manager
          * @requires handleMediaChanges
@@ -457,7 +491,7 @@
     class:status-deleted={is_media_deleted}
     class:status-selected={is_media_selected}   
     class:status-yanked={is_media_yanked}
-    class:status-titles-enabled={enable_video_titles}
+    class:status-titles-enabled={enable_media_titles || renaming_current_media}
     class:status-media-hovering={media_dragged_over}
     class:status-media-dragging={is_dragged}
     draggable="{enable_dragging}"
@@ -482,9 +516,19 @@
         </h4>
     </div>
     <div class="media-name-tool-tip">
-        <p class="media-name-tool-tip-content">
-            {ordered_media.MediaName}
-        </p>
+        <div class="media-name-tool-tip-content-wrapper">
+            {#if !renaming_current_media}
+                <p class="media-name-tool-tip-content">
+                    {ordered_media.MediaName}
+                </p>
+            {:else}
+                <MediaRenamingInput 
+                    the_media={ordered_media.Media}
+                    onRenameDone={handleMediaRenamed}
+                    should_autofocus
+                />
+            {/if}
+        </div> 
     </div>
     {#if !is_skeleton}
         {#key ordered_media.uuid}
@@ -681,14 +725,18 @@
             .meg-display-item-wrapper.status-titles-enabled .media-name-tool-tip {
                 display: block;
 
-                & p.media-name-tool-tip-content {
+                & .media-name-tool-tip-content-wrapper {
                     width: 96cqw;
                     font-size: calc(var(--font-size-1) * 0.9);
                     color: white;
                     line-height: 1.2;
-                    text-align: center;
                     translate: 2px 5%;
                     scale: 1;
+                }
+
+                & p.media-name-tool-tip-content {
+                    text-align: center;
+                    font-size: inherit;
                 }
             }
 
@@ -698,7 +746,7 @@
                 display: block;
             }
 
-            .meg-display-item-wrapper .media-name-tool-tip p.media-name-tool-tip-content {
+            .meg-display-item-wrapper .media-name-tool-tip .media-name-tool-tip-content-wrapper {
                 color: var(--grey-1);
                 font-size: var(--font-size-fineprint);
                 line-height: 1;
@@ -711,16 +759,16 @@
                 transition: scale .3s ease-out;
             }
 
-            .meg-display-item-wrapper:hover .media-name-tool-tip p.media-name-tool-tip-content {
+            .meg-display-item-wrapper:hover .media-name-tool-tip .media-name-tool-tip-content-wrapper {
                 scale: 1;
             }
 
             @supports (color: rgb(from white r g b)) {
-                .meg-display-item-wrapper .media-name-tool-tip p.media-name-tool-tip-content {
+                .meg-display-item-wrapper .media-name-tool-tip .media-name-tool-tip-content-wrapper {
                     background-color: hsl(from var(--grey) h s l / 0.9);
                 }
 
-                .meg-display-item-wrapper.status-titles-enabled .media-name-tool-tip p.media-name-tool-tip-content {
+                .meg-display-item-wrapper.status-titles-enabled .media-name-tool-tip .media-name-tool-tip-content-wrapper {
                     background-color: hsl(from var(--grey) h s l / .8);
                 }
             }
