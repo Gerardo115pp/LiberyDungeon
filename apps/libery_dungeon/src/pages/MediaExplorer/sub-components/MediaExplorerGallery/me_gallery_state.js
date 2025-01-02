@@ -15,6 +15,12 @@ export const me_gallery_changes_manager = writable(null);
 export const me_gallery_yanked_medias = writable([]);
 
 /**
+ * Whether the current focused media should be renamed.
+ * @type {import('svelte/store').Writable<boolean>} 
+ */
+export const me_renaming_focused_media = writable(false);
+
+/**
  * Sets the media explorer gallery to a clean state.
  * @returns {void}
  */
