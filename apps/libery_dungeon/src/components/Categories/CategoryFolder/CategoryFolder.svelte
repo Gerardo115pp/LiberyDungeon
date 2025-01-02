@@ -405,7 +405,12 @@
             {#if !category_renaming}
                 <h3>{inner_category?.name}</h3>
             {:else}
-                <input type="text" id="ce-ic-rename-input" on:keyup={handleRenameInput} autofocus value="{inner_category.name}"/>
+                <input id="ce-ic-rename-input"
+                    type="text"
+                    on:keyup={handleRenameInput} 
+                    autofocus
+                    value="{inner_category.name}"
+                />
             {/if}
         </div>
     </li>
