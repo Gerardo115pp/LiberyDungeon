@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	dungeon_models "libery-dungeon-libs/models"
 
@@ -107,6 +108,68 @@ func (db *MediasMysql) GetMediaByID(ctx context.Context, media_id string) (*dung
 	}
 
 	return media, nil
+}
+
+func (db *MediasMysql) GetMediaIdentity(ctx context.Context, media_uuid string) (*dungeon_models.MediaIdentity, error) {
+	var media_identity *dungeon_models.MediaIdentity
+
+	stmt, err := db.db.PrepareContext(ctx, `
+		SELECT
+			m.uuid, m.name, m.last_seen, m.main_category, m.media_thumbnail, m.type, m.downloaded_from,
+			c.uuid, c.fullpath,
+			cc.uuid, cc.fs_path
+		FROM medias m
+		INNER JOIN categorys c ON m.main_category=c.uuid
+		INNER JOIN categories_clusters cc ON c.cluster=cc.uuid
+		WHERE m.uuid=?
+	`)
+	if err != nil {
+		return media_identity, errors.Join(err, fmt.Errorf("In CategoriesService.CategoriesMysql.GetMediaIdentity: Error preparing statement"))
+	}
+	defer stmt.Close()
+
+	var time_reciever sql.NullTime
+	var downloaded_from_reciever sql.NullInt64
+
+	row := stmt.QueryRowContext(ctx, media_uuid)
+
+	media_identity = new(dungeon_models.MediaIdentity)
+	media_identity.Media = new(dungeon_models.Media)
+
+	var media_thumbnail_reciever sql.NullString
+
+	err = row.Scan(
+		&media_identity.Media.Uuid,
+		&media_identity.Media.Name,
+		&time_reciever,
+		&media_identity.Media.MainCategory,
+		&media_thumbnail_reciever,
+		&media_identity.Media.Type,
+		&downloaded_from_reciever,
+		&media_identity.CategoryUUID,
+		&media_identity.CategoryPath,
+		&media_identity.ClusterUUID,
+		&media_identity.ClusterPath,
+	)
+	if err != nil {
+		return media_identity, errors.Join(err, fmt.Errorf("In CategoriesService.CategoriesMysql.GetMediaIdentity: Error scanning row"))
+	}
+
+	if time_reciever.Valid {
+		media_identity.Media.LastSeen = time_reciever.Time
+	}
+
+	media_identity.Media.MediaThumbnail = ""
+
+	if media_thumbnail_reciever.Valid {
+		media_identity.Media.MediaThumbnail = media_thumbnail_reciever.String
+	}
+
+	if downloaded_from_reciever.Valid {
+		media_identity.Media.DownloadedFrom = downloaded_from_reciever.Int64
+	}
+
+	return media_identity, nil
 }
 
 func (db *MediasMysql) GetMediaByName(ctx context.Context, media_name string, main_category_id string) (*dungeon_models.Media, error) {
