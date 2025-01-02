@@ -11,7 +11,7 @@
         import { hotkeys_sheet_visible, layout_properties } from "@stores/layout";
         import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
-        import { me_gallery_changes_manager, me_gallery_yanked_medias } from './me_gallery_state';
+        import { me_gallery_changes_manager, me_gallery_yanked_medias, me_renaming_focused_media } from './me_gallery_state';
         import MeGalleryDisplayItem from './MEGalleryDisplayItem.svelte';
         import GridLoader from '@components/UI/Loaders/GridLoader.svelte';
         import CoverSlide from '@components/Animations/HoverEffects/CoverSlide.svelte';
@@ -28,6 +28,7 @@
     import SequenceCreationTool from './SequenceCreationTool.svelte';
     import { ui_pandasworld_tag_references } from '@app/common/ui_references/dungeon_tags_references';
     import { ui_core_dungeon_references } from '@app/common/ui_references/core_ui_references';
+    import { common_action_groups } from '@app/common/keybinds/CommonActionsName';
     
     /*=====  End of Imports  ======*/
     
@@ -261,6 +262,12 @@
                         description: "<tools>Enable the sequence creation tool.",
                     });
 
+                    hotkeys_context.register(["c c"], handleRenameCurrentMediaHotkey, {
+                        description: `${common_action_groups.CONTENT}Allows you to rename the focused ${ui_core_dungeon_references.MEDIA.EntityName}`,
+                        await_execution: false,
+                        mode: "keyup"
+                    })
+
                     hotkeys_context.register(["m"], handleMagnifyFocusedMedia, {
                         description: "<behavior>Toggle the magnify focused media mode. when enabled, the focused media item will be scale up and be contained so the entier media can be seen.",
                     });
@@ -318,6 +325,14 @@
              */
             const handleEnableSequenceCreationTool = () => {
                 enable_sequence_creation_tool = true;
+            }
+
+            /**
+             * Enables the focused media renaming state.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleRenameCurrentMediaHotkey = (event, hotkey) => {
+                toggleRenamingFocusedMediaState();
             }
             
 
@@ -439,7 +454,7 @@
 
             /**
              * Handles the movement to the first media in active_medias.
-            */
+             */
             const handleMovetoFirstActiveMedia = () => media_focus_index = 0;
             
 
@@ -454,7 +469,6 @@
              * Opens the media viewer on the focused media item.
              */
             const handleOpenMedia = () => {
-                console.log(`Opening media viewer on media index ${media_focus_index}`);
                 openMediaViewerOnIndex(media_focus_index);
             }
 
@@ -469,14 +483,9 @@
                     return;
                 }
                 
-                if (!hotkey_event.repeat) {
-                    console.log('event:', hotkey_event);    
-                }
-
                 if (hotkey_event.repeat || hotkey_event.type !== "keydown" && hotkey_event.type !== "keyup") return;
 
                 let new_auto_stage_delete_focused_media = hotkey_event.type === "keydown";
-                console.log(`auto_stage_delete_focused_media: ${new_auto_stage_delete_focused_media}`);
 
                 if (new_auto_stage_delete_focused_media) {
                     stageFocusedMediaDeletion();
@@ -493,7 +502,6 @@
                 hotkey_event.preventDefault();
                 if (hotkey_event.type !== "keydown" && hotkey_event.type !== "keyup") return;
                 if (hotkey_event.repeat) return;
-                console.log(`Event type: ${hotkey_event.type}`);
                 
                 auto_select_focused_media = hotkey_event.type === "keydown";
 
@@ -557,8 +565,6 @@
 
             const active_media_range = getLoadedMediaRange();
             if (active_media_range.end === media_items.length) return false;
-
-            console.log(`active_media_range:`, active_media_range);
 
             let start_index = active_media_range.end + 1;
             let end_index = Math.min(start_index + amount, media_items.length);
@@ -694,8 +700,6 @@
 
             const active_media_range = getLoadedMediaRange();
 
-            console.log(`Media item clicked with order ${media_order}`);
-
             if (media_order == null || isNaN(media_order) || (media_order < 0 || media_order > active_media_range.end)) return;
 
             if (!event.altKey) {
@@ -711,7 +715,6 @@
          * Hanldes the content end watch dog viewport enter event.
          */
         const handleContentEndWatchdogEnter = async () => {
-            console.log("Content end watchdog enter event.");
             if (active_medias.length === 0) {
                 addInitialMediaItems();
                 return;
@@ -743,10 +746,8 @@
             
             if (lowest_order_media.Order === 0) return false; // nothing more can be loaded.
 
-            console.log(`Lowest order media:`, lowest_order_media);
             
             let succesful_prepend = prependMediaItems(media_batch_size);
-            console.log(`Prepending medias result ${succesful_prepend}`);
             
             if (!succesful_prepend) return false;
             
@@ -754,7 +755,6 @@
             await tick();
             
             const media_item_element = getMediaItemByOrder(lowest_order_media.Order);
-            console.log(`Scrolling to media item with order ${lowest_order_media.Order}`, media_item_element);
 
             if (media_item_element != null) {
                 // Prevent layout shift by scrolling to the first media item in the gallery.
@@ -807,10 +807,8 @@
             const active_media_range = getLoadedMediaRange();
             
             if (media_focus_index < active_media_range.start + media_per_row) {
-                console.log(`Prepending medias as Media focus index ${media_focus_index} is in the first row.`);
                 await loadPrecedingMedias();
             } else if (media_focus_index >= active_media_range.end - media_per_row) {
-                console.log(`Appending medias as Media focus index ${media_focus_index} is in the last row.`);
                 await loadProceedingMedias();
             }
 
@@ -856,8 +854,6 @@
             if (media_item == null) return;
 
             const page_state = $page.state;
-
-            console.log(`storing media_index: ${media_index} in the page state.`);
 
             replaceState(location.href, {
                 ...page_state,
@@ -933,6 +929,7 @@
             global_hotkeys_manager.dropContext(hotkeys_context_name);
 
             me_gallery_changes_manager.set(null);
+            me_renaming_focused_media.set(false);
         }
 
         /**
@@ -953,7 +950,6 @@
             
             /** @type {number | undefined} */
             let cached_media_index = await category_cache.getCategoryIndex($current_category.uuid); 
-            console.log("Indexed db cached media index:", cached_media_index);
 
             /**
              * @type {number | undefined}
@@ -961,16 +957,12 @@
             // @ts-ignore - meg_gallery is defined in the page state.
             let page_state_store_index = $page.state?.meg_gallery?.media_index;
 
-            console.log("History API cached media index:", page_state_store_index);
-
             cached_media_index = cached_media_index ?? page_state_store_index;
 
             if (cached_media_index == null) {
-                console.log("No cached media index found in the page state.");
                 return;
             }
 
-            console.log(`kept media index: ${cached_media_index}`);
 
             cached_media_index = Math.max(0, Math.min(cached_media_index, media_items.length - 1));
 
@@ -981,8 +973,6 @@
             if (active_medias.length !== 0) {
                 throw new Error("Attempted to recover the gallery focus item when active_medias is not empty.");
             }
-
-            console.log(`Focused media index: ${cached_media_index}`);
 
             let batches_needed = cached_media_index > media_batch_size ? Math.ceil(cached_media_index / media_batch_size) : 1;
 
@@ -998,8 +988,6 @@
             await tick();
 
             let keyboard_selected_media = document.querySelector(`.meg-gallery-item[data-media-order="${media_focus_index}"]`);
-
-            console.log(`Keyboard selected media:`, keyboard_selected_media);
 
             if (keyboard_selected_media != null) {
                 keyboard_selected_media.scrollIntoView({
@@ -1142,7 +1130,6 @@
             });
 
             $me_gallery_changes_manager.stageMediaMove(media_item.Media, fake_inner_category);
-            console.log(`Media ${media_item.uuid} staged to be moved.`);
         }
 
         /**
@@ -1164,6 +1151,14 @@
             }
 
             $me_gallery_changes_manager.stageMediaDeletion(ordered_media.Media);
+        }
+
+        /**
+         * Toggles the renaming focused media state.
+         * @returns {void}
+         */
+        const toggleRenamingFocusedMediaState = () => {
+            me_renaming_focused_media.set(!$me_renaming_focused_media);
         }
         
     /*=====  End of Methods  ======*/
@@ -1214,7 +1209,7 @@
                             check_container_limits
                             container_selector="#meg-gallery"
                             enable_heavy_rendering={enable_gallery_heavy_rendering}
-                            enable_video_titles={show_media_titles_mode}
+                            enable_media_titles={show_media_titles_mode}
                             {use_masonry}
                         />
                         <CoverSlide 
