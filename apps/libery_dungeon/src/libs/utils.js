@@ -210,6 +210,18 @@ export const getMediaFilename = media_url => {
 }
 
 /**
+ * Returns the file extension from base file name such as 'file.jpg' -> 'jpg'
+ * @param {string} filename 
+ * @returns {string}
+ */
+export const getFileExtension = filename => {
+    const filename_fragments = filename.split('.');
+
+    // @ts-ignore - if the length is greater than 0, it's impossible for the return type of .pop() to be undefined. 
+    return filename_fragments.length >= 2 ? filename_fragments.pop() : "";
+}
+
+/**
  * Clears a string from problematic characters for filenames. changes spaces to underscores and optionaly
  * lowercases the string.
  * @param {string} new_filename 
