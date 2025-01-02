@@ -126,6 +126,24 @@ export class Media {
     }
 
     /**
+     * Returns a shared link. The first time this function is called it will need to create a shared token which involves communication with the server.
+     * @return {Promise<string | null>}
+     */
+    getSharedUrl = async () => {
+        if (this.#shared_media_token === "") {
+            const new_shared_media_token = await this.#requestSharedMediaToken();
+
+            if (new_shared_media_token === null) {
+                return null;
+            }
+
+            this.#shared_media_token = new_shared_media_token;
+        }
+
+        return getSharedMediaLink(this.#shared_media_token);
+    }
+
+    /**
      * Whether the media source is a video.
      * @returns {boolean}
      */
@@ -200,6 +218,33 @@ export class Media {
     }
 
     /**
+     * Renames the media. This changes the media record in the server, not just this instance.
+     * @param {string} new_name
+     * @returns {Promise<boolean>}
+     */
+    rename = async (new_name) => {
+        if (new_name === this.name) return true;
+
+        if (new_name === "" || !new_name) {
+            throw new Error(`In @models/Medias.Media.rename: tried to rename with an invalid value <${new_name}>`);
+        }
+
+        let successful = await renameMedia(this, new_name);
+
+        if (successful) {
+            this.name = new_name;
+        }
+
+        // Reprocessing name fragments. 
+        this.#media_name = "";
+        this.#file_extension = "";
+
+        this.#setMediaName(new_name);
+
+        return successful
+    }
+
+    /**
      * Sets the media name and file extension.
      * @param {string} name full name of the media resource
      * @returns {void}
@@ -229,24 +274,6 @@ export class Media {
      */
     get Url() {
         return getMediaUrl(this.#category_path, this.name, false, false);
-    }
-
-    /**
-     * Returns a shared link. The first time this function is called it will need to create a shared token which involves communication with the server.
-     * @return {Promise<string | null>}
-     */
-    getSharedUrl = async () => {
-        if (this.#shared_media_token === "") {
-            const new_shared_media_token = await this.#requestSharedMediaToken();
-
-            if (new_shared_media_token === null) {
-                return null;
-            }
-
-            this.#shared_media_token = new_shared_media_token;
-        }
-
-        return getSharedMediaLink(this.#shared_media_token);
     }
 
     /**
