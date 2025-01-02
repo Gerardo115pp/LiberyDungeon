@@ -2,6 +2,7 @@ import {
     GetMediaByUUIDRequest,
     getMediaUrl,
     PatchRenameMediasRequest,
+    PatchMediaRenameRequest,
     GetMediaIdentityByUUIDRequest,
     getSharedMediaLink
 } from "@libs/DungeonsCommunication/services_requests/media_requests";
@@ -455,24 +456,7 @@ export const media_types = {
     VIDEO: "VIDEO"
 }
 
-/**
- * Renames a sequence of medias. gets a Sequence map, which is just an object of the form {media_uuid: new_name} where new_name does not include 
- * a file extension. and a category_uuid were the medias are located.
- * @param {Object<string, string>} sequence_map 
- * @param {string} category_uuid 
- */
-export const sequenceRenameMedias = async (sequence_map, category_uuid) => {
-    const request = new PatchRenameMediasRequest(category_uuid, sequence_map);
-    let renamed = false;
 
-    const response = await request.do();
-
-    if (response.status === 204) {
-        renamed = true;
-    }
-
-    return renamed;
-}
 
 /* ----------------------------- Nullish models ----------------------------- */
 
@@ -588,6 +572,53 @@ export const getTaggedMedias = async (tag_ids, page, page_size) => {
     }
 
     return paginated_response;
+}
+
+/**
+ * Renames a single media. Returns true if the rename was successful.
+ * @param {Media} media
+ * @param {string} new_name
+ * @returns {Promise<boolean>}
+ */
+export const renameMedia = async (media, new_name) => {
+    if (new_name === "") {
+        return false;
+    }
+
+    if (new_name === media.name) {
+        return true;
+    }
+
+    const request = new PatchMediaRenameRequest(new_name, media.uuid);
+
+    let rename_successful = false;
+
+    const response = await request.do();
+
+    if (response.Ok && response.data != null) {
+        rename_successful = response.data.response;
+    }
+
+    return rename_successful;
+}
+
+/**
+ * Renames a sequence of medias. gets a Sequence map, which is just an object of the form {media_uuid: new_name} where new_name does not include 
+ * a file extension. and a category_uuid were the medias are located.
+ * @param {Object<string, string>} sequence_map 
+ * @param {string} category_uuid 
+ */
+export const sequenceRenameMedias = async (sequence_map, category_uuid) => {
+    const request = new PatchRenameMediasRequest(category_uuid, sequence_map);
+    let renamed = false;
+
+    const response = await request.do();
+
+    if (response.status === 204) {
+        renamed = true;
+    }
+
+    return renamed;
 }
 
 /*=====  End of Model actions  ======*/
