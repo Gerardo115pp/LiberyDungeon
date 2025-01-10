@@ -1,4 +1,4 @@
-import { medias_server, collect_server } from "../services";
+import { medias_server, collect_server, categories_server } from "../services";
 import { HttpResponse, attributesToJson } from "../base";
 
 const media_fs_endpoint = `${medias_server}/medias-fs`;
@@ -230,6 +230,61 @@ export class GetMediaIdentityByUUIDRequest {
         }
 
         return new HttpResponse(response, media_identity);
+    }
+}
+
+/**
+ * Returns a list of media identities by their uuids. All medias must belong to the same category cluster(not necessarily the same category). Requires public_content_view grant.
+ */
+export class GetMediaIdentitiesByUUIDsRequest {
+
+    static endpoint = `${categories_server}/medias/in-list`;
+
+    /**
+     * @param {string[]} media_uuids
+     * @param {string} cluster_uuid
+     */
+    constructor(media_uuids, cluster_uuid) {
+        this.media_uuids = media_uuids;
+        this.cluster_uuid = cluster_uuid;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import('@models/Medias').MediaIdentityParams[]>>}`
+     */
+    do = async () => {
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        /**
+         * @type {import('@models/Medias').MediaIdentityParams[]}
+         */
+        let media_identities = [];
+
+        let media_uuids_param = this.media_uuids.join(",");
+        
+        const resource_url = new URL(GetMediaIdentitiesByUUIDsRequest.endpoint, location.origin);
+
+        resource_url.searchParams.set("media_uuids", media_uuids_param);
+
+        resource_url.searchParams.set("cluster_uuid", this.cluster_uuid);
+
+        try {
+            response = await fetch(resource_url);
+
+            if (response.ok) {
+                media_identities = await response.json();
+            }
+        } catch (error) {
+            console.error("Error while fetching media identities by uuids: ", error);
+            throw error;
+        }
+
+        return new HttpResponse(response, media_identities);
     }
 }
 
