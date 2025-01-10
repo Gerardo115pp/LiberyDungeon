@@ -505,6 +505,12 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
         #category_thumbnail;
 
         /**
+         * The configuration of the category. This is not loaded by default.
+         * @type {CategoryConfig | null}
+         */
+        #config;
+
+        /**
          * @param {CategoryLeafParams} param0 
          */
         constructor({uuid, name, parent, inner_categories, content, fullpath, cluster, category_thumbnail}) {
@@ -539,35 +545,8 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
 
             this.#setInnerCategoriesMap();
             console.debug("Inner categories map: ", this.#inner_categories_map);
-        }
 
-        get FullPath() {
-            return this.#fullpath;
-        }
-
-        get InnerCategories() {
-            return this.#inner_categories;
-        }
-
-        /**
-         * @returns {CategoryLeaf | null} the parent category of this category
-         */
-        get ParentCategory() {
-            return this.parent_category;
-        }
-
-        get ClusterUUID() {
-            return this.#cluster;
-        }
-
-        /**
-         * Sets the parent category of this category.
-         * @param {CategoryLeaf} category
-         */
-        set ParentCategory(category) {
-            if (!(category instanceof CategoryLeaf)) return;
-
-            this.parent_category = category;
+            this.#config = null;
         }
 
         /**
@@ -610,6 +589,21 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
             });
         }
 
+        get ClusterUUID() {
+            return this.#cluster;
+        }
+
+        /**
+         * Returns the category configuration if it's loaded, otherwise returns null. To load the configuration, call the loadCategoryConfig once.
+         * @type {CategoryConfig | null}
+         */
+        get Config() {
+            return this.#config;
+        }
+
+        get FullPath() {
+            return this.#fullpath;
+        }
         /**
          * @returns {CategoryLeaf[]} the inner categories of this category that have been loaded
          */
@@ -727,6 +721,41 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
             return this.#inner_categories.length === 0 && this.content.length === 0;
         }
 
+        get InnerCategories() {
+            return this.#inner_categories;
+        }
+
+        /**
+         * Loads the category configuration. returns whether the configuration is now loaded.
+         * @returns {Promise<CategoryConfig | null>}
+         */
+        loadCategoryConfig = async () => {
+            const category_config = await getCategoryConfig(this.uuid);
+
+            if (category_config === null) return null;
+
+            this.setCategoryConfig(category_config);
+
+            return category_config;
+        }
+
+        /**
+         * @returns {CategoryLeaf | null} the parent category of this category
+         */
+        get ParentCategory() {
+            return this.parent_category;
+        }
+
+        /**
+         * Sets the parent category of this category.
+         * @param {CategoryLeaf} category
+         */
+        set ParentCategory(category) {
+            if (!(category instanceof CategoryLeaf)) return;
+
+            this.parent_category = category;
+        }
+
         /**
          * Removes a loaded leaf from the inner categories map
          * @param {string} category_id
@@ -740,12 +769,20 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
          * Adds a child category data to this category
          * @param {CategoryLeaf} category
          * @returns {boolean} true if the category was added, false otherwise
-        */
+         */
         setChildCategory = category => {
             if (!(category instanceof CategoryLeaf) || !this.isChildCategory(category)) return false;
 
             this.#inner_categories_map[category.uuid] = category;
             return true;
+        }
+
+        /**
+         * Sets the category configuration
+         * @param {CategoryConfig} config 
+         */
+        setCategoryConfig = config => {
+            this.#config = config;
         }
         
         /**
@@ -1339,6 +1376,36 @@ export class CategoryConfig {
      */
     get BillboardDungeonTags() {
         return this.#billboard_dungeon_tags;
+    }
+
+    /**
+     * Sets a new list of media uuids to be displayed in the explorer billboard and updates the configuration on the server.
+     * @param {string[]} media_uuids 
+     * @returns {Promise<boolean>}
+     */
+    updateBillboardMediaUUIDs = async media_uuids => {
+        let success = await updateCategoryConfig__BillboardMediaUUIDs(this.#category_uuid, media_uuids);
+
+        if (success) {
+            this.#billboard_media_uuids = media_uuids;
+        }
+
+        return success;
+    }
+
+    /**
+     * Sets a new list of dungeon tags for the category and updates the configuration on the server.
+     * @param {number[]} dungeon_tags
+     * @returns {Promise<boolean>}
+     */
+    updateBillboardDungeonTags = async dungeon_tags => {
+        let success = await updateCategoryConfig__BillboardDungeonTags(this.#category_uuid, dungeon_tags);
+
+        if (success) {
+            this.#billboard_dungeon_tags = dungeon_tags;
+        }
+
+        return success;
     }
 
     /**
