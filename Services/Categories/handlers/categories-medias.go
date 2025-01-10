@@ -49,7 +49,7 @@ func getMediasHandler(response http.ResponseWriter, request *http.Request) {
 	var handler_func http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
 
 	switch resource_path {
-	case fmt.Sprintf("%s/media-in-list", medias_path):
+	case fmt.Sprintf("%s/in-list", medias_path):
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getMediaInListHandler)
 	}
 
