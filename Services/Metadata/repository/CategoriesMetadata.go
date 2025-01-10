@@ -7,3 +7,9 @@ type CategoriesConfigurationRepository interface {
 	GetCategoryConfig(category_uuid string) *models.CategoryConfig
 	UpdateCategoryConfig(category_config *models.CategoryConfig) error
 }
+
+var CategoriesConfigRepo CategoriesConfigurationRepository
+
+func SetCategoriesConfigRepository(repo CategoriesConfigurationRepository) {
+	CategoriesConfigRepo = repo
+}
