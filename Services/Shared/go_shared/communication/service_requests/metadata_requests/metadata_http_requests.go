@@ -1,5 +1,7 @@
 package metadata_requests
 
+// -------------------- Dungeon tags --------------------
+
 type MultiTagEntitiesRequest struct {
 	DungeonTags []int    `json:"dungeon_tags"`
 	EntityUUIDS []string `json:"entity_uuids"`
@@ -16,4 +18,16 @@ type TagEntitiesRequest struct {
 	DungeonTagID  int      `json:"tag_id"`
 	EntityType    string   `json:"entity_type"`
 	EntitiesUUIDs []string `json:"entities_uuids"`
+}
+
+// -------------------- Categories config --------------------
+
+type PatchCategoryBillboardTagsRequest struct {
+	CategoryUUID         string `json:"category_uuid"`
+	BillboardDungeonTags []int  `json:"billboard_tags"`
+}
+
+type PatchCategoryBillboardMediasRequest struct {
+	CategoryUUID        string   `json:"category_uuid"`
+	BillboardMediaUUIDs []string `json:"billboard_media_uuids"`
 }
