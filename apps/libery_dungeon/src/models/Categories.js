@@ -16,8 +16,12 @@ import {
     getCategoryIndex, 
     updateCategoryIndex 
 } from "@databases/category_cache";
+import {
+    GetCategoryConfigRequest, 
+    PatchCategoryBillboardTagsRequest,
+    PatchCategoryBillboardMediasRequest
+} from "@libs/DungeonsCommunication/services_requests/metadata_requests/category_metadata_requests";
 import { browser } from "$app/environment";
-import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
 import { getRandomMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
 
 const ROOT_CATEGORY_PROXY_UUID = "main";
@@ -232,7 +236,6 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
 
     return response.data;
 }
-
 
 /*=============================================
 =            Category Tree            =
@@ -1349,6 +1352,68 @@ export class CategoryConfig {
             billboard_dungeon_tags: this.#billboard_dungeon_tags
         };
     }
+}
+
+/**
+ * Returns a CategoryConfig object from the server. Requires the user to have public_content_read grant.
+ * @param {string} category_uuid the 40 character identifier of the category
+ * @returns {Promise<CategoryConfig | null>}
+ */
+export const getCategoryConfig = async category_uuid => {
+    let request = new GetCategoryConfigRequest(category_uuid);
+
+    /** 
+     * @type {CategoryConfig | null}
+     */
+    let category_config = null;
+
+    let response = await request.do();
+
+    if (response.Ok && response.data !== null) {
+        category_config = new CategoryConfig(response.data);
+    }
+
+    return category_config;
+}
+
+/**
+ * Updates the list of media uuids to be displayed in the explorer billboard for a category. Requires the user to have content_alter grant.
+ * @param {string} category_uuid the 40 character identifier of the category
+ * @param {string[]} media_uuids a list of media uuids
+ * @returns {Promise<boolean>}
+ */
+export const updateCategoryConfig__BillboardMediaUUIDs = async (category_uuid, media_uuids) => {
+    let request = new PatchCategoryBillboardMediasRequest(category_uuid, media_uuids);
+
+    let response = await request.do();
+
+    let success = false;
+
+    if (response.Ok) {
+        success = response.data.response;
+    }
+
+    return success;
+}
+
+/**
+ * Updates the list of dungeon tags for a category. Requires the user to have content_alter grant.
+ * @param {string} category_uuid the 40 character identifier of the category
+ * @param {number[]} dungeon_tags a list of dungeon tag ids
+ * @returns {Promise<boolean>}
+ */
+export const updateCategoryConfig__BillboardDungeonTags = async (category_uuid, dungeon_tags) => {
+    let request = new PatchCategoryBillboardTagsRequest(category_uuid, dungeon_tags);
+
+    let response = await request.do();
+
+    let success = false;
+
+    if (response.Ok) {
+        success = response.data.response;
+    }
+
+    return success;
 }
 
 /*=====  End of Categories configuration  ======*/
