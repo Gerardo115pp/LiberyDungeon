@@ -6,6 +6,8 @@ import (
 )
 
 type MediasRepository interface {
+	GetMedia(ctx context.Context, media_uuid string) (*dungeon_models.Media, error)
+	GetMedias(ctx context.Context, media_uuids []string) ([]*dungeon_models.Media, error)
 	DeleteMedia(ctx context.Context, media_uuid string) error
 	InsertMedia(ctx context.Context, media *dungeon_models.Media) error
 }
