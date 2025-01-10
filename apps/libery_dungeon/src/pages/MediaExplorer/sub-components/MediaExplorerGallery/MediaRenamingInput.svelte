@@ -80,6 +80,7 @@
             if (the_renamer_input == null) return;
 
             the_renamer_input.focus();
+            the_renamer_input.select();
         }
     
         /**
