@@ -115,6 +115,12 @@ func patchCategoryMetadataBillboardTagsHandler(response http.ResponseWriter, req
 		return
 	}
 
+	if request_body.BillboardDungeonTags == nil {
+		echo.Echo(echo.RedFG, "In handlers/categories-metadata.go patchCategoryMetadataBillboardTagsHandler: billboard tags are empty")
+		response.WriteHeader(400)
+		return
+	}
+
 	category_config := repository.CategoriesConfigRepo.GetCategoryConfig(request_body.CategoryUUID)
 
 	category_config.BillboardDungeonTags = request_body.BillboardDungeonTags
@@ -141,6 +147,12 @@ func patchCategoryMetadataBillboardMediasHandler(response http.ResponseWriter, r
 
 	if request_body.CategoryUUID == "" {
 		echo.Echo(echo.RedFG, "In handlers/categories-metadata.go patchCategoryMetadataBillboardMediasHandler: category uuid is empty")
+		response.WriteHeader(400)
+		return
+	}
+
+	if request_body.BillboardMediaUUIDs == nil {
+		echo.Echo(echo.RedFG, "In handlers/categories-metadata.go patchCategoryMetadataBillboardMediasHandler: billboard media uuids are empty")
 		response.WriteHeader(400)
 		return
 	}
