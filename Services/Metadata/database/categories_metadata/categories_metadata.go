@@ -15,7 +15,7 @@ type categoryConfigDB struct {
 	categoryConfigs map[string]*service_models.CategoryConfig
 }
 
-func NewCategoryConfigDB(config_path string) (*categoryConfigDB, error) {
+func NewCategoryConfigDB(config_path string) *categoryConfigDB {
 	var new_category_config_db *categoryConfigDB = new(categoryConfigDB)
 
 	categories_config_path, err := bootCategoriesMetadataDB(config_path)
@@ -26,7 +26,7 @@ func NewCategoryConfigDB(config_path string) (*categoryConfigDB, error) {
 	new_category_config_db.categoriesConfigPath = categories_config_path
 	new_category_config_db.categoryConfigs = make(map[string]*service_models.CategoryConfig)
 
-	return new_category_config_db, nil
+	return new_category_config_db
 }
 
 func (category_config_db *categoryConfigDB) CreateCategoryConfig(category_uuid string) *service_models.CategoryConfig {
