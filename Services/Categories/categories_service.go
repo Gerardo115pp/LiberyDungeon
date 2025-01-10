@@ -24,6 +24,7 @@ func BinderRoutes(server libery_networking.Server, router *patriot_router.Router
 	router.RegisterRoute(patriot_router.NewRoute("/search", true), handlers.SearchHandler(server))
 	router.RegisterRoute(patriot_router.NewRoute("/trashcan(/.+)?$", false), handlers.TrashcanHandler(server))
 	router.RegisterRoute(handlers.SHARED_CONTENT_ROUTE, handlers.SharedContentHandler(server))
+	router.RegisterRoute(handlers.MEDIAS_ROUTE, handlers.MediasHandler(server))
 }
 
 func main() {
