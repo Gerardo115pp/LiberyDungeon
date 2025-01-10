@@ -7,6 +7,10 @@ import {
     DeleteClusterRecordRequest,
     GetClusterRootPathRequest
  } from "@libs/DungeonsCommunication/services_requests/categories_cluster_requests";
+import {
+    GetMediaIdentitiesByUUIDsRequest
+} from "@libs/DungeonsCommunication/services_requests/media_requests";
+import { MediaIdentity } from "./Medias";
 
 export class CategoriesCluster {
     
@@ -62,9 +66,36 @@ export class CategoriesCluster {
         this.#root_category = root_category;
     }
 
-    get UUID() {
-        return this.#uuid;
+    get DownloadCategoryID() {
+        return this.#filter_category;
     }
+    
+    get FSPath() {
+        return this.#fs_path;
+    }
+
+    /**
+     * Returns a list of media identities that belong in this cluster.
+     * @param {string[]} media_uuids
+     * @returns {Promise<import("@models/Medias").MediaIdentity[]>}
+     */
+    async getClusterMedias(media_uuids) {
+        const request = new GetMediaIdentitiesByUUIDsRequest(media_uuids, this.#uuid);
+
+        /**
+         *  @type {MediaIdentity[]} 
+         */
+        let media_identities = [];
+
+        const response = await request.do();
+
+        if (response.Ok && response.data != null) {
+            media_identities = response.data.map(media_identity_params => new MediaIdentity(media_identity_params));
+        }
+
+        return media_identities;
+    }
+
 
     get Name() {
         return this.#name;
@@ -72,14 +103,6 @@ export class CategoriesCluster {
 
     set Name(new_name) {
         this.#name = new_name;
-    }
-    
-    get FSPath() {
-        return this.#fs_path;
-    }
-
-    get DownloadCategoryID() {
-        return this.#filter_category;
     }
 
     get RootCategoryID() {
@@ -94,6 +117,10 @@ export class CategoriesCluster {
             filter_category: this.#filter_category,
             root_category: this.#root_category
         }
+    }
+
+    get UUID() {
+        return this.#uuid;
     }
 }
 
