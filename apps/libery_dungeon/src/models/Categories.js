@@ -1283,6 +1283,77 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
 /*=====  End of Category Cache  ======*/
 
 
+/*=============================================
+=            Categories configuration            =
+=============================================*/
+
+/**
+ * An object that holds the configuration of a category
+* @typedef {Object} CategoryConfigParams
+ * @property {string} category_uuid the 40 character identifier of the category
+ * @property {string[]} billboard_media_uuids a list of media uuids to be displayed explorer billboard. takes precedence over the category content.
+ * @property {number[]} billboard_dungeon_tags a list of dungeon tags, the medias matching these tags will be displayed in the explorer billboard. takes precedence over the billboard_media_uuids or the category content
+*/
+
+export class CategoryConfig {
+    /** @type {string} the 40 character identifier of the category */
+    #category_uuid;
+
+    /** @type {string[]} a list of media uuids to be displayed explorer billboard */
+    #billboard_media_uuids;
+
+    /** @type {number[]} a list of dungeon tags, the medias matching these tags will be displayed in the explorer billboard */
+    #billboard_dungeon_tags;
+
+    /**
+     * @param {CategoryConfigParams} param0
+     */
+    constructor({category_uuid, billboard_media_uuids, billboard_dungeon_tags}) {
+        this.#category_uuid = category_uuid;
+        this.#billboard_media_uuids = billboard_media_uuids;
+        this.#billboard_dungeon_tags = billboard_dungeon_tags;
+    }
+
+    /**
+     * The 40 character identifier of the category this configuration is for.
+     * @type {string}
+     */
+    get CategoryUUID() {
+        return this.#category_uuid;
+    }
+
+    /**
+     * The list of media uuids to be displayed in the explorer billboard. Takes precedence over the category content.
+     * @type {string[]}
+     */
+    get BillboardMediaUUIDs() {
+        return this.#billboard_media_uuids;
+    }
+
+    /**
+     * The list of dungeon tag ids. The medias matching these tags will be displayed in the explorer billboard. Takes precedence over the billboard_media_uuids or the category content.
+     * @type {number[]}
+     */
+    get BillboardDungeonTags() {
+        return this.#billboard_dungeon_tags;
+    }
+
+    /**
+     * Converts a CategoryConfig to a CategoryConfigParams object
+     * @returns {CategoryConfigParams}
+     */
+    toParams = () => {
+        return {
+            category_uuid: this.#category_uuid,
+            billboard_media_uuids: this.#billboard_media_uuids,
+            billboard_dungeon_tags: this.#billboard_dungeon_tags
+        };
+    }
+}
+
+/*=====  End of Categories configuration  ======*/
+
+
 
 
 
