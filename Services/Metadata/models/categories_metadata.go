@@ -22,7 +22,7 @@ func (category_config *CategoryConfig) CopyNonDefaultValues(other_category_confi
 }
 
 // Returns the default values used for a category configs.
-func getDefaultCategoryConfig() *CategoryConfig {
+func GetDefaultCategoryConfig() *CategoryConfig {
 	return &CategoryConfig{
 		BillboardMediaUUIDs:  []string{},
 		BillboardDungeonTags: []int{},
@@ -30,6 +30,6 @@ func getDefaultCategoryConfig() *CategoryConfig {
 }
 
 // Creates a new category config.
-func newCategoryConfig() *CategoryConfig {
-	return getDefaultCategoryConfig()
+func NewCategoryConfig() *CategoryConfig {
+	return GetDefaultCategoryConfig()
 }
