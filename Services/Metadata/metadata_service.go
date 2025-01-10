@@ -23,6 +23,7 @@ func BinderRoutes(server libery_networking.Server, router *patriot_router.Router
 	router.RegisterRoute(patriot_router.NewRoute("/watch-points", true), handlers.WatchPointsHandler(server))
 	router.RegisterRoute(handlers.CLUSTER_METADATA_ROUTE, handlers.ClusterMetadataHandler(server))
 	router.RegisterRoute(dungeon_tags_handler.DUNGEON_TAGS_ROUTE, dungeon_tags_handler.DungeonTagsHandler(server)) // This is the new standard for route registration and ownership. TODO: Adapt all routes(in all services) to this new standard
+	router.RegisterRoute(handlers.CATEGORIES_METADATA_ROUTE, handlers.CategoriesMetadataHandler(server))
 }
 
 func main() {
