@@ -245,3 +245,19 @@ func ParseQueryParameterAsIntSlice(request *http.Request, key string) ([]int, er
 
 	return values, nil
 }
+
+// It parses a query parameter matched by the given key, is expected to be a string of the form "a1,a2,a3" and contain
+// only strings which cannot themselves contain any commas. It returns a slice of strings.
+func ParseQueryParameterAsStringSlice(request *http.Request, key string) ([]string, error) {
+	var query_param string = request.URL.Query().Get(key)
+
+	if query_param == "" {
+		return nil, fmt.Errorf("Query parameter %s is empty", key)
+	}
+
+	var values []string = strings.FieldsFunc(query_param, func(r rune) bool {
+		return r == ','
+	})
+
+	return values, nil
+}
