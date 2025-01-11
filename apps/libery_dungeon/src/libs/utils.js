@@ -275,6 +275,31 @@ export const videoDurationToString = (duration, is_seconds = true) => {
     return duration_string;
 }
 
+/**
+ * Returns the base name of a give unix-like path.
+ * @param {string} path 
+ * @returns {string}
+ */
+export const getPathBasename = path => {
+    const path_fragments = path.split('/');
+
+    if (path_fragments.length === 0) {
+        return "";
+    }
+
+    let basename = "";
+
+    for (let h = (path_fragments.length - 1); h >= 0; h--) {
+        basename = path_fragments[h];
+
+        if (basename !== "") {
+            break;
+        }
+    }
+
+    return basename;
+}
+
 /*=============================================
 =            Data structures            =
 =============================================*/
