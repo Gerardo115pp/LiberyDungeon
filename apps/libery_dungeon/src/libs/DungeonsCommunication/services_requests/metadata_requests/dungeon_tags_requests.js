@@ -145,6 +145,58 @@ export class GetDungeonTagByNameRequest {
 }
 
 /**
+ * Returns a list of dungeon tags matching a list of tag ids.
+ */
+export class GetDungeonTagsRequest {
+    
+    static endpoint = `${metadata_server}/dungeon-tags/tags/by-ids`;
+
+    /**
+     * @param {number[]} tags
+     */
+    constructor(tags) {
+        this.tags = tags;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import("@models/DungeonTags").DungeonTagParams[]>>}
+     */
+    do = async () => {
+        /**
+         * @type {import("@models/DungeonTags").DungeonTagParams[]}
+         */
+        let matching_tags = [];
+
+        let tags_param = this.tags.map(t => t.toString()).join(',')
+
+        const url = new URL(GetDungeonTagsRequest.endpoint, globalThis.location.origin);
+
+        url.searchParams.append("tags", tags_param);
+
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        try {
+            response = await fetch(url);
+
+            if (response.ok) {
+                matching_tags = await response.json();
+            }
+        } catch (err) {
+            console.error("Error getting dungeon tags: ", err);
+
+            throw err;
+        }
+
+        return new HttpResponse(response, matching_tags);
+    }
+}
+
+/**
  * Returns all of the tags associated with an entity identifier on a specific cluster.
  */
 export class GetEntityTaggingsRequest {
