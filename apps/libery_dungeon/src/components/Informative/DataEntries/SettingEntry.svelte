@@ -150,7 +150,7 @@
     
 </script>
 
-<li class="dungeon-setting-entry" 
+<div class="dungeon-setting-entry" 
     style:font-size="{font_size}"
 >
     <label class="dungeon-input">
@@ -169,10 +169,10 @@
             required={is_required}
         >
     </label>
-</li>
+</div>
 
 <style>
-    li.dungeon-setting-entry {
+    .dungeon-setting-entry {
         & label.dungeon-input {
             font-size: inherit;
             padding-inline: 1em;
