@@ -321,6 +321,12 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
         #the_thumbnail;
 
         /**
+         * The configuration of the category. has to be loaded before usage.
+         * @type {CategoryConfig | null}
+         */
+        #config;
+
+        /**
          * @param {InnerCategoryParams} param0 
          */
         constructor ({name, uuid, fullpath, category_thumbnail}) {
@@ -337,6 +343,16 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
             this.#category_thumbnail = category_thumbnail;
 
             this.#the_thumbnail = null;
+
+            this.#config = null;
+        }
+
+        /**
+         * The category configuration. It has to be loaded first by calling loadCategoryConfig.
+         * @type {CategoryConfig | null}
+         */
+        get Config() {
+            return this.#config;
         }
 
         /**
@@ -356,6 +372,14 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
          */
         hasThumbnail = () => {
             return this.#category_thumbnail !== "";
+        }
+
+        /**
+         * Whether the category configuration has been loaded.
+         * @returns {this is {#config: CategoryConfig, Config: CategoryConfig}}
+         */
+        hasConfig = () => {
+            return this.#config !== null;
         }
 
         /**
@@ -391,6 +415,26 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
             this.#the_thumbnail = media_identity;
 
             return true;
+        }
+
+        /**
+         * Loads the category configuration. returns whether the configuration is now loaded.
+         * @returns {Promise<CategoryConfig>}
+         */
+        loadCategoryConfig = async () => {
+            if (this.hasConfig()) {
+                return this.Config;
+            }
+
+            const category_config = await getCategoryConfig(this.uuid);
+
+            if (category_config === null) {
+                throw new Error("In @models/Categories.InnerCategory.loadCategoryConfig: The category configuration couldn't be loaded");
+            }
+
+            this.#config = category_config;
+
+            return category_config;
         }
 
         /**
