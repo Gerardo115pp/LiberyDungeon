@@ -3,6 +3,7 @@ package dungeon_tags_handler
 import (
 	"encoding/json"
 	"fmt"
+	"libery-dungeon-libs/communication/service_requests/metadata_requests"
 	"libery-dungeon-libs/dungeonsec/dungeon_middlewares"
 	dungeon_helpers "libery-dungeon-libs/helpers"
 	service_models "libery-metadata-service/models"
@@ -44,6 +45,8 @@ func getTagHandler(response http.ResponseWriter, request *http.Request) {
 	switch resource {
 	case "/dungeon-tags/tags":
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonTagsTagHandler)
+	case "/dungeon-tags/tags/by-ids":
+		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getDungeonTagsByIDListHandler)
 	case "/dungeon-tags/tags/entity":
 		handler_func = dungeon_middlewares.CheckUserCan_ViewContent(getEntityTagsHandler)
 	case "/dungeon-tags/tags/cluster":
@@ -74,6 +77,26 @@ func getDungeonTagsTagHandler(response http.ResponseWriter, request *http.Reques
 
 	echo.Echo(echo.RedFG, "In getDungeonTagsTagHandler, invalid query parameters\n")
 	dungeon_helpers.WriteRejection(response, 400, "Invalid query parameters")
+}
+
+func getDungeonTagsByIDListHandler(response http.ResponseWriter, request *http.Request) {
+	request_body, err := metadata_requests.ParseTagIDsListParams(request)
+	if err != nil {
+		dungeon_helpers.WriteRejection(response, 400, "Invalid query parameters")
+		return
+	}
+
+	dungeon_tags, err := repository.DungeonTagsRepo.GetTagsByIDsCTX(request.Context(), request_body.TagList)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In getDungeonTagsByIDListHandler, while getting tags by ids: %s\n", err))
+		response.WriteHeader(404)
+		return
+	}
+
+	response.Header().Add("Content-Type", "application/json")
+	response.WriteHeader(200)
+
+	json.NewEncoder(response).Encode(dungeon_tags)
 }
 
 func getDungeonTagByIdHandler(response http.ResponseWriter, request *http.Request) {
