@@ -3,6 +3,7 @@ import {
     GetClusterTaxonomiesRequest,
     GetDungeonTagByIDRequest,
     GetDungeonTagByNameRequest,
+    GetDungeonTagsRequest,
     GetEntityTaggingsRequest,
     GetEntitiesWithTagsRequest,
     GetClusterTagsRequest,
@@ -426,6 +427,26 @@ export const stringifyDungeonTags = (dungeon_tags) => {
         }
 
         return dungeon_tag;
+    }
+
+    /**
+     * Returns a list of dungeon tags matching a list of tag ids.
+     * @param {number[]} tag_ids
+     * @returns {Promise<DungeonTag[]>}
+     */
+    export const getDungeonTags = async (tag_ids) => {
+        /** @type {DungeonTag[]} */
+        let dungeon_tags = [];
+
+        const request = new GetDungeonTagsRequest(tag_ids);
+
+        const response = await request.do();
+
+        if (response.Ok) {
+            dungeon_tags = response.data.map(tag_params => new DungeonTag(tag_params));
+        }
+
+        return dungeon_tags;
     }
 
     /**
