@@ -216,6 +216,15 @@
              * @type {UIReference}
              */
             const ui_media_reference = new UIReference("media", "medias");
+
+        
+        /*----------  References  ----------*/
+        
+            /**
+             * The explorer billboard component.
+             * @type {ExplorerBillboard}
+             */
+            let explorer_billboard;
     
     /*=====  End of Properties  ======*/
 
@@ -1089,6 +1098,23 @@
             category_tagger_tool_mounted.set(false);
         }
 
+        
+        /*=============================================
+        =            Category config changes            =
+        =============================================*/
+        
+            /**
+             * Handles the change of the billboard related configurations.
+             * @type {import('@components/Categories/CategoryConfiguration/category_configuration').CategoryConfig_CategoryConfigChanged}
+             */
+            const handleBillboardConfigurationChange = new_config => {
+                explorer_billboard.updateCurrentCategoryConfig(new_config);
+            }
+        
+        /*=====  End of Category config changes  ======*/
+        
+        
+
         /**
          * Handles the onvalid_media_change event emitted by the ExplorerBillboard component.
          * @returns {void}
@@ -1465,6 +1491,7 @@
             <CategoryConfiguration
                 the_inner_category={$current_category.asInnerCategory()}
                 enable_billboard_config
+                onBillboardConfigChanged={handleBillboardConfigurationChange}
             />
         </div>
     {/if}
@@ -1482,6 +1509,7 @@
                 on:breadcrumb-selected={handleBreadcrumbSelected}
             />
             <ExplorerBillboard
+                bind:this={explorer_billboard}
                 the_billboard_category={$current_category}
                 onvalid_media_change={handleValidMediaChange}
             >

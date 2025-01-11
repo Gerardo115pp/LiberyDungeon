@@ -50,6 +50,12 @@
              * @type {import("./category_configuration").CategoryConfig_ThumbnailChanged}
              */ 
             export let on_thumbnail_change = updated_category => {};
+
+            /**
+             * Called when ever billboard configuration change.
+             * @type {import('./category_configuration').CategoryConfig_CategoryConfigChanged}
+             */
+            export let onBillboardConfigChanged = new_config => {};
     
     /*=====  End of Properties  ======*/
     
@@ -129,7 +135,9 @@
 
             const new_billboard_medias_uuids = [media_identity.Media.uuid, ...category_config.BillboardMediaUUIDs];
 
-            category_config.updateBillboardMediaUUIDs(new_billboard_medias_uuids);
+            await category_config.updateBillboardMediaUUIDs(new_billboard_medias_uuids);
+
+            onBillboardConfigChanged(category_config)
         }
 
         /**
@@ -144,7 +152,9 @@
 
             const new_billboard_medias_uuids = category_config.BillboardMediaUUIDs.filter(media_uuid_in_list => media_uuid_in_list !== media_uuid);
 
-            category_config.updateBillboardMediaUUIDs(new_billboard_medias_uuids);
+            await category_config.updateBillboardMediaUUIDs(new_billboard_medias_uuids);
+
+            onBillboardConfigChanged(category_config)
         }
 
         /**

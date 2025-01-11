@@ -141,10 +141,6 @@
             return configuration_has_medias || new_category.content.length > 0 
         }
 
-
-
-        
-
         /**
          * Returns the html billboard element.
          * @returns {HTMLImageElement | HTMLVideoElement | null}
@@ -172,7 +168,7 @@
 
             if (await categoryHasBillboardMedia(the_billboard_category)) {
                 await loadBillboardMedias(the_billboard_category.Config)
-                handleChangeBillboardImage(); 
+                handleChangeBillboardImage(true); 
             }
 
             if (was_current_media_null && current_billboard_media != null) {
@@ -182,9 +178,10 @@
     
         /**
          * Changes the current billboard media.
+         * @param {boolean} [avoid_same_image] if true and uses random navigation, it will avoid landing in the same index.
          */ 
-        const handleChangeBillboardImage = () => {
-            if (current_billboard_media != null && billboard_medias.length === 1) {
+        const handleChangeBillboardImage = (avoid_same_image) => {
+            if (avoid_same_image && current_billboard_media != null && billboard_medias.length === 1) {
                 resetBillboardMediaIteration();
                 return;
             }
@@ -263,9 +260,10 @@
 
         /**
          * Iters through medias using a random progression system.
+         * @param {boolean} [avoid_same_image] if true, it will avoid landing in the same index.
          * @returns {void}
          */
-        const iterBillboardMediasRandom = () => {
+        const iterBillboardMediasRandom = (avoid_same_image) => {
             let inifite_loop_guard = 0;
 
             /**
@@ -278,7 +276,7 @@
 
                 new_billboard_media = billboard_medias[rand_media_index];
 
-                if (current_billboard_media != null && current_billboard_media.uuid === new_billboard_media.uuid) {
+                if (current_billboard_media != null && current_billboard_media.uuid === new_billboard_media.uuid && avoid_same_image) {
                     new_billboard_media = null
                 }
 
@@ -393,6 +391,24 @@
          */
         const setRandomBillboardMediaIteration = (enable) => {
             random_billboard_media_iteration = enable;
+        }
+
+        /**
+         * Updates the current category configuration. meant to be used from a parent component.
+         * @param {import('@models/Categories').CategoryConfig} new_config 
+         */
+        export async function updateCurrentCategoryConfig(new_config) {
+            if (new_config.CategoryUUID != the_billboard_category.uuid) return;
+
+            the_billboard_category.setCategoryConfig(new_config);
+
+            if (await categoryHasBillboardMedia(the_billboard_category)) {
+                await loadBillboardMedias(new_config);
+                resetBillboardMediaIteration(false);
+            }
+
+            console.log("Updated category configuration for the billboard.");
+        
         }
     
     /*=====  End of Methods  ======*/
