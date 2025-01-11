@@ -657,6 +657,10 @@
             font-weight: 600;
         }
     }
+
+    .dungeon-generic-text {
+        color: var(--grey-3);
+    }
     
     /*=============================================
     =            Color highligthed text            =
