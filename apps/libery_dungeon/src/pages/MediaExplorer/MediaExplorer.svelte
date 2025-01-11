@@ -1464,6 +1464,7 @@
         <div id="category-configuration-component-wrapper">
             <CategoryConfiguration
                 the_inner_category={$current_category.asInnerCategory()}
+                enable_billboard_config
             />
         </div>
     {/if}
