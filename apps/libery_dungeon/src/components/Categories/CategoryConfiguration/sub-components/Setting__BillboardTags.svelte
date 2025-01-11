@@ -1,4 +1,5 @@
 <script>
+    import { dungeon_tags_content_type } from "@app/common/content_types";
     import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
     import { ui_pandasworld_tag_references } from "@app/common/ui_references/dungeon_tags_references";
     import SettingEntry from "@components/Informative/DataEntries/SettingEntry.svelte";
@@ -6,7 +7,8 @@
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
     import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
-    import { getDungeonTagByID, getDungeonTags } from "@models/DungeonTags";
+    import { ClipboardContent } from "@models/Clipboard";
+    import { DungeonTagList, getDungeonTagByID, getDungeonTags } from "@models/DungeonTags";
     
     /*=============================================
     =            Properties            =
@@ -168,6 +170,56 @@
             emitPlatformMessage(`Removed ${hr_label}`);
         }
 
+        /**
+         * Handles the clipboard paste event on the tag aggregator.
+         * @param {ClipboardEvent} event
+         * @returns {Promise<void>}
+         */
+        const handleClipboardPaste = async event => {
+            console.log("event:", event);
+            
+            const clipboard_content = await readClipboard();
+
+            if (clipboard_content === null) return;
+
+            event.preventDefault();
+
+            let new_dungeon_tags = clipboard_content.Content.DungeonTags;
+
+            the_tags_aggregator.clearSettingValue();
+
+            const current_tags = new Set(the_billboard_tags);
+            let new_tags = new Set(new_dungeon_tags);
+
+            new_tags = new_tags.difference(current_tags);
+
+            the_billboard_tags = Array.from(current_tags.union(new_tags));
+            new_dungeon_tags = Array.from(new_tags);
+
+            onTagsAdded(new_dungeon_tags);
+        }
+
+        /**
+         * Attempts to read the content from the clipboard. If it can parse a ClipboardContent<DungeonTagList>, it will return it. otherwise it will return null.
+         * @returns {Promise<ClipboardContent<DungeonTagList> | null>}
+         */
+        const readClipboard = async () => {
+            const clipboard_content_any = await ClipboardContent.fromClipboard();
+
+            if (clipboard_content_any === null) return null;
+
+            const content_any = clipboard_content_any.Content;
+
+
+            const dungeon_tags_list = DungeonTagList.fromUnknown(content_any);
+
+            if (dungeon_tags_list === null) return null;
+
+
+            const clipboard_content = new ClipboardContent(dungeon_tags_content_type, dungeon_tags_list);
+
+            return clipboard_content;
+        }
 
         /**
          * Resets the state of the dungeon component.
@@ -189,6 +241,7 @@
             font_size="var(--cacow-font-size)"
             information_entry_label="{ui_pandasworld_tag_references.TAG.EntityNamePlural} ID(or just paste them)"
             on_setting_change={handleNewBillboardTag}
+            onClipboardPaste={handleClipboardPaste}
         />
     </div>
     <ol id="cacow-current-billboard-tags"

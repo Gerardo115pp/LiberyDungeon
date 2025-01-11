@@ -46,6 +46,13 @@
              */
             export let on_setting_change = (setting_key, new_value) => {};
 
+            /**
+             * Triggered when the user has initiated a "paste" action through the browser's user interface. Just the same as a paste event from
+             * the Element interface.
+             * @type {(event: ClipboardEvent) => void}
+             */
+            export let onClipboardPaste = (event) => {};
+
         
         /*----------  Behavior  ----------*/
         
@@ -172,6 +179,7 @@
             bind:value={information_entry_value}
             on:keydown={handleKeyDown}
             on:keyup={handleKeyUp}
+            on:paste={onClipboardPaste}
             spellcheck="false"
             pattern={value_pattern}
             required={is_required}
