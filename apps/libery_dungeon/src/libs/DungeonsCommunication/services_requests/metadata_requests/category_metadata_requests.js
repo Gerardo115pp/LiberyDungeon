@@ -121,7 +121,7 @@ export class PatchCategoryBillboardTagsRequest {
      */
     constructor(category_uuid, billboard_dungeon_tags) {
         this.category_uuid = category_uuid;
-        this.billboard_dungeon_tags = billboard_dungeon_tags;
+        this.billboard_tags = billboard_dungeon_tags;
     }
 
     toJson = attributesToJson.bind(this);
