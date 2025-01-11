@@ -34,6 +34,21 @@
             loadDungeonTags(the_billboard_tags_ids);
         } 
     
+        
+        /*----------  Event handlers  ----------*/
+        
+            /**
+             * Triggered whenever a dungeon tag is added to the billboard tags.
+             * @type {import('../category_configuration').CategoryConfig_BillboardDungeonTagsAdded}
+             */ 
+            export let onTagsAdded = (dungeon_tag) => {};
+
+            /**
+             * Triggered whenever a dungeon tag is removed from the billboard tags.
+             * @type {import('../category_configuration').CategoryConfig_BillboardDungeonTagsRemoved}
+             */
+            export let onTagsRemoved = (dungeon_tag_id) => {};
+
     /*=====  End of Properties  ======*/
     
     /*=============================================
@@ -104,6 +119,8 @@
 
             the_billboard_tags = [new_dungeon_tag, ...the_billboard_tags];
 
+            onTagsAdded(new_dungeon_tag);
+
             const hr_label = generateHRDungeonTagLabel(new_dungeon_tag);
 
             emitPlatformMessage(`Added ${hr_label}`);
@@ -143,6 +160,8 @@
             }
 
             the_billboard_tags = new_billboard_dungeon_tags;
+
+            onTagsRemoved(removed_dungeon_tag.Id);
 
             const hr_label = generateHRDungeonTagLabel(removed_dungeon_tag);
 
