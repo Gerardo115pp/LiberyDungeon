@@ -8,7 +8,7 @@ export type CategoryConfig_BillboardMediaAdded = (media_identity: MediaIdentity)
 
 export type CategoryConfig_BillboardMediaRemoved = (media_uuid: string) => void;
 
-export type CategoryConfig_BillboardDungeonTagsAdded = (dungeon_tag: DungeonTag) => void;
+export type CategoryConfig_BillboardDungeonTagsAdded = (dungeon_tags: DungeonTag[]) => void;
 
 export type CategoryConfig_BillboardDungeonTagsRemoved = (tag_id: number) => void;
 

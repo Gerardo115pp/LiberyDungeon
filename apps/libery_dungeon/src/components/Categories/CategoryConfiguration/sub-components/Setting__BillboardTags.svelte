@@ -41,7 +41,7 @@
              * Triggered whenever a dungeon tag is added to the billboard tags.
              * @type {import('../category_configuration').CategoryConfig_BillboardDungeonTagsAdded}
              */ 
-            export let onTagsAdded = (dungeon_tag) => {};
+            export let onTagsAdded = (dungeon_tags) => {};
 
             /**
              * Triggered whenever a dungeon tag is removed from the billboard tags.
@@ -119,7 +119,7 @@
 
             the_billboard_tags = [new_dungeon_tag, ...the_billboard_tags];
 
-            onTagsAdded(new_dungeon_tag);
+            onTagsAdded([new_dungeon_tag]);
 
             const hr_label = generateHRDungeonTagLabel(new_dungeon_tag);
 

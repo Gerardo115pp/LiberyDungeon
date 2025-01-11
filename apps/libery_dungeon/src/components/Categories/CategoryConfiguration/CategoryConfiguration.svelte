@@ -161,13 +161,15 @@
          * Handles the addition of new dungeon tags to the Category billboard configurations.
          * @type {import('./category_configuration').CategoryConfig_BillboardDungeonTagsAdded}
          */
-        const handleNewBillboardTag = async (dungeon_tag) => {
+        const handleNewBillboardTag = async (dungeon_tags) => {
             if (category_config == null) {
                 console.error("In CategoryConfiguration.handleNewBillboardTag: category_config is null");
                 return;
             }
 
-            const new_billboard_tags_ids = [dungeon_tag.Id, ...category_config.BillboardDungeonTags];
+            const new_tags_ids = dungeon_tags.map(dt => dt.Id);
+
+            const new_billboard_tags_ids = [...new_tags_ids, ...category_config.BillboardDungeonTags];
 
             await category_config.updateBillboardDungeonTags(new_billboard_tags_ids);
 
