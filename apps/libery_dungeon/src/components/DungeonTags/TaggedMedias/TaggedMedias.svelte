@@ -14,6 +14,8 @@
     import { last_keyboard_focused_tag } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_store";
     import { ComponentHotkeyContext } from "@libs/LiberyHotkeys/hotkeys_context";
     import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
+    import dungeon_tags_clipboard from "../stores/dungeon_tags_clipboard";
+    import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     
     /*=============================================
     =            Properties            =
@@ -171,6 +173,41 @@
                 }
 
 
+                /**
+                 * Prepares the public hotkey cations to generate the hotkeys context.
+                 * @param {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext} new_component_hotkey_context
+                 * @returns {import('@libs/LiberyHotkeys/hotkeys_context').default}
+                 */
+                const preparePublicHotkeysActions = new_component_hotkey_context => {
+                    cluster_public_tags_hotkey_context = component_hotkey_context.ChildHotkeysContexts.get(tagged_medias_child_contexts.CLUSTER_PUBLIC_TAGS) ?? null;
+                    if (cluster_public_tags_hotkey_context == null) {
+                        throw new Error("In TaggedMedias, invalid component_hotkey_context: ClusterPublicTags hotkey context was not defined as a child context of the TaggedMedias hotkey context.");
+                    }
+
+                    cluster_public_tags_hotkey_context.registerExtraHotkey({
+                        hotkey_triggers: ["n"],
+                        callback: handleClearFilteringTags,
+                        options: {
+                            description: `${common_action_groups.CONTENT} Removes all the filtering ${ui_pandasworld_tag_references.TAG_TAXONOMY.EntityName} ${ui_pandasworld_tag_references.TAG.EntityNamePlural}`,
+                        }
+                    });
+
+                    cluster_public_tags_hotkey_context.registerExtraHotkey({
+                        hotkey_triggers: ["y y"],
+                        callback: handleCopyDungeonTags,
+                        options: {
+                            description: `<registries>Copies the ${ui_pandasworld_tag_references.TAG_TAXONOMY.EntityName} ${ui_pandasworld_tag_references.TAG.EntityNamePlural} of the current ${ui_core_dungeon_references.MEDIA.EntityName}`,
+                        }
+                    })
+
+                    sub_component_sections.push(cluster_public_tags_hotkey_context);
+
+                    const hotkey_context = new_component_hotkey_context.generateHotkeysContext();
+
+                    return hotkey_context;
+                }
+
+            /* -------------------------------------------------------------------------- */
 
             /**
              * Handles the delete focused tag action from the TagTaxonomy component.
@@ -196,32 +233,29 @@
 
                 onClose();
             }
-
+        
             /**
-             * Prepares the public hotkey cations to generate the hotkeys context.
-             * @param {import('@libs/LiberyHotkeys/hotkeys_context').ComponentHotkeyContext} new_component_hotkey_context
-             * @returns {import('@libs/LiberyHotkeys/hotkeys_context').default}
+             * Handles coping the current media dungeon tags.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
-            const preparePublicHotkeysActions = new_component_hotkey_context => {
-                cluster_public_tags_hotkey_context = component_hotkey_context.ChildHotkeysContexts.get(tagged_medias_child_contexts.CLUSTER_PUBLIC_TAGS) ?? null;
-                if (cluster_public_tags_hotkey_context == null) {
-                    throw new Error("In TaggedMedias, invalid component_hotkey_context: ClusterPublicTags hotkey context was not defined as a child context of the TaggedMedias hotkey context.");
+            const handleCopyDungeonTags = async (event, hotkey) => {
+                const media_tags = filtering_dungeon_tags.map(tagging => tagging);
+
+                dungeon_tags_clipboard.writeOnCurrentRegister(media_tags);
+
+                const content = dungeon_tags_clipboard.readRegister();
+
+                if (content != null) {
+                    try {
+                        await content.copy();
+                    } catch (error) {
+                        console.error("Failed to copy the tags to the clipboard.", error);
+                    } 
                 }
 
-                cluster_public_tags_hotkey_context.registerExtraHotkey({
-                    hotkey_triggers: ["n"],
-                    callback: handleClearFilteringTags,
-                    options: {
-                        description: `${common_action_groups.CONTENT} Removes all the filtering ${ui_pandasworld_tag_references.TAG_TAXONOMY.EntityName} ${ui_pandasworld_tag_references.TAG.EntityNamePlural}`,
-                    }
-                });
-
-                sub_component_sections.push(cluster_public_tags_hotkey_context);
-
-                const hotkey_context = new_component_hotkey_context.generateHotkeysContext();
-
-                return hotkey_context;
+                emitPlatformMessage(`Copied all filtering ${ui_pandasworld_tag_references.TAG.EntityNamePlural}`);
             }
+
 
             /* ------------------------- sub-components hotkeys ------------------------- */
 
