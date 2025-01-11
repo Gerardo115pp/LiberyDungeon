@@ -72,6 +72,11 @@
                 handleCategoryChange(the_billboard_category);
             }
 
+            /**
+             * Whether the billboard media has a vertical aspect ratio.
+             * @type {boolean}
+             */
+            let billboard_media_vertical = false;
             
             /*----------  Looping interval  ----------*/
 
@@ -292,8 +297,7 @@
 
             use_dark_theme = new_white_percentage > 18;
 
-            console.log("White percentage of the billboard image: ", new_white_percentage);
-            console.log("White overlay color theme: ", !use_dark_theme);
+            verifyBillboardImageAspectRatio(billboard_element);
         }
 
         /**
@@ -309,6 +313,7 @@
             }
 
             use_dark_theme = false;
+            verifyBillboardVideoAspectRatio(billboard_element);
         }
 
         /**
@@ -360,6 +365,16 @@
             current_billboard_media = new_billboard_media;
 
             console.log("Changed billboard media to: ", current_billboard_media);
+        }
+
+        /**
+         * Returns whether a given set of width and height values describes a vertical aspect ratio.
+         * @param {number} width
+         * @param {number} height
+         * @returns {boolean}
+         */
+        const isVerticalAspectRatio = (width, height) => {
+            return height >= (width * 1.1);
         }
 
         /**
@@ -479,6 +494,43 @@
             console.log("Updated category configuration for the billboard.");
         
         }
+
+        /**
+         * Verifies the current billboard media aspect ratio.
+         * @returns {void}
+         */
+        const verifyBillboardMediaAspectRatio = () => {
+            const billboard_media_element = getBillboardElement();
+
+            if (billboard_media_element == null) {
+                billboard_media_vertical = false;
+                return;
+            }
+
+            if (billboard_media_element instanceof HTMLImageElement) {
+                verifyBillboardImageAspectRatio(billboard_media_element);
+            } else if (billboard_media_element instanceof HTMLVideoElement) {
+                verifyBillboardVideoAspectRatio(billboard_media_element);
+            }
+        }
+
+        /**
+         * Verifies the aspect ratio of the billboard image.
+         * @param {HTMLImageElement} image_element
+         * @returns {void}
+         */
+        const verifyBillboardImageAspectRatio = (image_element) => {
+            billboard_media_vertical = isVerticalAspectRatio(image_element.naturalWidth, image_element.naturalHeight);
+        }
+
+        /**
+         * Verifies the aspect ratio of the billboard video.
+         * @param {HTMLVideoElement} video_element
+         * @returns {void}
+         */
+        const verifyBillboardVideoAspectRatio = (video_element) => {
+            billboard_media_vertical = isVerticalAspectRatio(video_element.videoWidth, video_element.videoHeight);
+        }
     
     /*=====  End of Methods  ======*/
     
@@ -491,6 +543,7 @@
     class:loaded-billboard={current_billboard_media != null}
     class:billboard-looping-enabled={billboard_media_looping_enabled}
     class:dark-overlay-color-theme={use_dark_theme}
+    class:billboard-media-vertical={billboard_media_vertical}
 >
     <div id="mexbill-underlay-billboard-wrapper">
         {#if current_billboard_media != null}
@@ -579,6 +632,8 @@
             /* overflow: hidden; */
 
             & > img, video {
+                position: absolute;
+                inset: 0;
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
@@ -607,10 +662,14 @@
             }
         }  
 
-        section#media-explorer-billboard.billboard-looping-enabled {
-            & > img, video {
-                position: absolute;
-                inset: 0;
+        section#media-explorer-billboard.billboard-media-vertical {
+            
+            & #mexbill-underlay-billboard-wrapper {
+                height: 250cqh;
+            }
+
+            & img, video {
+                object-position: center 30%;
             }
         }
         
