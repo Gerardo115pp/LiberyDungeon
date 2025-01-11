@@ -7,6 +7,10 @@
     import { LabeledError, VariableEnvironmentContextError } from '@libs/LiberyFeedback/lf_models';
     import { lf_errors } from '@libs/LiberyFeedback/lf_errors';
     import { changeCategoryThumbnail } from '@models/Categories';
+    import SettingBillboardMedias from './sub-components/Setting__BillboardMedias.svelte';
+    import SettingBillboardTags from './sub-components/Setting__BillboardTags.svelte';
+    import { ui_core_dungeon_references } from '@app/common/ui_references/core_ui_references';
+    import { ui_pandasworld_tag_references } from '@app/common/ui_references/dungeon_tags_references';
 
     /*=============================================
     =            Properties            =
@@ -29,7 +33,16 @@
         let category_config = null;
 
         $: handleCurrentCategoryChange(the_inner_category);
+       
         
+        /*----------  Sections state  ----------*/
+        
+            /**
+             * Whether the billboard section should be enabled.
+             * @type {boolean}
+             * @default false
+             */ 
+            export let enable_billboard_config = false;
         /*----------  Event handlers  ----------*/
         
             /**
@@ -147,7 +160,7 @@
 </script>
 
 <dialog open 
-    class="category-config-wrapper libery-dungeon-window"
+    class="category-config-wrapper libery-dungeon-window dungeon-scroll"
     transition:slide={{axis: 'y', easing: quartOut}}
 >
     <section id="cacow-general-settings" 
@@ -178,17 +191,49 @@
             </div>
         </menu>
     </section>
-    <section id="cacow-billboard-section"
-        class="cacow-settings-section"          
-    >
-        <header class="cacow-configuration-header">
-            <h4 class="cacow-category-identity">
-                Billboard settings
-            </h4>
-        </header>
-        <menu class="cacow-settings">
-        </menu>
-    </section>
+    {#if enable_billboard_config}
+        <section id="cacow-billboard-section"
+            class="cacow-settings-section"          
+        >
+            <header class="cacow-configuration-header">
+                <h4 class="cacow-category-identity">
+                    Billboard settings
+                </h4>
+                <div id="cacow-billboard-medias-setting-description" 
+                    class="dungeon-description cacow-header-instructtions" 
+                >
+                    <p 
+                        class="cacow-setting-instructions "
+                    >
+                        Change the medias that appear in the billboard for this {ui_core_dungeon_references.CATEGORY.EntityName}. You have three options:
+                    </p>
+                    <p class="cacow-setting-instructions">
+                        <b>First</b>: Add a set of {ui_pandasworld_tag_references.TAG_TAXONOMY.EntityName} {ui_pandasworld_tag_references.TAG.EntityNamePlural} in the appropriate section(you can paste a set of copied {ui_pandasworld_tag_references.TAG.EntityNamePlural} copied from the Viewer) and then all {ui_core_dungeon_references.MEDIA.EntityNamePlural} that match, will be displayed in the billboard.
+                    </p>
+                    <p class="cacow-setting-instructions">
+                        <b>Second</b>: Add a list of {ui_core_dungeon_references.MEDIA.EntityName} uuids and only those will show in the billboard.
+                    </p>
+                    <p class="cacow-setting-instructions">
+                        <b>Third</b>: If the {ui_core_dungeon_references.CATEGORY.EntityName} has any {ui_core_dungeon_references.MEDIA.EntityNamePlural} then one of those will be picked at random.
+                    </p>
+                </div>
+            </header>
+            <div class="cacow-group-wrapper">
+                {#if category_config != null}
+                    <SettingBillboardMedias 
+                        the_billboard_media_uuids={category_config.BillboardMediaUUIDs}
+                    />
+                {/if}
+            </div>
+            <div class="cacow-group-wrapper">
+                {#if category_config != null}
+                    <SettingBillboardTags 
+                        the_billboard_tags={category_config.BillboardDungeonTags}
+                    />
+                {/if}
+            </div>
+        </section>
+    {/if}
 </dialog>
 
 <style>
@@ -206,6 +251,7 @@
         padding-block: calc(var(--spacing-3) + var(--spacing-1));
         border-color: hsl(from var(--grey-8) h s l / 0.7);
         backdrop-filter: var(--backdrop-filter-blur);
+        overscroll-behavior: contain;
         z-index: var(--z-index-t-5);
     }
 
@@ -225,6 +271,45 @@
         row-gap: var(--spacing-2);
         color: var(--grey-1);
     }
+
+    .cacow-setting-instructions {
+        color: var(--grey-3);
+    } 
+
+    
+
+    /*=============================================
+    =            Billboard settings            =
+    =============================================*/
+        header.cacow-configuration-header:has(.cacow-header-instructtions) {
+            display: flex;
+            flex-direction: column;
+            row-gap: var(--spacing-2);
+        }
+
+        #cacow-billboard-medias-setting-description {
+            display: flex;
+            flex-direction: column;
+            row-gap: calc(var(--spacing-1) * 0.7);
+
+            & > .cacow-setting-instructions:first-of-type {
+                font-weight: 600;
+            }
+        }
+    
+        .cacow-group-wrapper {
+            display: flex;
+            flex-direction: column;
+            row-gap: var(--spacing-1);
+            padding-block: var(--spacing-1);
+        } 
+
+
+        .cacow-group-wrapper:not(:last-of-type) {
+            border-bottom: 1px solid var(--grey-9);
+        }
+    
+    /*=====  End of Billboard settings  ======*/
 
     @container (width < 260px) {
         header.cacow-configuration-header {
