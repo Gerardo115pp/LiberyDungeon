@@ -22,12 +22,19 @@
             CATEGORY_THUMBNAIL: 'category_thumbnail_uuid',
         }
 
+        /**
+         * The current category's configuration.
+         * @type {import('@models/Categories').CategoryConfig | null}
+         */
+        let category_config = null;
+
+        $: handleCurrentCategoryChange(the_inner_category);
         
         /*----------  Event handlers  ----------*/
         
             /**
              * Handler for the thumbnail-change event.
-             * @type {import('./category_folder_subs').CategoryConfig_ThumbnailChanged}
+             * @type {import("./category_configuration").CategoryConfig_ThumbnailChanged}
              */ 
             export let on_thumbnail_change = updated_category => {};
     
@@ -96,6 +103,44 @@
 
             on_thumbnail_change(the_inner_category);
         }
+
+        /**
+         * Handles the current category change.
+         * @param {import('@models/Categories').InnerCategory} new_category
+         */
+        const handleCurrentCategoryChange = async (new_category) => {
+            if (new_category == null) {
+                return;
+            }
+
+            category_config = await loadCategoryConfig();
+        }
+
+        /**
+         * Loads the category's configuration.
+         * @returns {Promise<import('@models/Categories').CategoryConfig | null>}
+         */
+        const loadCategoryConfig = async () => {
+            if (the_inner_category.hasConfig()) {
+                return the_inner_category.Config;
+            }
+
+            let loaded_config = null;
+
+            try {
+                loaded_config = await the_inner_category.loadCategoryConfig();
+            } catch (err) {
+                const variable_environment = new VariableEnvironmentContextError("In CategoryConfiguration.loadCategoryConfig")
+
+                variable_environment.addVariable("category_uuid", the_inner_category.uuid);
+
+                const labeled_err = new LabeledError(variable_environment, `Sorry, there was an error loading the configuration for category '${the_inner_category.uuid}'.`, lf_errors.ERR_PROCESSING_ERROR);
+
+                labeled_err.alert();
+            }
+
+            return loaded_config;
+        }
     
     /*=====  End of Methods  ======*/
     
@@ -105,30 +150,45 @@
     class="category-config-wrapper libery-dungeon-window"
     transition:slide={{axis: 'y', easing: quartOut}}
 >
-    <header class="cacow-configuration-header">
-        <h4 class="cacow-category-identity">
-            Settings for {the_inner_category.name}
-        </h4>
-    </header>
-    <menu class="cacow-settings">
-        <div class="cacow-data-entry">
-            <DungeonDataEntry
-                font_size="var(--cacow-font-size)"
-                information_entry_label="uuid"
-                information_entry_value={the_inner_category.uuid}
-                paste_on_click
-            /> 
-        </div>
-        <div class="cacow-setting-entry">
-            <SettingEntry
-                id_selector={category_setting_ids.CATEGORY_THUMBNAIL}
-                font_size="var(--cacow-font-size)"
-                information_entry_label="thumbnail"
-                information_entry_value={the_inner_category.ThumbnailUUID}
-                on_setting_change={handleSettingChanges}
-            /> 
-        </div>
-    </menu>
+    <section id="cacow-general-settings" 
+        class="cacow-settings-section"
+    >
+        <header class="cacow-configuration-header">
+            <h4 class="cacow-category-identity">
+                General settings
+            </h4>
+        </header>
+        <menu class="cacow-settings">
+            <div class="cacow-data-entry">
+                <DungeonDataEntry
+                    font_size="var(--cacow-font-size)"
+                    information_entry_label="uuid"
+                    information_entry_value={the_inner_category.uuid}
+                    paste_on_click
+                /> 
+            </div>
+            <div class="cacow-setting-entry">
+                <SettingEntry
+                    id_selector={category_setting_ids.CATEGORY_THUMBNAIL}
+                    font_size="var(--cacow-font-size)"
+                    information_entry_label="thumbnail"
+                    information_entry_value={the_inner_category.ThumbnailUUID}
+                    on_setting_change={handleSettingChanges}
+                /> 
+            </div>
+        </menu>
+    </section>
+    <section id="cacow-billboard-section"
+        class="cacow-settings-section"          
+    >
+        <header class="cacow-configuration-header">
+            <h4 class="cacow-category-identity">
+                Billboard settings
+            </h4>
+        </header>
+        <menu class="cacow-settings">
+        </menu>
+    </section>
 </dialog>
 
 <style>
@@ -141,12 +201,18 @@
         height: 100%;
         background: var(--grey-t);
         flex-direction: column;
-        row-gap: var(--spacing-3);
+        row-gap: var(--spacing-4);
         padding-inline: 0.8em;
         padding-block: calc(var(--spacing-3) + var(--spacing-1));
         border-color: hsl(from var(--grey-8) h s l / 0.7);
         backdrop-filter: var(--backdrop-filter-blur);
         z-index: var(--z-index-t-5);
+    }
+
+    section.cacow-settings-section {
+        display: flex;
+        flex-direction: column;
+        row-gap: var(--spacing-3);
     }
 
     header.cacow-configuration-header {

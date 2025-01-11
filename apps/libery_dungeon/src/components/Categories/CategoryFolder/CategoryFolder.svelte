@@ -6,7 +6,7 @@
     import { browser } from "$app/environment";
     import { current_cluster } from "@stores/clusters";
     import { avoid_heavy_resources } from "@stores/layout";
-    import CategoryConfiguration from "./sub-components/CategoryConfiguration.svelte";
+    import CategoryConfiguration from "@components/Categories/CategoryConfiguration/CategoryConfiguration.svelte";
     import { ensureElementVisible, isOutTheViewport } from "@libs/utils";
 
     
@@ -178,7 +178,7 @@
 
         /**
          * Handles the thumbnail changed event emitted by the CategoryConfiguration sub-component.
-         * @type {import('./sub-components/category_folder_subs').CategoryConfig_ThumbnailChanged}
+         * @type {import('@components/Categories/CategoryConfiguration/category_configuration').CategoryConfig_ThumbnailChanged}
          */
         const handleThumbnailChanged = updated_category => {
             if (!inner_category.hasThumbnail() || !inner_category.loadThumbnail()) return;
