@@ -323,7 +323,7 @@
             let new_billboard_medias = [];
             let configuration_had_medias = false;
 
-            if (category_configuration.BillboardDungeonTags.length !== 0 && false) {
+            if (category_configuration.BillboardDungeonTags.length !== 0) {
                 // @ts-ignore
                 new_billboard_medias = await loadBillboardMediasFromTags(category_configuration.BillboardDungeonTags);
                 configuration_had_medias = true;
