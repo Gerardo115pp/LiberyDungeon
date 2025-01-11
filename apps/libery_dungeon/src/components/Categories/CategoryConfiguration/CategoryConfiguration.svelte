@@ -158,6 +158,40 @@
         }
 
         /**
+         * Handles the addition of new dungeon tags to the Category billboard configurations.
+         * @type {import('./category_configuration').CategoryConfig_BillboardDungeonTagsAdded}
+         */
+        const handleNewBillboardTag = async (dungeon_tag) => {
+            if (category_config == null) {
+                console.error("In CategoryConfiguration.handleNewBillboardTag: category_config is null");
+                return;
+            }
+
+            const new_billboard_tags_ids = [dungeon_tag.Id, ...category_config.BillboardDungeonTags];
+
+            await category_config.updateBillboardDungeonTags(new_billboard_tags_ids);
+
+            onBillboardConfigChanged(category_config);
+        }
+
+        /**
+         * Handles the removal of dungeon tags from the Category billboard configurations.
+         * @type {import('./category_configuration').CategoryConfig_BillboardDungeonTagsRemoved}
+         */
+        const handleBillboardTagRemoved = async dungeon_tag_id => {
+            if (category_config == null) {
+                console.error("In CategoryConfiguration.handleBillboardTagRemoved: category_config is null");
+                return;
+            }
+
+            const new_billboard_tags_ids = category_config.BillboardDungeonTags.filter(tag_id => tag_id !== dungeon_tag_id);
+
+            await category_config.updateBillboardDungeonTags(new_billboard_tags_ids);
+
+            onBillboardConfigChanged(category_config);
+        }
+
+        /**
          * Handles the current category change.
          * @param {import('@models/Categories').InnerCategory} new_category
          */
@@ -270,7 +304,9 @@
             <div class="cacow-group-wrapper">
                 {#if category_config != null}
                     <SettingBillboardTags 
-                        the_billboard_tags={category_config.BillboardDungeonTags}
+                        the_billboard_tags_ids={category_config.BillboardDungeonTags}
+                        onTagsAdded={handleNewBillboardTag}
+                        onTagsRemoved={handleBillboardTagRemoved}
                     />
                 {/if}
             </div>
