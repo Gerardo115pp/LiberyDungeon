@@ -84,10 +84,18 @@
     /*=====  End of Properties  ======*/
 
 
-    
     /*=============================================
     =            Methods            =
     =============================================*/
+
+        /**
+         * Clears the setting value and emits no events. Meant to be called by a parent component.
+         * @returns {void}
+         */
+        export function clearSettingValue() {
+            setting_is_valid = false;
+            information_entry_value = '';
+        }
 
         /**
          * Emits the setting-change event if the new setting is valid.
