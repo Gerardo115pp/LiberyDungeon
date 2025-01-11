@@ -101,7 +101,6 @@
             }
 
             breadcrumb_fragments = [root_category_fragment, ...breadcrumb_fragments];
-            console.log(breadcrumb_fragments);
 
             return breadcrumb_fragments;
         }
