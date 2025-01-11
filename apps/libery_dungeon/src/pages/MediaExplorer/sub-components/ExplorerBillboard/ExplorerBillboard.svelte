@@ -7,6 +7,7 @@
     import { current_cluster } from '@stores/clusters';
     import { navbar_ethereal } from '@stores/layout';
     import { onMount, onDestroy } from 'svelte';
+    import { fade } from 'svelte/transition';
 
     /*=============================================
     =            Properties            =
@@ -70,6 +71,27 @@
             $: if (the_billboard_category != null && component_mounted) {
                 handleCategoryChange(the_billboard_category);
             }
+
+            
+            /*----------  Looping interval  ----------*/
+
+                /**
+                 * An interval the loops through the billboard medias.
+                 * @type {number}
+                 */
+                let billboard_media_looping_interval = NaN;
+
+                /**
+                 * The time that has to elapse before the billboard media changes.
+                 * @type {number}
+                 */
+                const LOOPING_INTERVAL_TIME = 120000;
+
+                /**
+                 * Whether the billboard media looping interval is enabled.
+                 * @type {boolean}
+                 */
+                let billboard_media_looping_enabled = false;
     
     /*=====  End of Properties  ======*/
 
@@ -88,6 +110,16 @@
     /*=============================================
     =            Methods            =
     =============================================*/
+
+        /**
+         * Called by the billboard media looping interval when is invoked.
+         * @returns {void}
+         */
+        const billboardMediaLoopingIntervalCallback = () => {
+            if (billboard_medias.length === 0) return;
+
+            handleChangeBillboardImage(true);
+        }
 
         /**
          * checks if the scrollY is below a threshold and if so, turns the navbar ethereal.
@@ -142,6 +174,37 @@
         }
 
         /**
+         * Clears the billboard media looping interval.
+         * @returns {void}
+         */
+        const disableBillboardMediaLooping = () => {
+            billboard_media_looping_enabled = false;
+
+            if (isNaN(billboard_media_looping_interval)) return;
+
+            clearInterval(billboard_media_looping_interval);
+
+            billboard_media_looping_interval = NaN;
+        }
+
+        /**
+         * Enables the billboard media looping interval.
+         * @returns {void}
+         */
+        const enableBillboardMediaLooping = () => {
+            if (billboard_media_looping_enabled || !isNaN(billboard_media_looping_interval)) {
+                disableBillboardMediaLooping();
+
+                billboard_media_looping_enabled = true;
+            }
+
+            random_billboard_media_iteration = billboard_medias.length > 2;
+
+
+            billboard_media_looping_interval = setInterval(billboardMediaLoopingIntervalCallback, LOOPING_INTERVAL_TIME);
+        }
+
+        /**
          * Returns the html billboard element.
          * @returns {HTMLImageElement | HTMLVideoElement | null}
          */
@@ -169,6 +232,10 @@
             if (await categoryHasBillboardMedia(the_billboard_category)) {
                 await loadBillboardMedias(the_billboard_category.Config)
                 handleChangeBillboardImage(true); 
+
+                enableBillboardMediaLooping();
+            } else {
+                disableBillboardMediaLooping();
             }
 
             if (was_current_media_null && current_billboard_media != null) {
@@ -205,6 +272,8 @@
          */
         const handleBillboardDestroy = () => {
             navbar_ethereal.set(false);
+
+            disableBillboardMediaLooping();
         }
 
         /**
@@ -420,6 +489,7 @@
 />
 <section id="media-explorer-billboard"
     class:loaded-billboard={current_billboard_media != null}
+    class:billboard-looping-enabled={billboard_media_looping_enabled}
     class:dark-overlay-color-theme={use_dark_theme}
 >
     <div id="mexbill-underlay-billboard-wrapper">
@@ -431,6 +501,8 @@
                     src="{current_billboard_media.Url}" 
                     on:load={handleBillboardImageLoad}
                     on:error={handleBillboardImageError}
+                    in:fade={{ duration: 100}}
+                    out:fade={{ duration: 200}}
                     alt=""
                 >
             {:else if current_billboard_media.isVideo()}
@@ -439,6 +511,8 @@
                     src="{current_billboard_media.Url}"
                     on:loadeddata={handleBillboardVideoLoad}
                     on:error={handleBillboardVideoError}
+                    in:fade={{ duration: 100}}
+                    out:fade={{ duration: 200}}
                     muted
                     autoplay
                     loop
@@ -533,6 +607,12 @@
             }
         }  
 
+        section#media-explorer-billboard.billboard-looping-enabled {
+            & > img, video {
+                position: absolute;
+                inset: 0;
+            }
+        }
         
     /*=====  End of Billboard  ======*/
         
