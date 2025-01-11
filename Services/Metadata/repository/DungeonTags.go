@@ -26,6 +26,8 @@ type DungeonTagsRepository interface {
 	GetClusterTagsByInternalValue(cluster_uuid string, internal bool) ([]service_models.TaxonomyTags, error)
 	GetTagByIdCTX(ctx context.Context, tag_id int) (service_models.DungeonTag, error)
 	GetTagById(tag_id int) (service_models.DungeonTag, error)
+	GetTagsByIDsCTX(ctx context.Context, tag_ids []int) ([]service_models.DungeonTag, error)
+	GetTagsByIDs(tag_ids []int) ([]service_models.DungeonTag, error)
 	GetTagByNameCTX(ctx context.Context, tag_name, taxonomy string) (service_models.DungeonTag, error)
 	GetTagByName(tag_name, taxonomy string) (service_models.DungeonTag, error)
 	GetTaxonomyTagsCTX(ctx context.Context, taxonomy_uuid string) ([]service_models.DungeonTag, error)

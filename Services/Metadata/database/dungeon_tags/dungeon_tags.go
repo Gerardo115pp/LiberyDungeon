@@ -278,6 +278,50 @@ func (dt_db *DungeonTagsDB) GetTagById(tag_id int) (service_models.DungeonTag, e
 	return dt_db.GetTagByIdCTX(context.Background(), tag_id)
 }
 
+func (dt_db *DungeonTagsDB) GetTagsByIDsCTX(ctx context.Context, tag_ids []int) ([]service_models.DungeonTag, error) {
+	var tags []service_models.DungeonTag = make([]service_models.DungeonTag, 0)
+
+	if len(tag_ids) == 0 {
+		return tags, nil
+	}
+
+	var stmt_placeholder string = dungeon_helpers.GetPreparedListPlaceholders(len(tag_ids))
+
+	stmt, err := dt_db.db_conn.PrepareContext(ctx, fmt.Sprintf("SELECT `id`, `name`, `taxonomy`, `name_taxonomy` FROM `dungeon_tags` WHERE `id` IN (%s)", stmt_placeholder))
+	if err != nil {
+		return tags, err
+	}
+	defer stmt.Close()
+
+	var args []interface{} = make([]interface{}, len(tag_ids))
+	for h, v := range tag_ids {
+		args[h] = v
+	}
+
+	rows, err := stmt.QueryContext(ctx, args...)
+	if err != nil {
+		return tags, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tag service_models.DungeonTag
+
+		err = rows.Scan(&tag.ID, &tag.Name, &tag.Taxonomy, &tag.NameTaxonomy)
+		if err != nil {
+			return tags, err
+		}
+
+		tags = append(tags, tag)
+	}
+
+	return tags, nil
+}
+
+func (dt_db *DungeonTagsDB) GetTagsByIDs(tag_ids []int) ([]service_models.DungeonTag, error) {
+	return dt_db.GetTagsByIDsCTX(context.Background(), tag_ids)
+}
+
 func (dt_db *DungeonTagsDB) GetTagByNameCTX(ctx context.Context, tag_name, taxonomy string) (service_models.DungeonTag, error) {
 	var tag service_models.DungeonTag
 
