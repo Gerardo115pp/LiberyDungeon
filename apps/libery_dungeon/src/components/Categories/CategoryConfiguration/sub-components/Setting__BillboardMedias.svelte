@@ -36,6 +36,19 @@
         $: if (the_billboard_media_uuids.length != 0) {
             generateLabelMap(the_billboard_media_uuids);
         }
+
+        
+        /*----------  Event handlers  ----------*/
+        
+            /**
+             * @type {import('../category_configuration').CategoryConfig_BillboardMediaAdded}
+             */ 
+            export let onMediaAdded = (media_identity) => {}
+
+            /**
+             * @type {import('../category_configuration').CategoryConfig_BillboardMediaRemoved}
+             */
+            export let onMediaRemoved = (media_uuid) => {}
     
     /*=====  End of Properties  ======*/
     
@@ -129,6 +142,40 @@
             }
 
             addMediaIdentityToMap(new_media);
+
+            onMediaAdded(new_media);
+        }
+
+        /**
+         * Handles the delete button of the DeleteableItem.
+         * @param {CustomEvent<{item_id: string}>} event 
+         */
+        const handleMediaDeleted = event => {
+            const { item_id:human_readable_label } = event.detail;
+
+            const media_identity = media_label_to_media_identity.get(human_readable_label);
+
+            if (media_identity === undefined) return;
+
+
+            removeHumanReadableLabelFromMap(human_readable_label);
+
+            onMediaRemoved(media_identity.Media.uuid);
+        
+            emitPlatformMessage(`Removed ${human_readable_label}`);
+        }
+
+        /**
+         * Removes a media identity from the media_label_to_media_identity map.
+         * @param {string} human_readable_label
+         * @returns {void}
+         */
+        const removeHumanReadableLabelFromMap = human_readable_label => {
+            const media_labels_map_copy = new Map(media_label_to_media_identity.entries());
+
+            media_labels_map_copy.delete(human_readable_label);
+
+            media_label_to_media_identity = media_labels_map_copy
         }
     
     /*=====  End of Methods  ======*/
@@ -153,6 +200,7 @@
             <DeleteableItem
                 item_id={media_uuid}    
                 id_selector="cacow-billboard-media-{media_uuid}"
+                on:item-deleted={handleMediaDeleted}
             >
                 <p class="cacow-billboard-media">
                     {media_uuid}

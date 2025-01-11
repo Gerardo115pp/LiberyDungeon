@@ -118,6 +118,36 @@
         }
 
         /**
+         * Handles the billboard media aggregation.
+         * @type {import('./category_configuration').CategoryConfig_BillboardMediaAdded}
+         */
+        const handleBillboardMediaAdded = async media_identity => {
+            if (category_config == null) {
+                console.error("In CategoryConfiguration.handleBillboardMediaAdded: category_config is null");
+                return;
+            }
+
+            const new_billboard_medias_uuids = [media_identity.Media.uuid, ...category_config.BillboardMediaUUIDs];
+
+            category_config.updateBillboardMediaUUIDs(new_billboard_medias_uuids);
+        }
+
+        /**
+         * Handles the billboard media removal.
+         * @type {import('./category_configuration').CategoryConfig_BillboardMediaRemoved}
+         */
+        const handleBillboardMediaRemoved = async media_uuid => {
+            if (category_config == null) {
+                console.error("In CategoryConfiguration.handleBillboardMediaRemoved: category_config is null");
+                return;
+            }
+
+            const new_billboard_medias_uuids = category_config.BillboardMediaUUIDs.filter(media_uuid_in_list => media_uuid_in_list !== media_uuid);
+
+            category_config.updateBillboardMediaUUIDs(new_billboard_medias_uuids);
+        }
+
+        /**
          * Handles the current category change.
          * @param {import('@models/Categories').InnerCategory} new_category
          */
@@ -222,6 +252,8 @@
                 {#if category_config != null}
                     <SettingBillboardMedias 
                         the_billboard_media_uuids={category_config.BillboardMediaUUIDs}
+                        onMediaAdded={handleBillboardMediaAdded}
+                        onMediaRemoved={handleBillboardMediaRemoved}
                     />
                 {/if}
             </div>
