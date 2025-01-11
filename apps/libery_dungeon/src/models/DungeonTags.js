@@ -352,6 +352,98 @@ export class DungeonTagging {
 }
 
 /**
+ * A class only intended to condense all the dungeon_tags in a list of DungeonTag objects as a json string to satisfy the ClipboardContent generic constraint.
+ */
+export class DungeonTagList {
+
+    /**
+     * Parses an object into a DungeonTagList.
+     * @param {unknown} the_object
+     * @returns {DungeonTagList | null}
+     */
+    static fromUnknown(the_object) {
+        if (typeof the_object != 'object' || !the_object) return null;
+
+        /**
+         * @typedef {Object} DungeonTagListParams
+         * @property {import('@models/DungeonTags').DungeonTagParams[]} dungeon_tags
+         */
+
+        const obj = /** @type {DungeonTagListParams} */(the_object); // sometimes i really hate typescript...
+
+        if (!obj.dungeon_tags || !Array.isArray(obj.dungeon_tags)) return null;
+
+        /**
+         * @type {DungeonTag[]}
+         */
+        const dungeon_tags = [];
+
+        for (let dungeon_tag_params of obj.dungeon_tags) {
+            if (!dungeon_tag_params.id || !dungeon_tag_params.name || !dungeon_tag_params.name_taxonomy || !dungeon_tag_params.taxonomy) {
+                console.log(`In DungeonTagList.fromUnknown: after ${dungeon_tags.length} items. found an invalid dungeon tag params`, dungeon_tag_params);
+                console.warn("Stopping the parsing of the dungeon tags");
+                return null;
+            }
+
+            dungeon_tags.push(new DungeonTag(dungeon_tag_params))
+        }
+
+        return new DungeonTagList(dungeon_tags);
+    }
+
+    /**
+     * A list of dungeon tags
+     * @param {DungeonTag[]} dungeon_tags
+     */
+    #dungeon_tags;
+    
+    /**
+     * @param {DungeonTag[]} dungeon_tags
+     */
+    constructor(dungeon_tags) {
+        this.#dungeon_tags = dungeon_tags;
+    }
+
+    /**
+     * The dungeon tags.
+     * @type {DungeonTag[]}
+     */
+    get DungeonTags() {
+        return this.#dungeon_tags;
+    }
+
+    /**
+     * Converts the dungeon tags in a json string
+     * @returns {Object}
+     */
+    toJsonSerializable() {
+        /**
+         * @type {DungeonTagParams[]}
+         */
+        const dungeon_tags_as_params = [];
+        let human_readable_label = "";
+
+        for (let h=0; h < this.#dungeon_tags.length; h++) {
+            let dungeon_tag = this.#dungeon_tags[h];
+
+            dungeon_tags_as_params.push(dungeon_tag.toParams());
+
+            human_readable_label += String(dungeon_tag);
+            if (h < this.#dungeon_tags.length - 1) {
+                human_readable_label += ",";
+            }
+        }
+
+        const json_content = {
+            readable_label: human_readable_label,
+            dungeon_tags: dungeon_tags_as_params,
+        }
+
+        return json_content;
+    }
+}
+
+/**
  * returns the dungeon tags as string formed by a comma separated list of dungeon tag id's
  * @param {DungeonTag[]} dungeon_tags
  * @returns {string}
