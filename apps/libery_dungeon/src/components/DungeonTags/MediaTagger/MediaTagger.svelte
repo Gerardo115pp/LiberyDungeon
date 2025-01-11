@@ -32,7 +32,7 @@
         import generateMediaTaggerHotkeyContext, { media_tagger_actions, media_tagger_child_contexts } from "./media_tagger_hotkeys";
         import { cluster_public_tags_actions } from "../TagTaxonomyComponents/cluster_public_tags_hotkeys";
         import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
-        import dungeon_tags_clipboard from "./stores/dungeon_tags_clipboard";
+        import dungeon_tags_clipboard from "../stores/dungeon_tags_clipboard";
         import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
         import { last_keyboard_focused_tag } from "../TagTaxonomyComponents/TaxonomyTags/taxonomy_tags_store";
         import { HotkeyData } from "@libs/LiberyHotkeys/hotkeys";
@@ -278,7 +278,6 @@
                         description: `<registries>Changes the registry allowing to type a long name at the cost of having to hit ENTER(and having to type a longer name).`,
                         capture_hotkey_callback: captureHandler__registryLongName,
                     });
-                
 
                     component_hotkey_context.applyExtraHotkeys();
 

@@ -2,7 +2,7 @@
  * Never import this from another store
  */
 import { resetDungeonTagsStore } from "./dungeons_tags";
-import dungeon_tags_clipboard from "@components/DungeonTags/MediaTagger/stores/dungeon_tags_clipboard";
+import dungeon_tags_clipboard from "@components/DungeonTags/stores/dungeon_tags_clipboard";
 
 /**
  * Resets dungeon tags related store.
