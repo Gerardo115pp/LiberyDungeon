@@ -385,6 +385,38 @@ export class MediaIdentity {
     get Media() {
         return this.#the_media;
     }
+
+    /**
+     * The uuid of the category where the media belongs.
+     * @type {string}
+     */
+    get CategoryUUID() {
+        return this.#category_uuid;
+    }
+
+    /**
+     * The path of the category where the media belongs.
+     * @type {string}
+     */
+    get CategoryPath() {
+        return this.#category_path;
+    }
+
+    /**
+     * The uuid of the cluster where the media belongs.
+     * @type {string}
+     */
+    get ClusterUUID() {
+        return this.#cluster_uuid;
+    }
+
+    /**
+     * The FS path where the cluster of this media exists.
+     * @type {string}
+     */ 
+    get ClusterPath() {
+        return this.#cluster_path;
+    }
 }
 
 export class OrderedMedia {
