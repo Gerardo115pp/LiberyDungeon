@@ -2,6 +2,9 @@
     import { browser } from '$app/environment';
     import LiberyHeadline from '@components/UI/LiberyHeadline.svelte';
     import { CanvasImage } from '@libs/LiberyColors/image_models';
+    import { linearCycleNavigationWrap } from '@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils';
+    import { getTaggedMedias } from '@models/Medias';
+    import { current_cluster } from '@stores/clusters';
     import { navbar_ethereal } from '@stores/layout';
     import { onMount, onDestroy } from 'svelte';
 
@@ -38,6 +41,26 @@
 
         
         /*----------  State  ----------*/
+
+            /**
+             * A list of medias that can be displayed on the billboard and are related to the current category.
+             * @type {import('@models/Medias').Media[]}
+             */
+            let billboard_medias = [];
+
+            /**
+             * The index iterator for the billboard_medias.
+             * @type {number}
+             * @default 0
+             */
+            let billboard_iterator_index = 0;
+
+            /**
+             * Whether to use random iteration for the billboard medias.
+             * @type {boolean}
+             * @default false
+             */
+            let random_billboard_media_iteration = false;
         
             /**
              * Whether the billboard has mounted.
@@ -51,7 +74,6 @@
     /*=====  End of Properties  ======*/
 
     onMount(() => {
-
         checkWindowScroll();
 
         component_mounted = true;
@@ -94,6 +116,36 @@
         }
 
         /**
+         * Determines if the current category has any media that can be displayed on the billboard.
+         * @param {import('@models/Categories').CategoryLeaf} new_category
+         * @returns {Promise<boolean>}
+         */
+        const categoryHasBillboardMedia = async (new_category) => {
+            if (new_category == null) return false;
+
+            /**
+             * @type {import('@models/Categories').CategoryConfig | null}
+             */
+            let category_configuration = new_category.Config;
+
+            if (category_configuration === null) {
+                category_configuration = await new_category.loadCategoryConfig();
+            }
+
+            if (category_configuration == null) {
+                return new_category.content.length >= 1
+            }
+
+            let configuration_has_medias = category_configuration.BillboardMediaUUIDs.length > 0 || category_configuration.BillboardDungeonTags.length > 0;
+
+            return configuration_has_medias || new_category.content.length > 0 
+        }
+
+
+
+        
+
+        /**
          * Returns the html billboard element.
          * @returns {HTMLImageElement | HTMLVideoElement | null}
          */
@@ -113,19 +165,15 @@
          * handles the current category change.
          * @param {import('@models/Categories').CategoryLeaf} new_category
          */
-        function handleCategoryChange(new_category) {
+        async function handleCategoryChange(new_category) {
             const was_current_media_null = current_billboard_media == null;
 
-            console.log("Billboard - Category changed: ", new_category);
             if (new_category == null) return;
 
-            if (new_category.content.length > 0) {
-                handleChangeBillboardImage();
+            if (await categoryHasBillboardMedia(the_billboard_category)) {
+                await loadBillboardMedias(the_billboard_category.Config)
+                handleChangeBillboardImage(); 
             }
-            
-            // console.log("Billboard - Category content length: ", new_category.content.length);
-            // console.log("Billboard - was_current_media_null: ", was_current_media_null);
-            // console.log("Billboard - current_billboard_media: ", current_billboard_media);
 
             if (was_current_media_null && current_billboard_media != null) {
                 onvalid_media_change();
@@ -136,38 +184,16 @@
          * Changes the current billboard media.
          */ 
         const handleChangeBillboardImage = () => {
-            if (current_billboard_media != null && the_billboard_category.content.length === 1) {
-                current_billboard_media = the_billboard_category.content[0];
+            if (current_billboard_media != null && billboard_medias.length === 1) {
+                resetBillboardMediaIteration();
                 return;
             }
 
-            let inifite_loop_guard = 0;
-
-            /**
-             * @type {import('@models/Medias').Media | null}
-             */
-            let new_billboard_media = null;
-
-            while (new_billboard_media == null) {
-                const rand_media_index = Math.trunc(Math.random() * the_billboard_category.content.length);
-
-                new_billboard_media = the_billboard_category.content[rand_media_index];
-
-                if (current_billboard_media != null && current_billboard_media.uuid === new_billboard_media.uuid) {
-                    new_billboard_media = null
-                }
-
-                inifite_loop_guard++;
-
-                if (inifite_loop_guard > the_billboard_category.content.length) {
-                    console.error(`In ExplorerBillboard.handleChangeBillboardImage: Infinite loop detected after ${the_billboard_category.content.length} iterations. Exiting.`);
-                    return;
-                }
+            if (random_billboard_media_iteration) {
+                iterBillboardMediasRandom();
+            } else {
+                iterBillboardMediasSequential();
             }
-
-            current_billboard_media = new_billboard_media;
-
-            console.log("Changed billboard media to: ", current_billboard_media);
         }
 
         /**
@@ -233,6 +259,140 @@
          */
         const handleBillboardVideoError = (event) => {
             console.log("Error loading billboard video: ", event);
+        }
+
+        /**
+         * Iters through medias using a random progression system.
+         * @returns {void}
+         */
+        const iterBillboardMediasRandom = () => {
+            let inifite_loop_guard = 0;
+
+            /**
+             * @type {import('@models/Medias').Media | null}
+             */
+            let new_billboard_media = null;
+
+            while (new_billboard_media == null) {
+                const rand_media_index = Math.trunc(Math.random() * billboard_medias.length);
+
+                new_billboard_media = billboard_medias[rand_media_index];
+
+                if (current_billboard_media != null && current_billboard_media.uuid === new_billboard_media.uuid) {
+                    new_billboard_media = null
+                }
+
+                inifite_loop_guard++;
+
+                if (inifite_loop_guard > billboard_medias.length) {
+                    console.error(`In ExplorerBillboard.handleChangeBillboardImage: Infinite loop detected after ${billboard_medias.length} iterations. Exiting.`);
+                    return;
+                }
+            }
+
+            current_billboard_media = new_billboard_media;
+
+            console.log("Changed billboard media to: ", current_billboard_media);
+        }
+
+        /**
+         * iterates over the billboard medias using a sequential progression system. When it reaches the limit of medias, it cycles.
+         */
+        const iterBillboardMediasSequential = () => {
+            if (billboard_medias.length === 0) return;
+
+            const next_index = linearCycleNavigationWrap(billboard_iterator_index, billboard_medias.length - 1, 1).value;
+
+            billboard_iterator_index = next_index;
+            current_billboard_media = billboard_medias[billboard_iterator_index];
+        }
+
+        /**
+         * Loads the billboard medias from a category configuration.
+         * @param {import('@models/Categories').CategoryConfig | null} category_configuration
+         * @returns {Promise<void>}
+         */
+        const loadBillboardMedias = async (category_configuration) => {
+            if (category_configuration == null) {
+                billboard_medias = the_billboard_category.content;
+                resetBillboardMediaIteration(true);
+                return;
+            }
+
+            /**
+             * @type {import("@models/Medias").Media[]}
+             */
+            let new_billboard_medias = [];
+            let configuration_had_medias = false;
+
+            if (category_configuration.BillboardDungeonTags.length !== 0 && false) {
+                // @ts-ignore
+                new_billboard_medias = await loadBillboardMediasFromTags(category_configuration.BillboardDungeonTags);
+                configuration_had_medias = true;
+            } else if (category_configuration.BillboardMediaUUIDs.length > 0) {
+                new_billboard_medias = await loadBillboardMediasFromUuids(category_configuration.BillboardMediaUUIDs);
+                configuration_had_medias = true;
+            } else {
+                new_billboard_medias = the_billboard_category.content;
+            }
+
+            billboard_medias = new_billboard_medias;
+            resetBillboardMediaIteration(true); // Always start with random navigation.
+        }
+
+        /**
+         * Called by loadBillboardMedias. Loads the billboard medias from a category configuration using the list of media uuids.
+         * @param {string[]} media_uuids
+         * @returns {Promise<import('@models/Medias').Media[]>}
+         */
+        const loadBillboardMediasFromUuids = async (media_uuids) => {
+            if ($current_cluster == null || media_uuids.length === 0) return [];
+
+            const billboard_media_identites = await $current_cluster.getClusterMedias(media_uuids);
+
+            let new_billboard_medias = billboard_media_identites.map(mi => mi.Media);
+
+            return new_billboard_medias;
+        }
+
+        /**
+         * Called by loadBillboardMedias. Loads the billboard medias from a category configuration using the list of media tags.
+         * @param {number[]} media_tags
+         * @returns {Promise<import('@models/Medias').Media[]>}
+         */
+        const loadBillboardMediasFromTags = async (media_tags) => {
+            const page_content = await getTaggedMedias(media_tags, 1, 200) // TODO: Move the limit and page_num to constants.
+
+            if (page_content === null) {
+                return [];
+            }
+
+            const new_billboard_medias = page_content.content.map(mi => mi.Media);
+
+            return new_billboard_medias;
+        }            
+
+        /**
+         * Resets the billboard iteration.
+         * @param {boolean} [use_random_navigation]
+         * @returns {void}
+         */
+        const resetBillboardMediaIteration = (use_random_navigation) => {
+            billboard_iterator_index = 0;
+            random_billboard_media_iteration = use_random_navigation === true;
+
+            if (billboard_medias.length === 0) return;
+
+            current_billboard_media = billboard_medias[billboard_iterator_index];
+        }
+
+        /**
+         * sets the enables/disables random navigation of billboard medias.
+         * @param {boolean} enable
+         * @returns {void}
+         */
+        const setRandomBillboardMediaIteration = (enable) => {
+            random_billboard_media_iteration = enable;
         }
     
     /*=====  End of Methods  ======*/
