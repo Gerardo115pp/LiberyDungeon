@@ -1021,6 +1021,24 @@
         animation: shake-vertical 1s ease-in-out infinite;
     }
 
+    @keyframes billboard-fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes billboard-fade-out {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+
 /*=====  End of Animations  ======*/
 /*=============================================
 =            Mobile            =

@@ -6,7 +6,7 @@
     import { getTaggedMedias } from '@models/Medias';
     import { current_cluster } from '@stores/clusters';
     import { navbar_ethereal } from '@stores/layout';
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount, onDestroy, tick } from 'svelte';
     import { cubicIn } from 'svelte/easing';
     import { fade } from 'svelte/transition';
 
@@ -31,6 +31,13 @@
          * @type {import('@models/Medias').Media | null}
          */
         let current_billboard_media = null;
+
+        /**
+         * A media object that is been prefetched.
+         * Used to create blending transitions.
+         * @type {import('@models/Medias').Media | null}
+         */
+        let prefetched_billboard_media = null;
 
         /**
          * A callback triggered when the current_billboard_media changes to a valid media.
@@ -63,6 +70,13 @@
              * @default 1.2
              */
             let small_image_blur = 1.2;
+
+            /**
+             * The time the fade  out animation of the 
+             * prefetched media last for.
+             * @type {number}
+             */
+            const PREFETCH_FADE_OUT_DURATION = 400;
         
         /*----------  State  ----------*/
 
@@ -100,11 +114,17 @@
              * @type {boolean}
              */
             let billboard_media_vertical = false;
+
+            /**
+             * Whether a media i been prefetched.
+             * @type {boolean}
+             */
+            let media_prefetching = false;
             
             /*----------  Looping interval  ----------*/
 
                 /**
-                 * An interval the loops through the billboard medias.
+                 * The interval that controls the looping of the billboard media.
                  * @type {number}
                  */
                 let billboard_media_looping_interval = NaN;
@@ -121,14 +141,7 @@
                  */
                 let billboard_media_looping_enabled = false;
                 
-                /**
-                 * The transition settings for the billboard media.
-                 */
-                const billboard_media_transition = {
-                    out_duration: 1100,
-                    in_duration: 900,
-                    ease: cubicIn
-                }
+
     
     /*=====  End of Properties  ======*/
 
@@ -153,9 +166,11 @@
          * @returns {void}
          */
         const billboardMediaLoopingIntervalCallback = () => {
-            if (billboard_medias.length === 0) return;
+            if (billboard_medias.length === 0 || media_prefetching) return;
 
-            handleChangeBillboardImage(true);
+            console.log("Looping interval called.")
+
+            changeBillboardImage(true);
         }
 
         /**
@@ -211,6 +226,37 @@
         }
 
         /**
+         * Changes the current billboard media.
+         * @param {boolean} [avoid_same_image] if true and uses random navigation, it will avoid landing in the same index.
+         */ 
+        const changeBillboardImage = (avoid_same_image) => {
+            /**
+             * @type {import('@models/Medias').Media | null}
+             */
+            let new_billboard_media = null;
+
+            if (avoid_same_image && current_billboard_media != null && billboard_medias.length === 1) {
+                resetBillboardMediaIteration();
+                new_billboard_media = billboard_medias[billboard_iterator_index];
+
+                prefetchBillboardMedia(new_billboard_media);
+                return;
+            }
+
+
+
+            if (random_billboard_media_iteration) {
+                new_billboard_media = iterBillboardMediasRandom();
+            } else {
+                new_billboard_media = iterBillboardMediasSequential();
+            }
+
+            if (new_billboard_media == null) return;
+
+            prefetchBillboardMedia(new_billboard_media);
+        }
+
+        /**
          * Clears the billboard media looping interval.
          * @returns {void}
          */
@@ -246,7 +292,9 @@
          * @returns {HTMLImageElement | HTMLVideoElement | null}
          */
         const getBillboardElement = () => {
-            const billboard_element = document.getElementById("mexbill-billboard");
+            if (current_billboard_media == null) return null;
+
+            const billboard_element = document.getElementById(`mexbill-billboard-${current_billboard_media.isVideo() ? "video" : "image"}`);
 
             if (billboard_element == null) return billboard_element;
 
@@ -300,7 +348,7 @@
 
             if (await categoryHasBillboardMedia(the_billboard_category)) {
                 await loadBillboardMedias(the_billboard_category.Config)
-                handleChangeBillboardImage(true); 
+                changeBillboardImage(true); 
 
             } else {
                 disableBillboardMediaLooping();
@@ -309,23 +357,6 @@
             if (was_current_media_null && current_billboard_media != null) {
                 onvalid_media_change();
             };
-        }
-    
-        /**
-         * Changes the current billboard media.
-         * @param {boolean} [avoid_same_image] if true and uses random navigation, it will avoid landing in the same index.
-         */ 
-        const handleChangeBillboardImage = (avoid_same_image) => {
-            if (avoid_same_image && current_billboard_media != null && billboard_medias.length === 1) {
-                resetBillboardMediaIteration();
-                return;
-            }
-
-            if (random_billboard_media_iteration) {
-                iterBillboardMediasRandom();
-            } else {
-                iterBillboardMediasSequential();
-            }
         }
 
         /**
@@ -377,9 +408,21 @@
         }
 
         /**
+         * Hides the prefecthing media.
+         * @returns {void}
+         */
+        const hidePrefetchedMedia = () => {
+            setTimeout(() => {
+                media_prefetching = false;
+                console.log("Hiding prefetched media.");
+            
+            }, PREFETCH_FADE_OUT_DURATION * 1.5);
+        }
+
+        /**
          * Iters through medias using a random progression system.
          * @param {boolean} [avoid_same_image] if true, it will avoid landing in the same index.
-         * @returns {void}
+         * @returns {import('@models/Medias').Media | null}
          */
         const iterBillboardMediasRandom = (avoid_same_image) => {
             let inifite_loop_guard = 0;
@@ -402,13 +445,24 @@
 
                 if (inifite_loop_guard > billboard_medias.length) {
                     console.error(`In ExplorerBillboard.handleChangeBillboardImage: Infinite loop detected after ${billboard_medias.length} iterations. Exiting.`);
-                    return;
+                    return null;
                 }
             }
 
-            current_billboard_media = new_billboard_media;
+            return new_billboard_media;
+        }
 
-            console.log("Changed billboard media to: ", current_billboard_media);
+        /**
+         * iterates over the billboard medias using a sequential progression system. When it reaches the limit of medias, it cycles.
+         * @returns {import('@models/Medias').Media | null}
+         */
+        const iterBillboardMediasSequential = () => {
+            if (billboard_medias.length === 0) return null;
+
+            const next_index = linearCycleNavigationWrap(billboard_iterator_index, billboard_medias.length - 1, 1).value;
+
+            billboard_iterator_index = next_index;
+            return billboard_medias[billboard_iterator_index];
         }
 
         /**
@@ -419,18 +473,6 @@
          */
         const isVerticalAspectRatio = (width, height) => {
             return height >= (width * 1.1);
-        }
-
-        /**
-         * iterates over the billboard medias using a sequential progression system. When it reaches the limit of medias, it cycles.
-         */
-        const iterBillboardMediasSequential = () => {
-            if (billboard_medias.length === 0) return;
-
-            const next_index = linearCycleNavigationWrap(billboard_iterator_index, billboard_medias.length - 1, 1).value;
-
-            billboard_iterator_index = next_index;
-            current_billboard_media = billboard_medias[billboard_iterator_index];
         }
 
         /**
@@ -520,6 +562,48 @@
         }
 
         /**
+         * Prefetches the given media. Don't call this directly. should only be called by 'changeBillboardImage'.
+         * @param {import('@models/Medias').Media} next_media
+         * @returns {Promise<void>}
+         */
+        const prefetchBillboardMedia = async (next_media) => {
+            if (next_media == null) return;
+
+            prefetched_billboard_media = current_billboard_media;
+
+            current_billboard_media = null;
+            media_prefetching = true;
+
+            console.log("Prefetching media: ", next_media);
+
+            await tick();
+
+            if (next_media.isVideo()) {
+                const preloader_video_element = document.createElement("video");
+
+                preloader_video_element.src = next_media.Url;
+
+                preloader_video_element.muted = true;
+
+                preloader_video_element.autoplay = true;
+
+                preloader_video_element.onloadeddata = () => {
+                    current_billboard_media = next_media;
+                    hidePrefetchedMedia();
+                }
+            } else if (next_media.isImage()) {
+                const preloader_image_element = document.createElement("img");
+
+                preloader_image_element.src = next_media.Url;
+
+                preloader_image_element.onload = () => {
+                    current_billboard_media = next_media;
+                    hidePrefetchedMedia();
+                }
+            }
+        }
+
+        /**
          * Resets the billboard iteration.
          * @param {boolean} [use_random_navigation]
          * @returns {void}
@@ -527,10 +611,6 @@
         const resetBillboardMediaIteration = (use_random_navigation) => {
             billboard_iterator_index = 0;
             random_billboard_media_iteration = use_random_navigation === true;
-
-            if (billboard_medias.length === 0) return;
-
-            current_billboard_media = billboard_medias[billboard_iterator_index];
         }
 
         /**
@@ -639,23 +719,45 @@
         {#if current_billboard_media != null}
             {#if current_billboard_media.isImage()}
                 <img
-                    id="mexbill-billboard"
+                    id="mexbill-billboard-image"
+                    class="billboard-media"
                     decoding="async"
                     src="{current_billboard_media.Url}" 
                     on:load={handleBillboardImageLoad}
                     on:error={handleBillboardImageError}
-                    in:fade={{ duration: billboard_media_transition.in_duration, easing: billboard_media_transition.ease}}
-                    out:fade={{ duration: billboard_media_transition.out_duration, easing: billboard_media_transition.ease}}
                     alt=""
                 >
             {:else if current_billboard_media.isVideo()}
                 <video 
-                    id="mexbill-billboard"
+                    id="mexbill-billboard-video"
+                    class="billboard-media"
                     src="{current_billboard_media.Url}"
                     on:loadeddata={handleBillboardVideoLoad}
                     on:error={handleBillboardVideoError}
-                    in:fade={{ duration: billboard_media_transition.in_duration, easing: billboard_media_transition.ease}}
-                    out:fade={{ duration: billboard_media_transition.out_duration, easing: billboard_media_transition.ease}}
+                    muted
+                    autoplay
+                    loop
+                >
+                    <track kind="captions">
+                </video>
+            {/if}
+        {/if}
+        {#if prefetched_billboard_media != null && media_prefetching}
+            {#if prefetched_billboard_media.isImage()}
+                <img
+                    id="mexbill-prefeched-billboard"
+                    class="billboard-media billboard-media-prefetched"
+                    decoding="async"
+                    src="{prefetched_billboard_media.Url}" 
+                    style:animation-duration="{PREFETCH_FADE_OUT_DURATION}ms"
+                    alt=""
+                >
+            {:else if prefetched_billboard_media.isVideo()}
+                <video 
+                    id="mexbill-prefeched-billboard"
+                    class="billboard-media billboard-media-prefetched"
+                    style:animation-duration="{PREFETCH_FADE_OUT_DURATION}ms"
+                    src="{prefetched_billboard_media.Url}"
                     muted
                     autoplay
                     loop
@@ -682,6 +784,9 @@
 </section>
 
 <style>
+
+
+
     section#media-explorer-billboard {
         --shadows-color: hsl(from var(--body-bg-color) h s l / 0.85);
         /* Style custom-properites for the LiberyHeadline */
@@ -721,7 +826,7 @@
             z-index: var(--z-index-b-5);
             /* overflow: hidden; */
 
-            & > img, video {
+            & .billboard-media {
                 position: absolute;
                 inset: 0;
                 width: 100%;
@@ -731,12 +836,17 @@
                 z-index: var(--z-index-b-6);
             }
 
+            & .billboard-media-prefetched.billboard-media {
+                z-index: var(--z-index-b-4);
+                animation-name: billboard-fade-out;
+                animation-fill-mode: forwards;
+            }
+
             &::after {
                 content: "";
                 position: absolute;
                 inset: auto auto -2% 0;
                 width: 100%;
-                /* background: var(--body-bg-color); */
                 background: linear-gradient(to top, hsl(from var(--body-bg-color) h s l / 0.99) 10%, hsl(from var(--body-bg-color) h s l / 0.001)) ;
                 height: 30cqh;
             }
@@ -756,13 +866,13 @@
 
             height: 250cqh;
 
-            & > img, video {
+            & .billboard-media {
                 object-position: center 30%;
             }
         }
 
         section#media-explorer-billboard.billboard-media-small #mexbill-underlay-billboard-wrapper {
-            &  > img, video {
+            &  .billboard-media {
                 filter: blur(var(--small-image-blur));
             }
         }
@@ -786,4 +896,6 @@
             /* translate: calc(-1 * var(--common-page-inline-padding)); */
             box-shadow: 0 -10px 36px 40px var(--synopsis-panel-bg);
         }
+
+    /* ------------------------------- Animations ------------------------------- */
 </style>

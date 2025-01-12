@@ -278,9 +278,6 @@
 
         definePlatformEventHandlers();
 
-        // DELETE EVERYTHING BELOW THIS LINE
-
-        // category_tagger_tool_mounted.set(true);
     });
 
     onDestroy(() => {
@@ -1112,16 +1109,6 @@
             }
         
         /*=====  End of Category config changes  ======*/
-        
-        
-
-        /**
-         * Handles the onvalid_media_change event emitted by the ExplorerBillboard component.
-         * @returns {void}
-         */
-        const handleValidMediaChange = () => {
-            explorer_billboard_has_media = true;
-        }
 
         /**
          * Navigates to a selected category. Determines if the category is a child category in which case it will navigate to it using SPA navigation.
@@ -1455,7 +1442,6 @@
     </title>
 </svelte:head>
 <main id="libery-categories-explorer"
-    class:with-billboard={($current_category?.content?.length ?? 0) > 0 || explorer_billboard_has_media}
     class:with-category-thumbnails={$use_category_folder_thumbnails}
     style:position="relative"
 >
@@ -1511,7 +1497,6 @@
             <ExplorerBillboard
                 bind:this={explorer_billboard}
                 the_billboard_category={$current_category}
-                onvalid_media_change={handleValidMediaChange}
             >
                 <button id="lce-uc-current-category-name" 
                     slot="billboard-headline"
@@ -1584,7 +1569,7 @@
 
 <style>
     
-    :global(#libery-dungeon-content:has(main#libery-categories-explorer.with-billboard)) {
+    :global(#libery-dungeon-content:has(main#libery-categories-explorer)) {
         margin-top: 0 !important;
     }
 
@@ -1593,11 +1578,6 @@
         display: flex;
         flex-direction: column;
         row-gap: var(--vspacing-4);
-        padding-inline: var(--common-page-inline-padding);
-        padding-block: var(--common-page-block-padding);
-    }
-
-    main#libery-categories-explorer.with-billboard {
         padding: 0;
     }
     
@@ -1605,7 +1585,7 @@
     =            header            =
     =============================================*/
 
-        .with-billboard header#lce-upper-content {
+        #libery-categories-explorer header#lce-upper-content {
             position: relative;
             padding-block-start: calc(var(--navbar-height) + var(--spacing-2));
         }
@@ -1697,28 +1677,21 @@
         grid-template-columns: repeat(auto-fill, minmax(var(--category-folder-size), 1fr));
         grid-auto-rows: var(--category-folder-size);
         list-style: none;
-        padding: 0;
-        gap: 2px;
-    }
-
-    .with-billboard ul#category-content {
         padding-inline: var(--common-page-inline-padding);
         padding-block-end: var(--common-page-block-padding);
+        gap: 2px;
     }
-
     
     /*=============================================
     =            Category thumbnails            =
     =============================================*/
     
-    #libery-categories-explorer.with-category-thumbnails ul#category-content {
-        grid-auto-rows: calc(var(--category-folder-size) * 1.7);
-        gap: var(--spacing-2);
-    }
+        #libery-categories-explorer.with-category-thumbnails ul#category-content {
+            grid-auto-rows: calc(var(--category-folder-size) * 1.7);
+            gap: var(--spacing-2);
+        }
     
     /*=====  End of Category thumbnails  ======*/
-    
-    
 
 
     @media only screen and (max-width: 768px) {
