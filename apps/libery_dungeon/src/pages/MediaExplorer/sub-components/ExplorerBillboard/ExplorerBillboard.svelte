@@ -13,6 +13,12 @@
     /*=============================================
     =            Properties            =
     =============================================*/
+
+        /**
+        * @typedef {Object} MediaSize
+         * @property {number} width
+         * @property {number} height
+        */
     
         /**
          * The category to create the billboard for.
@@ -41,6 +47,22 @@
              */ 
             let use_dark_theme = false;
 
+            /**
+             * Whether the natural dimensions of the current b
+             * billboard media are smaller than the viewport. 
+             * This is used to apply different styles like blur 
+             * to minimize artifacts.
+             * @type {boolean}
+             */
+            let current_media_is_small = false;
+
+            /**
+             * How much a small image should be blurred. this is in
+             * pixels.
+             * @type {number}
+             * @default 1.2
+             */
+            let small_image_blur = 1.2;
         
         /*----------  State  ----------*/
 
@@ -236,6 +258,38 @@
         }
 
         /**
+         * Returns the size of the current billboard media.
+         * @param {HTMLImageElement | HTMLVideoElement} [billboard_element]
+         * @returns {MediaSize}
+         */
+        const getBillboardMediaSize = (billboard_element) => {
+
+            /** @type {MediaSize} */
+            const media_size = {
+                width: 0,
+                height: 0
+            }
+
+
+            if (billboard_element == null) {
+                // @ts-ignore - i really dont care whether it is null or undefined...................  fing typescript.
+                billboard_element = getBillboardElement();
+
+                if (billboard_element == null) return media_size;
+            } 
+
+            if (billboard_element instanceof HTMLImageElement) {
+                media_size.width = billboard_element.naturalWidth;
+                media_size.height = billboard_element.naturalHeight;
+            } else if (billboard_element instanceof HTMLVideoElement) {
+                media_size.width = billboard_element.videoWidth;
+                media_size.height = billboard_element.videoHeight;
+            }
+
+            return media_size;
+        }
+        
+        /**
          * handles the current category change.
          * @param {import('@models/Categories').CategoryLeaf} new_category
          */
@@ -295,18 +349,7 @@
          * @param {Event} event
          */
         const handleBillboardImageLoad = (event) => {
-            const billboard_element = event.target;
-
-            if (!(billboard_element instanceof HTMLImageElement)) {
-                console.error("In ExplorerBillboard.handleBillboardImageLoad: The event target is not an instance of HTMLImageElement.");
-                return;
-            }
-
-            let new_white_percentage = calculateMediaWhitePercentage(billboard_element);
-
-            use_dark_theme = new_white_percentage > 18;
-
-            verifyBillboardImageAspectRatio(billboard_element);
+            optimizeBillboardDisplay();
         }
 
         /**
@@ -314,15 +357,7 @@
          * @param {Event} event
          */
         const handleBillboardVideoLoad = (event) => {
-            const billboard_element = event.target;
-
-            if (!(billboard_element instanceof HTMLVideoElement)) {
-                console.error("In ExplorerBillboard.handleBillboardVideoLoad: The event target is not an instance of HTMLVideoElement.");
-                return;
-            }
-
-            use_dark_theme = false;
-            verifyBillboardVideoAspectRatio(billboard_element);
+            optimizeBillboardDisplay();
         }
 
         /**
@@ -467,6 +502,24 @@
         }            
 
         /**
+         * Optimizies the billboard display to render the image on the most astetically pleasing way possible.
+         * @returns {void}
+         */
+        const optimizeBillboardDisplay = () => {
+            const billboard_element = getBillboardElement();
+
+            if (current_billboard_media == null || billboard_element == null) return;
+
+            const media_size = getBillboardMediaSize();
+
+            verifyBillboardMediaAspectRatio(media_size);            
+
+            verifyBillboardMediaIsSmall(media_size, current_billboard_media.isVideo());
+
+            verifyBillboardMediaWhitePercentage(billboard_element);
+        }
+
+        /**
          * Resets the billboard iteration.
          * @param {boolean} [use_random_navigation]
          * @returns {void}
@@ -509,39 +562,61 @@
 
         /**
          * Verifies the current billboard media aspect ratio.
+         * @param {MediaSize} media_size
          * @returns {void}
          */
-        const verifyBillboardMediaAspectRatio = () => {
-            const billboard_media_element = getBillboardElement();
+        const verifyBillboardMediaAspectRatio = (media_size) => {
+            billboard_media_vertical = isVerticalAspectRatio(media_size.width, media_size.height);
+        }
 
-            if (billboard_media_element == null) {
-                billboard_media_vertical = false;
+        /**
+         * Verifies the current billboard media size in relation to the
+         * viewport and determine if it is to small to be displayed normally.
+         * @param {MediaSize} media_size
+         * @param {boolean} is_video
+         * @returns {void}
+         */
+        const verifyBillboardMediaIsSmall = (media_size, is_video) => {
+            current_media_is_small =  media_size.width < (window.innerWidth * 0.8);
+
+            if (!current_media_is_small) {
+                small_image_blur = 0;
                 return;
             }
 
-            if (billboard_media_element instanceof HTMLImageElement) {
-                verifyBillboardImageAspectRatio(billboard_media_element);
-            } else if (billboard_media_element instanceof HTMLVideoElement) {
-                verifyBillboardVideoAspectRatio(billboard_media_element);
+            const min_blur = 1.2;
+            const max_blur = is_video ? 2 : 6;
+
+            const media_to_viewport_ratio = media_size.width / window.innerWidth;
+
+            switch (true) {
+                case media_to_viewport_ratio <= 0.2:
+                    small_image_blur = max_blur;
+                    break;
+                case media_to_viewport_ratio <= 0.3:
+                    small_image_blur = Math.max(max_blur * 0.5, min_blur);
+                    break;
+                default:
+                    small_image_blur = min_blur;
             }
+
+            return;
         }
 
         /**
-         * Verifies the aspect ratio of the billboard image.
-         * @param {HTMLImageElement} image_element
+         * Verifies the white percentage of the current billboard media and sets the use_dark_theme property accordingly.
+         * @param {HTMLImageElement | HTMLVideoElement} billboard_element
          * @returns {void}
          */
-        const verifyBillboardImageAspectRatio = (image_element) => {
-            billboard_media_vertical = isVerticalAspectRatio(image_element.naturalWidth, image_element.naturalHeight);
-        }
+        const verifyBillboardMediaWhitePercentage = (billboard_element) => {
+            if (billboard_element == null || billboard_element instanceof HTMLVideoElement) {
+                use_dark_theme = false;
+                return;
+            }
 
-        /**
-         * Verifies the aspect ratio of the billboard video.
-         * @param {HTMLVideoElement} video_element
-         * @returns {void}
-         */
-        const verifyBillboardVideoAspectRatio = (video_element) => {
-            billboard_media_vertical = isVerticalAspectRatio(video_element.videoWidth, video_element.videoHeight);
+            let new_white_percentage = calculateMediaWhitePercentage(billboard_element);
+
+            use_dark_theme = new_white_percentage > 18;           
         }
     
     /*=====  End of Methods  ======*/
@@ -554,10 +629,13 @@
 <section id="media-explorer-billboard"
     class:loaded-billboard={current_billboard_media != null}
     class:billboard-looping-enabled={billboard_media_looping_enabled}
-    class:dark-overlay-color-theme={use_dark_theme}
     class:billboard-media-vertical={billboard_media_vertical}
+    class:billboard-media-small={current_media_is_small}
+    class:dark-overlay-color-theme={use_dark_theme}
 >
-    <div id="mexbill-underlay-billboard-wrapper">
+    <div id="mexbill-underlay-billboard-wrapper"
+        style:--small-image-blur="{small_image_blur}px"
+    >
         {#if current_billboard_media != null}
             {#if current_billboard_media.isImage()}
                 <img
@@ -674,14 +752,18 @@
             }
         }  
 
-        section#media-explorer-billboard.billboard-media-vertical {
-            
-            & #mexbill-underlay-billboard-wrapper {
-                height: 250cqh;
-            }
+        section#media-explorer-billboard.billboard-media-vertical #mexbill-underlay-billboard-wrapper {
 
-            & img, video {
+            height: 250cqh;
+
+            & > img, video {
                 object-position: center 30%;
+            }
+        }
+
+        section#media-explorer-billboard.billboard-media-small #mexbill-underlay-billboard-wrapper {
+            &  > img, video {
+                filter: blur(var(--small-image-blur));
             }
         }
         
