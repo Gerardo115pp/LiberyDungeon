@@ -7,6 +7,7 @@
     import { current_cluster } from '@stores/clusters';
     import { navbar_ethereal } from '@stores/layout';
     import { onMount, onDestroy } from 'svelte';
+    import { cubicIn } from 'svelte/easing';
     import { fade } from 'svelte/transition';
 
     /*=============================================
@@ -97,6 +98,15 @@
                  * @type {boolean}
                  */
                 let billboard_media_looping_enabled = false;
+                
+                /**
+                 * The transition settings for the billboard media.
+                 */
+                const billboard_media_transition = {
+                    out_duration: 1100,
+                    in_duration: 900,
+                    ease: cubicIn
+                }
     
     /*=====  End of Properties  ======*/
 
@@ -238,7 +248,6 @@
                 await loadBillboardMedias(the_billboard_category.Config)
                 handleChangeBillboardImage(true); 
 
-                enableBillboardMediaLooping();
             } else {
                 disableBillboardMediaLooping();
             }
@@ -411,11 +420,14 @@
                 // @ts-ignore
                 new_billboard_medias = await loadBillboardMediasFromTags(category_configuration.BillboardDungeonTags);
                 configuration_had_medias = true;
+                enableBillboardMediaLooping();
             } else if (category_configuration.BillboardMediaUUIDs.length > 0) {
                 new_billboard_medias = await loadBillboardMediasFromUuids(category_configuration.BillboardMediaUUIDs);
                 configuration_had_medias = true;
+                enableBillboardMediaLooping();
             } else {
                 new_billboard_medias = the_billboard_category.content;
+                disableBillboardMediaLooping()
             }
 
             billboard_medias = new_billboard_medias;
@@ -554,8 +566,8 @@
                     src="{current_billboard_media.Url}" 
                     on:load={handleBillboardImageLoad}
                     on:error={handleBillboardImageError}
-                    in:fade={{ duration: 100}}
-                    out:fade={{ duration: 200}}
+                    in:fade={{ duration: billboard_media_transition.in_duration, easing: billboard_media_transition.ease}}
+                    out:fade={{ duration: billboard_media_transition.out_duration, easing: billboard_media_transition.ease}}
                     alt=""
                 >
             {:else if current_billboard_media.isVideo()}
@@ -564,8 +576,8 @@
                     src="{current_billboard_media.Url}"
                     on:loadeddata={handleBillboardVideoLoad}
                     on:error={handleBillboardVideoError}
-                    in:fade={{ duration: 100}}
-                    out:fade={{ duration: 200}}
+                    in:fade={{ duration: billboard_media_transition.in_duration, easing: billboard_media_transition.ease}}
+                    out:fade={{ duration: billboard_media_transition.out_duration, easing: billboard_media_transition.ease}}
                     muted
                     autoplay
                     loop
