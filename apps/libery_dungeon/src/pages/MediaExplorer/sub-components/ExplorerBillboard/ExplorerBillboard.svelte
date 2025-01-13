@@ -7,8 +7,6 @@
     import { current_cluster } from '@stores/clusters';
     import { navbar_ethereal } from '@stores/layout';
     import { onMount, onDestroy, tick } from 'svelte';
-    import { cubicIn } from 'svelte/easing';
-    import { fade } from 'svelte/transition';
 
     /*=============================================
     =            Properties            =
@@ -170,7 +168,7 @@
 
             console.log("Looping interval called.")
 
-            changeBillboardImage(true);
+            changeBillboardImage(undefined, true);
         }
 
         /**
@@ -227,9 +225,10 @@
 
         /**
          * Changes the current billboard media.
+         * @param {number} [force_index]
          * @param {boolean} [avoid_same_image] if true and uses random navigation, it will avoid landing in the same index.
          */ 
-        const changeBillboardImage = (avoid_same_image) => {
+        const changeBillboardImage = (force_index, avoid_same_image) => {
             /**
              * @type {import('@models/Medias').Media | null}
              */
@@ -244,8 +243,9 @@
             }
 
 
-
-            if (random_billboard_media_iteration) {
+            if (force_index !== undefined) {
+                new_billboard_media = iterBillboardMediasToIndex(force_index);
+            } else if (random_billboard_media_iteration) {
                 new_billboard_media = iterBillboardMediasRandom();
             } else {
                 new_billboard_media = iterBillboardMediasSequential();
@@ -348,7 +348,7 @@
 
             if (await categoryHasBillboardMedia(the_billboard_category)) {
                 await loadBillboardMedias(the_billboard_category.Config)
-                changeBillboardImage(true); 
+                changeBillboardImage(undefined, true); 
 
             } else {
                 disableBillboardMediaLooping();
@@ -463,6 +463,18 @@
 
             billboard_iterator_index = next_index;
             return billboard_medias[billboard_iterator_index];
+        }
+
+        /**
+         * Changes the current media to the one on the given index or clamps it if out of bounds.
+         * @param {number} given_index
+         .* @returns {import('@models/Medias').Media} 
+         */
+        const iterBillboardMediasToIndex = given_index => {
+            const safe_index = Math.max(0, Math.min(given_index, billboard_medias.length - 1));
+
+            billboard_iterator_index = safe_index;
+            return billboard_medias[safe_index];
         }
 
         /**
@@ -634,6 +646,7 @@
             if (await categoryHasBillboardMedia(the_billboard_category)) {
                 await loadBillboardMedias(new_config);
                 resetBillboardMediaIteration(false);
+                changeBillboardImage(0)
             }
 
             console.log("Updated category configuration for the billboard.");
