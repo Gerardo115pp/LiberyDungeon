@@ -1332,7 +1332,6 @@
         const getHTMLMediaElement = () => {
             return document.querySelector(".mw-media-element-display");
         }
-
         
         /*=============================================
         =            Active media state modifiers            =

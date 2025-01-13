@@ -27,9 +27,14 @@
         /**
          * The media uuid of the video element
          * @type {string}
-        */
+         */
         export let media_uuid;
 
+        /**
+         * Whether the video element has been unmounted since handleVideoElementChange was called.
+         * @type {boolean}
+         */
+        let video_element_unmounted = true;
 
         /**
          * Whether the component should disappear when the mouse is not over it 
@@ -259,14 +264,12 @@
         let active_media_index_unsubscriber = () => {};
     
         const dispatch = createEventDispatcher();
+
+        $: handleVideoElementChange(the_video_element);
     
     /*=====  End of Properties  ======*/
     
     onMount(() => {
-        the_video_element.addEventListener("timeupdate", handleVideoTimeUpdate);
-        the_video_element.addEventListener("durationchange", handleVideoDurationChange);
-        the_video_element.addEventListener("loadedmetadata", handleVideoMetadataLoaded);
-        window.addEventListener("beforeunload", saveVideoWatchProgress);
 
         active_media_index_unsubscriber = active_media_index.subscribe(handleActiveMediaIndexChange);
 
@@ -276,10 +279,7 @@
     onDestroy(() => {
         if (!browser) return;
 
-        the_video_element.removeEventListener("timeupdate", handleVideoTimeUpdate);
-        the_video_element.removeEventListener("durationchange", handleVideoDurationChange);
-        the_video_element.removeEventListener("loadedmetadata", handleVideoMetadataLoaded);
-        window.removeEventListener("beforeunload", saveVideoWatchProgress);
+        removeVideoElementListeners(the_video_element);
 
         active_media_index_unsubscriber();
 
@@ -528,7 +528,20 @@
         
         /*=====  End of Hotkeys  ======*/
 
-        
+        /**
+         * Attaches necessary event listeners to the_video_element.
+         * @param {HTMLVideoElement} new_video_element
+         * @returns {void}
+         */
+        const attachVideoElementEventListeners = (new_video_element) => {
+            if (new_video_element === null) return;
+
+            new_video_element.addEventListener("timeupdate", handleVideoTimeUpdate);
+            new_video_element.addEventListener("durationchange", handleVideoDurationChange);
+            new_video_element.addEventListener("loadedmetadata", handleVideoMetadataLoaded);
+            new_video_element.addEventListener("playing", handleVideoPlaying);
+            window.addEventListener("beforeunload", saveVideoWatchProgress);
+        }
 
         /**
          * Changes the volume of the video by the given amount
@@ -581,12 +594,42 @@
          * @param {HTMLVideoElement} video_element
          * @returns {void}
          */
-        const handleVideElementChanges = (video_element) => {
+        const handleVideoElementLoaded = (video_element) => {
             if (VideoControllerSettings.shouldPreservePlaybackSpeed()) {
                 video_element.playbackRate = VideoControllerSettings.getPlaybackSpeed();
             } else {
                 VideoControllerSettings.setPlaybackSpeed(1);
             }
+
+            video_paused = the_video_element.paused;
+            console.log("Video was paused: ", video_paused);
+        }
+
+        /**
+         * Handles the changes on the reference to the the_video_element variable.
+         * @param {HTMLVideoElement | null} new_video_element
+         * @returns {void}
+         */
+        function handleVideoElementChange(new_video_element) {
+            if (new_video_element === null) {
+                removeVideoElementListeners(null);
+                video_element_unmounted = true;
+                return;
+            }
+
+            if (video_element_unmounted) {
+                attachVideoElementEventListeners(new_video_element);
+            }
+
+            video_muted = the_video_element.muted;
+        }
+
+        /**
+         * Handles the playing event from the video downloader
+         * @returns {void}
+         */
+        function handleVideoPlaying() {
+            video_paused = false;
         }
 
         /**
@@ -642,7 +685,7 @@
             // @ts-ignore
             getWatchProgress.call(this);
 
-            handleVideElementChanges(this);
+            handleVideoElementLoaded(this);
         }
 
         /**
@@ -707,6 +750,23 @@
             } else {
                 the_video_element.play();
             }
+        }
+
+        /**
+         * Removes the event listeners from the given video element and the global context.
+         * @param {HTMLVideoElement | null} new_video_element
+         * @returns {void}
+         */
+        const removeVideoElementListeners = (new_video_element) => {
+            if (new_video_element instanceof HTMLVideoElement) {
+
+                the_video_element.removeEventListener("timeupdate", handleVideoTimeUpdate);
+                the_video_element.removeEventListener("durationchange", handleVideoDurationChange);
+                the_video_element.removeEventListener("loadedmetadata", handleVideoMetadataLoaded);
+                the_video_element.removeEventListener("playing", handleVideoPlaying);
+            }
+
+            window.removeEventListener("beforeunload", saveVideoWatchProgress);
         }
 
         /**
@@ -820,23 +880,6 @@
             setPlaybackCurrentTime(new_time, true);
         }
 
-        function toggleMute() {
-            video_muted = !the_video_element.muted;
-
-            automute_enabled.set(video_muted); // Muted value of the video element is reactive to this store
-        }
-
-        /**
-         * Updates the video progress percentage
-         * @modifies {video_progress}
-         * @returns {void}
-        */
-        const updateVideoProgress = () => {
-            if (isNaN(the_video_element.duration)) return;
-
-            video_progress = (the_video_element.currentTime / the_video_element.duration) * 100;
-        }
-
         /**
          * Hides the controller after a given amount of time
          * @param {number} [hide_delay]
@@ -848,6 +891,23 @@
 
             controller_opacity = 1;
             controller_visible = true;
+        }
+
+        function toggleMute() {
+            video_muted = !the_video_element.muted;
+
+            automute_enabled.set(video_muted); // Muted value of the video element is reactive to this store
+        }
+
+        /**
+         * Updates the video progress percentage
+         * @modifies {video_progress}
+         * @returns {void}
+         */
+        const updateVideoProgress = () => {
+            if (isNaN(the_video_element.duration)) return;
+
+            video_progress = (the_video_element.currentTime / the_video_element.duration) * 100;
         }
 
     /*=====  End of Methods  ======*/
@@ -902,7 +962,7 @@
             <button class="lvc-control-btn" id="lvc-toggle-mute-btn" on:click={toggleMute}>
                 <svg viewBox="0 0 24 24">
                     <path class="outline-path thin" d="M1 18L1 6H5l5 -4V22l-5 -4Z"/>
-                    {#if !video_muted}
+                    {#if !video_muted && !the_video_element.muted}
                         <path class="outline-path thin" d="M14 6Q 20 12 14 18"/>
                         <path class="outline-path thin" d="M14 2C 24 2 24 20 14 22"/>
                     {:else}
