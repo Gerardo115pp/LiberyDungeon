@@ -6,6 +6,7 @@ import { browser } from "$app/environment";
 /**
  * @type {import('svelte/store').Writable<CategoriesCluster>}
  */
+// @ts-ignore
 export const current_cluster = writable(null);
 
 /**

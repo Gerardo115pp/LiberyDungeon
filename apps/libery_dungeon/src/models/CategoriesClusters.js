@@ -11,6 +11,7 @@ import {
     GetMediaIdentitiesByUUIDsRequest
 } from "@libs/DungeonsCommunication/services_requests/media_requests";
 import { MediaIdentity } from "./Medias";
+import { getVideoMoments, createVideoMoment } from "./Metadata";
 
 export class CategoriesCluster {
     
@@ -45,6 +46,12 @@ export class CategoriesCluster {
          */
         #root_category;
 
+        /**
+         * A map of media uuids -> video moments that exist on this cluster and have been fetched.
+         * @type {Map<string, import('@models/Metadata').VideoMoment[]>}
+         */
+        #cluster_video_moments
+
     /**
      * @param {CategoriesClusterParams} param0 
      * @typedef {Object} CategoriesClusterParams
@@ -64,7 +71,86 @@ export class CategoriesCluster {
         this.#fs_path = fs_path;
         this.#filter_category = filter_category;
         this.#root_category = root_category;
+
+        this.#cluster_video_moments = new Map();
     }
+
+    
+    /*=============================================
+    =            Video moments            =
+    =============================================*/
+
+        /**
+         * Creates a new video moment for a media that exists on this cluster.
+         * @param {string} media_uuid
+         * @param {number} moment_time
+         * @param {string} moment_title
+         * @returns {Promise<import('@models/Metadata').VideoMoment | null>}
+         */
+        createVideoMoment = async (media_uuid, moment_time, moment_title) => {
+            const new_video_moment = await createVideoMoment(
+                media_uuid,
+                this.#uuid,
+                moment_time,
+                moment_title
+            );
+
+            if (new_video_moment === null) return null;
+            
+            let existing_video_moments = this.#cluster_video_moments.get(media_uuid);
+
+            if (existing_video_moments === undefined) {
+                existing_video_moments = [new_video_moment];
+            }
+
+            existing_video_moments = this.#sortVideoMoments(existing_video_moments);
+
+            this.#cluster_video_moments.set(media_uuid, existing_video_moments);
+
+            return new_video_moment;
+        }
+    
+        /**
+         * Returns all the video moments available for the given media uuid.
+         * @param {string} media_uuid
+         * @returns {Promise<import('@models/Metadata').VideoMoment[] | null>}
+         */
+        getMediaVideoMoments = async media_uuid => {
+            const cached_video_moments = this.#cluster_video_moments.get(media_uuid);
+            if (cached_video_moments != undefined) {
+                return cached_video_moments;
+            }
+
+            const fetched_video_moments = await getVideoMoments(media_uuid, this.#uuid);
+
+            if (fetched_video_moments.length === 0) {
+                return null;
+            }
+
+            this.#cluster_video_moments.set(media_uuid, fetched_video_moments);
+
+            return fetched_video_moments;
+        }
+
+        /**
+         * Returns a copy of the given list of video moment but sorted by moment
+         * time.
+         * @param {import('@models/Metadata').VideoMoment[]} video_moments
+         * @returns {import('@models/Metadata').VideoMoment[]}
+         */
+        #sortVideoMoments = video_moments => {
+            const sorted_video_moments = [...video_moments];
+
+            sorted_video_moments.sort((a, b) => {
+                return a.StartTime - b.StartTime;
+            });
+
+            return sorted_video_moments;
+        }
+    
+    /*=====  End of Video moments  ======*/
+    
+    
 
     get DownloadCategoryID() {
         return this.#filter_category;
@@ -95,7 +181,6 @@ export class CategoriesCluster {
 
         return media_identities;
     }
-
 
     get Name() {
         return this.#name;
