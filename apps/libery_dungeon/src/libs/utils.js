@@ -275,6 +275,25 @@ export const videoDurationToString = (duration, is_seconds = true) => {
     return duration_string;
 }
 
+
+/**
+ * Decodes a given video time.
+ * @param {number} video_time
+ * @returns {number}
+ */
+export const decodeVideoTime = video_time => {
+    return video_time / 1000;
+}
+
+/**
+ * Encodes a given video time.
+ * @param {number} video_time
+ * @returns {number}
+ */
+export const encodeVideoTime = video_time => {
+    return video_time * 1000;
+}
+
 /**
  * Returns the base name of a give unix-like path.
  * @param {string} path 
