@@ -8,6 +8,7 @@ import (
 	"libery-metadata-service/database/categories_metadata"
 	cluster_metadata_database "libery-metadata-service/database/clusters_metadata"
 	dungeon_tags_database "libery-metadata-service/database/dungeon_tags"
+	"libery-metadata-service/database/video_moments"
 	watch_point_database "libery-metadata-service/database/watch_points"
 	"libery-metadata-service/handlers"
 	"libery-metadata-service/handlers/dungeon_tags_handler"
@@ -37,6 +38,11 @@ func main() {
 	watch_point_impl = watch_point_database.NewWatchPointDatabase()
 
 	repository.SetWatchPointRepository(watch_point_impl)
+
+	var video_moments_impl repository.VideoMomentsRepository
+	video_moments_impl = video_moments.NewVideoMomentsDB()
+
+	repository.SetVideoMomentsRepo(video_moments_impl)
 
 	var cluster_metadata_impl repository.ClusterMetadataRepository
 	cluster_metadata_impl = cluster_metadata_database.NewClusterMetadataDB()
