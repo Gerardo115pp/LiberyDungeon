@@ -2,6 +2,9 @@ import { metadata_server } from "../../services";
 import { HttpResponse, attributesToJson } from "../../base";
 
 export class GetWatchPointRequest {
+    /**
+     * @param {string} media_uuid 
+     */
     constructor(media_uuid) {
         this.media_uuid = media_uuid;
     }
@@ -16,7 +19,12 @@ export class GetWatchPointRequest {
     do = async () => {
         const response = await fetch(`${metadata_server}/watch-points?media_uuid=${this.media_uuid}`);
 
-        let data = null;
+        /**
+         * @type {WatchPointTime}
+         */
+        let data = {
+            start_time: NaN
+        };
         let http_response = new HttpResponse(response, data);
 
         if (!(response.status <= 200 && response.status < 300) || !response.headers.has("Content-Type")) {
@@ -31,8 +39,8 @@ export class GetWatchPointRequest {
                 break;
             case "application/octet-stream":
                 let response_data = {};
-                data = await response.arrayBuffer();
-                let data_view = new DataView(data);
+                let array_data = await response.arrayBuffer();
+                let data_view = new DataView(array_data);
                 response_data.start_time = data_view.getUint32(0, true);
                 http_response = new HttpResponse(response, response_data);
                 break;
@@ -43,6 +51,11 @@ export class GetWatchPointRequest {
 }
 
 export class PostWatchPointRequest {
+
+    /**
+     * @param {string} media_uuid 
+     * @param {number} start_time 
+     */
     constructor(media_uuid, start_time) {
         this.media_uuid = media_uuid;
         this.start_time = start_time;
