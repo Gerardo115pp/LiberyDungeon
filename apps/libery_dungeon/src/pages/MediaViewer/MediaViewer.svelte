@@ -860,13 +860,15 @@
                     console.error("In MediaViewer.handleGoBack: $categories_tree is null.");
                     return;
                 }
-               
-
                 
                 if (global_hotkeys_manager == null) {
                     console.error("The global hotkeys manager is null");
                     return;
                 }
+
+                const changes_confirmation = await confirmMediaChanges();
+
+                if (!changes_confirmation) return;
 
                 if (media_viewer_closing) return;
 
@@ -1259,6 +1261,107 @@
         }
 
         /**
+         * Captures a frame from the video element as a webp and downloads it.
+         */
+        const captureVideoFrame = async () => {
+            if (video_element == null) {
+                return;
+            };
+
+            let canvas = document.createElement("canvas");
+         
+            canvas.width = video_element.videoWidth;
+            canvas.height = video_element.videoHeight;
+
+            let ctx = canvas.getContext("2d");
+
+            if (ctx === null) {
+                const variable_enviroment = new VariableEnvironmentContextError("In MediaViewer.captureVideoFrame while trying to get the 2d context of the canvas element");
+
+                variable_enviroment.addVariable("canvas is HTMLCanvasElement", canvas instanceof HTMLCanvasElement);
+                variable_enviroment.addVariable("canvas is null", canvas === null);
+                variable_enviroment.addVariable("video_element is null", video_element === null);
+                variable_enviroment.addVariable("video_element is HTMLVideoElement", video_element instanceof HTMLVideoElement);
+
+                const labeled_err = new LabeledError(variable_enviroment, "Could not capture the video frame. Are you using an old browser?", lf_errors.ERR_UNSUPPORTED_BROWSER_FEATURE);
+
+                labeled_err.alert();
+                return;
+            }
+
+            ctx.drawImage(video_element, 0, 0, canvas.width, canvas.height);
+
+            const active_media = getActiveMedia();
+
+            const media_name = active_media.MediaName;
+            const frame_image_name = `${media_name}_frame_${video_element.currentTime}.webp`;
+
+            const user_wants_upload = await confirmPlatformMessage({
+                message_title: "Screenshot taken",
+                question_message: "Do you want to upload the screenshot?",
+                auto_focus_cancel: false,
+                cancel_label: "No",
+                confirm_label: "Yes",
+                danger_level: -1
+            });
+
+            const generated_media_mime_type = "image/webp";
+
+            if (user_wants_upload === 1) {
+                canvas.toBlob(blob => {
+                    if (blob === null) {
+                        const variable_enviroment = new VariableEnvironmentContextError("In MediaViewer.captureVideoFrame");
+
+                        variable_enviroment.addVariable("blob is null", blob === null);
+                        variable_enviroment.addVariable("canvas is HTMLCanvasElement", canvas instanceof HTMLCanvasElement);
+                        console.dirxml(canvas);
+                        console.dirxml(active_media);
+
+                        const labeled_err = new LabeledError(variable_enviroment, "Could not capture the video frame. Are you using an old browser?", lf_errors.ERR_UNSUPPORTED_BROWSER_FEATURE);
+
+                        labeled_err.alert();
+                        return;
+                    }
+
+                    uploadGeneratedMedia(blob, frame_image_name, generated_media_mime_type);
+                }, generated_media_mime_type, 1);
+
+                return;
+            }
+
+            let dataURL = canvas.toDataURL(generated_media_mime_type);
+
+            // download the image as a file just for testing purposes
+            let a = document.createElement("a");
+            a.href = dataURL;
+            a.download = frame_image_name;
+            a.click();
+
+            setDiscreteFeedbackMessage(`Screenshot taken at ${video_element.currentTime} seconds.`);
+        }
+
+        /**
+         * Confirms the media changes and returns whether the user has accepeted them.
+         * @returns {Promise<boolean>}
+         */
+        const confirmMediaChanges = async () => {
+            if ($media_changes_manager.ChangesAmount === 0) {
+                return true;
+            }
+
+            let user_confirmation = await confirmPlatformMessage({
+                message_title: "Media changes",
+                question_message: "Do you want to save the changes you made to the medias?",
+                auto_focus_cancel: false,
+                cancel_label: "No",
+                confirm_label: "Yes",
+                danger_level: -1
+            });
+
+            return user_confirmation === 1;
+        }
+
+        /**
          * Determines what active_media_index should be set initially. Either the one from a url parameter, the one from the cache.
          * @requires url_category_id - to load the cached index from the cache
          * @requires url_media_index - if this is valid, then the cached index will be ignored
@@ -1600,85 +1703,7 @@
             $static_next_medias.Clear();
         }
 
-        /**
-         * Captures a frame from the video element as a webp and downloads it.
-         */
-        const captureVideoFrame = async () => {
-            if (video_element == null) {
-                return;
-            };
 
-            let canvas = document.createElement("canvas");
-         
-            canvas.width = video_element.videoWidth;
-            canvas.height = video_element.videoHeight;
-
-            let ctx = canvas.getContext("2d");
-
-            if (ctx === null) {
-                const variable_enviroment = new VariableEnvironmentContextError("In MediaViewer.captureVideoFrame while trying to get the 2d context of the canvas element");
-
-                variable_enviroment.addVariable("canvas is HTMLCanvasElement", canvas instanceof HTMLCanvasElement);
-                variable_enviroment.addVariable("canvas is null", canvas === null);
-                variable_enviroment.addVariable("video_element is null", video_element === null);
-                variable_enviroment.addVariable("video_element is HTMLVideoElement", video_element instanceof HTMLVideoElement);
-
-                const labeled_err = new LabeledError(variable_enviroment, "Could not capture the video frame. Are you using an old browser?", lf_errors.ERR_UNSUPPORTED_BROWSER_FEATURE);
-
-                labeled_err.alert();
-                return;
-            }
-
-            ctx.drawImage(video_element, 0, 0, canvas.width, canvas.height);
-
-            const active_media = getActiveMedia();
-
-            const media_name = active_media.MediaName;
-            const frame_image_name = `${media_name}_frame_${video_element.currentTime}.webp`;
-
-            const user_wants_upload = await confirmPlatformMessage({
-                message_title: "Screenshot taken",
-                question_message: "Do you want to upload the screenshot?",
-                auto_focus_cancel: false,
-                cancel_label: "No",
-                confirm_label: "Yes",
-                danger_level: -1
-            });
-
-            const generated_media_mime_type = "image/webp";
-
-            if (user_wants_upload === 1) {
-                canvas.toBlob(blob => {
-                    if (blob === null) {
-                        const variable_enviroment = new VariableEnvironmentContextError("In MediaViewer.captureVideoFrame");
-
-                        variable_enviroment.addVariable("blob is null", blob === null);
-                        variable_enviroment.addVariable("canvas is HTMLCanvasElement", canvas instanceof HTMLCanvasElement);
-                        console.dirxml(canvas);
-                        console.dirxml(active_media);
-
-                        const labeled_err = new LabeledError(variable_enviroment, "Could not capture the video frame. Are you using an old browser?", lf_errors.ERR_UNSUPPORTED_BROWSER_FEATURE);
-
-                        labeled_err.alert();
-                        return;
-                    }
-
-                    uploadGeneratedMedia(blob, frame_image_name, generated_media_mime_type);
-                }, generated_media_mime_type, 1);
-
-                return;
-            }
-
-            let dataURL = canvas.toDataURL(generated_media_mime_type);
-
-            // download the image as a file just for testing purposes
-            let a = document.createElement("a");
-            a.href = dataURL;
-            a.download = frame_image_name;
-            a.click();
-
-            setDiscreteFeedbackMessage(`Screenshot taken at ${video_element.currentTime} seconds.`);
-        }
 
         /**
          * Enters or exists fullscreen mode.
