@@ -8,6 +8,7 @@
     import { videoDurationToString } from "@libs/utils";
     import generateVideoControllerContext from "./video_controller_hotkeys";
     import VideoControllerSettings from "./stores/video_controller_settings";
+    import { current_cluster } from "@stores/clusters";
     
     /*=============================================
     =            Properties            =
@@ -258,6 +259,12 @@
              * @type {number}
              */
             let last_frame_skip_timestamp = 0;
+
+            /**
+             * The user saved video moments for the current video.
+             * @type {import('@models/Metadata').VideoMoment[]}
+             */
+            let current_video_moments = [];
         
         /*=====  End of State  ======*/
 
@@ -602,7 +609,8 @@
             }
 
             video_paused = the_video_element.paused;
-            console.log("Video was paused: ", video_paused);
+        
+            loadVideoMoments(media_uuid)
         }
 
         /**
@@ -611,6 +619,8 @@
          * @returns {void}
          */
         function handleVideoElementChange(new_video_element) {
+            resetCurrentVideoMoments();
+
             if (new_video_element === null) {
                 removeVideoElementListeners(null);
                 video_element_unmounted = true;
@@ -738,6 +748,20 @@
             mouse_over_controller = false;
         }
 
+        /**
+         * Loads the video moments available for a given media uuid if any.
+         * If there are any video moments, then is stores them on current_video_moments.
+         * @param {string} media_uuid
+         * @returns {Promise<void>}
+         */
+        const loadVideoMoments = async media_uuid => {
+            const new_video_moments = await $current_cluster.getMediaVideoMoments(media_uuid);
+
+            if (new_video_moments === null) return;
+
+            current_video_moments = new_video_moments;
+        }
+
         function emitCaptureVideoFrame() {
             dispatch("capture-frame");            
         }
@@ -767,6 +791,14 @@
             }
 
             window.removeEventListener("beforeunload", saveVideoWatchProgress);
+        }
+
+        /**
+         * Resets the video moments.
+         * @returns {void}
+         */
+        const resetCurrentVideoMoments = () => {
+            current_video_moments = [];
         }
 
         /**
