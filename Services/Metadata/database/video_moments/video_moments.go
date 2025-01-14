@@ -31,7 +31,7 @@ func NewVideoMomentsDB() *VideoMomentsDB {
 }
 
 func (video_moments_db VideoMomentsDB) AddVideoCTX(ctx context.Context, video video_moment_models.Video) error {
-	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "INSERT INTO videos (video_uuid, video_cluster) VALUES (?, ?)")
+	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "INSERT INTO `videos` (`uuid`, `cluster_uuid`) VALUES (?, ?)")
 	if err != nil {
 		return errors.Join(fmt.Errorf("In database/video_moments/video_moments.AddVideoCTX: While preparing statement."), err)
 	}
@@ -50,7 +50,7 @@ func (video_moments_db VideoMomentsDB) AddVideo(video video_moment_models.Video)
 }
 
 func (video_moments_db VideoMomentsDB) AddVideoMomentCTX(ctx context.Context, video_moment video_moment_models.VideoMoment) error {
-	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "INSERT INTO video_moments (video_uuid, moment_time) VALUES (?, ?)")
+	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "INSERT INTO `video_moments` (`video_uuid`, `moment_time`) VALUES (?, ?)")
 	if err != nil {
 		return errors.Join(fmt.Errorf("In database/video_moments/video_moments.AddVideoMomentCTX: While preparing statement."), err)
 	}
@@ -68,16 +68,16 @@ func (video_moments_db VideoMomentsDB) AddVideoMoment(video_moment video_moment_
 	return video_moments_db.AddVideoMomentCTX(context.Background(), video_moment)
 }
 
-func (video_moments_db VideoMomentsDB) GetVideoCTX(ctx context.Context, video_uuid string, cluster_uuid string) (*video_moment_models.Video, error) {
+func (video_moments_db VideoMomentsDB) GetVideoCTX(ctx context.Context, uuid string, cluster_uuid string) (*video_moment_models.Video, error) {
 	var video video_moment_models.Video
 
-	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "SELECT video_uuid, video_cluster FROM videos WHERE video_uuid = ? AND video_cluster = ?")
+	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "SELECT `uuid`, `cluster_uuid` FROM `videos` WHERE uuid` = ? AND cluster_uuid = ?")
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("In database/video_moments/video_moments.GetVideoCTX: While preparing statement."), err)
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRowContext(ctx, video_uuid, cluster_uuid).Scan(&video.VideoUUID, &video.VideoCluster)
+	err = stmt.QueryRowContext(ctx, uuid, cluster_uuid).Scan(&video.VideoUUID, &video.VideoCluster)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("In database/video_moments/video_moments.GetVideoCTX: While executing statement."), err)
 	}
@@ -85,14 +85,14 @@ func (video_moments_db VideoMomentsDB) GetVideoCTX(ctx context.Context, video_uu
 	return &video, nil
 }
 
-func (video_moments_db VideoMomentsDB) GetVideo(video_uuid string, cluster_uuid string) (*video_moment_models.Video, error) {
-	return video_moments_db.GetVideoCTX(context.Background(), video_uuid, cluster_uuid)
+func (video_moments_db VideoMomentsDB) GetVideo(uuid string, cluster_uuid string) (*video_moment_models.Video, error) {
+	return video_moments_db.GetVideoCTX(context.Background(), uuid, cluster_uuid)
 }
 
 func (video_moments_db VideoMomentsDB) GetVideoMomentCTX(ctx context.Context, video *video_moment_models.Video, moment_id int) (*video_moment_models.VideoMoment, error) {
 	var video_moment video_moment_models.VideoMoment
 
-	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "SELECT `id`, `video_uuid`, `moment_time` FROM `video_moments` WHERE `video_uuid` = ? AND `id` = ?")
+	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "SELECT `id`, `video_uuid`, `moment_time` FROM `video_moments` WHERE `uuid` = ? AND `id` = ?")
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("In database/video_moments/video_moments.GetVideoMomentCTX: While preparing statement."), err)
 	}
@@ -146,7 +146,7 @@ func (video_moments_db VideoMomentsDB) GetVideoMoments(video *video_moment_model
 func (video_moments_db VideoMomentsDB) GetClusterVideosCTX(ctx context.Context, cluster_uuid string) ([]video_moment_models.Video, error) {
 	var videos []video_moment_models.Video
 
-	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "SELECT `video_uuid`, `video_cluster` FROM `videos` WHERE `video_cluster` = ?")
+	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "SELECT `uuid`, `cluster_uuid` FROM `videos` WHERE `cluster_uuid` = ?")
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("In database/video_moments/video_moments.GetClusterVideosCTX: While preparing statement."), err)
 	}
@@ -179,7 +179,7 @@ func (video_moments_db VideoMomentsDB) GetClusterVideos(cluster_uuid string) ([]
 func (video_moments_db VideoMomentsDB) GetClusterMomentsCTX(ctx context.Context, cluster_uuid string) ([]video_moment_models.VideoMoment, error) {
 	var video_moments []video_moment_models.VideoMoment
 
-	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "SELECT `id`, `video_uuid`, `moment_time` FROM `video_moments` WHERE `video_uuid` IN (SELECT `video_uuid` FROM `videos` WHERE `video_cluster` = ?)")
+	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "SELECT `id`, `video_uuid`, `moment_time` FROM `video_moments` WHERE `video_uuid` IN (SELECT `uuid` FROM `videos` WHERE `cluster_uuid` = ?)")
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("In database/video_moments/video_moments.GetClusterMomentsCTX: While preparing statement."), err)
 	}

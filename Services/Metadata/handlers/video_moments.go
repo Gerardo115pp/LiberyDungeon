@@ -119,7 +119,7 @@ func post__NewVideoMomentHandler(response http.ResponseWriter, request *http.Req
 
 		err = repository.VideoMomentsRepo.AddVideoCTX(request.Context(), *video_instance)
 		if err != nil {
-			echo.Echo(echo.RedFG, "In handlers/video_moments.post__NewVideoMomentHandler: error adding video")
+			echo.Echo(echo.RedFG, "In handlers/video_moments.post__NewVideoMomentHandler: error adding video\n\n%s", err)
 			dungeon_helpers.WriteRejection(response, 500, "Error adding video")
 			return
 		}
