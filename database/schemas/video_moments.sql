@@ -3,7 +3,7 @@ PRAGMA foreign_keys=ON;
 DROP TABLE IF EXISTS `videos`;
 CREATE TABLE IF NOT EXISTS `videos` (
     `uuid` TEXT PRIMARY KEY,
-    `cluster_uuid` TEXT NOT NULL,
+    `cluster_uuid` TEXT NOT NULL
 );
 
 DROP TABLE IF EXISTS `video_moments`;

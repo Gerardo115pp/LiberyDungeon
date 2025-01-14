@@ -46,6 +46,32 @@ func ParseTagIDsListParams(request *http.Request) (*TagListRequest, error) {
 	return request_body, nil
 }
 
+/* ------------------------------ Video Moments ----------------------------- */
+
+type VideoMoments_VideoIdentifier struct {
+	VideoUUID    string `json:"video_uuid"`
+	VideoCluster string `json:"video_cluster"`
+}
+
+type VideoMoments_NewVideoMoment struct {
+	VideoMoments_VideoIdentifier
+	MomentTime int `json:"moment_time"`
+}
+
+func ParseVideoIdentifierParams(request *http.Request) *VideoMoments_VideoIdentifier {
+	const (
+		video_uuid_key    string = "video_uuid"
+		video_cluster_key string = "video_cluster"
+	)
+
+	var request_body *VideoMoments_VideoIdentifier = new(VideoMoments_VideoIdentifier)
+
+	request_body.VideoUUID = request.URL.Query().Get(video_uuid_key)
+	request_body.VideoCluster = request.URL.Query().Get(video_cluster_key)
+
+	return request_body
+}
+
 // -------------------- Categories config --------------------
 
 type PatchCategoryBillboardTagsRequest struct {
