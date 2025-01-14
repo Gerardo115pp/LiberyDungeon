@@ -37,7 +37,7 @@ export class PostVideoMomentsRequest {
             moment_time: this.moment_time
         }
 
-        const url = new URL(PostVideoMomentsRequest.endpoint);
+        const url = new URL(PostVideoMomentsRequest.endpoint, globalThis.location.origin);
 
         /**
          * @type {Response}
@@ -96,7 +96,7 @@ export class GetVideoMomentsRequest {
          */
         let response;
 
-        const url = new URL(GetVideoMomentsRequest.endpoint);
+        const url = new URL(GetVideoMomentsRequest.endpoint, globalThis.location.origin);
 
         url.searchParams.append("video_uuid", this.video_uuid);
         url.searchParams.append("video_cluster", this.video_cluster);
