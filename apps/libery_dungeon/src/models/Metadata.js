@@ -1,5 +1,6 @@
 import { GetWatchPointRequest, PostWatchPointRequest } from "@libs/DungeonsCommunication/services_requests/metadata_requests/watch_points_requests";
 import { GetVideoMomentsRequest, PostVideoMomentsRequest } from "@libs/DungeonsCommunication/services_requests/metadata_requests/video_moments_requests";
+import { encodeVideoTime, decodeVideoTime } from "@libs/utils";
 
 
 /*=============================================
@@ -95,6 +96,17 @@ export const saveMediaWatchPoint = async (media_uuid, start_time) => {
             this.#video_uuid = video_uuid;
             this.#moment_title = moment_title;
             this.#moment_time = moment_time;
+        }
+
+        /**
+         * Returns the percentage T of the given video duration at which this moment ocurres. Where 0 <= T <= 100.
+         * @param {number} total_duration
+         * @returns {number}
+         */
+        getTimelineStartPoint = total_duration => {
+            const decoded_time = decodeVideoTime(this.#moment_time);
+
+            return Math.max(0, Math.min(1, (decoded_time / total_duration))) * 100;
         }
 
         /**
