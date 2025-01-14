@@ -55,7 +55,8 @@ type VideoMoments_VideoIdentifier struct {
 
 type VideoMoments_NewVideoMoment struct {
 	VideoMoments_VideoIdentifier
-	MomentTime int `json:"moment_time"`
+	MomentTime  int    `json:"moment_time"`
+	MomentTitle string `json:"moment_title"`
 }
 
 func ParseVideoIdentifierParams(request *http.Request) *VideoMoments_VideoIdentifier {

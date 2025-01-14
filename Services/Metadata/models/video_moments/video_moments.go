@@ -6,9 +6,10 @@ type Video struct {
 }
 
 type VideoMoment struct {
-	ID         int    `json:"id"`
-	VideoUUID  string `json:"video_uuid"`
-	MomentTime int    `json:"moment_time"`
+	ID          int    `json:"id"`
+	VideoUUID   string `json:"video_uuid"`
+	MomentTitle string `json:"moment_title"`
+	MomentTime  int    `json:"moment_time"`
 }
 
 type VideoMoments struct {

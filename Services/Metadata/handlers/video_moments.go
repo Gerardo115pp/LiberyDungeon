@@ -67,14 +67,14 @@ func get__VideoMomentsHandler(response http.ResponseWriter, request *http.Reques
 
 	video_instance, err := repository.VideoMomentsRepo.GetVideoCTX(request.Context(), request_params.VideoUUID, request_params.VideoCluster)
 	if err != nil {
-		echo.Echo(echo.RedFG, "In handlers/video_moments.get__VideoMomentsHandler: video likely does not exist")
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.get__VideoMomentsHandler: While searching for the video. Video likely doesn't exists.\n\n%s", err))
 		dungeon_helpers.WriteRejection(response, 404, "Video not found")
 		return
 	}
 
 	moments, err := repository.VideoMomentsRepo.GetVideoMomentsCTX(request.Context(), video_instance)
 	if err != nil {
-		echo.Echo(echo.RedFG, "In handlers/video_moments.get__VideoMomentsHandler: error getting video moments")
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.get__VideoMomentsHandler: error getting video moments\n\n%s", err))
 		dungeon_helpers.WriteRejection(response, 500, "Error getting video moments")
 		return
 	}
@@ -102,13 +102,18 @@ func post__NewVideoMomentHandler(response http.ResponseWriter, request *http.Req
 
 	err := json.NewDecoder(request.Body).Decode(&request_body)
 	if err != nil {
-		echo.Echo(echo.RedFG, "In handlers/video_moments.post__NewVideoMomentHandler: error decoding request body")
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.post__NewVideoMomentHandler: error decoding request body\n\n%s", err))
 		dungeon_helpers.WriteRejection(response, 400, "Malformed request")
 		return
 	}
 
-	video_instance, err := repository.VideoMomentsRepo.GetVideoCTX(request.Context(), request_body.VideoUUID, request_body.VideoCluster)
+	if request_body.MomentTitle == "" || request_body.VideoCluster == "" || request_body.VideoUUID == "" {
+		echo.Echo(echo.RedFG, "In handlers/video_moments.post__NewVideoMomentHandler: request was malformed, either moment_title, video_cluster or video_uuid was empty")
+		dungeon_helpers.WriteRejection(response, 400, "Missing parameters")
+		return
+	}
 
+	video_instance, err := repository.VideoMomentsRepo.GetVideoCTX(request.Context(), request_body.VideoUUID, request_body.VideoCluster)
 	if err != nil {
 		// If the video doesn't exist, create it.
 
@@ -126,13 +131,14 @@ func post__NewVideoMomentHandler(response http.ResponseWriter, request *http.Req
 	}
 
 	video_moment_instance := video_moment_models.VideoMoment{
-		VideoUUID:  video_instance.VideoUUID,
-		MomentTime: request_body.MomentTime,
+		VideoUUID:   video_instance.VideoUUID,
+		MomentTime:  request_body.MomentTime,
+		MomentTitle: request_body.MomentTitle,
 	}
 
 	err = repository.VideoMomentsRepo.AddVideoMomentCTX(request.Context(), video_moment_instance)
 	if err != nil {
-		echo.Echo(echo.RedFG, "In handlers/video_moments.post__NewVideoMomentHandler: error adding video moment")
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.post__NewVideoMomentHandler: error adding video moment\n\n%s", err))
 		dungeon_helpers.WriteRejection(response, 500, "Error adding video moment")
 		return
 	}
