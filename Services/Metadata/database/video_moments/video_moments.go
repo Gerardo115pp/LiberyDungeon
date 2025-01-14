@@ -49,22 +49,24 @@ func (video_moments_db VideoMomentsDB) AddVideo(video video_moment_models.Video)
 	return video_moments_db.AddVideoCTX(context.Background(), video)
 }
 
-func (video_moments_db VideoMomentsDB) AddVideoMomentCTX(ctx context.Context, video_moment video_moment_models.VideoMoment) error {
+func (video_moments_db VideoMomentsDB) AddVideoMomentCTX(ctx context.Context, video_moment video_moment_models.VideoMoment) (int, error) {
 	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "INSERT INTO `video_moments` (`video_uuid`, `moment_time`, `moment_title`) VALUES (?, ?, ?)")
 	if err != nil {
-		return errors.Join(fmt.Errorf("In database/video_moments/video_moments.AddVideoMomentCTX: While preparing statement."), err)
+		return -1, errors.Join(fmt.Errorf("In database/video_moments/video_moments.AddVideoMomentCTX: While preparing statement."), err)
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, video_moment.VideoUUID, video_moment.MomentTime, video_moment.MomentTitle)
+	results, err := stmt.ExecContext(ctx, video_moment.VideoUUID, video_moment.MomentTime, video_moment.MomentTitle)
 	if err != nil {
-		return errors.Join(fmt.Errorf("In database/video_moments/video_moments.AddVideoMomentCTX: While executing statement."), err)
+		return -1, errors.Join(fmt.Errorf("In database/video_moments/video_moments.AddVideoMomentCTX: While executing statement."), err)
 	}
 
-	return nil
+	moment_id, err := results.LastInsertId()
+
+	return int(moment_id), err
 }
 
-func (video_moments_db VideoMomentsDB) AddVideoMoment(video_moment video_moment_models.VideoMoment) error {
+func (video_moments_db VideoMomentsDB) AddVideoMoment(video_moment video_moment_models.VideoMoment) (int, error) {
 	return video_moments_db.AddVideoMomentCTX(context.Background(), video_moment)
 }
 

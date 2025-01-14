@@ -8,8 +8,8 @@ import (
 type VideoMomentsRepository interface {
 	AddVideoCTX(ctx context.Context, video video_moment_models.Video) error
 	AddVideo(video video_moment_models.Video) error
-	AddVideoMomentCTX(ctx context.Context, video_moment video_moment_models.VideoMoment) error
-	AddVideoMoment(video_moment video_moment_models.VideoMoment) error
+	AddVideoMomentCTX(ctx context.Context, video_moment video_moment_models.VideoMoment) (int, error)
+	AddVideoMoment(video_moment video_moment_models.VideoMoment) (int, error)
 	GetVideoCTX(ctx context.Context, video_uuid string, cluster_uuid string) (*video_moment_models.Video, error)
 	GetVideo(video_uuid string, cluster_uuid string) (*video_moment_models.Video, error)
 	GetVideoMomentCTX(ctx context.Context, video *video_moment_models.Video, moment_id int) (*video_moment_models.VideoMoment, error)
