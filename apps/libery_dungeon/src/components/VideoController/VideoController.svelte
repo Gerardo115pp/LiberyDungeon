@@ -721,6 +721,35 @@
             }
 
             /**
+             * Handles the click event of a video moment.
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            const handleVideoMomentClicked = event => {
+                const event_target = event.currentTarget;
+
+                if (!(event_target instanceof HTMLElement)) {
+                    console.error("In @components/VideoController/VideoController.svelte:handleVideoMomentClicked: event_target is not an HTMLElement");
+                    return;
+                };
+
+                const video_moment_index_str = event_target.dataset.videoMomentIndex;
+
+                if (video_moment_index_str === undefined) {
+                    console.error("In @components/VideoController/VideoController.svelte:handleVideoMomentClicked: video_moment_index_str is undefined");
+                    console.log("eventTarget:", event_target);
+                    console.log("currentTarget:", event.currentTarget);
+                    return;
+                };
+
+                const moment_index = parseInt(video_moment_index_str);
+
+                const moment = current_video_moments[moment_index];
+
+                setPlaybackCurrentTime(moment.DecodedTime, false);
+            }
+
+            /**
              * Loads the video moments available for a given media uuid if any.
              * If there are any video moments, then is stores them on current_video_moments.
              * @param {string} media_uuid
@@ -1208,9 +1237,11 @@
                         ></div>
                     </div>
                     {#if current_video_moments.length > 0} 
-                        {#each current_video_moments as video_moment}
+                        {#each current_video_moments as video_moment, h}
                             <div class="lvc-pbt-tc-video-moment"
+                                data-video-moment-index="{h}"
                                 style:--translate-x="{video_moment.getTimelineStartPoint(the_video_element.duration)}cqw"
+                                on:click={handleVideoMomentClicked}
                             >
                                 <div class="lvc-pbt-tc-vm-title-wrapper">
                                     <div class="lvc-pbt-tc-vm-title">
