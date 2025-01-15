@@ -24,8 +24,16 @@
          */
         export let component_hotkey_context = generateVideoControllerContext();
     
-        /** @type {HTMLVideoElement} the video element that will be controlled */
+        /** 
+         * @type {HTMLVideoElement} the video element that will be controlled
+         */
         export let the_video_element;
+
+        /**
+         * The progress track bar.
+         * @type {HTMLDivElement}
+         */
+        let the_progress_bar_track;
 
         let global_hotkeys_manager = getHotkeysManager();
 
@@ -285,6 +293,12 @@
              * @type {number}
              */
             let last_frame_skip_timestamp = 0;
+
+            /**
+             * Whether a MouseDown event has been triggered on the time scrubber but not a MouseUp
+             * @type {boolean}
+             */
+            let time_scrubber_mouse_down = false;
 
             
             /*----------  Video Moments  ----------*/
@@ -778,6 +792,119 @@
 
         /*=====  End of Video moments  ======*/
 
+        /*=============================================
+        =            UI Event handlers            =
+        =============================================*/
+        
+            /**
+             * Handles the video progress bar click event
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            const handleProgressClick = (event) => {
+                event.stopPropagation();
+
+                const current_target = event.currentTarget;
+
+                if (!(current_target instanceof Element)) return;
+                
+                const rect = current_target.getBoundingClientRect();
+                const clickX = event.clientX - rect.left;
+                const new_progress = (clickX / rect.width);
+                let new_video_time =  new_progress * the_video_element.duration;
+                
+                setPlaybackCurrentTime(new_video_time);
+            };       
+
+            /**
+             * Handles the mouse movement on the entire document.
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            const handleMouseMovement = (event) => {
+                setControllerHiddenTimeout();
+
+                handleTimeScrubberDragging(event)
+            }
+
+            /**
+             * handles the mouse up event on the controller element.
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            const handleControllerMouseUp = event => {
+                if (time_scrubber_mouse_down) {
+                    handleTimeScrubberMouseUp(event);
+                }
+            }
+
+            /**
+             * Handles the controller mouseenter event.
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            const handleControllerMouseEnter = event => {
+                mouse_over_controller = true;
+            }
+
+            /**
+             * Handles the controller mouseleave event.
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            const handleControllerMouseLeave = event => {
+                mouse_over_controller = false;
+            }
+
+            /**
+             * Handles the mouse down event on the time scrubber.
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            const handleTimeScrubberMouseDown = event => {
+                event.stopPropagation();
+
+                time_scrubber_mouse_down = true;
+
+                pauseVideo();
+            }
+
+            /**
+             * Handles the mouse up event on the time scrubber.
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            const handleTimeScrubberMouseUp = event => {
+                event.stopPropagation();
+
+                time_scrubber_mouse_down = false;
+
+                playVideo();
+            }
+
+            /**
+             * Handles the dragging of the time scrubber. If the time_scrubber_mouse_down variable
+             * is true. otherwise it returns immediately
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            const handleTimeScrubberDragging = event => {
+                if (!time_scrubber_mouse_down) return;
+
+                if (!mouse_over_controller) {
+                    time_scrubber_mouse_down = false;
+                    return;
+                }
+
+                const time_line_point = getProgressBarTimelinePoint(event.clientX, false);
+            
+                setPlaybackCurrentTime(time_line_point, false);
+
+                updateVideoProgress();
+            }
+        
+        /*=====  End of UI Event handlers  ======*/
+
         /**
          * Attaches necessary event listeners to the_video_element.
          * @param {HTMLVideoElement} new_video_element
@@ -812,6 +939,15 @@
         }
 
         /**
+         * Convert timeline point -> percentage.
+         * @param {number} timeline_point
+         * @returns {number} 
+         */
+        const convertTimelinePointToPercentage = timeline_point => {
+            return (timeline_point / the_video_element.duration) * 100;
+        }
+
+        /**
          * Fetches the watch progress of the video.
          * @this the_video_element
          * @returns {Promise<void>}
@@ -831,6 +967,31 @@
          */
         function getVideoCurrentProgressString() {
             return videoDurationToString(the_video_element.currentTime);
+        }
+
+        /**
+         * Returns the time represented by a point in the progress bar.
+         * @param {number} x_point - the x coordinate of the point.
+         * @param {boolean} normalized whether the x_point is already relative to the progress bar rect(true) or requires normalization(false)
+         * @returns {number}
+         */
+        function getProgressBarTimelinePoint(x_point, normalized) {
+            if (!normalized && the_progress_bar_track === undefined) {
+                console.error("In @components/VideoController/VideoController.svelte:getProgressBarTimelinePoint: the_progress_bar_track is undefined and the given point is not normalized. Cannot proceed.");
+                return 0;
+            }
+
+            const progress_bar_rect = the_progress_bar_track.getBoundingClientRect();
+
+            if (!normalized) {
+                x_point = Math.min(x_point, (progress_bar_rect.x + progress_bar_rect.width));
+
+                x_point = Math.max(0, (x_point - progress_bar_rect.x));
+            }
+
+            const point_timeline_percentage = (x_point / progress_bar_rect.width);
+
+            return the_video_element.duration * point_timeline_percentage;
         }
 
         const handleActiveMediaIndexChange = () => {
@@ -947,36 +1108,6 @@
 
             handleVideoElementLoaded(this);
         }
-        
-        /*=============================================
-        =            UI Event handlers            =
-        =============================================*/
-        
-            /**
-             * Handles the video progress bar click event
-             * @param {MouseEvent} event
-             * @returns {void}
-             */
-            const handleProgressClick = (event) => {
-                event.stopPropagation();
-
-                const current_target = event.currentTarget;
-
-                if (!(current_target instanceof Element)) return;
-                
-                const rect = current_target.getBoundingClientRect();
-                const clickX = event.clientX - rect.left;
-                const new_progress = (clickX / rect.width);
-                let new_video_time =  new_progress * the_video_element.duration;
-                
-                setPlaybackCurrentTime(new_video_time);
-            };       
-
-            const handleMouseMovement = () => {
-                setControllerHiddenTimeout();
-            }
-        
-        /*=====  End of UI Event handlers  ======*/
 
         // TODO: create a proper visibility controller for mobile, although this more or less works, it's due to pure black magic and also once the controller appears it doesn't disappear ever again on unless the media viewer 
         // unmounts and mounts again the video controller (like when the media changes to an from video to image and back to video)
@@ -1003,6 +1134,8 @@
 
             mouse_over_controller = false;
         }
+
+
 
         function emitCaptureVideoFrame() {
             dispatch("capture-frame");            
@@ -1205,7 +1338,7 @@
         const updateVideoProgress = () => {
             if (isNaN(the_video_element.duration)) return;
 
-            video_progress = (the_video_element.currentTime / the_video_element.duration) * 100;
+            video_progress = convertTimelinePointToPercentage(the_video_element.currentTime);
         }
 
     /*=====  End of Methods  ======*/
@@ -1214,14 +1347,16 @@
 
 <svelte:document on:mousemove={handleMouseMovement} />
 <div id="libery-video-controller" 
-    class="libery-dungeon-window"
     role="group" 
     aria-label="Video controls" 
+    class="libery-dungeon-window"
     class:adebug={false}  
+    class:time-scrubber-dragging={time_scrubber_mouse_down}
     style:opacity={controller_opacity}
     style:visibility={controller_visible ? "visible" : "hidden"}
-    on:mouseenter={() => mouse_over_controller = true}
-    on:mouseleave={() => mouse_over_controller = false}
+    on:mouseenter={handleControllerMouseEnter}
+    on:mouseleave={handleControllerMouseLeave}
+    on:mouseup={handleControllerMouseUp}
     on:touchstart={handleControllerTouch}
 >
     {#if enable_video_moment_creation}
@@ -1240,7 +1375,10 @@
                 {/if}
             </div>
             <div id="lvc-progress-bar-track">
-                <div id="lvc-pbt-track-bar" on:click={handleProgressClick}>
+                <div id="lvc-pbt-track-bar"
+                    bind:this={the_progress_bar_track}
+                    on:click={handleProgressClick}
+                >
                     <div id="lvc-pbt-tc-progress-wrapper">
                         <div id="lvc-pbt-tc-progress"
                             style:scale="{video_progress}% 1"
@@ -1265,6 +1403,8 @@
                     {/if}
                     <div id="lvc-pbt-tc-time-scrubber"
                         style:translate="{video_progress}cqw"
+                        on:mousedown={handleTimeScrubberMouseDown}
+                        on:mouseup={handleTimeScrubberMouseUp}
                     ></div>
                 </div>
             </div>
@@ -1343,6 +1483,11 @@
         width: 100%;
         padding: var(--spacing-1);
         transition: all .46s ease-in-out, visibility 0s linear;
+    }
+
+    #libery-video-controller.time-scrubber-dragging {
+        cursor: grabbing;
+        user-select: none;
     }
 
     #libery-video-controller #lvc-content-wrapper {
@@ -1468,6 +1613,10 @@
             justify-content: center;
             transition: all .28s ease-in-out;
         }
+
+        #libery-video-controller.time-scrubber-dragging button.lvc-control-btn {
+            pointer-events: none;
+        }
         
         #libery-video-controller .lvc-control-btn svg {
             width: min(16cqw, 50px);
@@ -1591,6 +1740,16 @@
 
             & #lvc-pbt-tc-time-scrubber:hover {
                 scale: 3;
+            }
+        }
+
+        .time-scrubber-dragging #lvc-pbt-track-bar {
+            & #lvc-pbt-tc-progress {
+                transition: scale 0s linear;
+            }
+
+            & #lvc-pbt-tc-time-scrubber {
+                transition: scale 0.3s ease-out, translate 0s linear;
             }
         }
 
