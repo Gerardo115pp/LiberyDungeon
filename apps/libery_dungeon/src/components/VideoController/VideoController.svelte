@@ -5,7 +5,7 @@
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import { layout_properties } from "@stores/layout";
     import { browser } from "$app/environment";
-    import { videoDurationToString } from "@libs/utils";
+    import { videoDurationToString, encodeVideoTime, decodeVideoTime } from "@libs/utils";
     import generateVideoControllerContext from "./video_controller_hotkeys";
     import VideoControllerSettings from "./stores/video_controller_settings";
     import { current_cluster } from "@stores/clusters";
@@ -580,7 +580,7 @@
 
             if (watch_progress == null) return;
 
-            this.currentTime = watch_progress / 1000;
+            this.currentTime = decodeVideoTime(watch_progress);
         }
 
         /**
@@ -846,7 +846,7 @@
          * @returns {void}
          */
         function setSaveWatchProgress() {
-            let video_duration_ms = this.duration * 1000;
+            let video_duration_ms = encodeVideoTime(this.duration);
             save_watch_progress = video_duration_ms >= SAVE_WATCH_PROGRESS_THRESHOLD;
         }
 
@@ -857,7 +857,7 @@
         const saveVideoWatchProgress = () => {
             if (!save_watch_progress || media_uuid == null) return;
 
-            let watch_progress = Math.floor(the_video_element.currentTime * 1000);
+            let watch_progress = encodeVideoTime(the_video_element.currentTime);
 
             saveMediaWatchPoint(media_uuid, watch_progress);
         }
@@ -966,15 +966,6 @@
                 {/if}
             </div>
             <div id="lvc-progress-bar-track">
-                <!-- <svg id="lvc-pbt-track-bar" 
-                    viewBox="0 0 102 5"
-                    on:click={handleProgressClick}
-                    preserveAspectRatio="none"
-                >
-                    <path id="lvc-pbt-tb-empty-track" d="M 2 2.5 L 100 2.5" />
-                    <path id="lvc-pbt-tb-progress-track" d="M 2 2.5 L {video_progress + 2} 2.5" />
-                    <circle id="lvc-pbt-tb-progress-indicator" cx="{video_progress + 3}" cy="2.5" r="2.5" />
-                </svg> -->
                 <div id="lvc-pbt-track-bar">
                     <div id="lvc-pbt-tc-progress-wrapper">
                         <div id="lvc-pbt-tc-progress"
@@ -984,6 +975,13 @@
                     <div id="lvc-pbt-tc-time-scrubber"
                         style:translate="{video_progress}cqw"
                     ></div>
+                    {#if current_video_moments.length > 0} 
+                        {#each current_video_moments as video_moment}
+                            <div class="lvc-pbt-tc-video-moment"
+                                style:--translate-x="{video_moment.getTimelineStartPoint(the_video_element.duration)}cqw"
+                            ></div>
+                        {/each}
+                    {/if}
                 </div>
             </div>
             <div id="lvc-progress-total-duration-label" class="lvc-time-label">
@@ -1237,6 +1235,26 @@
 
             & #lvc-pbt-tc-time-scrubber:hover {
                 scale: 3;
+            }
+
+            & .lvc-pbt-tc-video-moment {
+                position: absolute;
+                background: var(--success-3);
+                top: 0;
+                left: 0;
+                width: 100cqh;
+                aspect-ratio: 1 / 1;
+                border-radius: 9999px;
+                transform-origin: center center;
+                translate: var(--translate-x) 0;
+                transition: .1s scale ease-out, .3s translate ease-out;
+            }
+
+
+            & .lvc-pbt-tc-video-moment:hover {
+                background: var(--success);
+                translate: var(--translate-x) -40cqh;
+                scale: 1.3;
             }
         }
 
