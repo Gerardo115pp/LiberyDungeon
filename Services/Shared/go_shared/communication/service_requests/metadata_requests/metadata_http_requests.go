@@ -3,6 +3,7 @@ package metadata_requests
 import (
 	dungeon_helpers "libery-dungeon-libs/helpers"
 	"net/http"
+	"strconv"
 )
 
 // -------------------- Dungeon tags --------------------
@@ -59,6 +60,10 @@ type VideoMoments_NewVideoMoment struct {
 	MomentTitle string `json:"moment_title"`
 }
 
+type VideoMoments_MomentIdentifier struct {
+	MomentID int `json:"id"`
+}
+
 func ParseVideoIdentifierParams(request *http.Request) *VideoMoments_VideoIdentifier {
 	const (
 		video_uuid_key    string = "video_uuid"
@@ -71,6 +76,25 @@ func ParseVideoIdentifierParams(request *http.Request) *VideoMoments_VideoIdenti
 	request_body.VideoCluster = request.URL.Query().Get(video_cluster_key)
 
 	return request_body
+}
+
+func ParseMomentIdentifierParams(request *http.Request) (*VideoMoments_MomentIdentifier, error) {
+	var new_request_body *VideoMoments_MomentIdentifier = new(VideoMoments_MomentIdentifier)
+
+	const (
+		moment_id_key string = "id"
+	)
+
+	var moment_id_str = request.URL.Query().Get(moment_id_key)
+
+	moment_id, err := strconv.Atoi(moment_id_str)
+	if err != nil {
+		return nil, err
+	}
+
+	new_request_body.MomentID = moment_id
+
+	return new_request_body, nil
 }
 
 // -------------------- Categories config --------------------
