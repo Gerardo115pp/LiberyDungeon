@@ -1,5 +1,5 @@
 <script>
-    import { onMount, onDestroy, createEventDispatcher } from "svelte";
+    import { onMount, onDestroy, createEventDispatcher, tick } from "svelte";
     import { active_media_index, automute_enabled, previous_media_index } from "@stores/media_viewer";
     import { saveMediaWatchPoint, getMediaWatchPoint } from "@models/Metadata";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
@@ -9,6 +9,10 @@
     import generateVideoControllerContext from "./video_controller_hotkeys";
     import VideoControllerSettings from "./stores/video_controller_settings";
     import { current_cluster } from "@stores/clusters";
+    import VideoMomentCreator from "./sub-components/VideoMomentCreator.svelte";
+    import { LabeledError } from "@libs/LiberyFeedback/lf_models";
+    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
+    import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     
     /*=============================================
     =            Properties            =
@@ -57,7 +61,7 @@
         const keybinds = {
             PAUSE_VIDEO: {
                 key_combo: "space",
-                handler: handlePauseHotkey,
+                handler: handlePausePlay,
                 options: {
                     description: "Pause/Play video",
                 }
@@ -95,6 +99,14 @@
                 handler: handleSeekPrevVideoMomentHotkey,
                 options: {
                     description: "Seeks to the previous video moment."
+                }
+            },
+            CREATE_VIDEO_MOMENT: {
+                key_combo: "v z",
+                handler: handleCreateVideoMoment,
+                options: {
+                    description: "Create a video moment at the current time.",
+                    mode: "keyup"
                 }
             },
             FORWARD_VIDEO: {
@@ -274,11 +286,20 @@
              */
             let last_frame_skip_timestamp = 0;
 
-            /**
-             * The user saved video moments for the current video.
-             * @type {import('@models/Metadata').VideoMoment[]}
-             */
-            let current_video_moments = [];
+            
+            /*----------  Video Moments  ----------*/
+            
+                /**
+                 * Whether video moment creation mode is enabled
+                 * @type {boolean}
+                 */ 
+                let enable_video_moment_creation = false;
+
+                /**
+                 * The user saved video moments for the current video.
+                 * @type {import('@models/Metadata').VideoMoment[]}
+                 */
+                let current_video_moments = [];
         
         /*=====  End of State  ======*/
 
@@ -427,8 +448,8 @@
                 setDiscreteFeedbackMessage(feedback_message);
             }            
 
-            function handlePauseHotkey() {
-                pauseVideo();
+            function handlePausePlay() {
+                togglePauseVideo();
 
                 let feedback_message = video_paused ? "paused" : "playing";
                 
@@ -488,6 +509,8 @@
              * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
             function handleSeekPrevVideoMomentHotkey(event, hotkey) {
+                pauseVideo();
+
                 const previous_video_moment = getPreviousVideoMoment();
 
                 if (previous_video_moment === null) {
@@ -502,6 +525,18 @@
 
                 setDiscreteFeedbackMessage(feedback_message);
             
+            }
+
+            /**
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            async function handleCreateVideoMoment(event, hotkey) {
+                pauseVideo();
+                toggleAutoHideMode(false);
+
+                await tick();
+
+                enable_video_moment_creation = true;
             }
             
             function handleSpeedUpVideoHotkey() {
@@ -535,16 +570,9 @@
             }
 
             function handleTogglePlayerAutoHide() {
-                auto_hide = !auto_hide;
+                let new_auto_hide_state = toggleAutoHideMode();
 
-                if (auto_hide) {
-                    setControllerHiddenTimeout();
-                } else {
-                    controller_visible = true;
-                    controller_opacity = 1;
-                }
-
-                let feedback_message = `auto-hide: ${auto_hide ? "on" : "off"}`;
+                let feedback_message = `auto-hide: ${new_auto_hide_state ? "on" : "off"}`;
 
                 setDiscreteFeedbackMessage(feedback_message);
             }
@@ -593,6 +621,106 @@
         =============================================*/
         
             /**
+             * Creates a new video moment on the currentTime. returns whether the creation was successful
+             * @param {string} moment_name
+             * @returns {Promise<boolean>}
+             */
+            const createVideoMoment = async moment_name => {
+                const video_time = encodeVideoTime(the_video_element.currentTime);
+
+                const new_moment = await $current_cluster.createVideoMoment(
+                    media_uuid,
+                    video_time,
+                    moment_name 
+                )
+
+                if (new_moment === null) {
+                    new LabeledError(
+                        "In @components/VideoController/VideoController.svelte:createVideoMoment",
+                        "Error creating video moment",
+                        lf_errors.ERR_PROCESSING_ERROR
+                    ).alert();
+
+                    return false;
+                }
+
+                await loadVideoMoments(media_uuid);
+
+                return true;
+            }
+            
+            /**
+             * Gets the next video moment in relation to the currentTime of the video element. if no more video moments are found cycles and returns the first one 
+             * @returns {import('@models/Metadata').VideoMoment | null}
+             */
+            const getNextVideoMoment = () => {
+                if (current_video_moments.length === 0) return null;
+
+                let next_video_moment = current_video_moments[0];
+
+                const current_time = the_video_element.currentTime;
+
+                for (let video_moment of current_video_moments) {
+                    if (video_moment.isBefore(current_time)) {
+                        next_video_moment = video_moment;
+                        break;
+                    }
+                }
+
+                return next_video_moment;
+            }
+
+            /**
+             * Returns the previous video moment in relation to the currentTime of the video element. if no more video moments are found cycles and returns the last one 
+             * @returns {import('@models/Metadata').VideoMoment | null}
+             */
+            const getPreviousVideoMoment = () => {
+                if (current_video_moments.length === 0) return null;
+
+                let previous_video_moment = current_video_moments[current_video_moments.length - 1];
+
+                const current_time = the_video_element.currentTime;
+
+                for (let h = current_video_moments.length - 1; h >= 0; h--) {
+                    let video_moment = current_video_moments[h];
+                    if (video_moment.isAfter(current_time)) {
+                        previous_video_moment = video_moment;
+                        break;
+                    }
+                }
+
+                return previous_video_moment;
+            }
+
+            /**
+             * Handles the cancellation of the new moment creation
+             * process
+             * @returns {void}
+             */
+            const handleNewMomentCreationCancel = () => {
+                enable_video_moment_creation = false;
+            }           
+
+            /**
+             * Handles the name committed event from the VideoMomentCreator
+             * @param {string} new_moment_name
+             */
+            const handleNewNameCommitted = async new_moment_name => {
+                enable_video_moment_creation = false;
+                toggleAutoHideMode(true);
+
+                if (the_video_element.paused) {
+                    playVideo();
+                }
+
+                const success = await createVideoMoment(new_moment_name);
+
+                if (!success) return;
+
+                emitPlatformMessage(`Created video moment '${new_moment_name}'`);
+            }
+
+            /**
              * Loads the video moments available for a given media uuid if any.
              * If there are any video moments, then is stores them on current_video_moments.
              * @param {string} media_uuid
@@ -614,47 +742,6 @@
                 current_video_moments = [];
             }           
 
-            /**
-             * Gets the next video moment in relation to the currentTime of the video element. if no more video moments are found cycles and returns the first one 
-             * @returns {import('@models/Metadata').VideoMoment | null}
-             */
-            const getNextVideoMoment = () => {
-                if (current_video_moments.length === 0) return null;
-
-                let next_video_moment = current_video_moments[0];
-
-                const current_time = the_video_element.currentTime;
-
-                for (let video_moment of current_video_moments) {
-                    if (video_moment.isAfter(current_time)) {
-                        next_video_moment = video_moment;
-                        break;
-                    }
-                }
-
-                return next_video_moment;
-            }
-
-            /**
-             * Returns the previous video moment in relation to the currentTime of the video element. if no more video moments are found cycles and returns the last one 
-             * @returns {import('@models/Metadata').VideoMoment | null}
-             */
-            const getPreviousVideoMoment = () => {
-                if (current_video_moments.length === 0) return null;
-
-                let previous_video_moment = current_video_moments[current_video_moments.length - 1];
-
-                const current_time = the_video_element.currentTime;
-
-                for (let video_moment of current_video_moments) {
-                    if (video_moment.isBefore(current_time)) {
-                        previous_video_moment = video_moment;
-                        break;
-                    }
-                }
-
-                return previous_video_moment;
-            }
 
         /*=====  End of Video moments  ======*/
 
@@ -878,13 +965,11 @@
             mouse_over_controller = false;
         }
 
-
-
         function emitCaptureVideoFrame() {
             dispatch("capture-frame");            
         }
 
-        function pauseVideo() {
+        function togglePauseVideo() {
             video_paused = !the_video_element.paused;
             
             if (video_paused) {
@@ -892,6 +977,16 @@
             } else {
                 the_video_element.play();
             }
+        }
+
+        function pauseVideo() {
+            video_paused = true;
+            the_video_element.pause();
+        }
+
+        function playVideo() {
+            video_paused = false;
+            the_video_element.play();
         }
 
         /**
@@ -1042,6 +1137,28 @@
         }
 
         /**
+         * toggles the auto hide mode. returns it's current state.
+         * @param {boolean} [force_state]
+         * @returns {boolean}
+         */
+        const toggleAutoHideMode = force_state => {
+            if (force_state === undefined) {
+                force_state = !auto_hide;
+            }
+
+            auto_hide = force_state;
+
+            if (auto_hide) {
+                setControllerHiddenTimeout();
+            } else {
+                controller_visible = true;
+                controller_opacity = 1;
+            }
+
+            return auto_hide;
+        }
+
+        /**
          * Updates the video progress percentage
          * @modifies {video_progress}
          * @returns {void}
@@ -1068,6 +1185,14 @@
     on:mouseleave={() => mouse_over_controller = false}
     on:touchstart={handleControllerTouch}
 >
+    {#if enable_video_moment_creation}
+        <div id="lvc-new-video-moment-wrapper">
+            <VideoMomentCreator 
+                onNameCommitted={handleNewNameCommitted}
+                onCancel={handleNewMomentCreationCancel}
+            />
+        </div>
+    {/if}
     <div id="lvc-content-wrapper">
         <div id="lvc-duration-section">            
             <div id="lvc-progress-current-duration-label" class="lvc-time-label">
@@ -1116,7 +1241,7 @@
                     <text x="50" y="50">-5%</text>
                 </svg>
             </button>
-            <button class="lvc-control-btn" id="lvc-pause-btn" aria-label="Pause video" on:click={pauseVideo}>
+            <button class="lvc-control-btn" id="lvc-pause-btn" aria-label="Pause video" on:click={togglePauseVideo}>
                 <svg viewBox="0 0 100 100">
                     {#if !video_paused}
                         <path d="M 30 20 L 30 80 L 45 80 L 45 20 L 30 20 Z M 55 20 L 55 80 L 70 80 L 70 20 L 55 20 Z" />
@@ -1155,6 +1280,7 @@
     }
 
     #libery-video-controller {
+        position: relative;
         display: flex;
         container-type: size;
         background-color: hsl(from var(--body-bg-color) h s l / 0.5);
@@ -1167,7 +1293,7 @@
         height: 100%;
         width: 100%;
         padding: var(--spacing-1);
-        transition: all .46s ease-in-out;
+        transition: all .46s ease-in-out, visibility 0s linear;
     }
 
     #libery-video-controller #lvc-content-wrapper {
@@ -1188,6 +1314,21 @@
         display: flex;
         justify-content: space-between;
     }
+
+    
+    /*=============================================
+    =            Video moments            =
+    =============================================*/
+    
+        #lvc-new-video-moment-wrapper {
+            position: absolute;
+            top: -50cqh;
+            left: 0;
+        }
+    
+    /*=====  End of Video moments  ======*/
+    
+    
     
     /*----------  Time labels  ----------*/
 
