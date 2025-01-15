@@ -152,8 +152,42 @@ func patchVideoMomentsHandler(response http.ResponseWriter, request *http.Reques
 }
 
 func deleteVideoMomentsHandler(response http.ResponseWriter, request *http.Request) {
-	response.WriteHeader(http.StatusMethodNotAllowed)
-	return
+	var resource string = request.URL.Path
+	var handler http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
+
+	switch resource {
+	case fmt.Sprintf("%s/moment", video_moments_path):
+		handler = dungeon_middlewares.CheckUserCan_ContentAlter(delete__VideoMomentByIDHandler)
+	}
+
+	handler(response, request)
+}
+
+func delete__VideoMomentByIDHandler(response http.ResponseWriter, request *http.Request) {
+	request_params, err := metadata_requests.ParseMomentIdentifierParams(request)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.delete__VideoMomentByIDHandler: error parsing request params\n\n%s", err))
+		dungeon_helpers.WriteRejection(response, 400, "Malformed request")
+		return
+	}
+
+	var moment_instance *video_moment_models.VideoMoment
+
+	moment_instance, err = repository.VideoMomentsRepo.GetVideoMomentCTX(request.Context(), request_params.MomentID)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.delete__VideoMomentByIDHandler: error getting video moment\n\n%s", err))
+		dungeon_helpers.WriteRejection(response, 404, "Video moment not found")
+		return
+	}
+
+	err = repository.VideoMomentsRepo.DeleteVideoMomentCTX(request.Context(), *moment_instance)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.delete__VideoMomentByIDHandler: error deleting video moment\n\n%s", err))
+		dungeon_helpers.WriteRejection(response, 500, "Error deleting video moment")
+		return
+	}
+
+	response.WriteHeader(204)
 }
 
 func putVideoMomentsHandler(response http.ResponseWriter, request *http.Request) {
