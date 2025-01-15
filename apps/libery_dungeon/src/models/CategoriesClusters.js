@@ -101,6 +101,8 @@ export class CategoriesCluster {
 
             if (existing_video_moments === undefined) {
                 existing_video_moments = [new_video_moment];
+            } else {
+                existing_video_moments = [new_video_moment, ...existing_video_moments];
             }
 
             existing_video_moments = this.#sortVideoMoments(existing_video_moments);
