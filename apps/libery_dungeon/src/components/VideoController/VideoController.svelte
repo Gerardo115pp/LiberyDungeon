@@ -1207,9 +1207,6 @@
                             style:scale="{video_progress}% 1"
                         ></div>
                     </div>
-                    <div id="lvc-pbt-tc-time-scrubber"
-                        style:translate="{video_progress}cqw"
-                    ></div>
                     {#if current_video_moments.length > 0} 
                         {#each current_video_moments as video_moment}
                             <div class="lvc-pbt-tc-video-moment"
@@ -1217,6 +1214,9 @@
                             ></div>
                         {/each}
                     {/if}
+                    <div id="lvc-pbt-tc-time-scrubber"
+                        style:translate="{video_progress}cqw"
+                    ></div>
                 </div>
             </div>
             <div id="lvc-progress-total-duration-label" class="lvc-time-label">
@@ -1473,7 +1473,7 @@
 
             & #lvc-pbt-tc-time-scrubber {
                 position: absolute;
-                background: var(--main-dark);
+                background: hsl(from var(--main-dark) h s l / 0.9);
                 top: 0;
                 left: 0;
                 width: 100cqh;
