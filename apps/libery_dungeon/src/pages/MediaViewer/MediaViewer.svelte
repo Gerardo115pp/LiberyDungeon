@@ -259,7 +259,7 @@
                      * Whether the tagged medias component should be hidden.
                      * @type {boolean}
                      */
-                    let tagged_medias_hidden = false;
+                    let tagged_medias_hidden = true;
 
                 /*----------  Video Controller  ----------*/
                 
@@ -1822,7 +1822,9 @@
                 <MediaMovementsTool bind:is_component_visible={show_media_movement_manager}/>
             {/if}
         </div>
-        <div id="ldmv-media-information-panel-wrapper">
+        <div id="ldmv-media-information-panel-wrapper"
+            class:media-viewer-tool-hidden={!show_media_information_panel}
+        >
             {#if show_media_information_panel && the_active_media && $current_cluster}
                 <MediaInformationPanel 
                     current_cluster_information={$current_cluster} 
@@ -1832,6 +1834,7 @@
             {/if}
         </div>
         <div id="ldmv-media-tagger-tool" 
+            class:media-viewer-tool-hidden={media_tagger_hidden}
             class:media-tagger-hidden={media_tagger_hidden}
         >
             {#if $media_tagging_tool_mounted && media_tagger_hotkeys_context != null}
@@ -1895,6 +1898,7 @@
     }
 
     /* -------------------------- Media viewer - tools -------------------------- */
+
 
         .media-viewer-tool-hidden {
             visibility: hidden;
