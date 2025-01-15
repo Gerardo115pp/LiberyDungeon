@@ -70,6 +70,25 @@ func (video_moments_db VideoMomentsDB) AddVideoMoment(video_moment video_moment_
 	return video_moments_db.AddVideoMomentCTX(context.Background(), video_moment)
 }
 
+func (video_moments_db VideoMomentsDB) DeleteVideoMomentCTX(ctx context.Context, video_moment video_moment_models.VideoMoment) error {
+	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "DELETE FROM `video_moments` WHERE `video_uuid` = ? AND `id` = ?")
+	if err != nil {
+		return errors.Join(fmt.Errorf("In database/video_moments/video_moments.DeleteVideoMomentCTX: While preparing statement."), err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, video_moment.VideoUUID, video_moment.ID)
+	if err != nil {
+		return errors.Join(fmt.Errorf("In database/video_moments/video_moments.DeleteVideoMomentCTX: While executing statement."), err)
+	}
+
+	return nil
+}
+
+func (video_moments_db VideoMomentsDB) DeleteVideoMoment(video_moment video_moment_models.VideoMoment) error {
+	return video_moments_db.DeleteVideoMomentCTX(context.Background(), video_moment)
+}
+
 func (video_moments_db VideoMomentsDB) GetVideoCTX(ctx context.Context, uuid string, cluster_uuid string) (*video_moment_models.Video, error) {
 	var video video_moment_models.Video
 
@@ -239,4 +258,23 @@ func (video_moments_db VideoMomentsDB) GetClusterVideoMomentsCTX(ctx context.Con
 
 func (video_moments_db VideoMomentsDB) GetClusterVideoMoments(cluster_uuid string) ([]video_moment_models.VideoMoments, error) {
 	return video_moments_db.GetClusterVideoMomentsCTX(context.Background(), cluster_uuid)
+}
+
+func (video_moments_db VideoMomentsDB) UpdateVideoMomentCTX(ctx context.Context, video_moment video_moment_models.VideoMoment) error {
+	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "UPDATE `video_moments` SET `moment_title` = ?, `moment_time` = ? WHERE `id` = ?")
+	if err != nil {
+		return errors.Join(fmt.Errorf("In database/video_moments/video_moments.UpdateVideoMomentCTX: While preparing statement."), err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, video_moment.MomentTitle, video_moment.MomentTime, video_moment.ID)
+	if err != nil {
+		return errors.Join(fmt.Errorf("In database/video_moments/video_moments.UpdateVideoMomentCTX: While executing statement."), err)
+	}
+
+	return nil
+}
+
+func (video_moments_db VideoMomentsDB) UpdateVideoMoment(video_moment video_moment_models.VideoMoment) error {
+	return video_moments_db.UpdateVideoMomentCTX(context.Background(), video_moment)
 }
