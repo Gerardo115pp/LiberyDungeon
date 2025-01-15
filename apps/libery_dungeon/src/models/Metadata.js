@@ -99,6 +99,14 @@ export const saveMediaWatchPoint = async (media_uuid, start_time) => {
         }
 
         /**
+         * The decoded moment time. this can be used to set to HTMLVideoElement.currentTime.
+         * @type {number}
+         */
+        get DecodedTime() {
+            return decodeVideoTime(this.#moment_time);
+        }
+
+        /**
          * Returns the percentage T of the given video duration at which this moment ocurres. Where 0 <= T <= 100.
          * @param {number} total_duration
          * @returns {number}
@@ -115,6 +123,29 @@ export const saveMediaWatchPoint = async (media_uuid, start_time) => {
          */
         get ID() {
             return this.#id;
+        }
+
+        /**
+         * Returns whether the given time point is after this video moment.
+         * @param {number} time_point
+         * @returns {boolean}
+         */
+        isAfter = time_point => {
+            const decoded_time = decodeVideoTime(this.#moment_time);
+
+            return time_point > decoded_time;
+        }
+
+        /**
+         * Returns whether the given time point ocurres before this video moment. If the video moment and the
+         * time_point ocurre at the exact same time. it returns true as well.
+         * @param {number} time_point
+         * @returns {boolean}
+         */
+        isBefore = time_point => {
+            const decoded_time = decodeVideoTime(this.#moment_time);
+
+            return time_point <= decoded_time;
         }
 
         /**
