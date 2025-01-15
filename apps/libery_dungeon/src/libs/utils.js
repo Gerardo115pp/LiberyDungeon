@@ -291,7 +291,7 @@ export const decodeVideoTime = video_time => {
  * @returns {number}
  */
 export const encodeVideoTime = video_time => {
-    return video_time * 1000;
+    return Math.floor(video_time * 1000);
 }
 
 /**
