@@ -83,6 +83,20 @@
                     description: "Decrease volume by 10%",
                 }
             },
+            VIDEO_MOMENT_NEXT: {
+                key_combo: "v n",
+                handler: handleSeekNextVideoMomentHotkey,
+                options: {
+                    description: "Seeks to the next video moment."
+                }
+            },
+            VIDEO_MOMENT_PREV: {
+                key_combo: "v N",
+                handler: handleSeekPrevVideoMomentHotkey,
+                options: {
+                    description: "Seeks to the previous video moment."
+                }
+            },
             FORWARD_VIDEO: {
                 key_combo: "shift+x",
                 handler: handleVideoForwardPercentageHotkey,
@@ -273,6 +287,7 @@
         const dispatch = createEventDispatcher();
 
         $: handleVideoElementChange(the_video_element);
+        $: handleMediaUUIDChange(media_uuid);
     
     /*=====  End of Properties  ======*/
     
@@ -450,6 +465,44 @@
                 setDiscreteFeedbackMessage(feedback_message);
             }
 
+            /**
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            function handleSeekNextVideoMomentHotkey(event, hotkey) {
+                const next_video_moment = getNextVideoMoment();
+
+                if (next_video_moment === null) {
+                    setDiscreteFeedbackMessage("This video has no video moments saved.");
+
+                    return;
+                }
+
+                the_video_element.currentTime = next_video_moment.DecodedTime;
+
+                let feedback_message = `Skipped to: ${next_video_moment.Title}`;
+
+                setDiscreteFeedbackMessage(feedback_message);
+            }
+
+            /**
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            function handleSeekPrevVideoMomentHotkey(event, hotkey) {
+                const previous_video_moment = getPreviousVideoMoment();
+
+                if (previous_video_moment === null) {
+                    setDiscreteFeedbackMessage("This video has no video moments saved.");
+
+                    return;
+                }
+
+                the_video_element.currentTime = previous_video_moment.DecodedTime;
+
+                let feedback_message = `Skipped to: ${previous_video_moment.Title}`;
+
+                setDiscreteFeedbackMessage(feedback_message);
+            
+            }
             
             function handleSpeedUpVideoHotkey() {
                 let new_playback_rate = setVideoPlaybackRate(true);
@@ -534,6 +587,76 @@
             }
         
         /*=====  End of Hotkeys  ======*/
+        
+        /*=============================================
+        =            Video moments            =
+        =============================================*/
+        
+            /**
+             * Loads the video moments available for a given media uuid if any.
+             * If there are any video moments, then is stores them on current_video_moments.
+             * @param {string} media_uuid
+             * @returns {Promise<void>}
+             */
+            const loadVideoMoments = async media_uuid => {
+                const new_video_moments = await $current_cluster.getMediaVideoMoments(media_uuid);
+
+                if (new_video_moments === null) return;
+
+                current_video_moments = new_video_moments;
+            }
+
+            /**
+             * Resets the video moments.
+             * @returns {void}
+             */
+            const resetCurrentVideoMoments = () => {
+                current_video_moments = [];
+            }           
+
+            /**
+             * Gets the next video moment in relation to the currentTime of the video element. if no more video moments are found cycles and returns the first one 
+             * @returns {import('@models/Metadata').VideoMoment | null}
+             */
+            const getNextVideoMoment = () => {
+                if (current_video_moments.length === 0) return null;
+
+                let next_video_moment = current_video_moments[0];
+
+                const current_time = the_video_element.currentTime;
+
+                for (let video_moment of current_video_moments) {
+                    if (video_moment.isAfter(current_time)) {
+                        next_video_moment = video_moment;
+                        break;
+                    }
+                }
+
+                return next_video_moment;
+            }
+
+            /**
+             * Returns the previous video moment in relation to the currentTime of the video element. if no more video moments are found cycles and returns the last one 
+             * @returns {import('@models/Metadata').VideoMoment | null}
+             */
+            const getPreviousVideoMoment = () => {
+                if (current_video_moments.length === 0) return null;
+
+                let previous_video_moment = current_video_moments[current_video_moments.length - 1];
+
+                const current_time = the_video_element.currentTime;
+
+                for (let video_moment of current_video_moments) {
+                    if (video_moment.isBefore(current_time)) {
+                        previous_video_moment = video_moment;
+                        break;
+                    }
+                }
+
+                return previous_video_moment;
+            }
+
+        /*=====  End of Video moments  ======*/
 
         /**
          * Attaches necessary event listeners to the_video_element.
@@ -619,8 +742,6 @@
          * @returns {void}
          */
         function handleVideoElementChange(new_video_element) {
-            resetCurrentVideoMoments();
-
             if (new_video_element === null) {
                 removeVideoElementListeners(null);
                 video_element_unmounted = true;
@@ -632,6 +753,15 @@
             }
 
             video_muted = the_video_element.muted;
+        }
+
+        /**
+         * handles the change of the media uuid.
+         * @param {string} new_media_uuid
+         * @returns {void}
+         */
+        function handleMediaUUIDChange(new_media_uuid) {
+            resetCurrentVideoMoments();
         }
 
         /**
@@ -748,19 +878,7 @@
             mouse_over_controller = false;
         }
 
-        /**
-         * Loads the video moments available for a given media uuid if any.
-         * If there are any video moments, then is stores them on current_video_moments.
-         * @param {string} media_uuid
-         * @returns {Promise<void>}
-         */
-        const loadVideoMoments = async media_uuid => {
-            const new_video_moments = await $current_cluster.getMediaVideoMoments(media_uuid);
 
-            if (new_video_moments === null) return;
-
-            current_video_moments = new_video_moments;
-        }
 
         function emitCaptureVideoFrame() {
             dispatch("capture-frame");            
@@ -791,14 +909,6 @@
             }
 
             window.removeEventListener("beforeunload", saveVideoWatchProgress);
-        }
-
-        /**
-         * Resets the video moments.
-         * @returns {void}
-         */
-        const resetCurrentVideoMoments = () => {
-            current_video_moments = [];
         }
 
         /**
@@ -885,7 +995,7 @@
         /**
          * Skips video by a given amount of seconds.
          * @param {number} seconds
-        */
+         */
         function skipVideoSeconds(seconds) {
             let direction_forward = seconds > 0;
             let new_time = the_video_element.currentTime + seconds;
@@ -899,7 +1009,7 @@
          * default value is 15fps. Larger values give greater control but can also result in the user not noticing any change.
          * @param {boolean} forward whether to skip forward or backward
          * @requires video_element
-        */
+         */
         function skipFrame(forward, assumed_fps = 30) {
             let frame_duration = 1 / assumed_fps; 
             let step = forward ? frame_duration : -frame_duration;
