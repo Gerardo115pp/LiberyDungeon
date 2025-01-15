@@ -746,6 +746,10 @@
 
                 const moment = current_video_moments[moment_index];
 
+                if (moment === undefined) return;
+
+                event.stopPropagation();
+
                 setPlaybackCurrentTime(moment.DecodedTime, false);
             }
 
@@ -943,30 +947,36 @@
 
             handleVideoElementLoaded(this);
         }
+        
+        /*=============================================
+        =            UI Event handlers            =
+        =============================================*/
+        
+            /**
+             * Handles the video progress bar click event
+             * @param {MouseEvent} event
+             * @returns {void}
+             */
+            const handleProgressClick = (event) => {
+                event.stopPropagation();
 
-        /**
-         * Handles the video progress bar click event
-         * @param {MouseEvent} event
-         * @returns {void}
-         */
-        const handleProgressClick = (event) => {
-            event.stopPropagation();
+                const current_target = event.currentTarget;
 
-            const current_target = event.currentTarget;
+                if (!(current_target instanceof Element)) return;
+                
+                const rect = current_target.getBoundingClientRect();
+                const clickX = event.clientX - rect.left;
+                const new_progress = (clickX / rect.width);
+                let new_video_time =  new_progress * the_video_element.duration;
+                
+                setPlaybackCurrentTime(new_video_time);
+            };       
 
-            if (!(current_target instanceof Element)) return;
-            
-            const rect = current_target.getBoundingClientRect();
-            const clickX = event.clientX - rect.left;
-            const new_progress = (clickX / rect.width);
-            let new_video_time =  new_progress * the_video_element.duration;
-            
-            the_video_element.currentTime = new_video_time;
-        };
-
-        const handleMouseMovement = () => {
-            setControllerHiddenTimeout();
-        }
+            const handleMouseMovement = () => {
+                setControllerHiddenTimeout();
+            }
+        
+        /*=====  End of UI Event handlers  ======*/
 
         // TODO: create a proper visibility controller for mobile, although this more or less works, it's due to pure black magic and also once the controller appears it doesn't disappear ever again on unless the media viewer 
         // unmounts and mounts again the video controller (like when the media changes to an from video to image and back to video)
@@ -1230,7 +1240,7 @@
                 {/if}
             </div>
             <div id="lvc-progress-bar-track">
-                <div id="lvc-pbt-track-bar">
+                <div id="lvc-pbt-track-bar" on:click={handleProgressClick}>
                     <div id="lvc-pbt-tc-progress-wrapper">
                         <div id="lvc-pbt-tc-progress"
                             style:scale="{video_progress}% 1"
