@@ -191,6 +191,49 @@ func delete__VideoMomentByIDHandler(response http.ResponseWriter, request *http.
 }
 
 func putVideoMomentsHandler(response http.ResponseWriter, request *http.Request) {
-	response.WriteHeader(http.StatusMethodNotAllowed)
-	return
+	var resource string = request.URL.Path
+	var handler http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
+
+	switch resource {
+	case fmt.Sprintf("%s/moment", video_moments_path):
+		handler = dungeon_middlewares.CheckUserCan_ContentAlter(put__VideoMomentDataHandler)
+	}
+
+	handler(response, request)
+}
+
+func put__VideoMomentDataHandler(response http.ResponseWriter, request *http.Request) {
+	var request_body *metadata_requests.VideoMoments_VideoMoment = new(metadata_requests.VideoMoments_VideoMoment)
+
+	err := json.NewDecoder(request.Body).Decode(request_body)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.put__VideoMomentDataHandler: error decoding request body\n\n%s", err))
+		dungeon_helpers.WriteRejection(response, 400, "Malformed request")
+		return
+	}
+
+	if request_body.MomentID <= 0 || request_body.MomentTitle == "" {
+		echo.Echo(echo.RedFG, "In handlers/video_moments.put__VideoMomentDataHandler: request was malformed, either moment_id or moment_title was empty")
+		dungeon_helpers.WriteRejection(response, 400, "Missing parameters")
+		return
+	}
+
+	moment, err := repository.VideoMomentsRepo.GetVideoMomentCTX(request.Context(), request_body.MomentID)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.put__VideoMomentDataHandler: error getting video moment\n\n%s", err))
+		dungeon_helpers.WriteRejection(response, 404, "Video moment not found")
+		return
+	}
+
+	moment.MomentTitle = request_body.MomentTitle
+	moment.MomentTime = request_body.MomentTime
+
+	err = repository.VideoMomentsRepo.UpdateVideoMomentCTX(request.Context(), *moment)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.put__VideoMomentDataHandler: error updating video moment\n\n%s", err))
+		dungeon_helpers.WriteRejection(response, 500, "Error updating video moment")
+		return
+	}
+
+	response.WriteHeader(204)
 }

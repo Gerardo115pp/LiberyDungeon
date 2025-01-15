@@ -54,14 +54,23 @@ type VideoMoments_VideoIdentifier struct {
 	VideoCluster string `json:"video_cluster"`
 }
 
-type VideoMoments_NewVideoMoment struct {
-	VideoMoments_VideoIdentifier
+type VideoMoments_VideoMomentData struct {
 	MomentTime  int    `json:"moment_time"`
 	MomentTitle string `json:"moment_title"`
 }
 
+type VideoMoments_NewVideoMoment struct {
+	VideoMoments_VideoIdentifier
+	VideoMoments_VideoMomentData
+}
+
 type VideoMoments_MomentIdentifier struct {
 	MomentID int `json:"id"`
+}
+
+type VideoMoments_VideoMoment struct {
+	VideoMoments_MomentIdentifier
+	VideoMoments_VideoMomentData
 }
 
 func ParseVideoIdentifierParams(request *http.Request) *VideoMoments_VideoIdentifier {
