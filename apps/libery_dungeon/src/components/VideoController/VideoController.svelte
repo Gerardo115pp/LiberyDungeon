@@ -1211,7 +1211,15 @@
                         {#each current_video_moments as video_moment}
                             <div class="lvc-pbt-tc-video-moment"
                                 style:--translate-x="{video_moment.getTimelineStartPoint(the_video_element.duration)}cqw"
-                            ></div>
+                            >
+                                <div class="lvc-pbt-tc-vm-title-wrapper">
+                                    <div class="lvc-pbt-tc-vm-title">
+                                        <p class="lvc-pbt-tc-vm-title-label">
+                                            {video_moment.Title}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         {/each}
                     {/if}
                     <div id="lvc-pbt-tc-time-scrubber"
@@ -1324,6 +1332,62 @@
             position: absolute;
             top: -50cqh;
             left: 0;
+        }
+
+        .lvc-pbt-tc-video-moment {
+            position: absolute;
+            background: var(--success-3);
+            top: 0;
+            left: 0;
+            width: 100cqh;
+            aspect-ratio: 1 / 1;
+            border-radius: 9999px;
+            transform-origin: center center;
+            translate: var(--translate-x) 0;
+            transition: .1s scale ease-out, .3s translate ease-out;
+
+            &:hover {
+                background: var(--success);
+                translate: var(--translate-x) -40cqh;
+                scale: 1.3;
+            }
+        }
+
+        .lvc-pbt-tc-vm-title-wrapper {
+            position: relative;
+            width: 100cqh;
+            aspect-ratio: 1 / 1;
+
+            & .lvc-pbt-tc-vm-title {
+                position: absolute;
+                inset: auto -10% 200cqh auto;
+                background: var(--grey-8);
+                padding: calc(var(--spacing-1) * 0.5) var(--spacing-1);
+                border-radius: var(--rounded-box-border-radius);
+                opacity: 0;
+                scale: 0;
+                translate: 100% -20%;
+                transition: scale .2s ease-out, opacity 0.3s ease-out, translate 0.3s ease-out;
+            }
+
+            & .lvc-pbt-tc-vm-title  p {
+                font-size: calc(.7 * var(--font-size-1));
+                
+            }
+        }
+
+        .lvc-pbt-tc-video-moment:hover {
+            & .lvc-pbt-tc-vm-title { 
+                opacity: 1;
+                scale: 1;
+                translate: 0;
+            }
+        }
+
+        .lvc-pbt-tc-video-moment:nth-child(4) {
+            & .lvc-pbt-tc-vm-title { 
+                opacity: 1;
+            }
         }
     
     /*=====  End of Video moments  ======*/
@@ -1486,26 +1550,6 @@
 
             & #lvc-pbt-tc-time-scrubber:hover {
                 scale: 3;
-            }
-
-            & .lvc-pbt-tc-video-moment {
-                position: absolute;
-                background: var(--success-3);
-                top: 0;
-                left: 0;
-                width: 100cqh;
-                aspect-ratio: 1 / 1;
-                border-radius: 9999px;
-                transform-origin: center center;
-                translate: var(--translate-x) 0;
-                transition: .1s scale ease-out, .3s translate ease-out;
-            }
-
-
-            & .lvc-pbt-tc-video-moment:hover {
-                background: var(--success);
-                translate: var(--translate-x) -40cqh;
-                scale: 1.3;
             }
         }
 
