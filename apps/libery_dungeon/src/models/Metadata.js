@@ -145,7 +145,20 @@ export const saveMediaWatchPoint = async (media_uuid, start_time) => {
         isBefore = time_point => {
             const decoded_time = decodeVideoTime(this.#moment_time);
 
-            return time_point <= decoded_time;
+            return time_point < decoded_time && !this.isEqual(time_point);
+        }
+
+        /**
+         * Returns whether a given time point is equal to this moment time but with 
+         * some tolerance. meaning it will still be true if it's really close.
+         * @param {number} time_point
+         * @returns {boolean}
+         */
+        isEqual = time_point => {
+            const decoded_time = decodeVideoTime(this.#moment_time);
+            const difference = Math.abs(time_point - decoded_time)
+
+            return difference < (decoded_time * 0.01);
         }
 
         /**
