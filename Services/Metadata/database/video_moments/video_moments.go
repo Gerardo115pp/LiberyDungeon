@@ -110,16 +110,16 @@ func (video_moments_db VideoMomentsDB) GetVideo(uuid string, cluster_uuid string
 	return video_moments_db.GetVideoCTX(context.Background(), uuid, cluster_uuid)
 }
 
-func (video_moments_db VideoMomentsDB) GetVideoMomentCTX(ctx context.Context, video *video_moment_models.Video, moment_id int) (*video_moment_models.VideoMoment, error) {
+func (video_moments_db VideoMomentsDB) GetVideoMomentCTX(ctx context.Context, moment_id int) (*video_moment_models.VideoMoment, error) {
 	var video_moment video_moment_models.VideoMoment
 
-	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "SELECT `id`, `video_uuid`, `moment_time`, `moment_title` FROM `video_moments` WHERE `video_uuid` = ? AND `id` = ?")
+	stmt, err := video_moments_db.db_conn.PrepareContext(ctx, "SELECT `id`, `video_uuid`, `moment_time`, `moment_title` FROM `video_moments` WHERE `id` = ?")
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("In database/video_moments/video_moments.GetVideoMomentCTX: While preparing statement."), err)
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRowContext(ctx, video.VideoUUID, moment_id).Scan(&video_moment.ID, &video_moment.VideoUUID, &video_moment.MomentTime, &video_moment.MomentTitle)
+	err = stmt.QueryRowContext(ctx, moment_id).Scan(&video_moment.ID, &video_moment.VideoUUID, &video_moment.MomentTime, &video_moment.MomentTitle)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("In database/video_moments/video_moments.GetVideoMomentCTX: While executing statement."), err)
 	}
@@ -127,8 +127,8 @@ func (video_moments_db VideoMomentsDB) GetVideoMomentCTX(ctx context.Context, vi
 	return &video_moment, nil
 }
 
-func (video_moments_db VideoMomentsDB) GetVideoMoment(video *video_moment_models.Video, moment_id int) (*video_moment_models.VideoMoment, error) {
-	return video_moments_db.GetVideoMomentCTX(context.Background(), video, moment_id)
+func (video_moments_db VideoMomentsDB) GetVideoMoment(moment_id int) (*video_moment_models.VideoMoment, error) {
+	return video_moments_db.GetVideoMomentCTX(context.Background(), moment_id)
 }
 
 func (video_moments_db VideoMomentsDB) GetVideoMomentsCTX(ctx context.Context, video *video_moment_models.Video) ([]video_moment_models.VideoMoment, error) {
