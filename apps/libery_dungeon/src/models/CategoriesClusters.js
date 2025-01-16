@@ -180,6 +180,23 @@ export class CategoriesCluster {
         }
 
         /**
+         * Returns all the items in the video content cache.
+         * @returns {import('@models/Metadata').VideoMoment[]}
+         */
+        getVideoMomentsCacheItems = () => {
+            /**
+             * @type {import('@models/Metadata').VideoMoment[]}
+             */
+            let video_moments = [];
+
+            for (let moments of this.#cluster_video_moments.values()) {
+                video_moments = [...video_moments, ...moments];
+            }
+
+            return video_moments;
+        }
+
+        /**
          * Returns whether the Video moments cache is empty or not.
          * @returns {boolean}
          */
