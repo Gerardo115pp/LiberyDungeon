@@ -104,6 +104,31 @@ export const saveMediaWatchPoint = async (media_uuid, start_time) => {
         }
 
         /**
+         * Alters either the title or the time of the this moment. the time is expected to be decoded.
+         * Returns whether the operation was successful
+         * @param {string} [moment_title]
+         * @param {number} [moment_time]
+         * @returns {Promise<boolean>}
+         */
+        alterMoment = async (moment_title, moment_time) => {
+            if (moment_time === undefined && moment_title === undefined) {
+                return true;
+            }
+
+            let new_moment_title = moment_title ?? this.#moment_title;
+            let new_moment_time = moment_time ?? this.#moment_time;
+
+            const success = await updateVideoMoment(this.#id, new_moment_title, new_moment_time);
+
+            if (success) {
+                this.#moment_time = new_moment_time;
+                this.#moment_title = new_moment_title;
+            }
+
+            return success;
+        }
+
+        /**
          * The decoded moment time. this can be used to set to HTMLVideoElement.currentTime.
          * @type {number}
          */
