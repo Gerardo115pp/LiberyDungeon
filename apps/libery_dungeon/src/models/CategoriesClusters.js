@@ -14,7 +14,8 @@ import { MediaIdentity } from "./Medias";
 import { 
     getVideoMoments,
     createVideoMoment,
-    deleteVideoMoment
+    deleteVideoMoment,
+    getAllClusterVideoMoments
 } from "./Metadata";
 
 export class CategoriesCluster {
@@ -84,6 +85,22 @@ export class CategoriesCluster {
     =============================================*/
 
         /**
+         * Adds a video moment to a given cache.
+         * @param {import('@models/Metadata').VideoMoment} video_moment
+         * @param {Map<string, import('@models/Metadata').VideoMoment[]>} cache
+         * @returns {void}
+         */
+        #addVideoMomentToCache = (video_moment, cache) => {
+            if (!cache.has(video_moment.VideoUUID)) {
+                cache.set(video_moment.VideoUUID, []);
+            }
+
+            const sibling_video_moments = /** @type {import('@models/Metadata').VideoMoment[]} */ (cache.get(video_moment.VideoUUID));
+
+            sibling_video_moments.push(video_moment);
+        }
+
+        /**
          * Creates a new video moment for a media that exists on this cluster.
          * @param {string} media_uuid
          * @param {number} moment_time
@@ -116,6 +133,14 @@ export class CategoriesCluster {
         }
 
         /**
+         * Clears the entire video moments cache of the cluster.
+         * @returns {void}
+         */
+        #clearVideoMomentsCache = () => {
+            this.#cluster_video_moments.clear();
+        }
+
+        /**
          * Deletes a given video moment.
          * @param {import('@models/Metadata').VideoMoment} video_moment
          * @returns {Promise<boolean>}
@@ -130,21 +155,6 @@ export class CategoriesCluster {
             return true;
         }
 
-        /**
-         * Removes a given video moment from the local cache.
-         * @param {import('@models/Metadata').VideoMoment} video_moment
-         * @returns {void}
-         */
-        #removeVideoMomentLocally = video_moment => {
-            const the_video_moment_siblings = this.#cluster_video_moments.get(video_moment.VideoUUID);
-
-            if (the_video_moment_siblings === undefined) return;
-
-            let new_video_moments = the_video_moment_siblings.filter(vm => vm.ID !== video_moment.ID);
-
-            this.#cluster_video_moments.set(video_moment.VideoUUID, new_video_moments);
-        }
-    
         /**
          * Returns all the video moments available for the given media uuid.
          * @param {string} media_uuid
@@ -170,6 +180,57 @@ export class CategoriesCluster {
         }
 
         /**
+         * Returns whether the Video moments cache is empty or not.
+         * @returns {boolean}
+         */
+        isVideoMomentsCacheEmpty = () => {
+            return this.#cluster_video_moments.size > 0;
+        }
+
+        /**
+         * Loads all the video moments for available for the cluster an stores them on the 
+         * the local cache.
+         * @returns {Promise<void>}
+         */
+        loadAllVideoMoments = async () => {
+            const cluster_moments = await getAllClusterVideoMoments(this.#uuid);
+
+            this.#setVideoMoments(cluster_moments);
+        }
+
+        /**
+         * Returns an ordered video moments cache from list of video moments.
+         * @param {import('@models/Metadata').VideoMoment[]} video_moments
+         * @returns {Map<string, import('@models/Metadata').VideoMoment[]>}
+         */
+        #orderVideoMoments = (video_moments) => {
+            const new_cache = new Map();
+
+            for (let h = 0; h < video_moments.length; h++) {
+                this.#addVideoMomentToCache(video_moments[h], new_cache);
+            }
+
+            this.#sortCacheVideoMoments(new_cache);
+
+            return new_cache;
+        }
+
+        /**
+         * Removes a given video moment from the local cache.
+         * @param {import('@models/Metadata').VideoMoment} video_moment
+         * @returns {void}
+         */
+        #removeVideoMomentLocally = video_moment => {
+            const the_video_moment_siblings = this.#cluster_video_moments.get(video_moment.VideoUUID);
+
+            if (the_video_moment_siblings === undefined) return;
+
+            let new_video_moments = the_video_moment_siblings.filter(vm => vm.ID !== video_moment.ID);
+
+            this.#cluster_video_moments.set(video_moment.VideoUUID, new_video_moments);
+        }
+
+        /**
          * Returns a copy of the given list of video moment but sorted by moment
          * time.
          * @param {import('@models/Metadata').VideoMoment[]} video_moments
@@ -183,6 +244,31 @@ export class CategoriesCluster {
             });
 
             return sorted_video_moments;
+        }
+
+        /**
+         * Sorts the video moments of a given video moment cache in place.
+         * @param {Map<string, import('@models/Metadata').VideoMoment[]>} cache
+         * @returns {void}
+         */
+        #sortCacheVideoMoments = cache => {
+            for (let [video_uuid, video_moments] of cache.entries()) {
+                this.#sortVideoMoments(video_moments);
+            }
+
+            return;
+        }
+
+
+        /**
+         * Sets a list of video moments to replace the current cache.
+         * @param {import('@models/Metadata').VideoMoment[]} video_moments
+         * @returns {void}
+         */
+        #setVideoMoments = video_moments => {
+            const new_cache = this.#orderVideoMoments(video_moments);
+
+            this.#cluster_video_moments = new_cache;
         }
     
     /*=====  End of Video moments  ======*/
