@@ -184,6 +184,13 @@
                     description: "Replay from the last frame skip",
                 }
             },
+            ENABLE_VIDEO_LOOPING: {
+                key_combo: "v l", 
+                handler: handleVideoLoopingModeHotkey,
+                options: {
+                    description: "Loops in a region of the video you create by using the skip frame forwards and backwards hotkeys."
+                }
+            },
             SEEK_MINUTE: {
                 key_combo: "\\d m",
                 handler: handleSeekMinute,
@@ -308,7 +315,19 @@
              * The last timestamp that was seeked back by using the frame skip(in backward direction). used to replay from that point on user input.
              * @type {number}
              */
-            let last_frame_skip_timestamp = 0;
+            let last_frame_skipped_backwards = 0;
+
+            /**
+             * The last frame skipped to using the frame skip forward hotkey. Used for the video looping feature.
+             * @type {number}
+             */
+            let last_forwards_skipped_frame = NaN;
+
+            /**
+             * Whether the video looping mode is on. This feature loops between the last_frame_skipped_backwards and last_forwards_skipped_frame.
+             * @type {boolean}
+             */
+            let video_looping_mode_enabled = false;
 
             /**
              * Whether a MouseDown event has been triggered on the time scrubber but not a MouseUp
@@ -499,15 +518,61 @@
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
              */
             function handleReplayFromLastFrameSkip(event, hotkey) {
-                if (last_frame_skip_timestamp === 0) return;
+                if (last_frame_skipped_backwards === 0) return;
 
-                setPlaybackCurrentTime(last_frame_skip_timestamp);
+                setPlaybackCurrentTime(last_frame_skipped_backwards);
+            }
+            
+            /**
+             * Sets the video looping mode on or off. Also tries to sort the start and end parts of the loop in a way that makes sense.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            function handleVideoLoopingModeHotkey(event, hotkey) {
+                if (video_looping_mode_enabled) {
+                    video_looping_mode_enabled = false;
+                    last_forwards_skipped_frame = NaN;
+
+                    setDiscreteFeedbackMessage("Looping mode disabled");
+                    return;
+                }
+
+                const MINIMUM_SAFE_LOOP_DURATION = 0.001;
+
+                if (isNaN(last_forwards_skipped_frame)) {
+                    last_forwards_skipped_frame = the_video_element.currentTime;
+                }
+
+                if (Math.abs(last_frame_skipped_backwards - last_forwards_skipped_frame) < MINIMUM_SAFE_LOOP_DURATION) {
+                    new LabeledError(
+                        "In @components/VideoController/VideoController.svelte:handleVideoLoopingModeHotkey",
+                        "The loop duration is too short",
+                        lf_errors.ERR_HUMAN_ERROR
+                    ).alert();
+
+                    return;
+                } 
+
+                if (last_frame_skipped_backwards > last_forwards_skipped_frame) {
+                    let variable_holder = last_forwards_skipped_frame;
+
+                    last_forwards_skipped_frame = last_frame_skipped_backwards;
+                    last_frame_skipped_backwards = variable_holder;
+                }
+
+                const start_time_label = videoDurationToString(last_frame_skipped_backwards);
+                const end_time_label = videoDurationToString(last_forwards_skipped_frame);
+
+                let feedback_message = `Looping from ${start_time_label} to ${end_time_label}`;
+
+                setDiscreteFeedbackMessage(feedback_message);
+
+                video_looping_mode_enabled = true;
             }
 
             function handleSkipFrameBackwardHotkey() {
                 skipFrame(false);
 
-                last_frame_skip_timestamp = the_video_element.currentTime;
+                last_frame_skipped_backwards = the_video_element.currentTime;
 
                 let feedback_message = "<<< frame";
 
@@ -516,6 +581,8 @@
 
             function handleSkipFrameForwardHotkey() {
                 skipFrame(true);
+
+                last_forwards_skipped_frame = the_video_element.currentTime;
 
                 let feedback_message = " frame >>>";
 
@@ -1241,6 +1308,10 @@
             video_progress_string = videoDurationToString(this.currentTime);
 
             updateVideoProgress.call(this);
+
+            if (video_looping_mode_enabled) {
+                handleVideoLoopMode();
+            }
         }
 
         /**
@@ -1284,7 +1355,16 @@
             mouse_over_controller = false;
         }
 
+        /**
+         * Handles the video loop mode. 
+         */
+        function handleVideoLoopMode() {
+            if (!video_looping_mode_enabled || isNaN(last_forwards_skipped_frame)) return;
 
+            if (the_video_element.currentTime >= last_forwards_skipped_frame) {
+                setPlaybackCurrentTime(last_frame_skipped_backwards);
+            }
+        }
 
         function emitCaptureVideoFrame() {
             dispatch("capture-frame");            
