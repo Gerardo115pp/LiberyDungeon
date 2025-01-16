@@ -120,6 +120,55 @@ export class GetVideoMomentsRequest {
 }
 
 /**
+ * Returns a cluster's video moments. All of them.
+ */
+export class GetAllClusterVideoMomentsRequest {
+
+    static endpoint = `${metadata_server}/video-moments/cluster`;
+
+    /**
+     * @param {string} cluster_uuid
+     */
+    constructor(cluster_uuid) {
+        this.cluster_uuid = cluster_uuid;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<import('@models/Metadata').VideoMomentParams[]>>}
+     */
+    do = async () => {
+        /**
+         * @type {import('@models/Metadata').VideoMomentParams[]}
+         */
+        let video_moments = [];
+
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        const url = new URL(GetAllClusterVideoMomentsRequest.endpoint, globalThis.location.origin);
+
+        url.searchParams.append("cluster_uuid", this.cluster_uuid);
+
+        try {
+            response = await fetch(url);
+
+            if (response.ok) {
+                video_moments = await response.json();
+            }
+        } catch (err) {
+            console.error(`In @libs/DungeonsCommunication/services_requests/metadata_requests/video_moments_requests GetAllClusterVideoMomentsHandler.do: ${err}`);
+            throw err;
+        }
+
+        return new HttpResponse(response, video_moments);
+    }
+}
+
+/**
  * Updates the title and/or the time of a video moment by its id.
  */
 export class PutVideoMomentDataRequest {
