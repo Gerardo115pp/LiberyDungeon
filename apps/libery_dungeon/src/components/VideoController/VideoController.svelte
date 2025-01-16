@@ -814,7 +814,7 @@
                 const current_moment = the_video_element.currentTime;
                 
                 for (let video_moment of current_video_moments) {
-                    if (video_moment.isEqual(current_moment)) {
+                    if (video_moment.isEqual(current_moment, 0.02)) {
                         current_video_moment = video_moment;
                         break;
                     }
