@@ -252,6 +252,12 @@
             let controller_visible = !auto_hide;
 
             /**
+             * Enable force visibility mode
+             * @type {boolean}
+             */
+            let force_visible_player_mode = false;
+
+            /**
              * Whether the mouse is over the component or not
              * @type {boolean}
              */
@@ -635,6 +641,8 @@
              */
             async function handleCreateVideoMoment(event, hotkey) {
                 pauseVideo();
+                await enableForceVisibilityMode();
+
                 toggleAutoHideMode(false);
 
                 await tick();
@@ -708,6 +716,8 @@
 
                     return;
                 }
+
+                await enableForceVisibilityMode();
 
                 toggleAutoHideMode(false);
 
@@ -896,6 +906,7 @@
              */
             const handleNewMomentCreationCancel = () => {
                 enable_video_moment_creation = false;
+                disableForceVisibilityMode()
             }           
 
             /**
@@ -905,6 +916,7 @@
             const handleNewNameCommitted = async new_moment_name => {
                 enable_video_moment_creation = false;
                 toggleAutoHideMode(true);
+                await disableForceVisibilityMode();
 
                 if (the_video_element.paused) {
                     playVideo();
@@ -924,6 +936,7 @@
              */
             const handleCurrentMomentEditingCancel = () => {
                 editing_video_moment = null;
+                disableForceVisibilityMode();
             }           
 
             /**
@@ -932,6 +945,7 @@
              */
             const handleCurrentMomentNewName = async new_moment_name => {
                 if (editing_video_moment === null) return;
+                await disableForceVisibilityMode();
 
                 const success = await editing_video_moment.alterMoment(new_moment_name);
 
@@ -1169,6 +1183,26 @@
         const disableVideoLoopingMode = () => {
             video_looping_mode_enabled = false;
             last_forwards_skipped_frame = NaN;
+        }
+
+        /**
+         * Disables the force visible mode.
+         * @returns {Promise<void>}
+         */
+        const disableForceVisibilityMode = async () => {
+            force_visible_player_mode = false;
+
+            await tick();
+        }
+        
+        /**
+         * Enables the force visible mode.
+         * @returns {Promise<void>}
+         */
+        const enableForceVisibilityMode = async () => {
+            force_visible_player_mode = true;
+
+            await tick();
         }
 
         /**
@@ -1590,6 +1624,7 @@
     class="libery-dungeon-window"
     class:adebug={false}  
     class:time-scrubber-dragging={time_scrubber_mouse_down}
+    class:force-visible-mode={force_visible_player_mode}
     style:opacity={controller_opacity}
     style:visibility={controller_visible ? "visible" : "hidden"}
     on:mouseenter={handleControllerMouseEnter}
@@ -1729,7 +1764,13 @@
         height: 100%;
         width: 100%;
         padding: var(--spacing-1);
-        transition: all .46s ease-in-out, visibility 0s linear;
+        transition: all .46s ease-in-out;
+    }
+
+    #libery-video-controller.force-visible-mode {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transition: opacity 0s linear, visibility 0s linear;
     }
 
     #libery-video-controller.time-scrubber-dragging {
