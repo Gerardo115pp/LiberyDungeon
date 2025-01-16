@@ -1164,6 +1164,14 @@
         }
 
         /**
+         * Disables the video looping mode.
+         */
+        const disableVideoLoopingMode = () => {
+            video_looping_mode_enabled = false;
+            last_forwards_skipped_frame = NaN;
+        }
+
+        /**
          * Fetches the watch progress of the video.
          * @this the_video_element
          * @returns {Promise<void>}
@@ -1259,6 +1267,7 @@
          */
         function handleMediaUUIDChange(new_media_uuid) {
             resetCurrentVideoMoments();
+            disableVideoLoopingMode();
         }
 
         /**
