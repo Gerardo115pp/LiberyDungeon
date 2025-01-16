@@ -714,7 +714,6 @@
             }
             
             function handleVolumeDownHotkey() {
-                console.log("Changing volume down");
                 changeVolumenBy(-0.1);
             }
     
@@ -903,8 +902,6 @@
 
                 if (video_moment_index_str === undefined) {
                     console.error("In @components/VideoController/VideoController.svelte:handleVideoMomentClicked: video_moment_index_str is undefined");
-                    console.log("eventTarget:", event_target);
-                    console.log("currentTarget:", event.currentTarget);
                     return;
                 };
 
@@ -929,8 +926,6 @@
                 const new_video_moments = await $current_cluster.getMediaVideoMoments(media_uuid);
 
                 if (new_video_moments === null) return;
-
-                console.log("Loaded video moments:", new_video_moments);
 
                 current_video_moments = new_video_moments;
             }

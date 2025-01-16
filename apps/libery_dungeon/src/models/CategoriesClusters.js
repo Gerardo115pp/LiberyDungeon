@@ -162,9 +162,11 @@ export class CategoriesCluster {
                 return null;
             }
 
-            this.#cluster_video_moments.set(media_uuid, fetched_video_moments);
+            const sorted_video_moments = this.#sortVideoMoments(fetched_video_moments);
 
-            return fetched_video_moments;
+            this.#cluster_video_moments.set(media_uuid, sorted_video_moments);
+
+            return sorted_video_moments;
         }
 
         /**
