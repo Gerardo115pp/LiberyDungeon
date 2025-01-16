@@ -1,5 +1,10 @@
 import { GetWatchPointRequest, PostWatchPointRequest } from "@libs/DungeonsCommunication/services_requests/metadata_requests/watch_points_requests";
-import { GetVideoMomentsRequest, PostVideoMomentsRequest } from "@libs/DungeonsCommunication/services_requests/metadata_requests/video_moments_requests";
+import { 
+    GetVideoMomentsRequest,
+    PostVideoMomentsRequest,
+    PutVideoMomentDataRequest,
+    DeleteVideoMomentRequest,
+} from "@libs/DungeonsCommunication/services_requests/metadata_requests/video_moments_requests";
 import { encodeVideoTime, decodeVideoTime } from "@libs/utils";
 
 
@@ -235,6 +240,33 @@ export const saveMediaWatchPoint = async (media_uuid, start_time) => {
         }
 
         return new_video_moment;
+    }
+
+    /**
+     * Deletes a video moment by it's id.
+     * @param {number} moment_id
+     * @returns {Promise<boolean>}
+     */
+    export const deleteVideoMoment = async (moment_id) => {
+        const request = new DeleteVideoMomentRequest(moment_id);
+
+        const response = await request.do();
+
+        return response.data;
+    }
+
+    /**
+     * Updates the title and/or time of a video moment by it's id. returns whether the operation was successful.
+     * @param {number} moment_id
+     * @param {string} moment_title
+     * @param {number} moment_time
+     */
+    export const updateVideoMoment = async (moment_id, moment_title, moment_time) => {
+        const request = new PutVideoMomentDataRequest(moment_id,moment_time, moment_title);
+
+        const response = await request.do();
+
+        return response.data;
     }
 
 /*=====  End of Video moments  ======*/
