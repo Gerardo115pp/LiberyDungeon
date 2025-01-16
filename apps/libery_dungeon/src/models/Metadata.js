@@ -1,6 +1,7 @@
 import { GetWatchPointRequest, PostWatchPointRequest } from "@libs/DungeonsCommunication/services_requests/metadata_requests/watch_points_requests";
 import { 
     GetVideoMomentsRequest,
+    GetAllClusterVideoMomentsRequest,
     PostVideoMomentsRequest,
     PutVideoMomentDataRequest,
     DeleteVideoMomentRequest,
@@ -247,6 +248,30 @@ export const saveMediaWatchPoint = async (media_uuid, start_time) => {
         }
 
         return video_moments;
+    }
+
+    /**
+     * Returns all video moments related to a cluster by it's uuid.
+     * @param {string} cluster_uuid
+     * @returns {Promise<VideoMoment[]>}
+     */
+    export const getAllClusterVideoMoments = async cluster_uuid => {
+        /**
+        * @type {VideoMoment[]}
+         */
+        const cluster_video_moments = [];
+
+        const request = new GetAllClusterVideoMomentsRequest(cluster_uuid);
+
+        const response = await request.do();
+
+        if (response.Ok) {
+            response.data.forEach(vmp => {
+                cluster_video_moments.push(new VideoMoment(vmp));
+            });
+        }
+
+        return cluster_video_moments;
     }
 
     /**
