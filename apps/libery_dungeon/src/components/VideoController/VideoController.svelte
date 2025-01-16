@@ -1706,6 +1706,7 @@
                 position: absolute;
                 inset: auto -10% 200cqh auto;
                 background: var(--grey-8);
+                width: max-content;
                 padding: calc(var(--spacing-1) * 0.5) var(--spacing-1);
                 border-radius: var(--rounded-box-border-radius);
                 opacity: 0;
