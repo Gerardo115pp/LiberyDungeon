@@ -173,3 +173,52 @@ export class PutVideoMomentDataRequest {
         return new HttpResponse(response, successful_update);
     }
 }
+
+/**
+ * Deletes a video moment by it's id.
+ */
+export class DeleteVideoMomentRequest {
+
+    static endpoint = `${metadata_server}/video-moments/moment`;
+
+    /**
+     * @param {number} id - the moment's identifier
+     */
+    constructor(id) {
+        this.id = id;
+    }
+
+    toJson = attributesToJson.bind(this);
+
+    /**
+     * @returns {Promise<HttpResponse<boolean>>}
+     */
+    do = async () => {
+        /**
+         * @type {Response}
+         */
+        let response;
+
+        /**
+         * @type {boolean}
+         */
+        let successful_deletion = false;
+
+        const url = new URL(DeleteVideoMomentRequest.endpoint, globalThis.location.origin);
+
+        url.searchParams.append("id", this.id.toString())
+
+        try {
+            response = await fetch(url, {
+                method: "DELETE"
+            });
+
+            successful_deletion = response.ok;
+        } catch (err) {
+            console.error(`In @libs/DungeonsCommunication/services_requests/metadata_requests/video_moments_requests DeleteVideoMomentHandler.do: ${err}`);
+            throw err;
+        }
+
+        return new HttpResponse(response, successful_deletion);
+    }
+}
