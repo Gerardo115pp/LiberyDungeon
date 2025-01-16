@@ -126,10 +126,11 @@
                 }
             },
             VIDEO_MOMENT_EDIT: {
-                key_combo: "z c",
+                key_combo: "z C",
                 handler: handleEditVideoMomentTitleHotkey,
                 options: {
                     description: "Edit the title of the current video moment.",
+                    mode: "keyup"
                 }
             },
             FORWARD_VIDEO: {
@@ -329,6 +330,12 @@
                  * @type {import('@models/Metadata').VideoMoment[]}
                  */
                 let current_video_moments = [];
+
+                /**
+                 * A video moment to edit the name of
+                 * @type {import('@models/Metadata').VideoMoment | null}
+                 */
+                let editing_video_moment = null;
         
         /*=====  End of State  ======*/
 
@@ -625,7 +632,19 @@
              * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
             async function handleEditVideoMomentTitleHotkey(event, hotkey) {
+                const current_video_moment = getCurrentVideoMoment();
 
+                if (current_video_moment === null) {
+                    const discrete_failure_message = "It's ambiguous which video moment to edit, please seek to a specific moment.";
+
+                    setDiscreteFeedbackMessage(discrete_failure_message);
+
+                    return;
+                }
+
+                toggleAutoHideMode(false);
+
+                editing_video_moment = current_video_moment;
             }
             
             function handleSpeedUpVideoHotkey() {
@@ -830,6 +849,41 @@
                 if (!success) return;
 
                 emitPlatformMessage(`Created video moment '${new_moment_name}'`);
+            }
+
+            /**
+             * Handles the cancellation of current video moment edition
+             * process
+             * @returns {void}
+             */
+            const handleCurrentMomentEditingCancel = () => {
+                editing_video_moment = null;
+            }           
+
+            /**
+             * Handles the new name of the current video moment.
+             * @param {string} new_moment_name
+             */
+            const handleCurrentMomentNewName = async new_moment_name => {
+                if (editing_video_moment === null) return;
+
+                const success = await editing_video_moment.alterMoment(new_moment_name);
+
+                if (!success) {
+                    new LabeledError(
+                        "In @components/VideoController/VideoController.svelte:handleCurrentMomentNewName",
+                        "Error editing video moment",
+                        lf_errors.ERR_PROCESSING_ERROR
+                    ).alert();
+
+                    return;
+                }
+                
+                current_video_moments = [...current_video_moments];
+
+                editing_video_moment = null;
+
+                emitPlatformMessage(`Edited video moment name to '${new_moment_name}'`);            
             }
 
             /**
@@ -1464,6 +1518,15 @@
             <VideoMomentCreator 
                 onNameCommitted={handleNewNameCommitted}
                 onCancel={handleNewMomentCreationCancel}
+            />
+        </div>
+    {:else if editing_video_moment !== null}
+        <div id="lvc-new-video-moment-wrapper">
+            <VideoMomentCreator 
+                starting_name={editing_video_moment.Title}
+                creator_label="New name"
+                onNameCommitted={handleCurrentMomentNewName}
+                onCancel={handleCurrentMomentEditingCancel}
             />
         </div>
     {/if}
