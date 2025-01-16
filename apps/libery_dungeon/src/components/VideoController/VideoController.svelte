@@ -12,7 +12,8 @@
     import VideoMomentCreator from "./sub-components/VideoMomentCreator.svelte";
     import { LabeledError } from "@libs/LiberyFeedback/lf_models";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
-    import { emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+    import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+    import Page from "@app/routes/+page.svelte";
     
     /*=============================================
     =            Properties            =
@@ -96,25 +97,39 @@
                 }
             },
             VIDEO_MOMENT_NEXT: {
-                key_combo: "v n",
+                key_combo: "z d",
                 handler: handleSeekNextVideoMomentHotkey,
                 options: {
                     description: "Seeks to the next video moment."
                 }
             },
             VIDEO_MOMENT_PREV: {
-                key_combo: "v N",
+                key_combo: "z a",
                 handler: handleSeekPrevVideoMomentHotkey,
                 options: {
                     description: "Seeks to the previous video moment."
                 }
             },
-            CREATE_VIDEO_MOMENT: {
-                key_combo: "v z",
+            VIDEO_MOMENT_CREATE: {
+                key_combo: "z z",
                 handler: handleCreateVideoMoment,
                 options: {
                     description: "Create a video moment at the current time.",
                     mode: "keyup"
+                }
+            },
+            VIDEO_MOMENT_DELETE: {
+                key_combo: "z x",
+                handler: handleDeleteVideoMomentHotkey,
+                options: {
+                    description: "Delete the current video moment.",
+                }
+            },
+            VIDEO_MOMENT_EDIT: {
+                key_combo: "z c",
+                handler: handleEditVideoMomentTitleHotkey,
+                options: {
+                    description: "Edit the title of the current video moment.",
                 }
             },
             FORWARD_VIDEO: {
@@ -552,6 +567,66 @@
 
                 enable_video_moment_creation = true;
             }
+
+            /**
+             * Handles the delete video moment hotkey. Deletes the current video moment.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            async function handleDeleteVideoMomentHotkey(event, hotkey) {
+                if (current_video_moments.length === 0) {
+                    new LabeledError(
+                        "In @components/VideoController/VideoController.svelte:handleDeleteVideoMomentHotkey",
+                        "No video moments to delete",
+                        lf_errors.ERR_HUMAN_ERROR,
+                    ).alert();
+
+                    return;
+                }
+
+                const current_moment = getCurrentVideoMoment();
+
+                if (current_moment === null) {
+                    const discrete_failure_message = "It's ambiguous which video moment to delete, please seek to a specific moment.";
+
+                    setDiscreteFeedbackMessage(discrete_failure_message);
+
+                    return;
+                }
+
+                let user_confirmation = await confirmPlatformMessage({
+                    message_title: "Delete moment?",
+                    question_message: `Are you sure you wanna delete '${current_moment.Title}'?`,
+                    danger_level: 1
+                });
+
+                if (user_confirmation !== 1) {
+                    return;
+                }
+
+                const success = await $current_cluster.deleteVideoMoment(current_moment);
+
+                if (!success) {
+                    new LabeledError(
+                        "In @components/VideoController/VideoController.svelte:handleDeleteVideoMomentHotkey",
+                        "Error deleting video moment",
+                        lf_errors.ERR_PROCESSING_ERROR
+                    ).alert();
+
+                    return;
+                }
+
+                await loadVideoMoments(media_uuid);
+
+                emitPlatformMessage("Deleted video moment");
+            }
+
+            /**
+             * Handles the edit video moment title hotkey.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            async function handleEditVideoMomentTitleHotkey(event, hotkey) {
+
+            }
             
             function handleSpeedUpVideoHotkey() {
                 let new_playback_rate = setVideoPlaybackRate(true);
@@ -707,6 +782,29 @@
             }
 
             /**
+             * Returns the current video moment or null if there is now video moment that is 
+             * close enough to the currentTime of the_video_element.
+             * @returns {import('@models/Metadata').VideoMoment | null}
+             */
+            const getCurrentVideoMoment = () => {
+                /**
+                 * @type {import('@models/Metadata').VideoMoment | null}
+                 */
+                let current_video_moment = null;
+
+                const current_moment = the_video_element.currentTime;
+                
+                for (let video_moment of current_video_moments) {
+                    if (video_moment.isEqual(current_moment)) {
+                        current_video_moment = video_moment;
+                        break;
+                    }
+                }
+
+                return current_video_moment;
+            }
+
+            /**
              * Handles the cancellation of the new moment creation
              * process
              * @returns {void}
@@ -777,6 +875,8 @@
                 const new_video_moments = await $current_cluster.getMediaVideoMoments(media_uuid);
 
                 if (new_video_moments === null) return;
+
+                console.log("Loaded video moments:", new_video_moments);
 
                 current_video_moments = new_video_moments;
             }
