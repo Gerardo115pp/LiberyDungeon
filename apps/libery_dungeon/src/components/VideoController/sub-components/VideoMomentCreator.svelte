@@ -13,6 +13,13 @@
         export let starting_name = "";
 
         /**
+         * The labels text.
+         * @type {string}
+         * @default 'New moment'
+         */
+        export let creator_label = "New moment";
+
+        /**
          * The video moment creator input
          * @type {HTMLInputElement}
          */
@@ -105,7 +112,7 @@
 </script>
 
 <label id="lvc-new-video-moment-creator" class="dungeon-input">
-    <span class="dungeon-label">New moment</span>
+    <span class="dungeon-label">{creator_label}</span>
     <input 
         id="lvc-new-video-moment-creator"
         bind:this={the_video_moment_creator}
