@@ -11,7 +11,11 @@ import {
     GetMediaIdentitiesByUUIDsRequest
 } from "@libs/DungeonsCommunication/services_requests/media_requests";
 import { MediaIdentity } from "./Medias";
-import { getVideoMoments, createVideoMoment } from "./Metadata";
+import { 
+    getVideoMoments,
+    createVideoMoment,
+    deleteVideoMoment
+} from "./Metadata";
 
 export class CategoriesCluster {
     
@@ -74,7 +78,6 @@ export class CategoriesCluster {
 
         this.#cluster_video_moments = new Map();
     }
-
     
     /*=============================================
     =            Video moments            =
@@ -110,6 +113,36 @@ export class CategoriesCluster {
             this.#cluster_video_moments.set(media_uuid, existing_video_moments);
 
             return new_video_moment;
+        }
+
+        /**
+         * Deletes a given video moment.
+         * @param {import('@models/Metadata').VideoMoment} video_moment
+         * @returns {Promise<boolean>}
+         */
+        deleteVideoMoment = async video_moment => {
+            const success = await deleteVideoMoment(video_moment.ID);
+
+            if (!success) return false;
+
+            this.#removeVideoMomentLocally(video_moment);
+
+            return true;
+        }
+
+        /**
+         * Removes a given video moment from the local cache.
+         * @param {import('@models/Metadata').VideoMoment} video_moment
+         * @returns {void}
+         */
+        #removeVideoMomentLocally = video_moment => {
+            const the_video_moment_siblings = this.#cluster_video_moments.get(video_moment.VideoUUID);
+
+            if (the_video_moment_siblings === undefined) return;
+
+            let new_video_moments = the_video_moment_siblings.filter(vm => vm.ID !== video_moment.ID);
+
+            this.#cluster_video_moments.set(video_moment.VideoUUID, new_video_moments);
         }
     
         /**
@@ -151,8 +184,6 @@ export class CategoriesCluster {
         }
     
     /*=====  End of Video moments  ======*/
-    
-    
 
     get DownloadCategoryID() {
         return this.#filter_category;
