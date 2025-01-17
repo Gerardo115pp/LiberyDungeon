@@ -10,7 +10,10 @@ import {
 import {
     GetMediaIdentitiesByUUIDsRequest
 } from "@libs/DungeonsCommunication/services_requests/media_requests";
-import { MediaIdentity } from "./Medias";
+import { 
+    MediaIdentity,
+    getMediaIdentityByUUID
+} from "./Medias";
 import { 
     getVideoMoments,
     createVideoMoment,
@@ -287,7 +290,7 @@ export class CategoriesCluster {
          * @returns {boolean}
          */
         isVideoMomentsCacheEmpty = () => {
-            return this.#cluster_video_moments.size > 0;
+            return this.#cluster_video_moments.size === 0;
         }
 
         /**
