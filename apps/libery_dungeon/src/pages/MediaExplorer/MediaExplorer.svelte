@@ -10,8 +10,10 @@
             category_search_focused,
             category_search_results,
             category_search_term,
+            video_moments_tool_mounted,
             resetCategorySearchState,
             current_category_configuration_mounted,
+            resetMediaExplorerState,
         } from "@pages/MediaExplorer/app_page_store";
         import CategoryTagger from "@components/DungeonTags/CategoryTagger/CategoryTagger.svelte";
         import MediaUploadTool from "./sub-components/MediaUploadTool/MediaUploadTool.svelte";
@@ -55,8 +57,8 @@
         import { common_action_groups } from "@app/common/keybinds/CommonActionsName";
         import ExplorerBillboard from "./sub-components/ExplorerBillboard/ExplorerBillboard.svelte";
         import CategoryConfiguration from "@components/Categories/CategoryConfiguration/CategoryConfiguration.svelte";
+        import VideoMomentsTool from "./sub-components/VideoMomentsTool/VideoMomentsTool.svelte";
         import state_cleaners from "@stores/store_cleaners";
-
     /*=====  End of Imports  ======*/
   
     /*=============================================
@@ -297,6 +299,8 @@
 
         dropGridNavigationWrapper();
 
+        resetMediaExplorerState();
+
         global_platform_events_manager.dropContext(app_page_name);
     });
     
@@ -362,6 +366,10 @@
                             description: `${common_action_groups.CONTENT}Opens a configuration panel for the ${ui_category_reference.EntityName}.`
                         });
                     }
+
+                    hotkeys_context.register(["; v"], handleOpenVideoMomentsTool, {
+                        description: `${common_action_groups.CONTENT}Opens the video moments tool.`
+                    });
 
                     hotkeys_context.register(["b"], () => { category_search_focused.set(!$category_search_focused);}, {
                         description: "<navigation>Open category search bar to search for categories in the current dungeon.",
@@ -638,6 +646,14 @@
 
                 capturing_category_name_search = true;
                 category_name_search_query = captured_string;
+            }
+
+            /**
+             * Opens/closes the video moments tool.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleOpenVideoMomentsTool = (event, hotkey) => {
+                video_moments_tool_mounted.set(!$video_moments_tool_mounted);
             }
 
             /**
@@ -1322,6 +1338,7 @@
             resetCategoryFiltersState();
             resetCategorySearchState();
 
+
             if (media_display_as_gallery) {
                 disableGalleryHotkeys();
                 media_display_as_gallery = false;
@@ -1470,6 +1487,11 @@
             <CategoryTagger
                 on:close-category-tagger={handleCategoryTaggerClose}
             />
+        </div>
+    {/if}
+    {#if $video_moments_tool_mounted && $current_cluster != null}
+        <div class="fullwidth-modals" id="video-moments-tool-wrapper">
+            <VideoMomentsTool />
         </div>
     {/if}
     {#if $current_category_configuration_mounted && $current_category != null}
@@ -1661,14 +1683,28 @@
     
     /*=====  End of Controls overlay  ======*/
     
-    .fullwidth-modals {
-        position: fixed;
-        top: var(--navbar-height);
-        left: 0;
-        width: 100%;
-        height: calc(100dvh - var(--navbar-height));
-        z-index: var(--z-index-t-1);
-    }
+    
+    /*=============================================
+    =             Tools            =
+    =============================================*/
+    
+        .fullwidth-modals {
+            position: fixed;
+            top: var(--navbar-height);
+            left: 0;
+            width: 100%;
+            height: calc(100dvh - var(--navbar-height));
+            z-index: var(--z-index-t-1);
+        }   
+
+        #video-moments-tool-wrapper {
+            container-type: inline-size;
+            width: 30%;
+            left: 50%;
+            translate: -50% 0;
+        }
+    
+    /*=====  End of  Tools  ======*/
 
     ul#category-content {
         --category-folder-size: 230px;
