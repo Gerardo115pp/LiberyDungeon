@@ -31,9 +31,7 @@
             auto_move_category,
             media_viewer_hotkeys_context_name,
             automute_enabled,
-
             static_next_medias
-
         } from "@stores/media_viewer";
         import { current_cluster, loadCluster } from "@stores/clusters";
         import MediaInformationPanel from "./sub-components/MediaInformation/MediaInformationPanel.svelte";
@@ -66,8 +64,7 @@
         } from "@pages/MediaViewer/features_wrappers/media_viewer_tag_mode";
         import generateTaggedMediasHotkeyContext from "@components/DungeonTags/TaggedMedias/tagged_medias_hotkeys";
         import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
-    import generateMediaViewerContext, { media_viewer_child_contexts } from "./media_viewer_hotkeys";
-
+        import generateMediaViewerContext, { media_viewer_child_contexts } from "./media_viewer_hotkeys";
     /*=====  End of Imports  ======*/
      
     /*=============================================
@@ -160,6 +157,12 @@
              * @default false
              */
             let active_media_index_determined = false;
+
+            /**
+             * the time query params request the current media be resumed to.
+             * @type {number}
+             */
+            let video_resume_time = NaN;
 
             /**
              * @type {number}
@@ -292,7 +295,7 @@
             window.media_viewer_hotkey_context = component_hotkey_context;
         }
 
-        if ($current_category === null) {
+        if ($current_category === null || ($current_category.uuid !== url_category_id && url_category_id !== "")) {
             let new_categories_tree = await getCategoryTree(url_category_id, current_category);
             
             if (new_categories_tree === null) {
@@ -330,6 +333,8 @@
             let media_change = $media_changes_manager.getMediaChangeType($current_category.content[new_index].uuid);
             active_media_change.set(media_change);
         });
+
+        parseQueryParams();
 
         // tagged_medias_tool_mounted.set(true);
     });
@@ -1634,6 +1639,19 @@
         }
 
         /**
+         * Handles the video ready event of the video controller
+         * @param {HTMLVideoElement} a_video_element
+         * @returns {void}
+         */
+        const handleVideoReady = a_video_element => {
+            if (isNaN(video_resume_time) || !video_resume_time) return;
+
+            a_video_element.currentTime = video_resume_time;
+
+            video_resume_time = NaN;
+        }
+
+        /**
          * Handles the change of tag filters for medias content
          * @type {import('@components/DungeonTags/TaggedMedias/tagged_medias').MediaTagsChangedCallback}
          */
@@ -1683,6 +1701,35 @@
             resetMediaViewerPageStore();
             resetRandomNavigationState();
             tagMode_resetTaggedContentMode();
+        }
+
+        /**
+         * Modifies the media viewer state depending on the query params it identifies.
+         */
+        function parseQueryParams() {
+            const query_params = new URLSearchParams(globalThis.location.search);
+
+            const MEDIA_UUID_KEY = "media_uuid"
+            const TIME_KEY = "time";
+            
+            const media_uuid = query_params.get(MEDIA_UUID_KEY);
+
+            if (media_uuid != null) {
+                let media_uuid_index = getMediaIndexByUUID(media_uuid);
+
+                if (media_uuid_index === -1) {
+                    console.error("In MediaViewer.parseQueryParams: media_uuid_index is -1.");
+                    return;
+                }
+
+                setActiveMediaIndex(media_uuid_index);
+            }
+
+            const time_str = query_params.get(TIME_KEY);
+
+            if (time_str !== null) {
+                video_resume_time = parseFloat(time_str);                
+            }
         }
 
         const resetComponentSettings = () => {
@@ -1812,6 +1859,7 @@
                     component_hotkey_context={vide_controller_context}
                     the_video_element={video_element} 
                     media_uuid={the_active_media.uuid}
+                    onVideoReady={handleVideoReady}
                     bind:auto_hide={auto_hide_video_controller}
                     on:capture-frame={captureVideoFrame}
                 />

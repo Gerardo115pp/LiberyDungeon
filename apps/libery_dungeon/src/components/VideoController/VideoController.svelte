@@ -370,6 +370,15 @@
 
         $: handleVideoElementChange(the_video_element);
         $: handleMediaUUIDChange(media_uuid);
+
+        
+        /*----------  Event Handlers  ----------*/
+        
+            /**
+             * Called as soon as the video is ready to be played and the watchpoint has been resumed.
+             * @type {(video_element: HTMLVideoElement) => void}
+             */ 
+            export let onVideoReady = (video_element) => {}
     
     /*=====  End of Properties  ======*/
     
@@ -1218,6 +1227,8 @@
             if (watch_progress == null) return;
 
             this.currentTime = decodeVideoTime(watch_progress);
+
+            onVideoReady(this);
         }
 
         /**
