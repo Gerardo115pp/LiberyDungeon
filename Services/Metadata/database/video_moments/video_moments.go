@@ -215,7 +215,7 @@ func (video_moments_db VideoMomentsDB) GetClusterMomentsCTX(ctx context.Context,
 	for rows.Next() {
 		var video_moment video_moment_models.VideoMoment
 
-		err = rows.Scan(&video_moment.ID, &video_moment.VideoUUID, &video_moment.MomentTime)
+		err = rows.Scan(&video_moment.ID, &video_moment.VideoUUID, &video_moment.MomentTime, &video_moment.MomentTitle)
 		if err != nil {
 			return nil, errors.Join(fmt.Errorf("In database/video_moments/video_moments.GetClusterMomentsCTX: While scanning rows."), err)
 		}

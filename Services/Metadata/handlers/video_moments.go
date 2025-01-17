@@ -51,6 +51,8 @@ func getVideoMomentsHandler(response http.ResponseWriter, request *http.Request)
 	switch resource_path {
 	case fmt.Sprintf("%s/video-moments", video_moments_path):
 		resource_handler = dungeon_middlewares.CheckUserCan_ViewContent(get__VideoMomentsHandler)
+	case fmt.Sprintf("%s/cluster", video_moments_path):
+		resource_handler = dungeon_middlewares.CheckUserCan_ViewContent(get__ClusterVideoMomentsHandler)
 	}
 
 	resource_handler(response, request)
@@ -83,6 +85,28 @@ func get__VideoMomentsHandler(response http.ResponseWriter, request *http.Reques
 	response.WriteHeader(200)
 
 	err = json.NewEncoder(response).Encode(moments)
+}
+
+func get__ClusterVideoMomentsHandler(response http.ResponseWriter, request *http.Request) {
+	var cluster_uuid string = request.URL.Query().Get("cluster_uuid")
+
+	if cluster_uuid == "" {
+		echo.Echo(echo.RedFG, "In handlers/video_moments.get__ClusterVideoMomentsHandler: request was malformed, cluster_uuid was empty")
+		dungeon_helpers.WriteRejection(response, 400, "Missing parameters")
+		return
+	}
+
+	video_moments, err := repository.VideoMomentsRepo.GetClusterMomentsCTX(request.Context(), cluster_uuid)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("In handlers/video_moments.get__ClusterVideoMomentsHandler: error getting video moments\n\n%s", err))
+		dungeon_helpers.WriteRejection(response, 500, "Error getting video moments")
+		return
+	}
+
+	response.Header().Set("Content-Type", "application/json")
+	response.WriteHeader(200)
+
+	json.NewEncoder(response).Encode(video_moments)
 }
 
 func postVideoMomentsHandler(response http.ResponseWriter, request *http.Request) {
