@@ -57,6 +57,12 @@ export class CategoriesCluster {
          */
         #cluster_video_moments
 
+        /**
+         * A dictionary to retrieve cached.
+         * @type {Map<string, import('@models/Medias').MediaIdentity>}
+         */
+        #media_identity_dictionary
+
     /**
      * @param {CategoriesClusterParams} param0 
      * @typedef {Object} CategoriesClusterParams
@@ -78,8 +84,88 @@ export class CategoriesCluster {
         this.#root_category = root_category;
 
         this.#cluster_video_moments = new Map();
+        this.#media_identity_dictionary = new Map();
     }
     
+    /*=============================================
+    =            Media identities dictionary            =
+    =============================================*/
+    
+        /**
+         * Adds a media identity to the media identity dictionary.
+         * @param {MediaIdentity} media_identity
+         * @returns {void}
+         */ 
+        addMediaIdentityToDict = media_identity => {
+            this.#media_identity_dictionary.set(media_identity.Media.uuid, media_identity);
+        }
+
+        /**
+         * Returns a list of media identities that belong in this cluster.
+         * @param {string[]} media_uuids
+         * @returns {Promise<import("@models/Medias").MediaIdentity[]>}
+         */
+        async getClusterMedias(media_uuids) {
+            const cached_identities = this.getStoredClusterMedias(media_uuids);
+
+            if (cached_identities.length === media_uuids.length) {
+                return cached_identities;
+            }
+
+            const missing_media_uuids = [];
+
+            for (let uuid of media_uuids) {
+                if (!this.#media_identity_dictionary.has(uuid)) {
+                    missing_media_uuids.push(uuid);
+                }
+            }
+
+            const request = new GetMediaIdentitiesByUUIDsRequest(missing_media_uuids, this.#uuid);
+
+            /**
+             *  @type {MediaIdentity[]} 
+             */
+            let new_media_identities = [];
+
+            const response = await request.do();
+
+            if (response.Ok && response.data != null) {
+                new_media_identities = response.data.map(media_identity_params => new MediaIdentity(media_identity_params));
+
+                new_media_identities.forEach(mi => {
+                    this.addMediaIdentityToDict(mi);
+                });
+            }
+
+            return new_media_identities;
+        }
+
+        /**
+         * Returns the media identities on a media uuid array that exist on the dictionary 
+         * @param {string[]} media_uuids 
+         * @returns {MediaIdentity[]}
+         */
+        getStoredClusterMedias(media_uuids) {
+            /**
+             * @type {MediaIdentity[]}
+             */
+            const media_identities = [];
+
+            for (let uuid of media_uuids) {
+                const stored_identity = this.#media_identity_dictionary.get(uuid);
+
+                if (stored_identity === undefined) {
+                    continue;
+                }
+
+                media_identities.push(stored_identity);
+            }
+
+            return media_identities;
+        }
+    
+    /*=====  End of Media identities dictionary  ======*/
+
     /*=============================================
     =            Video moments            =
     =============================================*/
@@ -296,28 +382,6 @@ export class CategoriesCluster {
     
     get FSPath() {
         return this.#fs_path;
-    }
-
-    /**
-     * Returns a list of media identities that belong in this cluster.
-     * @param {string[]} media_uuids
-     * @returns {Promise<import("@models/Medias").MediaIdentity[]>}
-     */
-    async getClusterMedias(media_uuids) {
-        const request = new GetMediaIdentitiesByUUIDsRequest(media_uuids, this.#uuid);
-
-        /**
-         *  @type {MediaIdentity[]} 
-         */
-        let media_identities = [];
-
-        const response = await request.do();
-
-        if (response.Ok && response.data != null) {
-            media_identities = response.data.map(media_identity_params => new MediaIdentity(media_identity_params));
-        }
-
-        return media_identities;
     }
 
     get Name() {
