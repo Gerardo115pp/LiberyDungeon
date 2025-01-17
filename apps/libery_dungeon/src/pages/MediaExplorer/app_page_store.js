@@ -38,7 +38,12 @@ import { writable } from "svelte/store";
      * @type {typeof media_upload_tool_mounted}
      */
     export const category_search_focused = writable(false);
-    
+
+    /**
+     * Whether the video moments tool is mounted or not.
+     * @type {import('svelte/store').Writable<boolean>}
+     */
+    export const video_moments_tool_mounted = writable(false);
     
     /*----------  Category search  ----------*/
     
@@ -64,5 +69,17 @@ import { writable } from "svelte/store";
 
 /*=====  End of Component state  ======*/
 
-
+/**
+ * Resets the state of the media explorer page.
+ * @returns {void}
+ */
+export const resetMediaExplorerState = () => {
+    media_upload_tool_mounted.set(false);
+    category_creation_tool_mounted.set(false);
+    media_transactions_tool_mounted.set(false);
+    category_tagger_tool_mounted.set(false);
+    current_category_configuration_mounted.set(false);
+    resetCategorySearchState();
+    video_moments_tool_mounted.set(false);
+}
 
