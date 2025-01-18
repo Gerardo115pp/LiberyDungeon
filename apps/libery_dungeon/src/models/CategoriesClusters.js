@@ -358,8 +358,11 @@ export class CategoriesCluster {
          * @returns {void}
          */
         #sortCacheVideoMoments = cache => {
+
             for (let [video_uuid, video_moments] of cache.entries()) {
-                this.#sortVideoMoments(video_moments);
+                const sorted_copy = this.#sortVideoMoments(video_moments);
+
+                cache.set(video_uuid, sorted_copy);
             }
 
             return;
