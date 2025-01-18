@@ -443,6 +443,7 @@ export class SearchResultsWrapper {
      * @returns {void}
      */
     wrapSearchHotkeys(hotkeys_context) {
+        // Search
         if (this.#search_options.search_hotkey != undefined || this.#search_options.search_hotkey !== "") {
             let search_hotkey_combo = Array.isArray(this.#search_options.search_hotkey) ? this.#search_options.search_hotkey[0] : this.#search_options.search_hotkey;
 
@@ -454,12 +455,14 @@ export class SearchResultsWrapper {
             });
         }
 
+        // Next search result
         if (this.#search_options.search_next_hotkey != undefined || this.#search_options.search_next_hotkey !== "") {
             hotkeys_context.register(this.#search_options.search_next_hotkey, this.#searchNextHotkeyHandler.bind(this), {
                 description: `${common_action_groups.NAVIGATION}Go to the next ${this.#search_options.ui_search_result_reference.EntityName}.`
             });
         }
 
+        // Previous search result
         if (this.#search_options.search_previous_hotkey != undefined || this.#search_options.search_previous_hotkey !== "") {
             hotkeys_context.register(this.#search_options.search_previous_hotkey, this.#searchPreviousHotkeyHandler.bind(this), {
                 description: `${common_action_groups.NAVIGATION}Go to the previous ${this.#search_options.ui_search_result_reference.EntityName}.`
