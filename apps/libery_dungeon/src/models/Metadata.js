@@ -227,17 +227,22 @@ export const saveMediaWatchPoint = async (media_uuid, start_time) => {
      * This is a composition class for a video moment and it's corresponding media identity
      */
     export class VideoMomentIdentity {
-        /**
-         * The media identity.
-         * @type {import('@models/Medias').MediaIdentity}
-         */
-        #media_identity;
 
-        /**
-         * The video moment.
-         * @type {VideoMoment}
-         */
-        #video_moment;
+        /* ---------------------------- Class properties ---------------------------- */
+
+            /**
+             * The media identity.
+             * @type {import('@models/Medias').MediaIdentity}
+             */
+            #media_identity;
+
+            /**
+             * The video moment.
+             * @type {VideoMoment}
+             */
+            #video_moment;
+
+        /* -------------------------------------------------------------------------- */
 
         /**
          * @param {import('@models/Medias').MediaIdentity} media_identity
@@ -262,6 +267,14 @@ export const saveMediaWatchPoint = async (media_uuid, start_time) => {
          */
         get VideoMoment() {
             return this.#video_moment;
+        }
+
+        /**
+         * Returns a string representation of the VideoMomentIdentity
+         * @returns {string}
+         */
+        toString() {
+            return this.#video_moment.Title;
         }
     }
 
