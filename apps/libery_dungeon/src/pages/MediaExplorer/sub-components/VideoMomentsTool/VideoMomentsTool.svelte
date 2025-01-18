@@ -3,6 +3,7 @@
     import { onMount } from "svelte";
     import { VideoMomentIdentity } from "@models/Metadata";
     import VideoMomentIdentityView from "./sub-components/VideoMomentIdentityView.svelte";
+    import VideoMomentSearchTool from "./sub-components/VideoMomentSearchTool.svelte";
 
     /*=============================================
     =            Properties            =
@@ -72,6 +73,15 @@
 
             cluster_video_moments = video_moment_identities;
         }
+
+        /**
+         * Handles search results from the VideoMomentSearchTool.
+         * @param {import('@models/Metadata').VideoMoment[]} search_results
+         * @returns {void}
+         */
+        const handleMomentSearchResults = search_results => {
+            return;
+        }
     
     /*=====  End of Methods  ======*/
     
@@ -90,6 +100,12 @@
             This is a list of all the video moments you have <strong>save in this cluster</strong>. Click on any of them to load the video on that video moment.
         </p>
     </header>
+    <div id="diviext-search-moments">
+        <VideoMomentSearchTool 
+            the_video_moments={cluster_video_moments}
+            onSearchResults={handleMomentSearchResults}
+        />
+    </div>
     <div class="diviext-moments-wrapper">
         <ul class="diviext-moments dungeon-scroll">
             {#each cluster_video_moments as video_moment}
