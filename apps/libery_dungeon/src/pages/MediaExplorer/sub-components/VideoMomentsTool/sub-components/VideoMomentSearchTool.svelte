@@ -1,4 +1,6 @@
 <script>
+    import { dungeonSearch } from '@libs/DungeonSearchUtils';
+
     
     /*=============================================
     =            Properties            =
@@ -33,7 +35,7 @@
             /**
              * called when a new set of results is generated for a search query
              * the user typed in the search bar.
-             * @type {(search_results: import('@models/Metadata').VideoMoment[]) => void}
+             * @type {(search_results: import('@models/Metadata').VideoMomentIdentity[]) => void}
              */ 
             export let onSearchResults = (search_results) => {};
 
@@ -47,15 +49,14 @@
 
         /**
          * triggers a search with the current query value and calls the search results callback.
+         * @param {string} search_query
          */
-        const handleMomentSearchProcess = () => {
-            if (the_search_input == null || !search_query_valid) return;
+        const handleMomentSearchProcess = (search_query) => {
+            search_query = search_query.trim();
 
-            let new_setting_value = the_search_input.value;
+            const search_results = searchMoments(the_video_moments, search_query)
 
-            new_setting_value = new_setting_value.trim();
-
-            the_search_input.blur();
+            onSearchResults(search_results);
         }
 
         /**
@@ -77,7 +78,9 @@
                     return;
                 }
 
-                handleMomentSearchProcess();
+                handleMomentSearchProcess(search_query);
+
+                the_search_input.blur();
             }
         }
 
@@ -96,6 +99,22 @@
 
             search_query_valid = the_search_input.checkValidity();
         } 
+
+        /**
+         * Returns moments in the given array that match the given query string.
+         * @param {import('@models/Metadata').VideoMomentIdentity[]} search_pool
+         * @param {string} search_query
+         * @returns {import('@models/Metadata').VideoMomentIdentity[]}
+         */
+        const searchMoments = (search_pool, search_query) => {
+            const search_results = dungeonSearch(search_pool, search_query, {
+                boost_exact_inclusion: true,
+                case_insensitive: true,
+                minimum_similarity: 0.8
+            });
+
+            return search_results;
+        }
     
     /*=====  End of Methods  ======*/
     
