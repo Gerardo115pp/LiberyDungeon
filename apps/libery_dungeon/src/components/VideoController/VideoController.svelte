@@ -73,6 +73,15 @@
                 handler: handlePausePlay,
                 options: {
                     description: "Pause/Play video",
+                    mode: "keyup"
+                }
+            },
+            PUSH_FAST_FORWARD: {
+                key_combo: "space",
+                handler: handlePushFastForward,
+                options: {
+                    description: "if kept pressed, increases(once) the playback speed of the video.",
+                    can_repeat: true,
                 }
             },
             TOGGLE_MUTE: {
@@ -280,6 +289,12 @@
              * @type {boolean}
              */
             let video_paused = false;
+
+            /**
+             * Whether the pause hotkey is been kept pressed.
+             * @type {boolean}
+             */
+            let fast_forward_push_enabled = false;
 
             /**
              * Whether the video is muted 
@@ -518,10 +533,36 @@
                 setDiscreteFeedbackMessage(feedback_message);
             }            
 
-            function handlePausePlay() {
-                togglePauseVideo();
+            /**
+             * Handles the push fast forward feature. Which is enabled if the pause button is
+             * kept pressed.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            function handlePushFastForward(event, hotkey) {
+                if (fast_forward_push_enabled) return;
 
-                let feedback_message = video_paused ? "paused" : "playing";
+                if (event.repeat) {
+                    fast_forward_push_enabled = true;
+                    setPlaybackSpeed(2, false);
+
+                    let feedback_message = "fast forward >>>";
+                
+                    setDiscreteFeedbackMessage(feedback_message);
+                }
+            }
+
+            function handlePausePlay() {
+                let feedback_message;
+                if (fast_forward_push_enabled) {
+                    setPlaybackSpeed(1, false);
+                    fast_forward_push_enabled = false;
+
+                    feedback_message = "normal speed";
+                } else {
+                    togglePauseVideo();
+
+                    feedback_message = video_paused ? "paused" : "playing";
+                }
                 
                 setDiscreteFeedbackMessage(feedback_message);
             }
@@ -734,7 +775,7 @@
             }
             
             function handleSpeedUpVideoHotkey() {
-                let new_playback_rate = setVideoPlaybackRate(true);
+                let new_playback_rate = increasePlaybackSpeed(true);
 
                 let feedback_message = `speed: ${new_playback_rate}x`;
 
@@ -742,7 +783,7 @@
             }
 
             function handleSlowDownVideoHotkey() {
-                let new_playback_rate = setVideoPlaybackRate(false);
+                let new_playback_rate = increasePlaybackSpeed(false);
 
                 let feedback_message = `speed: ${new_playback_rate}x`;
 
@@ -1467,7 +1508,7 @@
          * @param {boolean} increase whether to increase or decrease the playback rate
          * @returns {number}
          */
-        function setVideoPlaybackRate(increase) {
+        function increasePlaybackSpeed(increase) {
             const step_diff = 0.25;
 
             let step = increase ? step_diff : -step_diff;
@@ -1478,6 +1519,22 @@
             VideoControllerSettings.setPlaybackSpeed(new_playback_rate);
 
             return new_playback_rate;
+        }
+
+        /**
+         * Sets the given playback speed. 
+         * @param {number} new_speed - {0.25, 2}
+         * @param {boolean} [save]
+         * @returns {void}
+         */
+        function setPlaybackSpeed(new_speed, save) {
+            new_speed = Math.max(0.25, Math.min(2, new_speed));
+
+            if (save) {
+                VideoControllerSettings.setPlaybackSpeed(new_speed);
+            }
+
+            the_video_element.playbackRate = new_speed;
         }
 
         /**
@@ -1738,7 +1795,7 @@
                     <text x="50" y="50">+5%</text>
                 </svg>
             </button>
-            <button class="lvc-control-btn" id="lvc-playback-speed-btn" aria-label="slow down video" on:click={() => setVideoPlaybackRate(false)}>
+            <button class="lvc-control-btn" id="lvc-playback-speed-btn" aria-label="slow down video" on:click={() => increasePlaybackSpeed(false)}>
                 <svg viewBox="0 0 24 24" fill="none">
                         <path class="outline-path thin" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2" /> 
                         <path class="outline-path thin" d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2" stroke-dasharray="4 3"/>
