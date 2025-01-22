@@ -16,6 +16,8 @@ import (
 	"github.com/gotd/contrib/http_range"
 )
 
+/* ----------------------------- Cluster cookie ----------------------------- */
+
 /**
  * Attempts get the category cluster from the request first by checking if the cluster access cookie. If that fails, it will attempt to get the
  * cluster from the category id and the unsafe cluster path header. If the cluster access cookie is set. The category id can be an empty string
@@ -49,8 +51,10 @@ func GetRequestCategoryCluster(request *http.Request, category_id string) (*dung
 	return category_cluster, err
 }
 
-// Extracts the category cluster from the cookie app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME. If successful, it will construct a category cluster object from the
-// jwt data in the cookie.
+/**
+ * Extracts the category cluster from the cookie app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME. If successful, it will construct a category cluster object from the
+ * jwt data in the cookie.
+ */
 func GetCategoryClusterFromCookie(request *http.Request) (*dungeon_models.CategoryCluster, error) {
 	cluster_access_cookie, err := request.Cookie(app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME)
 	if err != nil {
@@ -105,12 +109,12 @@ func InferCategoryCluster(request *http.Request) (*dungeon_models.CategoryCluste
 	return request_category_cluster, err
 }
 
-/*
-Returns the fs path of a media. Expects the media_path to be the full path only missing the cluster fs path.
-And attempts to get the category cluster from the request. If trust is set to false, it will attempt to get
-the category cluster from the cookie app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME. If trust is set to true,
-it will use InferCategoryCluster to get the category cluster.
-*/
+/**
+ * Returns the fs path of a media. Expects the media_path to be the full path only missing the cluster fs path.
+ * And attempts to get the category cluster from the request. If trust is set to false, it will attempt to get
+ * the category cluster from the cookie app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME. If trust is set to true,
+ * it will use InferCategoryCluster to get the category cluster.
+ */
 func GetMediaFsPathFromRequest(request *http.Request, media_path string, trust bool) (string, error) {
 	var category_cluster *dungeon_models.CategoryCluster
 	var err error
@@ -130,7 +134,11 @@ func GetMediaFsPathFromRequest(request *http.Request, media_path string, trust b
 	return fs_media_path, nil
 }
 
-// Writes a media file to a response writer object.
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Writes a media file to a response writer object.
+ */
 func WriteMediaFileResponse(media_identity dungeon_models.MediaIdentity, response http.ResponseWriter, request *http.Request) {
 	var media_path string = media_identity.FsPath()
 
