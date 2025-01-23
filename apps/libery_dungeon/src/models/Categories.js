@@ -578,7 +578,7 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
 
             /** @type {Media[]} the media resources of this category */
             this.content = content.map(media => {
-                return new Media(media, this.#fullpath);
+                return new Media(media, cluster, this.#fullpath);
             });
 
             this.#cluster = cluster;

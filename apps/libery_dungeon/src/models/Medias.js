@@ -47,6 +47,12 @@ export class Media {
      */
     #category_path;
 
+    /** 
+     * The media's cluster uuid.
+     * @type {string}
+     */
+    #cluster_uuid
+
     /**
      * A token created by the pandasworld server. Can be used to share the media outside of the category cluster or even the platform.
      * Has to be created by a user with proper grants.
@@ -57,8 +63,10 @@ export class Media {
     /**
      * An Dungeon media resource.
      * @param {MediaParams} param0
+     * @param {string} cluster_uuid
+     * @param {string} category_path
      */
-    constructor({uuid, name, last_seen, main_category, type, downloaded_from}, category_path = "") {
+    constructor({uuid, name, last_seen, main_category, type, downloaded_from}, cluster_uuid, category_path = "") {
         /** @type {string} the 40 character identifier of the media resource */
         this.uuid = uuid;
         /** @type {string} the name of the media resource */
@@ -71,8 +79,9 @@ export class Media {
         this.main_category = main_category
         /** @type {number} the id of the download batch that this media resource was downloaded from */
         this.downloaded_from = downloaded_from;
-        /** @type {string} the path of the category that the media resource belongs to */
+
         this.#category_path = category_path;
+        this.#cluster_uuid = cluster_uuid;
 
         this.#media_name = "";
         this.#file_extension = "";
@@ -539,7 +548,7 @@ export const media_types = {
         main_category: "",
         type: "",
         downloaded_from: NaN
-    });
+    }, "");
 
     /**
      * Whether a media object is nullish.
@@ -572,9 +581,10 @@ export const media_types = {
 /**
  * Returns a media object by its uuid.
  * @param {string} media_uuid
+ * @param {string} cluster_uuid
  * @returns {Promise<Media | null>}
  */
-export const getMediaByUUID = async (media_uuid) => {
+export const getMediaByUUID = async (media_uuid, cluster_uuid) => {
     /**
      * @type {Media | null}
      */
@@ -585,7 +595,7 @@ export const getMediaByUUID = async (media_uuid) => {
     const response = await request.do();
 
     if (response.Ok && response.data != null) {
-        media = new Media(response.data);
+        media = new Media(response.data, cluster_uuid);
     }
 
     return media;

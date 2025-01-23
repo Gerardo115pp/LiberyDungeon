@@ -42,7 +42,7 @@ export class TrashedMedia {
      * @param {CategoryWeakIdentity} category_identity
      */
     constructor(media_params, category_identity) {
-        this.#the_media = new Media(media_params);  
+        this.#the_media = new Media(media_params, category_identity.cluster_uuid, category_identity.category_path);  
         this.#rejected_from = category_identity
     }
 
