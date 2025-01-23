@@ -66,7 +66,7 @@ export class Media {
      * @param {string} cluster_uuid
      * @param {string} category_path
      */
-    constructor({uuid, name, last_seen, main_category, type, downloaded_from}, cluster_uuid, category_path = "") {
+    constructor({uuid, name, last_seen, main_category, type, downloaded_from}, cluster_uuid, category_path) {
         /** @type {string} the 40 character identifier of the media resource */
         this.uuid = uuid;
         /** @type {string} the name of the media resource */
@@ -79,6 +79,10 @@ export class Media {
         this.main_category = main_category
         /** @type {number} the id of the download batch that this media resource was downloaded from */
         this.downloaded_from = downloaded_from;
+
+        if (!category_path || !cluster_uuid) {
+            throw new Error(`In @models/Medias.Media.constructor: category_path and cluster_uuid are required`);
+        }
 
         this.#category_path = category_path;
         this.#cluster_uuid = cluster_uuid;
@@ -132,7 +136,7 @@ export class Media {
 
         target_width = Math.round(target_width);
         
-        return getMediaUrl(this.#category_path, this.name, true, false, target_width);
+        return getMediaUrl(this.#category_path, this.#cluster_uuid, this.name, true, false, target_width);
     }
 
     /**
@@ -203,7 +207,7 @@ export class Media {
      * @returns {string}
      */
     get MobileUrl() {
-        return getMediaUrl(this.#category_path, this.name, false, true);
+        return getMediaUrl(this.#category_path, this.#cluster_uuid, this.name, false, true);
     }
 
     /**
@@ -295,7 +299,7 @@ export class Media {
      * @returns {string}
      */
     get Url() {
-        return getMediaUrl(this.#category_path, this.name, false, false);
+        return getMediaUrl(this.#category_path, this.#cluster_uuid, this.name, false, false);
     }
 
     /**
@@ -346,7 +350,7 @@ export class MediaIdentity {
      * @param {MediaIdentityParams} param0
      */
     constructor({media, category_path, category_uuid, cluster_path, cluster_uuid}) {
-        this.#the_media = new Media(media, category_path);
+        this.#the_media = new Media(media, cluster_uuid, category_path);
 
         this.#category_path = category_path;
         this.#category_uuid = category_uuid;
@@ -548,7 +552,7 @@ export const media_types = {
         main_category: "",
         type: "",
         downloaded_from: NaN
-    }, "");
+    }, "null", "null");
 
     /**
      * Whether a media object is nullish.
@@ -560,10 +564,10 @@ export const media_types = {
 
     export const NULLISH_MEDIA_IDENTITY = new MediaIdentity({
         media: NULLISH_MEDIA,
-        category_path: "",
-        category_uuid: "",
-        cluster_path: "",
-        cluster_uuid: ""
+        category_path: "null",
+        category_uuid: "null",
+        cluster_path: "null",
+        cluster_uuid: "null"
     });
 
     /**
@@ -582,9 +586,10 @@ export const media_types = {
  * Returns a media object by its uuid.
  * @param {string} media_uuid
  * @param {string} cluster_uuid
+ * @param {string} category_path
  * @returns {Promise<Media | null>}
  */
-export const getMediaByUUID = async (media_uuid, cluster_uuid) => {
+export const getMediaByUUID = async (media_uuid, cluster_uuid, category_path) => {
     /**
      * @type {Media | null}
      */
@@ -595,7 +600,7 @@ export const getMediaByUUID = async (media_uuid, cluster_uuid) => {
     const response = await request.do();
 
     if (response.Ok && response.data != null) {
-        media = new Media(response.data, cluster_uuid);
+        media = new Media(response.data, cluster_uuid, category_path);
     }
 
     return media;

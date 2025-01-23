@@ -5,6 +5,7 @@
     import { media_changes_manager, active_media_change, active_media_index } from "@stores/media_viewer";
     import { media_change_types } from "@models/WorkManagers";
     import { current_category } from "@stores/categories_tree";
+    import { current_cluster } from "@stores/clusters";
     import { onMount } from "svelte";
     
     /*=============================================
@@ -79,7 +80,7 @@
 </script>
 
 <div class="mg-thumbnail-wrapper" class:deleted-media={media_current_change === media_change_types.DELETED} on:click|stopPropagation={emitImageSelected}>
-    <LazyLoader className="mg-gg-media-loader" image_url={getMediaUrl(category_path, media.name, true)}>
+    <LazyLoader className="mg-gg-media-loader" image_url={getMediaUrl(category_path, $current_cluster.UUID, media.name, true)}>
         <img slot="lazy-wrapper-image" let:image_src src={image_src} alt="media thumbnail"/>
     </LazyLoader>
 </div>

@@ -6,10 +6,11 @@ const thumbnails_fs_endpoint = `${medias_server}/thumbnails-fs`;
 
 /**
  * @param {string} category_path
+ * @param {string} cluster_uuid
  * @param {string} media_name
  * @returns {string}
  */
-export const getMediaUrl = (category_path, media_name, use_thumbnail=false, use_mobile=false, target_width=0) => {
+export const getMediaUrl = (category_path, cluster_uuid, media_name, use_thumbnail=false, use_mobile=false, target_width=0) => {
     category_path = category_path.replace(/(^\/|\/$)/g, "");
 
     let endpoint = use_thumbnail ? thumbnails_fs_endpoint : media_fs_endpoint;
@@ -24,9 +25,19 @@ export const getMediaUrl = (category_path, media_name, use_thumbnail=false, use_
 
     if (target_width > 0 && use_thumbnail) {
         endpoint += `?width=${target_width}`;
-    }   
+    }
 
-    return endpoint;    
+    if (!URL.canParse(endpoint, location.origin)) {
+        return ""
+    }
+
+    const url = new URL(endpoint, location.origin);
+
+    const cluster_uuid_key = "cluster_uuid"
+
+    url.searchParams.append(cluster_uuid_key, cluster_uuid)
+
+    return url.toString();    
 }
 
 /**
