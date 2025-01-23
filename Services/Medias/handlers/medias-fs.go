@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"libery-dungeon-libs/communication"
+	"libery-dungeon-libs/dungeonsec/access_sec"
 	"libery-dungeon-libs/dungeonsec/dungeon_middlewares"
 	"libery-dungeon-libs/dungeonsec/dungeon_secrets"
 	dungeon_helpers "libery-dungeon-libs/helpers"
@@ -51,19 +52,17 @@ func MediasFSHandler(service_instance libery_networking.Server) http.HandlerFunc
 }
 
 func getMediasFSHandler(response http.ResponseWriter, request *http.Request) {
-	var fs_path string = ""
-	var cluster_cookie *http.Cookie
+	var cluster_uuid string = request.URL.Query().Get("cluster_uuid")
+	if cluster_uuid == "" {
+		dungeon_helpers.WriteRejection(response, 400, "Missing cluster_uuid")
+		return
+	}
 
-	cluster_cookie, err := request.Cookie(app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME)
-	if err == nil {
-		cluster, err := dungeon_models.GetCategoriesClusterFromToken(cluster_cookie.Value, app_config.JWT_SECRET)
-		if err != nil {
-			echo.Echo(echo.YellowFG, fmt.Sprintf("Error getting cluster from token: %s", err.Error()))
-			response.WriteHeader(400)
-			return
-		}
-
-		fs_path = cluster.FsPath
+	cluster, err := access_sec.GetSignedClusterOnRequest(cluster_uuid, request)
+	if err != nil {
+		echo.Echo(echo.YellowFG, fmt.Sprintf("Error getting cluster from token: %s", err.Error()))
+		dungeon_helpers.WriteRejection(response, 403, "Missing cluster sign access")
+		return
 	}
 
 	media_path := request.URL.Path
@@ -81,9 +80,7 @@ func getMediasFSHandler(response http.ResponseWriter, request *http.Request) {
 		use_mobile_version = true
 	}
 
-	if fs_path != "" {
-		media_path = path.Join(fs_path, media_path)
-	}
+	media_path = path.Join(cluster.FsPath, media_path)
 
 	file_descriptor, err := service_helpers.GetFileDescriptor(media_path)
 	if err != nil {
@@ -185,6 +182,7 @@ func postMediasFSHandler(response http.ResponseWriter, request *http.Request) {
 	response.WriteHeader(http.StatusMethodNotAllowed)
 	return
 }
+
 func patchMediasFSHandler(response http.ResponseWriter, request *http.Request) {
 	var resource string = request.URL.Path
 	var handler_func http.HandlerFunc = dungeon_helpers.ResourceNotFoundHandler
