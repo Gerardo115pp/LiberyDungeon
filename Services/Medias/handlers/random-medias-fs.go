@@ -3,9 +3,10 @@ package handlers
 import (
 	"fmt"
 	"io"
+	"libery-dungeon-libs/dungeonsec/access_sec"
+	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/libery_networking"
 	dungeon_models "libery-dungeon-libs/models"
-	app_config "libery_medias_service/Config"
 	service_helpers "libery_medias_service/helpers"
 	"libery_medias_service/repository"
 	"net/http"
@@ -41,36 +42,27 @@ func getRandomMediasFsHandler(response http.ResponseWriter, request *http.Reques
 	var cluster_id string = request.URL.Query().Get("cluster_id")
 	var category_id string = request.URL.Query().Get("category_id")
 	var cache_seconds string = request.URL.Query().Get("cache_seconds")
-	var cluster dungeon_models.CategoryCluster
+	var cluster *dungeon_models.CategoryCluster
 	var media *dungeon_models.Media
 	var category *dungeon_models.Category
 	var err error
 
 	if cluster_id == "" {
-		cluster_cookie, err := request.Cookie(app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME)
-		if err != nil {
-			echo.Echo(echo.RedFG, fmt.Sprintf("In getRandomMediasFsHandler: Error getting cluster access cookie because '%s'", err.Error()))
-			response.WriteHeader(404)
-			return
-		}
+		echo.Echo(echo.RedFG, "in random-medias-fs: missing cluster_id")
+		dungeon_helpers.WriteRejection(response, 400, "Missing parameter 'cluster_id")
+		return
+	}
 
-		token_cluster, err := dungeon_models.GetCategoriesClusterFromToken(cluster_cookie.Value, app_config.JWT_SECRET)
-		if err != nil {
-			echo.Echo(echo.RedFG, fmt.Sprintf("In getRandomMediasFsHandler: Error getting cluster from token because '%s'", err.Error()))
-			response.WriteHeader(404)
-			return
-		}
-
-		cluster = *token_cluster
-	} else {
-		echo.Echo(echo.GreenFG, fmt.Sprintf("Using query parameter cluster_id: '%s'", cluster_id))
-		cluster, err = repository.CategoriesClustersRepo.GetClusterByID(request.Context(), cluster_id)
+	cluster, err = access_sec.GetSignedClusterOnRequest(cluster_id, request)
+	if err != nil {
+		db_cluster, err := repository.CategoriesClustersRepo.GetClusterByID(request.Context(), cluster_id)
 		if err != nil {
 			echo.Echo(echo.RedFG, fmt.Sprintf("In getRandomMediasFsHandler: Error getting cluster by id because '%s'", err.Error()))
 			response.WriteHeader(404)
 			return
 		}
 
+		cluster = &db_cluster
 	}
 
 	media, category, err = repository.MediasRepo.GetRandomMedia(request.Context(), cluster.Uuid, category_id, true)
