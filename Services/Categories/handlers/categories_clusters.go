@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"libery-dungeon-libs/communication"
 	"libery-dungeon-libs/dungeonsec"
+	"libery-dungeon-libs/dungeonsec/access_sec"
 	"libery-dungeon-libs/dungeonsec/dungeon_middlewares"
 	"libery-dungeon-libs/dungeonsec/dungeon_secrets"
 	dungeon_helpers "libery-dungeon-libs/helpers"
@@ -15,7 +16,6 @@ import (
 	"libery_categories_service/repository"
 	service_fs_workflows "libery_categories_service/workflows/servicefs_workflows"
 	"net/http"
-	"time"
 
 	"github.com/Gerardo115pp/patriots_lib/echo"
 )
@@ -168,27 +168,17 @@ func getSignAccessCategoriesClustersHandler(response http.ResponseWriter, reques
 	access_response.RedirectURL = fmt.Sprintf("%s/%s", app_config.MEDIAS_APP_DUNGEON_EXPLORER_ROUTE, cluster.RootCategory)
 	access_response.Granted = true
 
-	var access_expiration_time time.Time = time.Now().Add(time.Hour * 24)
-
-	var access_token string
-	access_token, err = dungeon_models.GenerateCategoriesClusterAccess(cluster, access_expiration_time, app_config.JWT_SECRET)
-
-	var access_cookie http.Cookie = http.Cookie{
-		Name:     app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME,
-		Value:    access_token,
-		Path:     "/",
-		Expires:  access_expiration_time,
-		HttpOnly: true,
+	err = access_sec.SignClusterAccessOnRequest(&cluster, response)
+	if err != nil {
+		echo.Echo(echo.RedFG, fmt.Sprintf("Error signing cluster access: %s", err.Error()))
+		response.WriteHeader(500)
+		return
 	}
-
-	http.SetCookie(response, &access_cookie)
 
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(200)
 
 	json.NewEncoder(response).Encode(access_response)
-
-	// TODO: check if the user has ACCESS to the cluster.
 }
 
 func postCategoriesClustersHandler(response http.ResponseWriter, request *http.Request) {
