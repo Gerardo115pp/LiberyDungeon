@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	medias_http_requests "libery-dungeon-libs/communication/service_requests/medias_requests"
+	"libery-dungeon-libs/dungeonsec/access_sec"
 	"libery-dungeon-libs/dungeonsec/dungeon_middlewares"
 	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/libery_networking"
@@ -89,41 +90,19 @@ func getMediaByUUIDHandler(response http.ResponseWriter, request *http.Request) 
 func getMediaIdentityHandler(response http.ResponseWriter, request *http.Request) {
 	var media_uuid string = request.URL.Query().Get("uuid")
 
-	access_cluster, err := common_flows.GetCategoryClusterFromCookie(request)
-	if err != nil {
-		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Error getting category cluster from cookie: %s", err.Error()))
-		response.WriteHeader(403)
-		return
-	}
-
-	media, err := repository.MediasRepo.GetMediaByID(request.Context(), media_uuid)
+	media_identity, err := repository.MediasRepo.GetMediaIdentity(request.Context(), media_uuid)
 	if err != nil {
 		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Error getting media by ID: %s", err.Error()))
 		response.WriteHeader(404)
 		return
 	}
 
-	category, err := repository.CategoriesRepo.GetCategoryByID(request.Context(), media.MainCategory)
-	if err != nil {
-		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Error getting category by ID: %s", err.Error()))
-		response.WriteHeader(404)
-		return
-	}
-
-	category_cluster, err := repository.CategoriesClustersRepo.GetClusterByID(request.Context(), category.Cluster)
-	if err != nil {
-		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Error getting category cluster by ID: %s", err.Error()))
-		response.WriteHeader(404)
-		return
-	}
-
-	if category_cluster.Uuid != access_cluster.Uuid {
-		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Access denied to category cluster"))
+	has_cluster_access := access_sec.RequestHasClusterAccess(media_identity.ClusterUUID, request)
+	if !has_cluster_access {
+		echo.Echo(echo.RedBG, fmt.Sprintf("In MediasService.medias.getMediaIdentityHandler: Request does not have access to cluster '%s'", media_identity.ClusterUUID))
 		response.WriteHeader(403)
 		return
 	}
-
-	media_identity := dungeon_models.CreateNewMediaIdentity(media, &category, &category_cluster)
 
 	response.Header().Set("Content-Type", "application/json")
 	response.Header().Set("Cache-Control", "max-age=10600") // 3 hours
