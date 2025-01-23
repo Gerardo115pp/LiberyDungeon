@@ -3,6 +3,7 @@ package common_flows
 import (
 	"fmt"
 	"io"
+	"libery-dungeon-libs/dungeonsec/access_sec"
 	dungeon_helpers "libery-dungeon-libs/helpers"
 	dungeon_models "libery-dungeon-libs/models"
 	app_config "libery_medias_service/Config"
@@ -115,16 +116,11 @@ func InferCategoryCluster(request *http.Request) (*dungeon_models.CategoryCluste
  * the category cluster from the cookie app_config.CATEGORIES_CLUSTER_ACCESS_COOKIE_NAME. If trust is set to true,
  * it will use InferCategoryCluster to get the category cluster.
  */
-func GetMediaFsPathFromRequest(request *http.Request, media_path string, trust bool) (string, error) {
+func GetMediaFsPathFromRequest(request *http.Request, media_path, cluster_uuid string) (string, error) {
 	var category_cluster *dungeon_models.CategoryCluster
 	var err error
 
-	if trust {
-		category_cluster, err = InferCategoryCluster(request)
-	} else {
-		category_cluster, err = GetCategoryClusterFromCookie(request)
-	}
-
+	category_cluster, err = access_sec.GetSignedClusterOnRequest(cluster_uuid, request)
 	if err != nil {
 		return "", err
 	}

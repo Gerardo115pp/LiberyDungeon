@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/libery_networking"
 	app_config "libery_medias_service/Config"
 	service_helpers "libery_medias_service/helpers"
@@ -50,7 +51,13 @@ func getThumbnailsHandler(response http.ResponseWriter, request *http.Request) {
 }
 
 func getMediaThumbnailsHandler(response http.ResponseWriter, request *http.Request) {
-	media_path, err := service_common_workflows.GetMediaFsPathFromRequest(request, request.URL.Path, false)
+	var cluster_uuid string = request.URL.Query().Get("cluster_uuid")
+	if cluster_uuid == "" {
+		dungeon_helpers.WriteRejection(response, 400, "Missing cluster_uuid")
+		return
+	}
+
+	media_path, err := service_common_workflows.GetMediaFsPathFromRequest(request, request.URL.Path, cluster_uuid)
 	if err != nil {
 		echo.Echo(echo.YellowFG, fmt.Sprintf("Error getting media fs path from request: %s", err.Error()))
 		response.WriteHeader(http.StatusNotFound)
