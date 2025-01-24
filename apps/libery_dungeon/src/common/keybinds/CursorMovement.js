@@ -322,7 +322,7 @@ export class CursorMovementWASD {
     }
 
     /**
-     * Updates the cursor position and notifies the callback.
+     * Updates the cursor position and notifies the callback. This function automatically clamps the position if necessary.
      * @param {number} new_cursor_position - The new cursor position.
      * @returns {void}
      */
