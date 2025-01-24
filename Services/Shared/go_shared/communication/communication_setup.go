@@ -14,6 +14,7 @@ var (
 	PWEDITOR_SERVER   string = os.Getenv("PWEDITOR_SERVER")
 	JD_SERVER         string = os.Getenv("JD_SERVER")
 	METADATA_SERVER   string = os.Getenv("METADATA_SERVER")
+	USERS_SERVER      string = os.Getenv("USERS_SERVER")
 	GRPC_SERVER       string = os.Getenv("GRPC_SERVER")
 	BASE_DOMAIN       string = os.Getenv("BASE_DOMAIN")
 	SSL_CA_PATH       string = os.Getenv("SSL_CA_PATH")

@@ -126,7 +126,7 @@ func setupPlatformCommunication() (err error) {
 		return fmt.Errorf("JD is unreachable")
 	}
 
-	err = communication.JD.NotifyServiceOnline(SERVICE_NAME, communication.DOWNLOADS_SERVER, SERVICE_PORT)
+	err = communication.JD.NotifyServiceOnline(SERVICE_NAME, communication.USERS_SERVER, SERVICE_PORT)
 	if err != nil {
 		echo.EchoWarn(fmt.Sprintf("JD did not accept service online notification: %s", err.Error()))
 	}
