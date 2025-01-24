@@ -12,7 +12,7 @@ import (
 ) // Loads the configuration from the environment variables
 
 var SERVICE_PORT string = os.Getenv("SERVICE_PORT")
-var SERVICE_NAME string
+var SERVICE_NAME platform_services.PlatformServiceName
 var DEBUG_MODE bool = os.Getenv("EDEBUG") != ""
 var CATEGORIES_GRPC_SERVER_PORT string = os.Getenv("CATEGORIES_GRPC_SERVER_PORT")
 var SETTINGS_FILE string = os.Getenv("SETTINGS_FILE")

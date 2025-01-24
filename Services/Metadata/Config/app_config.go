@@ -13,7 +13,7 @@ import (
 var SERVICE_PORT string = os.Getenv("SERVICE_PORT")
 var SETTINGS_FILE string = os.Getenv("SETTINGS_FILE")
 var OPERATION_DATA_PATH string = os.Getenv("OPERATION_DATA_PATH")
-var SERVICE_NAME string
+var SERVICE_NAME platform_services.PlatformServiceName
 var JWT_SECRET string = os.Getenv("JWT_SECRET")
 var DOMAIN_SECRET string = os.Getenv("DOMAIN_SECRET")
 var METADATA_GRPC_SERVER_PORT string = os.Getenv("METADATA_GRPC_SERVER_PORT")

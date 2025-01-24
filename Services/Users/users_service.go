@@ -25,11 +25,11 @@ func main() {
 	echo.Echo(echo.GreenFG, "Booting up")
 
 	app_config.VerifyConfig()
-	echo.Echo(echo.GreenFG, fmt.Sprintf("Starting %s", app_config.SERVICE_NAME))
+	echo.Echo(echo.GreenFG, fmt.Sprintf("Starting %s", string(app_config.SERVICE_NAME)))
 
 	var new_server_config *libery_networking.ServerConfig = new(libery_networking.ServerConfig)
 	new_server_config.Port = app_config.SERVICE_PORT
-	new_server_config.ServiceName = app_config.SERVICE_NAME
+	new_server_config.ServiceName = string(app_config.SERVICE_NAME)
 
 	// ------ Repositories ------
 

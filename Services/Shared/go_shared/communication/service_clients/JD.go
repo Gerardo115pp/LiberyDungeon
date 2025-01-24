@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	JD_service_pb "libery-dungeon-libs/jd_service_pb"
+	"libery-dungeon-libs/models/platform_services"
 	"net/http"
 	"time"
 
@@ -69,7 +70,7 @@ func (jd_conf JD_Client) EmitPlatformEvent(event_uuid, event_type, event_message
 
 // TODO: sign in messages should be signed.
 
-func (jd_conf JD_Client) NotifyServiceOnline(service_name, service_route, service_port string) error {
+func (jd_conf JD_Client) NotifyServiceOnline(service_name platform_services.PlatformServiceName, service_route, service_port string) error {
 	conn, err := grpc.Dial(jd_conf.GrpcAddress, grpc.WithTransportCredentials(jd_conf.GrpcTransport))
 	if err != nil {
 		return err
@@ -82,7 +83,7 @@ func (jd_conf JD_Client) NotifyServiceOnline(service_name, service_route, servic
 	defer cancel()
 
 	message := JD_service_pb.ServiceOnlineNotification{
-		ServiceName:  service_name,
+		ServiceName:  string(service_name),
 		ServiceRoute: service_route,
 		ServicePort:  service_port,
 	}
@@ -92,7 +93,7 @@ func (jd_conf JD_Client) NotifyServiceOnline(service_name, service_route, servic
 	return err
 }
 
-func (jd_conf JD_Client) NotifyServiceOffline(service_name string) error {
+func (jd_conf JD_Client) NotifyServiceOffline(service_name platform_services.PlatformServiceName) error {
 	conn, err := grpc.Dial(jd_conf.GrpcAddress, grpc.WithTransportCredentials(jd_conf.GrpcTransport))
 	if err != nil {
 		return err
@@ -105,7 +106,7 @@ func (jd_conf JD_Client) NotifyServiceOffline(service_name string) error {
 	defer cancel()
 
 	message := JD_service_pb.ServiceOfflineNotification{
-		ServiceName: service_name,
+		ServiceName: string(service_name),
 	}
 
 	_, err = jd_grpc_client.NotifyServiceOffline(ctx, &message)

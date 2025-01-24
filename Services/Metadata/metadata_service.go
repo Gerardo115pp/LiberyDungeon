@@ -64,7 +64,7 @@ func main() {
 
 	var new_server_config *libery_networking.ServerConfig = new(libery_networking.ServerConfig)
 	new_server_config.Port = app_config.SERVICE_PORT
-	new_server_config.ServiceName = app_config.SERVICE_NAME
+	new_server_config.ServiceName = string(app_config.SERVICE_NAME)
 
 	echo.EchoDebug(fmt.Sprintf("server config: %+v", new_server_config))
 

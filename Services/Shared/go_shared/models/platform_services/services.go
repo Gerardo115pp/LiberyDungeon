@@ -6,12 +6,13 @@ type PlatformServiceName string
 
 const (
 	JD_SERVICE         PlatformServiceName = "libery_jd_service"
-	CATEGORIES_SERVICE                     = "libery_categories_service"
-	METADATA_SERVICE                       = "libery_metadata_service"
-	MEDIAS_SERVICE                         = "libery_medias_service"
-	COLLECT_SERVICE                        = "libery_collect_service"
-	DOWNLOADS_SERVICE                      = "libery_downloads_service"
-	USERS_SERVICE                          = "libery_users_service"
+	CATEGORIES_SERVICE PlatformServiceName = "libery_categories_service"
+	METADATA_SERVICE   PlatformServiceName = "libery_metadata_service"
+	MEDIAS_SERVICE     PlatformServiceName = "libery_medias_service"
+	PWEDITOR_SERVICE   PlatformServiceName = "libery-pw-editor-service"
+	COLLECT_SERVICE    PlatformServiceName = "libery_collect_service"
+	DOWNLOADS_SERVICE  PlatformServiceName = "libery_downloads_service"
+	USERS_SERVICE      PlatformServiceName = "libery_users_service"
 )
 
 var ExistingServices = [...]PlatformServiceName{
@@ -19,6 +20,7 @@ var ExistingServices = [...]PlatformServiceName{
 	CATEGORIES_SERVICE,
 	METADATA_SERVICE,
 	MEDIAS_SERVICE,
+	PWEDITOR_SERVICE,
 	COLLECT_SERVICE,
 	DOWNLOADS_SERVICE,
 	USERS_SERVICE,

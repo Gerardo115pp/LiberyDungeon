@@ -11,7 +11,7 @@ import (
 ) // Loads the configuration from the environment variables
 
 var SERVICE_PORT string = os.Getenv("SERVICE_PORT")
-var SERVICE_NAME string
+var SERVICE_NAME platform_services.PlatformServiceName
 var SETTINGS_FILE string = os.Getenv("SETTINGS_FILE")
 var OPERATION_DATA_PATH string = os.Getenv("OPERATION_DATA_PATH")
 var SSL_CA_PATH string = os.Getenv("SSL_CA_PATH")

@@ -14,7 +14,7 @@ import (
 var SERVICE_PORT string = os.Getenv("SERVICE_PORT")
 var SETTINGS_FILE string = os.Getenv("SETTINGS_FILE")
 var OPERATION_DATA_PATH string = os.Getenv("OPERATION_DATA_PATH")
-var SERVICE_NAME string
+var SERVICE_NAME platform_services.PlatformServiceName
 var DEBUG_MODE bool = os.Getenv("EDEBUG") != ""
 var USERS_GRPC_SERVER_PORT string = os.Getenv("USERS_GRPC_SERVER_PORT")
 var DOMAIN_SECRET string = os.Getenv("DOMAIN_SECRET")
