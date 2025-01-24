@@ -11,6 +11,7 @@ var (
 	MEDIAS_SERVER     string = os.Getenv("MEDIAS_SERVER")
 	COLLECT_SERVER    string = os.Getenv("COLLECT_SERVER")
 	DOWNLOADS_SERVER  string = os.Getenv("DOWNLOADS_SERVER")
+	PWEDITOR_SERVER   string = os.Getenv("PWEDITOR_SERVER")
 	JD_SERVER         string = os.Getenv("JD_SERVER")
 	METADATA_SERVER   string = os.Getenv("METADATA_SERVER")
 	GRPC_SERVER       string = os.Getenv("GRPC_SERVER")
@@ -30,18 +31,27 @@ func verifyEndpointConfig() {
 	if JD_SERVER == "" {
 		panic("JD_SERVER environment variable is required")
 	}
+
 	if CATEGORIES_SERVER == "" {
 		panic("CATEGORIES_SERVER environment variable is required")
 	}
+
 	if MEDIAS_SERVER == "" {
 		panic("MEDIAS_SERVER environment variable is required")
 	}
+
+	if PWEDITOR_SERVER == "" {
+		panic("PWEDITOR_SERVER environment variable is required")
+	}
+
 	if COLLECT_SERVER == "" {
 		panic("COLLECT_SERVER environment variable is required")
 	}
+
 	if DOWNLOADS_SERVER == "" {
 		panic("DOWNLOADS_SERVER environment variable is required")
 	}
+
 	if METADATA_SERVER == "" {
 		panic("METADATA_SERVER environment variable is required")
 	}
