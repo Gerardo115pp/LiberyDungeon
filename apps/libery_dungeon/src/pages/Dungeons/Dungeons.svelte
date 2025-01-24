@@ -17,6 +17,9 @@
         import { deleteClusterRecord } from "@models/CategoriesClusters";
         import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
+        import { CursorMovementWASD } from "@app/common/keybinds/CursorMovement";
+        import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
+    import { ensureElementVisible } from "@libs/utils";
     
     /*=====  End of Imports  ======*/
     
@@ -46,11 +49,10 @@
         let show_cluster_creation_tool = false; 
 
         /**
-         * The amount of cluster to render per row.
-         * @type {number}
-        */
-        const cluster_per_row = 3
-
+         * The grid navigation wrapper.
+         * @type {CursorMovementWASD | null}
+         */
+        let the_grid_navigation_wrapper = null;
         
         /*----------  State  ----------*/
         
@@ -114,6 +116,7 @@
     onDestroy(() => {
         if (browser) {
             dropHotkeysContext();
+            dropCursorMovementWASD();
         }
     });
     
@@ -135,9 +138,9 @@
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
 
-                    hotkeys_context.register(["w", "a", "s", "d"], handleDungeonHotkeyMovement, {
-                        description: `<dungeon_selection> Moves the focus between the dungeons.`,
-                    });
+                    // hotkeys_context.register(["w", "a", "s", "d"], handleDungeonHotkeyMovement, {
+                    //     description: `<dungeon_selection> Moves the focus between the dungeons.`,
+                    // });
 
                     hotkeys_context.register(["e"], handleClusterSelection, {
                         description: `<dungeon_selection> Selects the focused dungeon.`,
@@ -159,6 +162,8 @@
                         description: `<${HOTKEYS_GENERAL_GROUP}> Opens the hotkeys sheet.`,
                     });
 
+                    setGridNavigationWrapper(hotkeys_context);
+
                     global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
                 }
 
@@ -166,44 +171,29 @@
             }
 
             /**
-             * Handles the dungeon hotkey movement.
-             * @param {KeyboardEvent} event
-             * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             * Sets the grid navigation wrapper required data.
+             * @param {import("@libs/LiberyHotkeys/hotkeys_context").default} hotkeys_context
              */
-            const handleDungeonHotkeyMovement = (event, hotkey) => {
-                let key_combo = hotkey.KeyCombo.toLowerCase();
-
-                const cluster_count = categories_clusters.length;
-                const row_count = Math.ceil(cluster_count / cluster_per_row);
-
-                let new_focused_cluster_index = focused_cluster_index;
-
-                switch (key_combo) {
-                    case "w": // Up
-                        new_focused_cluster_index -= cluster_per_row;
-                        
-                        new_focused_cluster_index = new_focused_cluster_index < 0 ? ((row_count - 1) * cluster_per_row) + focused_cluster_index : new_focused_cluster_index;
-                        new_focused_cluster_index = new_focused_cluster_index >= cluster_count ? new_focused_cluster_index - cluster_count : new_focused_cluster_index;
-                        break;
-                    case "s": // Down
-                        new_focused_cluster_index += cluster_per_row;
-                        
-                        new_focused_cluster_index = new_focused_cluster_index >= cluster_count ? focused_cluster_index - ((row_count - 1) * cluster_per_row) : new_focused_cluster_index;
-                        new_focused_cluster_index = new_focused_cluster_index < 0 ? new_focused_cluster_index + cluster_count : new_focused_cluster_index;
-                        break;  
-                    case "a": // Left
-                        new_focused_cluster_index -= 1;
-                        
-                        new_focused_cluster_index = new_focused_cluster_index < 0 ? cluster_count - 1 : new_focused_cluster_index;
-                        break;
-                    case "d": // Right
-                        new_focused_cluster_index += 1;
-                        
-                        new_focused_cluster_index = new_focused_cluster_index >= cluster_count ? 0 : new_focused_cluster_index;
-                        break;
+            const setGridNavigationWrapper = (hotkeys_context) => {
+                if (the_grid_navigation_wrapper != null) {
+                    the_grid_navigation_wrapper.destroy(); // This allows this function to be used for updating the navigation grid.
                 }
 
-                focused_cluster_index = new_focused_cluster_index;
+                const grid_selectors = getGridSelectors();
+
+                const matching_elements_count = document.querySelectorAll(grid_selectors.grid_parent_selector).length;
+                if (matching_elements_count !== 1) {
+                    throw new Error(`tag parent selector '${grid_selectors.grid_parent_selector}' returned ${matching_elements_count}, expected exactly 1`);
+                }
+
+
+                the_grid_navigation_wrapper = new CursorMovementWASD(grid_selectors.grid_parent_selector, handleCursorUpdate, {
+                    initial_cursor_position: focused_cluster_index,
+                    sequence_item_name: ui_core_dungeon_references.CATEGORY_CLUSTER.EntityName,
+                    sequence_item_name_plural: ui_core_dungeon_references.CATEGORY_CLUSTER.EntityNamePlural,
+                    grid_member_selector: grid_selectors.grid_member_selector,
+                });
+                the_grid_navigation_wrapper.setup(hotkeys_context);
             }
 
             /**
@@ -286,6 +276,18 @@
 
 
             }
+
+            /**
+             * Handles the Cursor update event emitted by the_grid_navigation_wrapper.
+             * @type {import("@common/keybinds/CursorMovement").CursorPositionCallback}
+             */
+            const handleCursorUpdate = (cursor_wrapped_value) => {
+                focused_cluster_index = cursor_wrapped_value.value;
+
+                ensureCurrentClusterElementVisible();
+
+                return false;
+            }
         
         /*=====  End of Hotkeys  ======*/
 
@@ -298,13 +300,71 @@
         }
 
         /**
+         * Ensures the current cluster element is visible.
+         * @returns {void}
+         */
+        const ensureCurrentClusterElementVisible = () => {
+            const cluster_element = getCurrentClusterHTMLElement();
+
+            if (cluster_element === null) {
+                console.warn("In @pages/Dungeons/Dungeons.ensureCurrentClusterElementVisible: The current cluster element was not found.");
+                return;
+            }
+
+            ensureElementVisible(cluster_element);
+        }
+
+        /**
          * Drops the hotkeys context.
          * @returns {void}
-        */
+         */
         const dropHotkeysContext = () => {
             if (global_hotkeys_manager == null) return;
 
             global_hotkeys_manager.dropContext(hotkeys_context_name);
+        }
+
+        /**
+         * Frees the resources used by the CursorMovementWASD instance.
+         * @returns {void}
+         */
+        const dropCursorMovementWASD = () => {
+            if (the_grid_navigation_wrapper != null) {
+                the_grid_navigation_wrapper.destroy();
+            }
+        }
+
+        /**
+         * Returns the grid selector for the TaxonomyTags component.
+         * @returns {import('@common/interfaces/common_actions').GridSelectors}
+         */
+        const getGridSelectors = () => {
+            const parent_selector = '#dsp-content-wrapper > ul#dsp-libery-dungeons-grid';
+            const child_selector = `.dungeon-cluster-item-wrapper`
+
+            return {
+                grid_parent_selector: parent_selector,
+                grid_member_selector: child_selector,
+            }
+        }
+
+        /**
+         * Returns the cluster item wrapper element for the given item index.
+         * @param {number} item_index
+         * @returns {HTMLElement | null}
+         */
+        const getClusterHTMLElmenet = item_index => {
+            const cluster_element = document.getElementById(`dciw-cluster-item-${item_index}`)
+            
+            return cluster_element;
+        }
+
+        /**
+         * Returns the current cluster element.
+         * @returns {HTMLElement | null}
+         */
+        const getCurrentClusterHTMLElement = () => {
+            return getClusterHTMLElmenet(focused_cluster_index);
         }
 
         /**
@@ -363,7 +423,6 @@
         </header>
         <ul id="dsp-libery-dungeons-grid" 
             class:dtwo={false}
-            style:grid-template-columns={`repeat(${cluster_per_row}, 1fr)`}
         >
             {#each categories_clusters as dungeon_cluster, h}
                 {@const is_keyboard_focused = h === focused_cluster_index}
@@ -488,21 +547,31 @@
     /*=====  End of Headlines  ======*/
 
     #dsp-libery-dungeons-grid {
-        display: grid;
-        width: max-content;
-        gap: var(--vspacing-4);
+        --grid-items-width: 170px;
+        --grid-items-per-row: 3;
+        --grid-items-gaps: calc(var(--grid-items-per-row) - 1);
+        --grid-items-gap: var(--spacing-4);
+        --grid-inline-padding: var(--spacing-2);
+        --grid-block-padding: 0;
+
+        box-sizing: content-box;
+        display: flex;
+        width: calc(calc(var(--grid-items-per-row) * var(--grid-items-width)) + calc(var(--grid-items-gaps) * var(--grid-items-gap)) + calc(2 * var(--grid-inline-padding)));
+        flex-wrap: wrap;
+        gap: var(--grid-items-gap);
         height: 56dvh;
         justify-content: center;
         overflow-y: auto;
         list-style: none;
-        padding: 0 var(--spacing-2);
+        padding-inline: var(--grid-inline-padding);
+        padding-block: var(--grid-block-padding);
         scrollbar-width: thin;
         scrollbar-color: transparent transparent;
 
         & > li {
             display: flex;
             flex-direction: column;
-            width: 170px;
+            width: var(--grid-items-width);
             height: 315px;
             justify-content: space-between;
         }
