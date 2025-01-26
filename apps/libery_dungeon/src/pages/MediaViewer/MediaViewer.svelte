@@ -178,7 +178,7 @@
 
             let media_zoom = 1;
             let media_zoom_factor = 0.15;
-            const MAX_MEDIA_ZOOM = 3.3;
+            const MAX_MEDIA_ZOOM = 6.3;
             const MIN_MEDIA_ZOOM = 0.1;
 
             /**
