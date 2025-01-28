@@ -60,6 +60,7 @@
         import CategoryConfiguration from "@components/Categories/CategoryConfiguration/CategoryConfiguration.svelte";
         import VideoMomentsTool from "./sub-components/VideoMomentsTool/VideoMomentsTool.svelte";
         import state_cleaners from "@stores/store_cleaners";
+        import { navigateToMediaViewer } from "@libs/NavigationUtils";
     /*=====  End of Imports  ======*/
   
     /*=============================================
@@ -802,13 +803,9 @@
                 return;
             }
 
-            let href = `/${$layout_properties.IS_MOBILE ? 'media-viewer-mobile' : 'media-viewer'}/${$current_category.uuid}`;
-
-            if (media_index != null) {
-                href += `/${media_index}`;
-            }
-
-            goto(href); 
+            navigateToMediaViewer($current_category.uuid, {
+                media_index: media_index
+            });
         }
 
         /**
