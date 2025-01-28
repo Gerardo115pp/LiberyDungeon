@@ -42,7 +42,7 @@ export const active_media_index = writable(0);
 /**
  * @type {import('svelte/store').Writable<import('@models/Medias').Media | null>}
  */
-export const active_media = writable(null);
+export const shared_active_media = writable(null);
 
 /**
  * Whether or not the media random navigation is enabled, which means that the next media will be a random media

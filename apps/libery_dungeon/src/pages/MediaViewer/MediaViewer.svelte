@@ -18,10 +18,9 @@
         import { getMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
         import { replaceState } from "$app/navigation";
         import { media_types } from "@models/Medias";
-        import { resetMediaViewerPageStore, tagged_medias_tool_mounted } from "./app_page_store";
+        import {  } from "./app_page_store";
         import { 
             active_media_index, 
-            active_media,
             active_media_change,
             media_changes_manager,
             random_media_navigation,
@@ -30,9 +29,12 @@
             skip_deleted_medias,
             auto_move_on,
             auto_move_category,
+            shared_active_media,
             media_viewer_hotkeys_context_name,
             automute_enabled,
-            static_next_medias
+            static_next_medias,
+            resetMediaViewerPageStore,
+            tagged_medias_tool_mounted
         } from "@pages/MediaViewer/app_page_store";
         import { current_cluster, loadCluster } from "@stores/clusters";
         import MediaInformationPanel from "./sub-components/MediaInformation/MediaInformationPanel.svelte";
@@ -66,7 +68,7 @@
         import generateTaggedMediasHotkeyContext from "@components/DungeonTags/TaggedMedias/tagged_medias_hotkeys";
         import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
         import generateMediaViewerContext, { media_viewer_child_contexts } from "./media_viewer_hotkeys";
-    import { navigateToDungeonExplorer } from "@libs/NavigationUtils";
+        import { navigateToDungeonExplorer } from "@libs/NavigationUtils";
     /*=====  End of Imports  ======*/
      
     /*=============================================
@@ -927,7 +929,9 @@
                     return;
                 }
 
-                if (the_active_media == null) {
+                const current_media = getActiveMedia();
+
+                if (current_media == null) {
                     console.error("In MediaViewer.rejectMedia: active_media is null.");
                     return;
                 }
@@ -948,7 +952,6 @@
 
                 let feedback_message;
                 
-                const current_media = the_active_media;
                 const current_media_index = getActiveMediaIndex();
                 let not_deleted_media_index = current_media_index;
 
@@ -963,10 +966,11 @@
                 
                 if (not_deleted_media_index !== current_media_index) {
                     changeDisplayedMedia(not_deleted_media_index);
-                    saveActiveMediaToRoute();
                 } else {
                     active_media_change.set($media_changes_manager.getMediaChangeType(current_media.uuid));
                 }
+
+                applyMediaModifiersConfig();
 
 
                 setDiscreteFeedbackMessage(feedback_message);
@@ -1615,6 +1619,7 @@
              */
             const setActiveMedia = new_media => {
                 the_active_media = new_media;
+                shared_active_media.set(the_active_media);
             }
 
             /**
