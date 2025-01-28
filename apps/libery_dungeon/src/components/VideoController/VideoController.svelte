@@ -13,7 +13,6 @@
     import { LabeledError } from "@libs/LiberyFeedback/lf_models";
     import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
     import { confirmPlatformMessage, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
-    import Page from "@app/routes/+page.svelte";
     
     /*=============================================
     =            Properties            =
