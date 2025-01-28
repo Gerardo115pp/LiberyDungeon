@@ -22,7 +22,7 @@
         /**
          * Snapshot of the media explorer ephimeral state. for it to be restored navigation has to occur by navigating 'back'.
          * @see {@link https://kit.svelte.dev/docs/snapshots}
-         * @type {import('./$types').Snapshot<Object>} */
+         * @type {import('./$types').Snapshot<{was_media_display_as_gallery: boolean}>} */
         export const snapshot = {
             capture: () => {
                 return {
