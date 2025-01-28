@@ -21,6 +21,7 @@
         import { resetMediaViewerPageStore, tagged_medias_tool_mounted } from "./app_page_store";
         import { 
             active_media_index, 
+            active_media,
             active_media_change,
             media_changes_manager,
             random_media_navigation,
@@ -315,10 +316,9 @@
         }
 
         let determined_index = await determineActiveMediaIndexInitialValue();
-        active_media_index.set(determined_index);
+        setActiveMediaIndex(determined_index, false);
         active_media_index_determined = true;
 
-        updateActiveMedia();
 
         console.log("Opening media viewer")
 
@@ -474,7 +474,7 @@
                 
                 if ($active_media_change === media_change_types.NORMAL) return;
 
-                const current_media = $current_category.content[$active_media_index];
+                const current_media = getActiveMedia();
 
                 $media_changes_manager.clearMediaChanges(current_media.uuid);
 
@@ -588,20 +588,19 @@
                     return handleRandomMediaNavigation(key_event, key_combo);
                 }
 
-                const active_media_index = getActiveMediaIndex();
-                let new_index = active_media_index;
+                const the_media_index = getActiveMediaIndex();
+                let new_index = the_media_index;
                 const max_index = getMaxMediaIndex();
                 const index_increment = key_combo === "d" ? 1 : -1;
 
-                new_index = linearCycleNavigationWrap(active_media_index, max_index, index_increment).value;
+                new_index = linearCycleNavigationWrap(the_media_index, max_index, index_increment).value;
 
-                await setActiveMediaIndex(new_index);
 
-                const new_active_media = getActiveMedia();
+                const new_active_media = getDisplayedMediaByIndex(new_index);
 
                 if(media_change_types.DELETED === $media_changes_manager.getMediaChangeType(new_active_media.uuid) && $skip_deleted_medias) {
                     let not_deleted_new_index = getNextNotDeletedMediaIndex(new_index, key_combo !== "a");
-                    new_index = (not_deleted_new_index === new_index) ? active_media_index : not_deleted_new_index;
+                    new_index = (not_deleted_new_index === new_index) ? the_media_index : not_deleted_new_index;
                 }
 
                 automoveMedia();
@@ -698,7 +697,9 @@
                 if (!direction_forward && $previous_medias.Size <= 1) {
                     let error_feedback = "Cannot go back to previous media. No previous media to go back to.";
 
-                    if ($active_media_index > 0) {
+                    const media_index = getActiveMediaIndex();
+
+                    if (media_index) {
                         error_feedback += " Try disabling random navigation.";
                     }
 
@@ -871,26 +872,38 @@
                     return;
                 }
 
+                console.log("Media Viewer exiting...")
+
                 const changes_confirmation = await confirmMediaChanges();
 
-                if (!changes_confirmation) return;
+                if (!changes_confirmation) {
+                    console.warn("User cancelled the media viewer exit.");
+                    return;
+                };
 
-                if (media_viewer_closing) return;
+                if (media_viewer_closing) {
+                    console.error("Media viewer is already closing.");
+                    return;
+                }
 
                 media_viewer_closing = true;
 
                 global_hotkeys_manager.unregisterCurrentContext(); // Prevents users from using hotkeys while the page is closing
 
+                const media_index = getActiveMediaIndex()
+                const displayed_medias = getDisplayedMedias();
+
                 // change the active media index so that onComponentExit will save the correct updated index(saves the current value of active_media_index)
-                let new_active_media_index = resolveNewMediaIndex($media_changes_manager, $active_media_index, $current_category.content);
+                let new_active_media_index = resolveNewMediaIndex($media_changes_manager, media_index, displayed_medias);
                 
                 await $media_changes_manager.commitChanges($current_category.uuid);
                 await $categories_tree.updateCurrentCategory();
                 media_changes_manager.set(new MediaChangesManager());
 
                 // wait to set the active media index to the new value after async operations so the user doens't see weird image switching
-                active_media_index.set(new_active_media_index);
+                await setActiveMediaIndex(new_active_media_index, false);
             
+                console.log("Exiting media viewer")
                 history.back();
             }
 
@@ -1256,7 +1269,7 @@
             
             if ($auto_move_on === false || $auto_move_category == null) return;
 
-            let current_media = $current_category.content[$active_media_index];
+            let current_media = getActiveMedia();
 
             let current_media_change = $media_changes_manager.getMediaChangeType(current_media.uuid);
 
@@ -1450,9 +1463,9 @@
              * @param {number} new_index
              */
             const changeDisplayedMedia = async new_index => {
-                const active_media_index = getActiveMediaIndex();
+                const displayed_media_index = getActiveMediaIndex();
 
-                if (new_index === active_media_index) return;
+                if (new_index === displayed_media_index) return;
 
                 await setActiveMediaIndex(new_index);
             }
@@ -1569,18 +1582,24 @@
                     console.error("In MediaViewer.saveActiveMediaToRoute: $current_category is null.");
                     return;
                 }
+
+                const media_index = getActiveMediaIndex();
                 
-                replaceState(`/media-viewer/${$current_category.uuid}/${$active_media_index}`, $page.state);
+                replaceState(`/media-viewer/${$current_category.uuid}/${media_index}`, $page.state);
             }
 
             /**
              * Sets the active media index.
              * @param {number} new_index
+             * @param {boolean} update_route
              */
-            const setActiveMediaIndex = async new_index => {
+            const setActiveMediaIndex = async (new_index, update_route=true)=> {
                 if (!$mv_tag_mode_enabled) {
                     active_media_index.set(new_index);
-                    saveActiveMediaToRoute();
+
+                    if (update_route) {
+                        saveActiveMediaToRoute();
+                    }
                 } else {
                     console.log("Setting active media index in tag mode");
                     const was_set = await tagMode_setActiveMediaIndex(new_index);
@@ -1627,8 +1646,7 @@
 
             if (media_index === -1) return;
 
-            active_media_index.set(media_index);
-            saveActiveMediaToRoute();
+            setActiveMediaIndex(media_index);
             applyMediaModifiersConfig();
             show_media_gallery = false;
         }
@@ -1696,7 +1714,8 @@
 
         function onComponentExit() {        
             if (category_cache != null) {
-                category_cache.addCategoryIndex(url_category_id, $active_media_index);
+                const media_index = getActiveMediaIndex();
+                category_cache.addCategoryIndex(url_category_id, media_index);
             }
 
             resetComponentSettings();
@@ -1742,7 +1761,7 @@
         }
 
         const resetComponentSettings = () => {
-            active_media_index.set(0);
+            setActiveMediaIndex(0, false);
             auto_move_on.set(false);
             auto_move_category.set(null);
 
@@ -1754,7 +1773,9 @@
          * @returns {void}
          */
         const resetRandomNavigationState = () => {
-            previous_media_index.set($active_media_index);
+            const media_index = getActiveMediaIndex()
+
+            previous_media_index.set(media_index);
             $previous_medias.Clear();
             $static_next_medias.Clear();
         }
