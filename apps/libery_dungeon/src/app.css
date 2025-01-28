@@ -727,6 +727,12 @@
             background: var(--danger-7);
             color: var(--grey-1);
         }
+
+        &.thin {
+            line-height: 1;
+            padding-block: 0.4em;
+            padding-inline: 2em;
+        }
     }
 
     .dungeon-button-2 {
@@ -740,6 +746,12 @@
         &:disabled {
             background: var(--main-9);
             color: var(--grey-4);
+        }
+
+        &.thin {
+            line-height: 1;
+            padding-block: 0.4em;
+            padding-inline: 2em;
         }
     }
 

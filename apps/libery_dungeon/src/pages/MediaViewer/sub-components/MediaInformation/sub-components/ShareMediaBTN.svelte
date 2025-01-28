@@ -1,8 +1,6 @@
 <script>
     import { lf_errors } from '@libs/LiberyFeedback/lf_errors';
     import { LabeledError } from '@libs/LiberyFeedback/lf_models';
-
-
     
     /*=============================================
     =            Properties            =
@@ -44,8 +42,6 @@
 
     
     /*=====  End of Methods  ======*/
-    
-    
 
 </script>
 

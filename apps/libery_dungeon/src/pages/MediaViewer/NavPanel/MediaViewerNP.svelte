@@ -3,6 +3,7 @@
     import { media_change_types } from "@models/WorkManagers";
     import { 
         active_media_index, 
+        shared_active_media,
         active_media_change, 
         random_media_navigation, 
         skip_deleted_medias, 
@@ -92,6 +93,15 @@
             <h2><span>{$mv_tag_mode_enabled ? $active_tag_content_media_index+1 : $active_media_index+1}</span> of <span>{$mv_tag_mode_enabled ? $mv_tag_mode_total_content : $current_category.content.length}</span></h2>
         {/if}
     </li>
+    <li id="mvnw-media-downloader">
+        {#if $shared_active_media !== null}
+            <a href="{$shared_active_media.Url}" id="mvnw-media-downloader-anchor">
+                <button class="dungeon-button-1 thin">
+                    Download
+                </button>
+            </a>
+        {/if}
+    </li>
 </ul>
 
 <style>
@@ -99,6 +109,11 @@
         gap: var(--vspacing-3);
         color: var(--grey-2);
         font-weight: 600;
+
+        & > li button {
+            font-size: var(--font-size-1);
+            font-weight: normal;
+        }
     }
 
     #mvnw-media-counter h2 {
