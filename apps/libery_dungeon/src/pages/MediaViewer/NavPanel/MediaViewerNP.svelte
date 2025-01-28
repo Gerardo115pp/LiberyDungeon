@@ -19,6 +19,7 @@
         mv_tag_mode_total_content
 
     } from "@pages/MediaViewer/features_wrappers/media_viewer_tag_mode";
+    import DownloadIcon from "@components/UI/icons/download_icon.svelte";
 
     
     /*=============================================
@@ -88,18 +89,21 @@
     <li class:mv-np-disabled-field={$mv_tag_mode_enabled} id="mvnw-auto-move-state">
         <span class="mvnw-ams-label">auto moving to: {$auto_move_on ? $auto_move_category?.name : "disabled"}</span>
     </li>
-    <li id="mvnw-media-counter">
-        {#if $current_category !== null}
-            <h2><span>{$mv_tag_mode_enabled ? $active_tag_content_media_index+1 : $active_media_index+1}</span> of <span>{$mv_tag_mode_enabled ? $mv_tag_mode_total_content : $current_category.content.length}</span></h2>
-        {/if}
-    </li>
     <li id="mvnw-media-downloader">
         {#if $shared_active_media !== null}
             <a href="{$shared_active_media.Url}" id="mvnw-media-downloader-anchor">
-                <button class="dungeon-button-1 thin">
-                    Download
+                <button class="dungeon-button thin">
+                    <DownloadIcon 
+                        icon_color="var(--main)" 
+                        icon_size="calc(var(--spacing-3) * 0.8)"
+                    />
                 </button>
             </a>
+        {/if}
+    </li>
+    <li id="mvnw-media-counter">
+        {#if $current_category !== null}
+            <h2><span>{$mv_tag_mode_enabled ? $active_tag_content_media_index+1 : $active_media_index+1}</span> ⋯ <span>{$mv_tag_mode_enabled ? $mv_tag_mode_total_content : $current_category.content.length}</span></h2>
         {/if}
     </li>
 </ul>

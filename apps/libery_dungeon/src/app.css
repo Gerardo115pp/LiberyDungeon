@@ -710,6 +710,34 @@
         outline: none;
     }
 
+    .dungeon-button {
+        font-size: var(--font-size-2);
+        background: transparent;
+        color: var(--grey-2);
+        padding: var(--spacing-1) var(--spacing-2);
+        border: none;
+        transition: all 0.2s ease-out;
+
+        &:disabled {
+            color: transparent;
+        }
+
+        &.danger {
+            color: var(--danger-7);
+        }
+
+        &.thin {
+            line-height: 1;
+            padding-block: 0.2em;
+            padding-inline: 0.8em;
+        }
+
+        &:hover {
+            background: hsl(from var(--grey-4) h s l / 0.3);
+            transition: background 0.3s ease-out;
+        }
+    }
+
     .dungeon-button-1 {
         font-size: var(--font-size-2);
         background: var(--main);
@@ -730,8 +758,8 @@
 
         &.thin {
             line-height: 1;
-            padding-block: 0.4em;
-            padding-inline: 2em;
+            padding-block: 0.2em;
+            padding-inline: 0.8em;
         }
     }
 
@@ -828,6 +856,27 @@
         outline: none;
     }
 
+    .sketch-btn {
+        font-family: var(--font-decorative);
+        background: transparent;
+        padding: var(--vspacing-1);
+        border-width: 1px;
+        border-style: dashed;
+        border-color: var(--main);
+        color: var(--main-dark);
+        transition: all .4s cubic-bezier(0.075, 0.82, 0.165, 1);
+
+        &.thin {
+            line-height: 1;
+            padding-block: 0.2em;
+            padding-inline: 0.8em;
+        }
+    }
+
+    .sketch-btn:hover {
+        background: var(--main-dark-transparent);
+    }
+
     @media (pointer: fine) {
         .dungeon-button-1:not(:disabled):hover {
             background: var(--main-dark);
@@ -895,20 +944,7 @@
         }
         }
 
-        .sketch-btn {
-        font-family: var(--font-decorative);
-        background: transparent;
-        padding: var(--vspacing-1);
-        border-width: 1px;
-        border-style: dashed;
-        border-color: var(--main);
-        color: var(--main-dark);
-        transition: all .4s cubic-bezier(0.075, 0.82, 0.165, 1);
-        }
 
-        .sketch-btn:hover {
-        background: var(--main-dark-transparent);
-        }
 
 
 
