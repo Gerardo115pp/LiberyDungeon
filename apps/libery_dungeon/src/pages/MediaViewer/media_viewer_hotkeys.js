@@ -1,7 +1,4 @@
 import { ComponentHotkeyContext } from "@libs/LiberyHotkeys/hotkeys_context";
-import { HOTKEY_NULL_DESCRIPTION, HOTKEY_NULLISH_HANDLER } from "@libs/LiberyHotkeys/hotkeys_consts";
-import * as common_hotkey_actions  from "@common/keybinds/CommonActionsName";
-import { global_hotkey_action_triggers, global_hotkey_movement_triggers } from "@config/hotkeys_config";
 import generateVideoControllerContext, { video_controller_context_name } from "@components/VideoController/video_controller_hotkeys";
 
 /**

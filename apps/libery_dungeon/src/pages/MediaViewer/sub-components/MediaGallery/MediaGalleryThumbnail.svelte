@@ -2,7 +2,7 @@
     import LazyLoader from "@components/LazyLoader/LazyLoader.svelte";
     import { getMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
     import { createEventDispatcher } from "svelte";
-    import { media_changes_manager, active_media_change, active_media_index } from "@stores/media_viewer";
+    import { media_changes_manager, active_media_change, active_media_index } from "@pages/MediaViewer/app_page_store";
     import { media_change_types } from "@models/WorkManagers";
     import { current_category } from "@stores/categories_tree";
     import { current_cluster } from "@stores/clusters";

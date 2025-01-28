@@ -2,7 +2,6 @@
     import { hasClipboardWritePermission } from "@libs/utils";
     import { onMount } from "svelte";
     import InformationEntry from "./sub-components/InformationEntry.svelte";
-    import { active_media_index } from "@stores/media_viewer";
     import { current_category } from "@stores/categories_tree";
     import CategoryThumbnailSetBtn from "./sub-components/CategoryThumbnailSetBtn.svelte";
     import { getCategory } from "@models/Categories";

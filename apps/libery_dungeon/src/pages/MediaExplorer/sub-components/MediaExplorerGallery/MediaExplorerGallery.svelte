@@ -24,11 +24,10 @@
         import { pushState, replaceState } from '$app/navigation';
         import { page } from '$app/stores';
         import { OrderedMedia } from '@models/Medias';
-        import { active_media_index } from '@stores/media_viewer';
-    import SequenceCreationTool from './SequenceCreationTool.svelte';
-    import { ui_pandasworld_tag_references } from '@app/common/ui_references/dungeon_tags_references';
-    import { ui_core_dungeon_references } from '@app/common/ui_references/core_ui_references';
-    import { common_action_groups } from '@app/common/keybinds/CommonActionsName';
+        import SequenceCreationTool from './SequenceCreationTool.svelte';
+        import { ui_pandasworld_tag_references } from '@app/common/ui_references/dungeon_tags_references';
+        import { ui_core_dungeon_references } from '@app/common/ui_references/core_ui_references';
+        import { common_action_groups } from '@app/common/keybinds/CommonActionsName';
     
     /*=====  End of Imports  ======*/
     

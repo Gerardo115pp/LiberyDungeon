@@ -1,4 +1,6 @@
 <script>
+// @ts-nocheck
+
     import { media_changes_manager, skip_deleted_medias } from "@stores/media_viewer";
     import { category_cache, getCategoryTree } from "@models/Categories";
     import { current_category, categories_tree } from "@stores/categories_tree";

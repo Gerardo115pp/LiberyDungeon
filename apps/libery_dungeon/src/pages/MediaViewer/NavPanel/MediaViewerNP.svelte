@@ -9,7 +9,7 @@
         media_changes_manager,
         auto_move_category,
         auto_move_on
-    } from "@stores/media_viewer";
+    } from "@pages/MediaViewer/app_page_store";
     import { 
         mv_tag_mode_enabled, 
         mv_tagged_content,

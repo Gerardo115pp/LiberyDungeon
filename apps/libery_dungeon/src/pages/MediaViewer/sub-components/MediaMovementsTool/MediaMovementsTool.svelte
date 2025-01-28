@@ -18,7 +18,7 @@
             auto_move_on,
             auto_move_category,
             media_viewer_hotkeys_context_name
-        } from "@stores/media_viewer";
+        } from "@pages/MediaViewer/app_page_store";
         import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
         import HotkeysContext from "@libs/LiberyHotkeys/hotkeys_context";
         import QuickMovementsTools from "./QuickMovementsTools.svelte";

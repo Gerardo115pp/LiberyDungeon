@@ -32,7 +32,7 @@
             media_viewer_hotkeys_context_name,
             automute_enabled,
             static_next_medias
-        } from "@stores/media_viewer";
+        } from "@pages/MediaViewer/app_page_store";
         import { current_cluster, loadCluster } from "@stores/clusters";
         import MediaInformationPanel from "./sub-components/MediaInformation/MediaInformationPanel.svelte";
         import MediaTagger from "@components/DungeonTags/MediaTagger/MediaTagger.svelte";
@@ -318,7 +318,7 @@
         active_media_index.set(determined_index);
         active_media_index_determined = true;
 
-        the_active_media = getActiveMedia();
+        updateActiveMedia();
 
         console.log("Opening media viewer")
 
@@ -1588,7 +1588,16 @@
                     if (!was_set) return;
                 }
 
-                the_active_media = getActiveMedia();
+                updateActiveMedia();
+            }
+
+            /**
+             * Sets the active media.
+             * @param {import('@models/Medias').Media} new_media
+             * @returns {void}
+             */
+            const setActiveMedia = new_media => {
+                the_active_media = new_media;
             }
 
             /**
@@ -1596,7 +1605,7 @@
              * @returns {void}
              */
             const updateActiveMedia = () => {
-                the_active_media = getActiveMedia();
+                setActiveMedia(getActiveMedia());
             }
         
         /*=====  End of Active media state modifiers  ======*/

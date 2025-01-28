@@ -1,6 +1,6 @@
 <script>
     import viewport from "@components/viewport_actions/useViewportActions";
-    import { active_media_index } from "@stores/media_viewer";
+    import { active_media_index } from "@pages/MediaViewer/app_page_store";
     import { createEventDispatcher, onMount, tick } from "svelte";
     import { Media } from "@models/Medias";
     import MediaGalleryThumbnail from "./MediaGalleryThumbnail.svelte";

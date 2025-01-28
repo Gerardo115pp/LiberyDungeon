@@ -1,6 +1,6 @@
 <script>
     import { onMount, onDestroy, createEventDispatcher, tick } from "svelte";
-    import { active_media_index, automute_enabled, previous_media_index } from "@stores/media_viewer";
+    import { active_media_index, automute_enabled } from "@pages/MediaViewer/app_page_store";
     import { saveMediaWatchPoint, getMediaWatchPoint } from "@models/Metadata";
     import { getHotkeysManager } from "@libs/LiberyHotkeys/libery_hotkeys";
     import { layout_properties } from "@stores/layout";
