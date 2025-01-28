@@ -13,6 +13,7 @@
             video_moments_tool_mounted,
             resetCategorySearchState,
             current_category_configuration_mounted,
+            was_media_display_as_gallery,
             resetMediaExplorerState,
         } from "@pages/MediaExplorer/app_page_store";
         import CategoryTagger from "@components/DungeonTags/CategoryTagger/CategoryTagger.svelte";
@@ -147,11 +148,6 @@
              * @default false - change to true to modify the gallery UI.
              */
             let media_display_as_gallery = false;
-
-            /**
-             * @type {boolean}
-             */
-            export let was_media_display_as_gallery;
 
             /**
              * Whether to force the media gallery to recover the focus on the last viewed media.
@@ -435,7 +431,7 @@
                 media_display_as_gallery = !media_display_as_gallery;
 
                 if (!media_display_as_gallery) {
-                    was_media_display_as_gallery = false;
+                    was_media_display_as_gallery.set(false);
                 }
 
 
@@ -946,7 +942,7 @@
             console.debug("Gallery close event received");
             disableGalleryHotkeys();
             media_display_as_gallery = false;
-            was_media_display_as_gallery = false;
+            was_media_display_as_gallery.set(false);
         }
 
         /**
@@ -1084,7 +1080,7 @@
         const handleGalleryOpenMediaViewer = event => {
             const { media_index } = event.detail;
 
-            was_media_display_as_gallery = true;
+            was_media_display_as_gallery.set(true);
             
             enterMediaViewer(media_index);
         }
@@ -1573,12 +1569,12 @@
             {/if}
         {/if}
     </ul>
-    {#if $current_category != null && (media_display_as_gallery || was_media_display_as_gallery) && ($current_category?.content?.length ?? 0) > 0}
+    {#if $current_category != null && (media_display_as_gallery || $was_media_display_as_gallery) && ($current_category?.content?.length ?? 0) > 0}
         <div id="media-gallery-wrapper">
             <MediaExplorerGallery 
                 media_items={$current_category.content}
                 enable_gallery_hotkeys={enable_gallery_hotkeys}
-                recovering_gallery_state={was_media_display_as_gallery || recover_gallery_focus}
+                recovering_gallery_state={$was_media_display_as_gallery || recover_gallery_focus}
                 on:exit-hotkeys-context={disableGalleryHotkeys}
                 on:request-hotkeys-control={handleGalleryRequestedControl}
                 on:close-gallery={handleGalleryClose}

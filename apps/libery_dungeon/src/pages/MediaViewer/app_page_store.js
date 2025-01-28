@@ -36,7 +36,6 @@ export const resetMediaViewerPageStore = () => {
 /**
  * The index corresponding to the active media on stores/categories_tree.current_category.content array of Medias
  * @type {import('svelte/store').Writable<number>}
- * @deprecated
  */
 export const active_media_index = writable(0);
 

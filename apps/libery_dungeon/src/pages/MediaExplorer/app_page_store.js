@@ -7,12 +7,12 @@ import { writable } from "svelte/store";
     /**
      * @type {import('svelte/store').Writable<boolean>} whether the media upload tool is mounted or not.
      * @description This is currently toggled on by the NavbarPanel of MediaExplorer and toggled off by the  MediaUploadTool itself.
-    */
+     */
     export const media_upload_tool_mounted = writable(false);
 
     /**
      * @type {import('svelte/store').Writable<boolean>} whether the Category creation tool is mounted or not.
-    */
+     */
     export const category_creation_tool_mounted = writable(false);
 
     /**
@@ -68,6 +68,25 @@ import { writable } from "svelte/store";
         }
 
 /*=====  End of Component state  ======*/
+
+
+/*=============================================
+=            Snapshots            =
+=============================================*/
+// These are pieces of state that are meant to been kept even after unmount.
+// Replacement for 'https://svelte.dev/docs/kit/snapshots' on certain features.
+
+/**
+ * Whether to display the current category as a gallery or just as the normal MediasIcon.
+ * In any case, the MediaIcon is also displayed.
+ * @type {import('svelte/store').Writable<boolean>}
+ */
+export let was_media_display_as_gallery = writable(false);
+
+
+/*=====  End of Snapshots  ======*/
+
+
 
 /**
  * Resets the state of the media explorer page.

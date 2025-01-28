@@ -49,3 +49,23 @@ export const navigateToMediaViewer = (category_uuid, navigation_params) => {
     window.location.replace(url);
     window.location.reload();
 }
+
+/**
+ * Navigates to the dungeon explorer.
+ * @param {string} category_uuid
+ * @returns {Promise<boolean>} whether the navigation was successful
+ */
+export const navigateToDungeonExplorer = async category_uuid => {
+    const dungeon_explorer_page = `/dungeon-explorer/${category_uuid}`;
+
+    if (!URL.canParse(dungeon_explorer_page, globalThis.location.origin)) {
+        return false;
+    }
+
+    const url = new URL(dungeon_explorer_page, globalThis.location.origin);
+
+    await goto(url, {
+        replaceState: true,
+    });
+    return true;
+}

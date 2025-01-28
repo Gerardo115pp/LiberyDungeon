@@ -66,6 +66,7 @@
         import generateTaggedMediasHotkeyContext from "@components/DungeonTags/TaggedMedias/tagged_medias_hotkeys";
         import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
         import generateMediaViewerContext, { media_viewer_child_contexts } from "./media_viewer_hotkeys";
+    import { navigateToDungeonExplorer } from "@libs/NavigationUtils";
     /*=====  End of Imports  ======*/
      
     /*=============================================
@@ -872,14 +873,12 @@
                     return;
                 }
 
-                console.log("Media Viewer exiting...")
-
                 const changes_confirmation = await confirmMediaChanges();
 
                 if (!changes_confirmation) {
                     console.warn("User cancelled the media viewer exit.");
                     return;
-                };
+                }
 
                 if (media_viewer_closing) {
                     console.error("Media viewer is already closing.");
@@ -903,8 +902,7 @@
                 // wait to set the active media index to the new value after async operations so the user doens't see weird image switching
                 await setActiveMediaIndex(new_active_media_index, false);
             
-                console.log("Exiting media viewer")
-                history.back();
+                navigateToDungeonExplorer($current_category.uuid);
             }
 
             /**
