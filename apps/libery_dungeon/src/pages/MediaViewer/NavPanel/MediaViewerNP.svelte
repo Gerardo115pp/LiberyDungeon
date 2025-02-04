@@ -90,7 +90,7 @@
         <span class="mvnw-ams-label">auto moving to: {$auto_move_on ? $auto_move_category?.name : "disabled"}</span>
     </li>
     <li id="mvnw-media-downloader">
-        {#if $shared_active_media !== null}
+        {#if $shared_active_media != null}
             <a href="{$shared_active_media.Url}" id="mvnw-media-downloader-anchor">
                 <button class="dungeon-button thin">
                     <DownloadIcon 
