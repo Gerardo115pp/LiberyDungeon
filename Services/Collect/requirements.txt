@@ -1,4 +1,5 @@
 httpx==0.24.0
+curl_cffi==0.10.0
 fastapi==0.108.0
 uvicorn==0.22.0
 googleapis-common-protos==1.59.0
