@@ -22,11 +22,14 @@ async def getBoards():
 async def getBoardCatalog(board_name: str, not_filter: bool = False):
     boards_content: dict
     err: Exception
+
+    print(f"Getting board catalog for {board_name}")
     
     boards_content: list[models.CatalogThread] = []
     
     boards_content, err = workflows.FourChan.Boards.getBoardCatalogContent(board_name)
     if err:
+        print(f"Error while getting boards content: {err}")
         raise HTTPException(status_code=502, detail=f"Error while getting boards content: {err}")
     
     if not_filter:

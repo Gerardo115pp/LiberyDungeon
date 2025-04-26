@@ -1,6 +1,7 @@
 from helpers import getBoardCatalogUrl
 from bs4.element import ResultSet, Tag
 from bs4 import BeautifulSoup
+from workflows.Communication.CommunicationUtils import disguiseHttpRequest, impersonateTLSFingerPrint
 import Config as app_config
 import models
 import httpx
@@ -32,15 +33,16 @@ def findThreadsTag(lookup_pool: ResultSet) -> tuple[Tag, Exception]:
 def getBoardCatalog(board: str) -> tuple[str, Exception]:
     board_url = getBoardCatalogUrl(board)
     
-    response: httpx.Response = httpx.get(board_url)
+    response: httpx.Response = impersonateTLSFingerPrint(board_url)
     if response.status_code != 200:
-        return "", Exception(f"Error on 4chan communication: {response.status_code}")
+        return "", Exception(f"Error on 4chan('{board_url}') communication: {response.status_code}")
     
     return response.text, None
 
 def getBoardCatalogContent(board: str) -> tuple[list[models.CatalogThread], Exception]:
     board_catalog, err = getBoardCatalog(board)
     if err:
+        err = Exception(f"Error while getting board catalog: {err}")
         return [], err
 
     json_data = {}
@@ -57,6 +59,7 @@ def getBoardCatalogContent(board: str) -> tuple[list[models.CatalogThread], Exce
         
         json_data = json.loads(raw_tables[:-1])
     except Exception as e:
+        print(f"Error while parsing catalog: {e}")
         return [], e
     
     if "threads" not in json_data:

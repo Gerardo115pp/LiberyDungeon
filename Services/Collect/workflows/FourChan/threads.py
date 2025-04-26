@@ -2,14 +2,15 @@ from bs4 import BeautifulSoup, Tag
 import helpers
 import models
 import httpx
+from workflows.Communication.CommunicationUtils import impersonateTLSFingerPrint
 import bleach
 
 def getThreadImages(board_name: str, thread_uuid: str) -> tuple[list[str], Exception]:
     thread_url = helpers.getThreadUrl(board_name, thread_uuid)
     
-    response: httpx.Response = httpx.get(thread_url)
+    response = impersonateTLSFingerPrint(thread_url)
     if response.status_code != 200:
-        return [], Exception(f"Error on 4chan communication: {response.status_code}")
+        return [], Exception(f"Error on 4chan communication for '{thread_url}': {response.status_code}")
     
     thread_content = response.text
     
