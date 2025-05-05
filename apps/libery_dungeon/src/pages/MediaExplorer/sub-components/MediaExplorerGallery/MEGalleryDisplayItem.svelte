@@ -530,6 +530,9 @@
             {/if}
         </div> 
     </div>
+    <div class="media-order-label-overlay">
+        #{ordered_media.Order}
+    </div>
     {#if !is_skeleton}
         {#key ordered_media.uuid}
             {#if !ordered_media.Media.isVideo() || (!enable_heavy_rendering && !(enable_magnify_on_keyboard_focus && is_keyboard_focused))}
@@ -552,7 +555,7 @@
                 {/if}
             {:else if ordered_media.Media.isVideo() && (enable_magnify_on_keyboard_focus && is_keyboard_focused || enable_heavy_rendering)}
                 {#if media_inside_viewport || !enable_heavy_rendering}
-                <video 
+                    <video 
                         preload="metadata"
                         src="{ordered_media.Media.Url}" 
                         muted 
@@ -740,8 +743,6 @@
                 }
             }
 
-
-
             .meg-display-item-wrapper:not(.status-titles-enabled):hover .media-name-tool-tip {
                 display: block;
             }
@@ -771,6 +772,29 @@
                 .meg-display-item-wrapper.status-titles-enabled .media-name-tool-tip .media-name-tool-tip-content-wrapper {
                     background-color: hsl(from var(--grey) h s l / .8);
                 }
+            }
+        
+        
+        /*----------  media order label  ----------*/
+
+
+            .meg-display-item-wrapper .media-order-label-overlay {
+                display: none;
+                position: absolute;
+                inset: auto auto 5cqw 5cqw;
+                background-color: var(--grey-9);
+                width: max-content;
+                max-width: 100%;
+                line-height: 1;
+                padding: var(--spacing-1);
+                border-radius: var(--rounded-box-border-radius);
+                opacity: 0;
+                transition: display .3s linear allow-discrete, opacity .1s ease-out;
+            }
+        
+            .meg-display-item-wrapper.status-titles-enabled .media-order-label-overlay {
+                display: block;
+                opacity: 1;
             }
         
     /*=====  End of File name and type  ======*/
