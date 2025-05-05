@@ -20,7 +20,7 @@
         import { category_cache, InnerCategory } from '@models/Categories';
         import { LabeledError } from '@libs/LiberyFeedback/lf_models';
         import { lf_errors } from '@libs/LiberyFeedback/lf_errors';
-        import { emitPlatformMessage } from '@libs/LiberyFeedback/lf_utils';
+        import { confirmPlatformMessage, emitPlatformMessage } from '@libs/LiberyFeedback/lf_utils';
         import { pushState, replaceState } from '$app/navigation';
         import { page } from '$app/stores';
         import { OrderedMedia } from '@models/Medias';
@@ -428,6 +428,8 @@
                 let old_focus_index = media_focus_index;
                 media_focus_index = new_focus_index;
 
+                console.log(`media_focus_index: ${media_focus_index}`);
+
                 await manageInfiniteScroll();
 
                 if (auto_select_focused_media) {
@@ -538,8 +540,28 @@
             /**
              * handles gallery changes reset.
              */
-            const handleGalleryReset = () => {
+            const handleGalleryReset = async () => {
                 if ($me_gallery_changes_manager === null) return;
+
+                const changes_count = $me_gallery_changes_manager.ChangesAmount;
+
+                const medias_per_row = Math.floor(getMediaItemsPerRow());
+
+                const requires_confirmation = changes_count >= (1.5 * medias_per_row);
+
+                if (requires_confirmation) {
+                    const user_confirmed = await confirmPlatformMessage({
+                        message_title: "Reset selection",
+                        question_message: `Do you really want to reset the selection of ${changes_count}?`,
+                        auto_focus_cancel: true,
+                        danger_level: 1
+                    });
+
+                    if (user_confirmed !== 1) {
+                        console.log("Confirmation cancelled.");
+                        return;
+                    }
+                }
 
                 $me_gallery_changes_manager.clearAllChanges();
             }
