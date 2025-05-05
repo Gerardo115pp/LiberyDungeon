@@ -244,6 +244,9 @@ func (metadata_client MetadataServiceClient) RemoveAllTaggingsForEntities(entiti
 	}
 
 	boolean_response, err := metadata_grpc_client.DeleteEntitiesTaggings(ctx, &message)
+	if err != nil {
+		return false, errors.Join(err, fmt.Errorf("In Communication/MetadataService.RemoveAllTaggingsForEntities, while calling metadata_grpc_client.DeleteEntitiesTaggings"))
+	}
 
-	return boolean_response.Response, err
+	return boolean_response.Response, nil
 }
