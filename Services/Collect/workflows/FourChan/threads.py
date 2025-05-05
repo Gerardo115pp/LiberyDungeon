@@ -35,7 +35,7 @@ def getThreadImages(board_name: str, thread_uuid: str) -> tuple[list[str], Excep
 def getThreadContent(board_name: str, thread_uuid: str) -> tuple[models.FourChanThread, Exception|None]:
     thread_url = helpers.getThreadUrl(board_name, thread_uuid)
     
-    response: httpx.Response = httpx.get(thread_url)
+    response = impersonateTLSFingerPrint(thread_url)
     if response.status_code != 200:
         return None, Exception(f"Error on 4chan communication: {response.status_code}")
     

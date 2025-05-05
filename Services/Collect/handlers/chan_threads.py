@@ -21,7 +21,7 @@ async def getThread(board_name: str, thread_id: str):
     
     response = JSONResponse(
         content=json_content, 
-        headers={
+        headers = {
             "Cache-Control": "max-age=600, must-revalidate, private",
             "Age": "10"
         }
