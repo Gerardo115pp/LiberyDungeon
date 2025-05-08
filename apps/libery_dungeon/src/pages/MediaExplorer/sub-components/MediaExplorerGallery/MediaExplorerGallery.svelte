@@ -366,13 +366,12 @@
             const handleRenameCurrentMediaHotkey = (event, hotkey) => {
                 toggleRenamingFocusedMediaState();
             }
-            
 
             /**
              * Toggles the display of the media titles in the gallery items.
              */
             const handleShowTitlesMode = () => {
-                show_media_titles_mode = !show_media_titles_mode;
+                toggleMediaTitlesMode();
             }
 
             /**
@@ -1342,6 +1341,18 @@
 
             return true;
         }
+
+        /**
+         * toggles the media titles mode.
+         * @param {boolean} [force_state] - ensures the desired state is set instead of toggling it.
+         * @returns {void}
+         */
+        const toggleMediaTitlesMode = (force_state) => {
+            const new_state = force_state ?? !show_media_titles_mode;
+
+            show_media_titles_mode = new_state;
+        }
+        
 
         /**
          * Toggles the select stat of a given media.
