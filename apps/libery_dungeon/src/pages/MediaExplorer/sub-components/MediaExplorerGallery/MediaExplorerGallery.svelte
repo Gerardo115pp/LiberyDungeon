@@ -158,7 +158,7 @@
             
                 /**
                  * The wrapper of search functionality for media content.
-                 * @type {SearchResultsWrapper<import('@models/Medias').Media> | null}
+                 * @type {SearchResultsWrapper<import('@models/Medias').OrderedMedia> | null}
                  */
                 let the_media_content_search_wrapper = null;
 
@@ -166,7 +166,7 @@
                  * The query to search for in the media content.
                  * @type {string}
                  */
-                let media_content_search_query = "Alpine";
+                let media_content_search_query = "";
 
                 /**
                  * Whether the media search is active.
@@ -1144,7 +1144,7 @@
 
             /**
              * The search result handler bound to the_category_search_results_wrapper
-             * @type {import('@common/keybinds/CommonActionWrappers').SearchResultsUpdateCallback<import('@models/Medias').Media>}
+             * @type {import('@common/keybinds/CommonActionWrappers').SearchResultsUpdateCallback<import('@models/Medias').OrderedMedia>}
              */
             const handleFocuseSearchMatch = search_match => {
                 if (the_media_content_search_wrapper == null || search_match == null) return;
@@ -1153,13 +1153,13 @@
 
                 let media_item_uuid = search_match.uuid;
 
-                let media_content = active_medias;
+                let media_content = ordered_medias;
 
                 for (let h = 0; h <= media_content.length; h++) {
                     let iteration_media = media_content[h];
 
-                    if (!(iteration_media instanceof Media)) {
-                        console.error("iteration_category is not an InnerCategory:", iteration_media);
+                    if (!(iteration_media instanceof OrderedMedia)) {
+                        console.error("iteration_category is not a Media:", iteration_media);
                         throw new Error("The displayed categories should only contain InnerCategory instances")
                     }
 
@@ -1183,7 +1183,7 @@
                     return;
                 }
 
-                the_media_content_search_wrapper = new SearchResultsWrapper(hotkey_contenxt, media_items, handleFocuseSearchMatch, {
+                the_media_content_search_wrapper = new SearchResultsWrapper(hotkey_contenxt, ordered_medias, handleFocuseSearchMatch, {
                     minimum_similarity: 0.7,
                     search_hotkey: ["f"],
                     ui_search_result_reference: ui_core_dungeon_references.MEDIA,
@@ -1193,7 +1193,7 @@
                     no_results_callback: () => resetCategoryFiltersState()
                 });
 
-                the_media_content_search_wrapper.setItemToStringFunction(inner_category => inner_category.name.toLowerCase());
+                the_media_content_search_wrapper.setItemToStringFunction(ordered_medias => ordered_medias.MediaName.toLowerCase());
             }          
 
             /**
@@ -1330,6 +1330,13 @@
                 {/if}
             </header>
         </div>
+        <div id="meg-gw-floating-controls-overlay">
+            {#if capturing_media_content_search || media_content_search_query}
+                <p id="meg-gw-media-content-filter">
+                    /{media_content_search_query}
+                </p>
+            {/if}
+        </div>
         <ul id="meg-gallery" class:masonry-layout={use_masonry}>
             {#if $me_gallery_changes_manager instanceof MediaChangesEmitter}
                 {#each active_medias as ordered_media_item, h}
@@ -1422,6 +1429,35 @@
     
     /*=====  End of Gallery Header  ======*/
     
+   
+   /*=============================================
+   =            Control overlays            =
+   =============================================*/
+   
+        :has(> #meg-gw-floating-controls-overlay) {
+            position: relative;
+        }
+        
+        #meg-gw-floating-controls-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: var(--spacing-1);
+            z-index: var(--z-index-t-7);
+
+            & p#meg-gw-media-content-filter {
+                padding-inline-start: var(--spacing-2);
+                font-size: var(--font-size-2);
+                color: var(--grey-1);
+                line-height: 1.8;
+                background: hsl(from var(--grey-9) h s l / 0.3);
+                font-weight: 500;
+            }
+        }
+   
+   /*=====  End of Control overlays  ======*/
+   
     
 
     #meg-gallery {
