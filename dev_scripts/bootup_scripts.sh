@@ -160,6 +160,40 @@ function run_metadata {
     cd $current_pwd
 }
 
+function run_pweditor {
+    local pweditor_dir=$DUNGEON_ROOT_DIR/Services/PWEditor
+
+    if [ ! -d $pweditor_dir ]; then
+        echo "PWEditor directory not found: $pweditor_dir"
+        return 1
+    fi
+
+    local env_directory=$DUNGEON_ROOT_DIR/dev_scripts/env
+
+    if [ ! -d $env_directory ]; then
+        echo "Environment directory not found: $env_directory"
+        return 1
+    fi
+
+    local global_env_file=$env_directory/secretfile_global.env
+    local pweditor_env_file=$env_directory/secretfile_pweditor.env
+
+    local pweditor_service_main=$pweditor_dir/pweditor_service.go
+
+    if [ ! -f $pweditor_service_main ]; then
+        echo "PWEditor service main file not found: $pweditor_service_main"
+        return 1
+    fi
+
+    local current_pwd=$(pwd)
+
+    cd $pweditor_dir
+
+    dotenv-cli -e $global_env_file -e $pweditor_env_file -- go run $pweditor_service_main
+
+    cd $current_pwd
+}
+
 function run_users {
     local users_dir=$DUNGEON_ROOT_DIR/Services/Users
 
@@ -291,5 +325,8 @@ function run_layout {
     tmux set-option -p remain-on-exit on \; split-window -h -c "$DUNGEON_ROOT_DIR" -l 50% 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_collect';
 
     tmux new-window -n metadata 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_metadata';
+    tmux split-window -h -c "$DUNGEON_ROOT_DIR"
+
+    tmux new-window -n pweditor 'source "$HOME/.zshrc" && j ddev && source ./bootup_scripts.sh && run_pweditor';
     tmux split-window -h -c "$DUNGEON_ROOT_DIR"
 }
