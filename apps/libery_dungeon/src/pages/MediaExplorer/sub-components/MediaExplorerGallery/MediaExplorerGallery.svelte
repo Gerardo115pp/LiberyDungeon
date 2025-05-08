@@ -1200,6 +1200,8 @@
                 }
 
                 await focusMediaItemByOrder(search_match.Order);
+
+                toggleMediaTitlesMode(true);
             }
 
             /**
