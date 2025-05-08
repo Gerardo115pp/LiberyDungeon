@@ -47,7 +47,8 @@
         /*=====  End of Hotkeys  ======*/
 
         /** 
-         * The media items to be displayed
+         * The all medias that are available to be displayed in the gallery(f.e. all the medias in a category). These are not 
+         * are not necessarily the same as the ones displayed. but the list as provided by the MediaExplorer(parent component).
          * @type {import('@models/Medias').Media[]}
          */
         export let media_items = [];
@@ -62,7 +63,8 @@
         $: ordered_medias = media_items.map((mi, order_position) => new OrderedMedia(mi, order_position));
 
         /**
-         * the amount of medias to display render at a time. If the end of the viewport is reached, a new batch of exactly this amount of medias will be appended to the gallery.
+         * the amount of medias to display render at a time. If the end of the viewport is reached,
+         * a new batch of exactly this amount(or the remaining available) of medias will be appended to the gallery.
          * @type {number}
          */
         export let media_batch_size = 30;
@@ -76,7 +78,7 @@
         /*----------  State  ----------*/
         
             /**
-             * Active medias that will be displayed in the gallery
+             * The medias that ARE been displayed in the gallery. 
              * @type {import('@models/Medias').OrderedMedia[]}
              */
             export let active_medias = [];
@@ -104,14 +106,14 @@
             }
 
             /**
-             * Whether focused media items should be auto selected. Enabled on keydown for media select key(originally space) and disabled on key up.
+             * Whether focused media items should be auto selected(usually for media yanking). Enabled on keydown for media select
+             * key(originally space) and disabled on key up.
              * @type {boolean}
              */
             let auto_select_focused_media = false;
 
             /**
-             * Whether focused media should automatically staged
-             * for deletion.
+             * Whether focused media should automatically staged for deletion.
              * @type {boolean}
              */
             let auto_stage_delete_focused_media = false;
