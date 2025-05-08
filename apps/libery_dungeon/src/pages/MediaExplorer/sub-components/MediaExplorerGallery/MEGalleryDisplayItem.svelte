@@ -531,7 +531,10 @@
         </div> 
     </div>
     <div class="media-order-label-overlay">
-        #{ordered_media.Order}
+        #{ordered_media.Order + 1} 
+        <!-- 
+            Keep the order label 1-based, for user friendliness.
+        -->
     </div>
     {#if !is_skeleton}
         {#key ordered_media.uuid}

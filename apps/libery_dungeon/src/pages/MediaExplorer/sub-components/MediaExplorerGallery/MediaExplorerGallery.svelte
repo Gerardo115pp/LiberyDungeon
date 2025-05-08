@@ -245,8 +245,12 @@
                         description: "<navigation>Sets focus on the category section without closing the gallery.",
                     });
 
-                    hotkeys_context.register(["g"], handleGalleryClose, {
+                    hotkeys_context.register(["shift+g"], handleGalleryClose, {
                         description: "<navigation>Close the gallery and return focus to the category section.",
+                    });
+
+                    hotkeys_context.register(["\\d g"], handleJumpToMediaOrder, {
+                        description: "<navigate>Jump to the media in the \\d position.",
                     });
 
                     hotkeys_context.register(["shift+e"], handleOpenMedia, {
@@ -393,6 +397,34 @@
 
                 emitCloseGallery();
             }
+
+            /**
+             * Jumps media focus to a specific media position by vim-motion.
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+             */
+            const handleJumpToMediaOrder = async (event, hotkey) => {
+                if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
+
+                let requested_order = hotkey.MatchMetadata?.MotionMatches[0];
+
+                if (requested_order == null || isNaN(requested_order)) {
+                    console.log("Corrupted hotkey", hotkey);
+                    console.warn("Invalid media order requested.");
+                    return;
+                }
+
+                requested_order -= 1 // 1-based to 0-based index.
+
+                const order_in_bounds = isMediaOrderInBounds(requested_order);
+
+                if (!order_in_bounds) {
+                    emitPlatformMessage(`Media order ${requested_order + 1} is out of bounds.`);
+                    return;
+                }
+
+                await focusMediaItemByOrder(requested_order);
+            }
+
 
             /**
              * Handle Gallery Exit. This exists the gallery hotkeys control but doesn't close the gallery.
