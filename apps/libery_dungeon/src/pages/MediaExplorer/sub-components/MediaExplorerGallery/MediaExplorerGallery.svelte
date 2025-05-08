@@ -23,11 +23,12 @@
         import { confirmPlatformMessage, emitPlatformMessage } from '@libs/LiberyFeedback/lf_utils';
         import { pushState, replaceState } from '$app/navigation';
         import { page } from '$app/stores';
-        import { OrderedMedia } from '@models/Medias';
+        import { Media, OrderedMedia } from '@models/Medias';
         import SequenceCreationTool from './SequenceCreationTool.svelte';
         import { ui_pandasworld_tag_references } from '@app/common/ui_references/dungeon_tags_references';
         import { ui_core_dungeon_references } from '@app/common/ui_references/core_ui_references';
         import { common_action_groups } from '@app/common/keybinds/CommonActionsName';
+        import { SearchResultsWrapper } from '@common/keybinds/CommonActionWrappers';
     
     /*=====  End of Imports  ======*/
     
@@ -43,6 +44,7 @@
         
             const hotkeys_context_name = "media_explorer_gallery"; 
         
+
         
         /*=====  End of Hotkeys  ======*/
 
@@ -150,6 +152,34 @@
              * @type {boolean}
              */
             let enable_sequence_creation_tool = false;
+
+            
+            /*----------  Search media content  ----------*/
+            
+                /**
+                 * The wrapper of search functionality for media content.
+                 * @type {SearchResultsWrapper<import('@models/Medias').Media> | null}
+                 */
+                let the_media_content_search_wrapper = null;
+
+                /** 
+                 * The query to search for in the media content.
+                 * @type {string}
+                 */
+                let media_content_search_query = "Alpine";
+
+                /**
+                 * Whether the media search is active.
+                 * @type {boolean}
+                 */
+                let capturing_media_content_search = false;
+                
+                /**
+                 * The search results for the last query the
+                 * user entered.
+                 * @type {Set<string> | null}
+                 */
+                let media_content_search_results_lookup = null;
         
         /*----------  Masonry  ----------*/
 
@@ -255,7 +285,7 @@
                         description: "<content>Pastes the yanked medias if they were not yanked from the current category.",
                     });
 
-                    hotkeys_context.register(["n"], handleGalleryReset, {
+                    hotkeys_context.register(["alt+n"], handleGalleryReset, {
                         description: "<content>Deselects all selected medias and restores deleted medias that have not been committed(they are committed when you close the gallery).",
                     });
 
@@ -284,7 +314,8 @@
                     hotkeys_context.register(["?"], () => hotkeys_sheet_visible.set(!$hotkeys_sheet_visible), {
                         description: `<${HOTKEYS_GENERAL_GROUP}> Toggle the hotkeys cheat sheet.`,
                     });
-                    
+
+                    setSearchResultsWrapper(hotkeys_context);
 
                     global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
                 }
@@ -616,8 +647,16 @@
             }
 
             if (recovering_gallery_state) {
+                // recoverGalleryFocusItem:
+                // - Sets `media_focus_index` to the cached media index or the last viewed media index.
+                // - Loads enough media items into `active_medias` to ensure the focused media is visible.
+                // - Scrolls the focused media into view.
+                // - Sets `recovering_gallery_state` to false after recovery is complete.
                 recoverGalleryFocusItem();
             } else {
+                // addInitialMediaItems:
+                // - Clears the `active_medias` array.
+                // - Loads the first batch of media items (up to `media_batch_size`) into `active_medias`.
                 addInitialMediaItems();
             }
         }
@@ -1087,6 +1126,89 @@
 
             active_medias = ordered_medias.slice(start_index, end_index);
         }
+        
+        /*=============================================
+        =            Search content feature            =
+        =============================================*/
+        
+            /**
+             * Handles the update of the search query label
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCaptureCallback}
+             */
+            const handleCategorySearchQueryUpdate = (event, captured_string) => {
+                if (the_media_content_search_wrapper == null) return;
+
+                capturing_media_content_search = true;
+                media_content_search_query = captured_string;
+            }
+
+            /**
+             * The search result handler bound to the_category_search_results_wrapper
+             * @type {import('@common/keybinds/CommonActionWrappers').SearchResultsUpdateCallback<import('@models/Medias').Media>}
+             */
+            const handleFocuseSearchMatch = search_match => {
+                if (the_media_content_search_wrapper == null || search_match == null) return;
+
+                capturing_media_content_search = false;
+
+                let media_item_uuid = search_match.uuid;
+
+                let media_content = active_medias;
+
+                for (let h = 0; h <= media_content.length; h++) {
+                    let iteration_media = media_content[h];
+
+                    if (!(iteration_media instanceof Media)) {
+                        console.error("iteration_category is not an InnerCategory:", iteration_media);
+                        throw new Error("The displayed categories should only contain InnerCategory instances")
+                    }
+
+                    if (iteration_media.uuid === media_item_uuid) {
+                        console.log("Found media item:", iteration_media);
+                        break;
+                    }
+                }
+
+                if (the_media_content_search_wrapper.SearchResults.length > 0) {
+                    media_content_search_results_lookup = new Set(the_media_content_search_wrapper.SearchResults.map((result => result.uuid)));
+                }
+            }
+
+            /**
+             * @type {import('@common/keybinds/CommonActionWrappers').SearchResultsWrapperSetup}
+             */
+            const setSearchResultsWrapper = hotkey_contenxt => {
+                if ($current_category == null) {
+                    console.error("In MediaExplorerGallery.setSearchResultsWrapper , current_category is null");
+                    return;
+                }
+
+                the_media_content_search_wrapper = new SearchResultsWrapper(hotkey_contenxt, media_items, handleFocuseSearchMatch, {
+                    minimum_similarity: 0.7,
+                    search_hotkey: ["f"],
+                    ui_search_result_reference: ui_core_dungeon_references.MEDIA,
+                    search_typing_hotkey_handler: handleCategorySearchQueryUpdate,
+                    boost_exact_inclusion: false,
+                    allow_member_similarity_checking: true,
+                    no_results_callback: () => resetCategoryFiltersState()
+                });
+
+                the_media_content_search_wrapper.setItemToStringFunction(inner_category => inner_category.name.toLowerCase());
+            }          
+
+            /**
+             * Resets the state of the category name filter
+             * @returns {void}
+             */
+            const resetCategoryFiltersState = () => {
+                if (global_hotkeys_manager == null) return;
+
+                media_content_search_query = "";
+                capturing_media_content_search = false;
+                media_content_search_results_lookup = null;
+            }
+
+        /*=====  End of Search content feature  ======*/
 
         /**
          * Stages the focused media to be deleted.
@@ -1263,7 +1385,7 @@
     }
     
     /*=============================================
-    =            Gallery Header            =
+     =            Gallery Header            =
     =============================================*/
     
         header#meg-gallery-header {
