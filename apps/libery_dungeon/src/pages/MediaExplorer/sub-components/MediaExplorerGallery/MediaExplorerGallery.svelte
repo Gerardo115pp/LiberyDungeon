@@ -609,8 +609,9 @@
         /*=====  End of Hotkeys  ======*/
     
         /**
-         * Adds an amount of media N items to the active_medias. it start appending from an index == active_medias[active_medias.length - 1].Order + 1
-         * if there are no new medias to append, the function will return false otherwise true.
+         * Adds an amount of media N items to the active_medias. it starts appending from an
+         * index == active_medias[active_medias.length - 1].Order + 1 * if there are no new
+         * medias to append, the function will return false otherwise true.
          * @param {number} amount 
          * @returns {boolean}
          */
@@ -634,7 +635,8 @@
         }
 
         /**
-         * Adds an initial batch of medias using sliceOrderedMedias with indexes 0 and Math.min(media_batch_size, ordered_medias.length)
+         * Adds an initial batch of medias using sliceOrderedMedias with indexes 0
+         * and Math.min(media_batch_size, ordered_medias.length)
          */
         const addInitialMediaItems = () => {
             active_medias = [];
@@ -683,6 +685,43 @@
         }
 
         /**
+         * Focuses the a media item by it's order. if the order is not in the active_medias, it drops the current
+         * active medias an loads a batch that contains the media item. Assuming the media is inside the bounds of ordered_medias
+         * otherwise it will throw an error.
+         * @param {number} order
+         * @returns {Promise<void>}
+         */
+        const focusMediaItemByOrder = async (order) => {
+            const order_in_bounds = isMediaOrderInBounds(order);
+            if (!order_in_bounds) {
+                throw new Error(`Media order ${order} is out of bounds.`);
+            }
+
+            const order_displayed = isMediaOrderDisplayed(order);
+
+            if (!order_displayed) {
+                const containing_batch_loaded = await loadBatchWithMediaOrder(order);
+
+                if (!containing_batch_loaded) {
+                    throw new Error(`Media order ${order} is not in the active medias and could not be loaded.`);
+                }               
+            }
+
+            media_focus_index = order;
+
+            await tick();
+
+            const media_item_element = getMediaItemElementByOrder(order);
+
+            if (media_item_element != null) {
+                media_item_element.scrollIntoView({
+                    block: "center",
+                    behavior: "instant"
+                });
+            }
+        }
+
+        /**
          * Returns the amount of medias that fit in a single row of the gallery's grid.
          * @returns {number} - a float number most likely.
          */
@@ -727,12 +766,13 @@
          * @param {number} order
          * @returns {HTMLElement | null}
          */
-        const getMediaItemByOrder = (order) => {
+        const getMediaItemElementByOrder = (order) => {
             return document.querySelector(`.meg-gallery-item[data-media-order="${order}"]`);
         }
 
         /**
-         * Returns the range of medias exising in the avtive_medias slice where start <= 0 and end >= active_medias.length. start and end are garanteed to exist withing media_items bounds. 
+         * Returns the range of medias exising in the avtive_medias slice where start <= 0 and end >= active_medias.length.
+         * start and end are garanteed to exist withing media_items bounds. 
          * @returns {LoadedMediaRange}
          * @typedef {Object} LoadedMediaRange
          * @property {number} start
@@ -795,6 +835,26 @@
         }
 
         /**
+         * Returns whether the media order is in bounds.
+         * @param {number} order
+         * @returns {boolean}
+         */
+        const isMediaOrderInBounds = (order) => {
+            return order >= 0 && order < media_items.length;
+        }
+
+        /**
+         * Returns whether the media order is displayed. in other words,
+         * whether the media in the given order is in the active_medias array.
+         * @param {number} order
+         */
+        const isMediaOrderDisplayed = (order) => {
+            const active_media_range = getLoadedMediaRange();
+
+            return order >= active_media_range.start && order <= active_media_range.end;
+        }
+
+        /**
          * Loads medias preceding active_medias[0].Order. Returns a promise that resolves to true if more medias were loaded, false otherwise.
          * Throws an error if called when active_medias is empty as the propouse of this function is to fetch more medias for the infinite scroll.
          * @returns {Promise<boolean>}
@@ -816,7 +876,7 @@
 
             await tick();
             
-            const media_item_element = getMediaItemByOrder(lowest_order_media.Order);
+            const media_item_element = getMediaItemElementByOrder(lowest_order_media.Order);
 
             if (media_item_element != null) {
                 // Prevent layout shift by scrolling to the first media item in the gallery.
@@ -876,7 +936,6 @@
 
             manageContentEndWatchdogState();            
         }
-
 
         /**
          * Determines whether the content end watchdog should disabled.
@@ -1036,20 +1095,18 @@
                 throw new Error("Attempted to recover the gallery focus item when active_medias is not empty.");
             }
 
-            let batches_needed = cached_media_index > media_batch_size ? Math.ceil(cached_media_index / media_batch_size) : 1;
-
-
-
-            const container_batch_start_index = (batches_needed - 1) * media_batch_size;
-            const container_batch_end_index = Math.min(container_batch_start_index + media_batch_size, media_items.length);
-
-            sliceOrderedMedias(container_batch_start_index, container_batch_end_index);
+            const batch_loaded = await loadBatchWithMediaOrder(cached_media_index);
+           
+            if (!batch_loaded) {
+                console.error("Failed to load the batch with the cached media index.");
+                return;
+            }
             
             media_focus_index = cached_media_index;
             
             await tick();
 
-            let keyboard_selected_media = document.querySelector(`.meg-gallery-item[data-media-order="${media_focus_index}"]`);
+            let keyboard_selected_media = getMediaItemElementByOrder(media_focus_index);
 
             if (keyboard_selected_media != null) {
                 keyboard_selected_media.scrollIntoView({
@@ -1132,6 +1189,21 @@
         =============================================*/
         
             /**
+             * Focuses the given search result.
+             * @param {import('@models/Medias').OrderedMedia} search_match
+             * @returns {Promise<void>}
+             */
+            const focusMediaContentSearchMatch = async (search_match) => {
+                const search_match_in_bounds = isMediaOrderInBounds(search_match.Order);
+                if (!search_match_in_bounds) {
+                    console.error(`In MediaExplorerGallery.focusMediaContentSearchMatch: search match ${search_match.Order} is out of bounds for ordered_medias with length ${ordered_medias.length}`);
+                    return;
+                }
+
+                await focusMediaItemByOrder(search_match.Order);
+            }
+
+            /**
              * Handles the update of the search query label
              * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCaptureCallback}
              */
@@ -1146,32 +1218,28 @@
              * The search result handler bound to the_category_search_results_wrapper
              * @type {import('@common/keybinds/CommonActionWrappers').SearchResultsUpdateCallback<import('@models/Medias').OrderedMedia>}
              */
-            const handleFocuseSearchMatch = search_match => {
+            const handleSearchMatchRecieved = search_match => {
                 if (the_media_content_search_wrapper == null || search_match == null) return;
 
-                capturing_media_content_search = false;
-
-                let media_item_uuid = search_match.uuid;
-
-                let media_content = ordered_medias;
-
-                for (let h = 0; h <= media_content.length; h++) {
-                    let iteration_media = media_content[h];
-
-                    if (!(iteration_media instanceof OrderedMedia)) {
-                        console.error("iteration_category is not a Media:", iteration_media);
-                        throw new Error("The displayed categories should only contain InnerCategory instances")
-                    }
-
-                    if (iteration_media.uuid === media_item_uuid) {
-                        console.log("Found media item:", iteration_media);
-                        break;
-                    }
+                if (!(search_match instanceof OrderedMedia)) {
+                    console.error("search_match is not an OrderedMedia:", search_match);
+                    throw new Error("The displayed categories should only contain InnerCategory instances")
                 }
+
+                const search_match_in_bounds = isMediaOrderInBounds(search_match.Order);
+
+                if (!search_match_in_bounds) {
+                    console.error(`In MediaExplorerGallery.handleSearchMatchRecieved: search match ${search_match.Order} is out of bounds for ordered_medias with length ${ordered_medias.length}`);
+                    return;
+                }
+
+                capturing_media_content_search = false;
 
                 if (the_media_content_search_wrapper.SearchResults.length > 0) {
                     media_content_search_results_lookup = new Set(the_media_content_search_wrapper.SearchResults.map((result => result.uuid)));
                 }
+
+                focusMediaContentSearchMatch(search_match);
             }
 
             /**
@@ -1183,7 +1251,7 @@
                     return;
                 }
 
-                the_media_content_search_wrapper = new SearchResultsWrapper(hotkey_contenxt, ordered_medias, handleFocuseSearchMatch, {
+                the_media_content_search_wrapper = new SearchResultsWrapper(hotkey_contenxt, ordered_medias, handleSearchMatchRecieved, {
                     minimum_similarity: 0.7,
                     search_hotkey: ["f"],
                     ui_search_result_reference: ui_core_dungeon_references.MEDIA,
@@ -1246,6 +1314,33 @@
             for (let media_item of media_range) {
                 toggleMediaDeletion(media_item, true);
             }
+        }
+
+        /**
+         * Clears the active_medias and loads a new batch of ordered_medias that
+         * contain the given ordered media by order. returns whether the
+         * operation was successful or not.
+         * @param {number} media_order
+         * @returns {Promise<boolean>}
+         */
+        const loadBatchWithMediaOrder = async media_order => {
+            if (media_order < 0 || media_order >= ordered_medias.length) {
+                console.error(`In MediaExplorerGallery.loadBatchWithMediaOrder: media_order ${media_order} is out of bounds for ordered_medias with length ${ordered_medias.length}`);
+                return false;
+            }
+
+            active_medias = [];
+
+            await tick();
+
+            let batches_needed = media_order > media_batch_size ? Math.ceil(media_order / media_batch_size) : 1;
+
+            const container_batch_start_index = (batches_needed - 1) * media_batch_size;
+            const container_batch_end_index = Math.min(container_batch_start_index + media_batch_size, media_items.length);
+
+            sliceOrderedMedias(container_batch_start_index, container_batch_end_index);
+
+            return true;
         }
 
         /**
