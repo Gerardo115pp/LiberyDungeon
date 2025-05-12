@@ -110,7 +110,7 @@ export function enterFullScreen() {
 
 /**
  * @param {string} key 
- * @returns 
+ * @returns {string | null}
  */
 export const getUrlPARAM = key => {
     let url_string = window.location.href; 
@@ -165,6 +165,55 @@ export const isUrlImage = media_url => {
 export const isUrlMediaFile = media_url => {
     return isUrlVideo(media_url) || isUrlImage(media_url);
 }
+
+
+/*=============================================
+=            Paths            =
+=============================================*/
+
+    /**
+     * Returns the base name of a give unix-like path.
+     * @param {string} path 
+     * @returns {string}
+     */
+    export const getPathBasename = path => {
+        const path_fragments = path.split('/');
+
+        if (path_fragments.length === 0) {
+            return "";
+        }
+
+        let basename = "";
+
+        for (let h = (path_fragments.length - 1); h >= 0; h--) {
+            basename = path_fragments[h];
+
+            if (basename !== "") {
+                break;
+            }
+        }
+
+        return basename;
+    }
+
+    /**
+     * Joins a list of paths into a single path. It will remove any duplicate slashes and
+     * will not add a trailing slash.
+     * @param  {...string} paths - the paths to join
+     */
+    export const joinPaths = (...paths) => {
+        const should_start_with_slash = paths[0].startsWith('/'); // If the first path was an absolute path, we add a leading slash to preserve it.
+
+        const segments = paths.map(p => p.replace(/(^\/+|\/+$)/g, ''))
+
+        let joined_path = segments.join('/');
+
+        joined_path = should_start_with_slash && !joined_path.startsWith('/') ? `/${joined_path}` : joined_path;
+
+        return joined_path;
+    }
+
+/*=====  End of Paths  ======*/
 
 /**
  * Whether a given HtMLElemnt is completly invisible in the scroll view. That is, nor the bottom or the top of the element is visible. requires
@@ -275,7 +324,6 @@ export const videoDurationToString = (duration, is_seconds = true) => {
     return duration_string;
 }
 
-
 /**
  * Decodes a given video time.
  * @param {number} video_time
@@ -292,31 +340,6 @@ export const decodeVideoTime = video_time => {
  */
 export const encodeVideoTime = video_time => {
     return Math.floor(video_time * 1000);
-}
-
-/**
- * Returns the base name of a give unix-like path.
- * @param {string} path 
- * @returns {string}
- */
-export const getPathBasename = path => {
-    const path_fragments = path.split('/');
-
-    if (path_fragments.length === 0) {
-        return "";
-    }
-
-    let basename = "";
-
-    for (let h = (path_fragments.length - 1); h >= 0; h--) {
-        basename = path_fragments[h];
-
-        if (basename !== "") {
-            break;
-        }
-    }
-
-    return basename;
 }
 
 /*=============================================
