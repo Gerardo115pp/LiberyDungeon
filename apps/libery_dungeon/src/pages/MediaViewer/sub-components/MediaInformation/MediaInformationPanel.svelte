@@ -1,5 +1,5 @@
 <script>
-    import { hasClipboardWritePermission } from "@libs/utils";
+    import { hasClipboardWritePermission, joinPaths } from "@libs/utils";
     import { onMount } from "svelte";
     import InformationEntry from "./sub-components/InformationEntry.svelte";
     import { current_category } from "@stores/categories_tree";
@@ -64,7 +64,6 @@
     onMount(async () => {
         can_clipboard_paste = await hasClipboardWritePermission();
     });
-
     
     /*=============================================
     =            Methods            =
@@ -98,8 +97,6 @@
         }
     
     /*=====  End of Methods  ======*/
-    
-    
 
 </script>
 
@@ -132,7 +129,7 @@
                     />
                     <InformationEntry 
                         information_entry_label="Media Path"
-                        information_entry_value="{current_cluster_information.FSPath}/{current_category_information.FullPath}{current_media_information.name}"
+                        information_entry_value="{joinPaths(current_cluster_information.FSPath, current_category_information.FullPath, current_media_information.name)}"
                         paste_on_click={can_clipboard_paste}
                     />
                 </ul>
@@ -152,6 +149,11 @@
                     <InformationEntry 
                         information_entry_label="Name" 
                         information_entry_value="{current_category_information.Name}" 
+                        paste_on_click={can_clipboard_paste}
+                    />
+                    <InformationEntry 
+                        information_entry_label="Cell's directory" 
+                        information_entry_value="{joinPaths(current_cluster_information.FSPath, current_category_information.FullPath)}" 
                         paste_on_click={can_clipboard_paste}
                     />
                     <InformationEntry 
