@@ -171,6 +171,8 @@ export class SearchResultsWrapper {
      * @returns {number}
      */
     #getStringSimilarity = (item_string, search_string) => {
+        if (item_string === search_string) return 1; // Perfect match
+
         let similarity = 0;
         let similarity_boost = 0; 
 
