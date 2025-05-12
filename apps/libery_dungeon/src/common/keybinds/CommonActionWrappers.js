@@ -225,6 +225,16 @@ export class SearchResultsWrapper {
     }
 
     /**
+     * Returns whether a given string is numeric. It is strict. will filter out strings like
+     * '200g' but allow examples like '0200'(0 padded)
+     * @param {string} str
+     * @returns {boolean}
+     */
+    #isStringNumeric = (str) => {
+        return Number.isFinite(+str);
+    }
+
+    /**
      * handles a new search term captured by the search hotkey.
      * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
      */
@@ -253,9 +263,17 @@ export class SearchResultsWrapper {
          */
         let found_new_results = false;
 
-        if (search_string.length > 3) {
+        /**
+         * Whether the search query is a numeric string. in this case searchInclude is the only
+         * good option. jaroWinkler is not good nor is prefix search.
+         * @type {boolean}
+         */
+        const is_search_string_numeric = this.#isStringNumeric(search_string);
+
+
+        if (search_string.length > 3 && !is_search_string_numeric) {
             found_new_results = this.search(this.#search_pool, search_string);
-        } else if (search_string.length === 1) {
+        } else if (search_string.length === 1 && !is_search_string_numeric) {
             found_new_results = this.searchPrefix(this.#search_pool, search_string);
         } else {
             found_new_results = this.searchInclude(this.#search_pool, search_string);
