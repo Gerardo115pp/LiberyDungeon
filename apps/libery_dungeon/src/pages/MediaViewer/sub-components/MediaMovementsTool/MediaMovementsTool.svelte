@@ -492,7 +492,11 @@
     <div class="mv-ctm-category" id="mv-ctm-searh-bar-section">
         <div id="mv-ctm-search-bar-wrapper">
             {#if is_component_visible}
-                <CategorySearchBar bind:focusSearchBar={focusSearchBarComponent}  autofocus on:search-results={handleSearchResults}/>
+                <CategorySearchBar
+                    autofocus
+                    bind:focusSearchBar={focusSearchBarComponent}
+                    on:search-results={handleSearchResults}
+                />
             {/if}
         </div>
     </div>

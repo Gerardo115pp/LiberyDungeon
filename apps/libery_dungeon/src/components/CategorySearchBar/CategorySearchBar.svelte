@@ -5,6 +5,9 @@
     import { current_category } from "@stores/categories_tree";
     import { current_cluster } from "@stores/clusters";
     import { browser } from "$app/environment";
+    import { emitLabeledError } from "@libs/LiberyFeedback/lf_utils";
+    import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
+    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
 
     /*=============================================
     =            Properties            =
@@ -51,31 +54,65 @@
             }
         }
 
+        /**
+         * Requests categories with a similar name(fuzzy logic) to the value of search_query.
+         * Dispatches a "search-results" event with the results and returns true, if the search_query was valid
+         * and yields results; otherwise returns false.
+         * @returns {Promise<boolean>}
+         */
         const handleSearch = async () => {
             if ($current_category === null) {
                 throw new Error("On components/CategorySearchBar.svelte: Attempted to search categories without a current category. which is required to retrieve the cluster id");
             }
 
-            search_bar.blur();
+            const error_context = new VariableEnvironmentContextError("In CategorySearchBar.handleSearch")
+
+            error_context.addVariable("search_query", search_query);
 
             if (search_query === "") {
-                return;
+
+                const labeled_err = new LabeledError(
+                    error_context,
+                    "Search query is empty, press Esc to cancle the search.",
+                    lf_errors.ERR_HUMAN_ERROR
+                )
+                emitLabeledError(labeled_err);
+
+                return false;
             }
 
             const search_results = await searchCategories(search_query, $current_category.ClusterUUID, $current_cluster.DownloadCategoryID);
 
-            search_event_dispatcher("search-results", {
-                results: search_results,
-                search_query,
-            });
+            if (search_results.length > 0) {
+                search_bar.blur();
+
+                search_event_dispatcher("search-results", {
+                    results: search_results,
+                    search_query,
+                });
+
+                return true;
+            }
+
+            const labeled_err = new LabeledError(
+                error_context,
+                `No categoty matches '${search_query}'`,
+                lf_errors.ERR_NO_CONTENT
+            );
+            emitLabeledError(labeled_err);
+
+            return false;
         }
 
         /**
          * Handles the search bar keydown event.
          * @param {KeyboardEvent} e
+         * @returns {Promise<void>}
          */
-        const handleSearchBarKeydown = e => {
-            if (handleSearchBarCommands(e)) {
+        const handleSearchBarKeydown = async e => {
+            const command_was_handled = await handleSearchBarCommands(e);
+
+            if (command_was_handled) {
                 return;
             }
         }
@@ -91,9 +128,9 @@
          * Handles the search bar commands. The HotkeyBinder ignores events that occur on input and textarea elements. 
          * Returns whether the event was handled.
          * @param {KeyboardEvent} e
-         * @returns {boolean}
+         * @returns {Promise<boolean>}
          */
-        const handleSearchBarCommands = e => {
+        const handleSearchBarCommands = async e => {
             let event_handled = false;
 
             if (e.key === "Escape") {
@@ -103,6 +140,12 @@
             }
 
             if (e.key === "e" && e.ctrlKey || e.key === "Enter") {
+                if (search_query === "") {
+                    search_bar.blur();
+
+                    return true;
+                }                
+
                 let search_query_valid = search_bar.checkValidity();
 
                 if (!search_query_valid) {
@@ -111,8 +154,7 @@
                 }
 
                 e.preventDefault();
-                handleSearch();
-                event_handled = true;
+                event_handled = await handleSearch();
             }
 
             return event_handled;
