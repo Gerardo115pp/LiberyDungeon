@@ -769,6 +769,14 @@ class HM_GridRowSequence {
 }
 
 /**
+ * current cursor correction provider function. An optional function that can be passed to the GridNavigationWrapper to determine 
+ * what the current cursor should be after a mutation of the grid's contents.
+* @callback CurrentCursorCorrectionProvider
+ * @param {number} current_cursor - the current cursor before the mutation
+ * @returns {number} - the new cursor after the mutation if NaN or non-positive number is returned, the cursor will remain unchanged.
+*/
+
+/**
  * wraps the cursor around a grid navigation. Takes two selectors, one for the grid parent, and one for valid grid members. By default cycles the cursor if overflow occurs in any direction, any of them can be
  * opt-out. Once setup is called, it will monitor changes into the parent element by using the MutationObserver. to stop monitoring, call destroy(). It checks the elements height to determine if they belong to the
  * same row.
@@ -817,6 +825,15 @@ export class GridNavigationWrapper {
     #onresize_bounded;
 
     /**
+     * If set, when there is a mutation of the grid's contents, the mutation
+     * handler will call this function to determine what the new current cursor
+     * should be. This is useful for when the grid's contents can change in random ranges, not only at the end.
+     * if the contents only change by adding or removing elements at the end, you probably don't need this.
+     * @type {CurrentCursorCorrectionProvider | null}
+     */
+    #cursor_correction_provider = null;
+
+    /**
      * @param {string} grid_parent_selector - the selector for the grid parent
      * @param {string} grid_member_selector - the selector for the grid members. the grid parent selector will be prepended to this selector.
      */
@@ -833,6 +850,7 @@ export class GridNavigationWrapper {
         };
 
         this.#onresize_bounded = this.#onResize.bind(this);
+        this.#cursor_correction_provider = null;
     }
 
     /**
@@ -899,6 +917,16 @@ export class GridNavigationWrapper {
         this.scanGridMembers();
 
         if (!this.#grid_sequence.isUsable()) return;
+
+        if (this.#cursor_correction_provider !== null) {
+            let suggested_current_cursor = this.#cursor_correction_provider(current_cursor);
+
+            const suggested_cursor_is_valid = (typeof suggested_current_cursor === "number") && !isNaN(suggested_current_cursor) && suggested_current_cursor > 0;
+
+            if (suggested_cursor_is_valid) {
+                current_cursor = suggested_current_cursor;
+            }
+        }
 
         current_cursor = this.#grid_sequence.clampSequenceIndex(current_cursor);
     
@@ -989,6 +1017,20 @@ export class GridNavigationWrapper {
 
             previous_element_y = current_element_rect.y;
         }
+    }
+
+    /**
+     * Sets a function to be called when the grid's content change to determine what the value of the current cursor should be.
+     * Useful for when the grid's contents can change in random ranges, not only at the end.
+     * @param {CurrentCursorCorrectionProvider} cursor_provider_callback
+     * @returns {void}
+     */
+    setCursorCorrectionProvider(cursor_provider_callback) {
+        if (cursor_provider_callback.constructor.name !== "Function" && cursor_provider_callback.constructor.name !== "AsyncFunction") {
+            throw new Error("In @libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils.GridNavigationWrapper.setCursorCorrectionProvider: cursor_provider_callback was not a function");
+        }
+
+        this.#cursor_correction_provider = cursor_provider_callback;
     }
 }
 

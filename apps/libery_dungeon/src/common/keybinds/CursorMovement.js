@@ -46,8 +46,12 @@ const GRID_MOVEMENT_ITEM_CLASS_SELECTOR = `.${GRID_MOVEMENT_ITEM_CLASS}`;
  * @property {string} [row_end_trigger] - The key that moves the cursor to the end of the row. Defaults to "shift+d"
  * @property {string} [first_row_trigger] - The key that moves the cursor to the first row. Defaults to "shift+w"
  * @property {string} [last_row_trigger] - The key that moves the cursor to the last row. Defaults to "shift+s"
+ * @property {import("@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils").CurrentCursorCorrectionProvider | null} [on_mutation_cursor_correction_callback] - A callback that is called when the contents of the grid change. Allows you to correct the cursor position.
 */
 
+/**
+ * @type {Required<MovementModelOptions>}
+ */
 const default_cursor_movement_wasd_options = {
     grid_member_selector: GRID_MOVEMENT_ITEM_CLASS_SELECTOR,
     initial_cursor_position: 0,
@@ -63,6 +67,7 @@ const default_cursor_movement_wasd_options = {
     row_end_trigger: "shift+d",
     first_row_trigger: "shift+w",
     last_row_trigger: "shift+s",
+    on_mutation_cursor_correction_callback: null,
 }
 
 /**
@@ -107,6 +112,12 @@ export class CursorMovementWASD {
         }
 
         this.#grid_navigation_wrapper = new GridNavigationWrapper(grid_container_selector, this.#movement_options.grid_member_selector);
+
+        if (this.#movement_options.on_mutation_cursor_correction_callback != null) {
+            const correction_callback = this.#movement_options.on_mutation_cursor_correction_callback;
+
+            this.#grid_navigation_wrapper.setCursorCorrectionProvider(correction_callback)
+        }
     }
 
     /**
@@ -339,7 +350,7 @@ export class CursorMovementWASD {
         }
 
         if (!cursor_set) {
-            console.error("The cursor position is out of bounds or there was a problem setting it.");
+            console.error(`The cursor position(${new_cursor_position}) is out of bounds or there was a problem setting it.`);
             return;
         }
 
