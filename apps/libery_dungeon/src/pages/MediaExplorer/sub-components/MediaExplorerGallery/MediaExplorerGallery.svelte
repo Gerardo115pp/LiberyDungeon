@@ -29,6 +29,7 @@
         import { ui_core_dungeon_references } from '@app/common/ui_references/core_ui_references';
         import { common_action_groups } from '@app/common/keybinds/CommonActionsName';
         import { SearchResultsWrapper } from '@common/keybinds/CommonActionWrappers';
+        import { CursorMovementWASD } from '@app/common/keybinds/CursorMovement';
     
     /*=====  End of Imports  ======*/
     
@@ -84,12 +85,6 @@
              * @type {import('@models/Medias').OrderedMedia[]}
              */
             export let active_medias = [];
-
-            /** 
-             * Media selected index
-             * @type {number}
-             */
-            let media_focus_index = 0;
 
             /**
              * Whether there are more proceeding medias to load.
@@ -153,6 +148,22 @@
              */
             let enable_sequence_creation_tool = false;
 
+            /*----------  Navigation  ----------*/
+
+                /**
+                 * The grid navigation wrapper of the Media Explorer Gallery.
+                 * @type {CursorMovementWASD | null}
+                 */
+                let the_grid_navigation_wrapper = null;
+            
+                /** 
+                 * Media selected index. This index corresponds to the medias position in the ordered_medias array. not just
+                 * in the active_medias array.
+                 * @type {number}
+                 */
+                let media_focus_index = 0;
+            
+            /*-----------------------------*/
             
             /*----------  Search media content  ----------*/
             
@@ -187,6 +198,7 @@
              * Whether to use a masonry layout for the gallery.
              */
             export let use_masonry = false;
+            $: updateNavigationGrid(), use_masonry;
         
 
         let dispatch = createEventDispatcher();
@@ -229,17 +241,7 @@
                 if (!global_hotkeys_manager.hasContext(hotkeys_context_name)) {
                     const hotkeys_context = new HotkeysContext();
 
-                    hotkeys_context.register(["w", "a", "s", "d"], handleGalleryGridMovement, {
-                        description: `<navigation> Move the focus on the gallery grid.`,
-                    });
 
-                    hotkeys_context.register(["shift+s"], handleMovetoLastActiveMedia, {
-                        description: `<navigation> Move the focus to the last loaded media in the gallery.`,
-                    });
-
-                    hotkeys_context.register(["shift+w"], handleMovetoFirstActiveMedia, {
-                        description: `<navigation> Move the focus to the first loaded media in the gallery.`,
-                    });
 
                     hotkeys_context.register(["q"], handleGalleryExit, {
                         description: "<navigation>Sets focus on the category section without closing the gallery.",
@@ -247,10 +249,6 @@
 
                     hotkeys_context.register(["shift+g"], handleGalleryClose, {
                         description: "<navigation>Close the gallery and return focus to the category section.",
-                    });
-
-                    hotkeys_context.register(["\\d g"], handleJumpToMediaOrder, {
-                        description: "<navigate>Jump to the media in the \\d position.",
                     });
 
                     hotkeys_context.register(["shift+e"], handleOpenMedia, {
@@ -320,6 +318,24 @@
                     });
 
                     setSearchResultsWrapper(hotkeys_context);
+
+                    // hotkeys_context.register(["w", "a", "s", "d"], handleGalleryGridMovement, {
+                    //     description: `<navigation> Move the focus on the gallery grid.`,
+                    // });
+
+                    // hotkeys_context.register(["shift+s"], handleMovetoLastActiveMedia, {
+                    //     description: `<navigation> Move the focus to the last loaded media in the gallery.`,
+                    // });
+
+                    // hotkeys_context.register(["shift+w"], handleMovetoFirstActiveMedia, {
+                    //     description: `<navigation> Move the focus to the first loaded media in the gallery.`,
+                    // });
+
+                    // hotkeys_context.register(["\\d g"], handleJumpToMediaOrder, {
+                    //     description: "<navigate>Jump to the media in the \\d position.",
+                    // });
+
+                    setGridNavigationWrapper(hotkeys_context);
 
                     global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
                 }
@@ -415,16 +431,8 @@
 
                 requested_order -= 1 // 1-based to 0-based index.
 
-                const order_in_bounds = isMediaOrderInBounds(requested_order);
-
-                if (!order_in_bounds) {
-                    emitPlatformMessage(`Media order ${requested_order + 1} is out of bounds.`);
-                    return;
-                }
-
-                await focusMediaItemByOrder(requested_order);
+                await jumpToMediaOrder(requested_order);
             }
-
 
             /**
              * Handle Gallery Exit. This exists the gallery hotkeys control but doesn't close the gallery.
@@ -638,6 +646,112 @@
             }
 
         /*=====  End of Hotkeys  ======*/
+        
+        /*=============================================
+        =            Navigation            =
+        =============================================*/
+
+            /**
+             * Drops the grid navigation wrapper if it exists.
+             */
+            const dropGridNavigationWrapper = () => {
+                if (the_grid_navigation_wrapper != null) {
+                    the_grid_navigation_wrapper.destroy();
+                }
+            }
+        
+            /**
+             * Returns the grid selectors for the  Media Explorer Gallery navigation gird.
+             * @returns {import('@common/interfaces/common_actions').GridSelectors}
+             */
+            const getGridSelectors = () => {
+                const grid_parent_selector = `#meg-gallery`;
+
+                return {
+                    grid_parent_selector,
+                    grid_member_selector: `> .${media_item_html_class}`,
+                }
+            }
+            
+            /**
+             * Sets the grid navigation wrapper required data.
+             * @param {import("@libs/LiberyHotkeys/hotkeys_context").default} hotkeys_context
+             */
+            const setGridNavigationWrapper = (hotkeys_context) => {
+                if (!browser) return;
+
+                if (the_grid_navigation_wrapper != null) {
+                    the_grid_navigation_wrapper.destroy();
+                }
+
+                const grid_selectors = getGridSelectors();
+
+                const matching_elements_count = document.querySelectorAll(grid_selectors.grid_parent_selector).length;
+
+                if (matching_elements_count !== 1) {
+                    throw new Error(`Expected 1 element matching the grid member selector "${grid_selectors.grid_member_selector}" but found ${matching_elements_count}.`);
+                }
+
+
+                the_grid_navigation_wrapper = new CursorMovementWASD(grid_selectors.grid_parent_selector, handleCursorUpdate, {
+                    initial_cursor_position: media_focus_index,
+                    sequence_item_name: ui_core_dungeon_references.MEDIA.EntityName,
+                    sequence_item_name_plural: ui_core_dungeon_references.MEDIA.EntityNamePlural,
+                    grid_member_selector: grid_selectors.grid_member_selector,
+                    on_mutation_cursor_correction_callback: correctCurrentCursor,
+                });
+
+                the_grid_navigation_wrapper.setup(hotkeys_context);
+
+
+                // @ts-ignore
+                window.meg_gallery_grid_navigation_wrapper = the_grid_navigation_wrapper; // Debugging purposes.
+            }
+
+            /**
+             * Handles the Cursor update event emitted by the_grid_navigation_wrapper.
+             * @type {import("@common/keybinds/CursorMovement").CursorPositionCallback}
+             */
+            const handleCursorUpdate = (cursor_wrapped_value) => {
+                const media_index_in_displayed_array = cursor_wrapped_value.value;
+
+                const focused_media = getMediaByDisplayIndex(media_index_in_displayed_array);
+
+                console.log(`Cursor updated to media index: ${media_index_in_displayed_array}, media:`, focused_media);
+
+                if (focused_media == null) {
+                    console.error(`In @pages/MediaExplorer/sub-components/MediaExplorerGallery/MediaExplorerGallery.handleCursorUpdate: No media found at active_medias[${media_index_in_displayed_array}]`);
+                    return;
+                }
+
+                setMediaFocusIndex(focused_media.Order);
+            }
+
+            /**
+             * Correct the current cursor of the the_grid_navigation_wrapper(CursorMovementWASD) to match the 
+             * focused media when the gallery's content changes.
+             * @type {import("@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils").CurrentCursorCorrectionProvider}
+             */
+            const correctCurrentCursor = (cursor_value) => {
+                return getFocusedMediaDisplayIndex();
+            }
+
+            /**
+             * Updates the navigation grid.
+             * @returns {Promise<void>}
+             */
+            async function updateNavigationGrid () {
+                if (the_grid_navigation_wrapper == null) {
+                    console.warn("No grid navigation wrapper available to update the navigation grid.");
+                    return;
+                }
+
+                await tick();
+
+                the_grid_navigation_wrapper.MovementController.scanGridMembers();
+            }
+        
+        /*=====  End of Navigation  ======*/
     
         /**
          * Adds an amount of media N items to the active_medias. it starts appending from an
@@ -793,6 +907,20 @@
         }
 
         /**
+         * Returns a media by it's display index. meaning the index it has in the active_medias array.
+         * @param {number} display_index
+         * @returns {import('@models/Medias').OrderedMedia | null}
+         */
+        const getMediaByDisplayIndex = (display_index) => {
+            if (display_index < 0 || display_index >= active_medias.length) {
+                console.warn(`Display index ${display_index} is out of bounds for active_medias with length ${active_medias.length}`);
+                return null;
+            }
+
+            return active_medias[display_index];
+        }
+
+        /**
          * Returns the focused media item element in the gallery by it's order.
          * @param {number} order
          * @returns {HTMLElement | null}
@@ -802,18 +930,26 @@
         }
 
         /**
-         * Returns the range of medias exising in the avtive_medias slice where start <= 0 and end >= active_medias.length.
-         * start and end are garanteed to exist withing media_items bounds. 
-         * @returns {LoadedMediaRange}
+         * Returns the range of loaded medias in the active_medias array. meaning the {lowest order loaded, highest order loaded}
          * @typedef {Object} LoadedMediaRange
          * @property {number} start
          * @property {number} end
+         * @return {LoadedMediaRange}
          */
         const getLoadedMediaRange = () => {
             let start = active_medias[0].Order;
             let end = active_medias[active_medias.length - 1].Order;
 
             return {start, end};
+        }
+
+        /**
+         * Returns the index of the focused media in the active_medias(aka the currently displayed medias) array.
+         * This is not the order of the media but it's sequential position on the gallery's grid.
+         * @returns {number}
+         */
+        const getFocusedMediaDisplayIndex = () => {
+            return active_medias.findIndex(media => media.Order === media_focus_index);
         }
 
         /**
@@ -886,6 +1022,22 @@
         }
 
         /**
+         * Changes the focused media.
+         * @param {number} requested_order
+         */
+        const jumpToMediaOrder = async requested_order => {
+
+            const order_in_bounds = isMediaOrderInBounds(requested_order);
+
+            if (!order_in_bounds) {
+                emitPlatformMessage(`Media order ${requested_order + 1} is out of bounds.`);
+                return;
+            }
+
+            await focusMediaItemByOrder(requested_order);
+        }
+
+        /**
          * Loads medias preceding active_medias[0].Order. Returns a promise that resolves to true if more medias were loaded, false otherwise.
          * Throws an error if called when active_medias is empty as the propouse of this function is to fetch more medias for the infinite scroll.
          * @returns {Promise<boolean>}
@@ -941,6 +1093,33 @@
             if (!succesful_append) return false;
 
             await tick();
+
+            return true;
+        }
+
+        /**
+         * Clears the active_medias and loads a new batch of ordered_medias that
+         * contain the given ordered media by order. returns whether the
+         * operation was successful or not.
+         * @param {number} media_order
+         * @returns {Promise<boolean>}
+         */
+        const loadBatchWithMediaOrder = async media_order => {
+            if (media_order < 0 || media_order >= ordered_medias.length) {
+                console.error(`In MediaExplorerGallery.loadBatchWithMediaOrder: media_order ${media_order} is out of bounds for ordered_medias with length ${ordered_medias.length}`);
+                return false;
+            }
+
+            active_medias = [];
+
+            await tick();
+
+            let batches_needed = media_order > media_batch_size ? Math.ceil(media_order / media_batch_size) : 1;
+
+            const container_batch_start_index = (batches_needed - 1) * media_batch_size;
+            const container_batch_end_index = Math.min(container_batch_start_index + media_batch_size, media_items.length);
+
+            sliceOrderedMedias(container_batch_start_index, container_batch_end_index);
 
             return true;
         }
@@ -1082,6 +1261,8 @@
 
             me_gallery_changes_manager.set(null);
             me_renaming_focused_media.set(false);
+
+            dropGridNavigationWrapper();
         }
 
         /**
@@ -1196,6 +1377,33 @@
             if (focused_media === null) return;
 
             toggleMediaSelect(focused_media);
+        }
+
+        /**
+         * Sets the media_focus_index to the given index. Remember that in the MEGallery component, when we talk
+         * about media_focus_index, we are talking about the order of the media. Not its position in the 
+         * active_medias array, meaning is not is sequential position in the displayed gallery UI. but in the current
+         * content list(as ordered by the server).
+         * @param {number} new_media_focus_index
+         * @returns {Promise<void>}
+         */
+        const setMediaFocusIndex = async (new_media_focus_index) => {
+            const media_in_bounds = isMediaOrderInBounds(new_media_focus_index);
+
+            if (!media_in_bounds) {
+                throw new Error(`Media focus index ${new_media_focus_index} is out of bounds for media_items with length ${media_items.length}`);
+            }
+
+            const media_is_loaded = isMediaOrderDisplayed(new_media_focus_index);
+
+            if (media_is_loaded) {
+                media_focus_index = new_media_focus_index;
+                
+                await manageInfiniteScroll();
+            } else {
+                await focusMediaItemByOrder(new_media_focus_index);
+            }
+
         }
 
         /**
@@ -1347,33 +1555,6 @@
             for (let media_item of media_range) {
                 toggleMediaDeletion(media_item, true);
             }
-        }
-
-        /**
-         * Clears the active_medias and loads a new batch of ordered_medias that
-         * contain the given ordered media by order. returns whether the
-         * operation was successful or not.
-         * @param {number} media_order
-         * @returns {Promise<boolean>}
-         */
-        const loadBatchWithMediaOrder = async media_order => {
-            if (media_order < 0 || media_order >= ordered_medias.length) {
-                console.error(`In MediaExplorerGallery.loadBatchWithMediaOrder: media_order ${media_order} is out of bounds for ordered_medias with length ${ordered_medias.length}`);
-                return false;
-            }
-
-            active_medias = [];
-
-            await tick();
-
-            let batches_needed = media_order > media_batch_size ? Math.ceil(media_order / media_batch_size) : 1;
-
-            const container_batch_start_index = (batches_needed - 1) * media_batch_size;
-            const container_batch_end_index = Math.min(container_batch_start_index + media_batch_size, media_items.length);
-
-            sliceOrderedMedias(container_batch_start_index, container_batch_end_index);
-
-            return true;
         }
 
         /**
