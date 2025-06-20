@@ -344,11 +344,7 @@ export class CursorMovementWASD {
             return;
         }
 
-        let cursor_set = false;
-
-        if (this.#grid_navigation_wrapper.Grid.isUsable()) {
-            cursor_set = this.#grid_navigation_wrapper.Grid.setCursor(new_cursor_position)
-        }
+        let cursor_set = this.updateCursorPositionSilently(new_cursor_position);
 
         if (!cursor_set) {
             console.error(`The cursor position(${new_cursor_position}) is out of bounds or there was a problem setting it.`);
@@ -358,6 +354,26 @@ export class CursorMovementWASD {
         let wrapped_cursor_position = this.#grid_navigation_wrapper.Grid.CursorWrapped;
 
         this.#cursor_position_callback(wrapped_cursor_position);
+    }
+
+    /**
+     * Changes the cursor position without triggering the update callback.
+     * @param {number} new_cursor_position - The new cursor position.
+     * @returns {boolean} - Returns true if the cursor position was changed, false otherwise.
+     */
+    updateCursorPositionSilently(new_cursor_position) {
+        if (typeof new_cursor_position !== "number") {
+            console.error("Invalid cursor position update.");
+            return false;
+        }
+
+        let cursor_set = false;
+
+        if (this.#grid_navigation_wrapper.Grid.isUsable()) {
+            cursor_set = this.#grid_navigation_wrapper.Grid.setCursor(new_cursor_position)
+        }
+
+        return cursor_set;
     }
     
     /*=============================================
