@@ -1,4 +1,5 @@
 import { GridNavigationWrapper } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
+import { common_action_groups } from "./CommonActionsName";
 
 /**
  * A class used by default by the GridMovement wrappers to determine the sequence members. it is appended to the passed grid container selector resulting in a selector of the
@@ -168,7 +169,7 @@ export class CursorMovementWASD {
             const wasd_triggers = this.#getWASDMovementTriggers();
             
             hotkeys_context.register(wasd_triggers, this.#wasdMovementHandler.bind(this), {
-                description: `<navigation>Moves changes the focused ${this.#movement_options.sequence_item_name}.`,
+                description: `<${common_action_groups.NAVIGATION}>Moves changes the focused ${this.#movement_options.sequence_item_name}.`,
             });
         }
 
@@ -177,7 +178,7 @@ export class CursorMovementWASD {
             const goto_item_triggers = this.#getGotoItemTriggers();
     
             hotkeys_context.register(goto_item_triggers, this.#wasdGotoItemHandler.bind(this), {
-                description: `<navigation>Goes to a specific ${this.#movement_options.sequence_item_name}.`,
+                description: `<${common_action_groups.NAVIGATION}>Goes to a specific ${this.#movement_options.sequence_item_name}.`,
             });
         }
 
@@ -186,7 +187,7 @@ export class CursorMovementWASD {
             const goto_row_triggers = this.#getGotoRowTriggers();
 
             hotkeys_context.register(goto_row_triggers, this.#wasdGotoRowHandler.bind(this), {
-                description: `<navigation>Goes to a specific line of ${this.#movement_options.sequence_item_name_plural}.`,
+                description: `<${common_action_groups.NAVIGATION}>Goes to a specific line of ${this.#movement_options.sequence_item_name_plural}.`,
             });
         }
 
@@ -195,7 +196,7 @@ export class CursorMovementWASD {
             const row_start_triggers = this.#getRowStartTriggers();
 
             hotkeys_context.register(row_start_triggers, this.#wasdRowStartHandler.bind(this), {
-                description: `<navigation>Moves the cursor to the start of the row.`,
+                description: `<${common_action_groups.NAVIGATION}>Moves the cursor to the start of the row.`,
             });
         }
 
@@ -204,7 +205,7 @@ export class CursorMovementWASD {
             const row_end_triggers = this.#getRowEndTriggers();
 
             hotkeys_context.register(row_end_triggers, this.#wasdRowEndHandler.bind(this), {
-                description: `<navigation>Moves the cursor to the end of the row.`,
+                description: `<${common_action_groups.NAVIGATION}>Moves the cursor to the end of the row.`,
             });
         }
 
@@ -213,7 +214,7 @@ export class CursorMovementWASD {
             const first_row_triggers = this.#getFirstRowTriggers();
 
             hotkeys_context.register(first_row_triggers, this.#wasdFirstRowHandler.bind(this), {
-                description: `<navigation>Moves the cursor to the first row.`,
+                description: `<${common_action_groups.NAVIGATION}>Moves the cursor to the first row.`,
             });
         }
 
@@ -222,7 +223,7 @@ export class CursorMovementWASD {
             const last_row_triggers = this.#getLastRowTriggers();
 
             hotkeys_context.register(last_row_triggers, this.#wasdLastRowHandler.bind(this), {
-                description: `<navigation>Moves the cursor to the last row.`,
+                description: `<${common_action_groups.NAVIGATION}>Moves the cursor to the last row.`,
             });
         }
     }
