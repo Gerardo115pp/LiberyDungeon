@@ -426,11 +426,12 @@
              * Handles the WASD Gallery grid movement.
              * @param {KeyboardEvent} hotkey_event
              * @param {import('@libs/LiberyHotkeys/hotkeys').HotkeyData} hotkey
+             * @deprecated
              */
             const handleGalleryGridMovement = async (hotkey_event, hotkey) => {
                 const media_count = active_medias.length;
                 const active_media_range = getLoadedMediaRange();
-                const media_per_row = Math.floor(getMediaItemsPerRow());
+                const media_per_row = Math.floor(getMediaItemsPerRow() || 6);
                 const row_count = Math.ceil(media_count / media_per_row);
 
                 let new_focus_index = media_focus_index;
@@ -598,7 +599,12 @@
 
                 const changes_count = $me_gallery_changes_manager.ChangesAmount;
 
-                const medias_per_row = Math.floor(getMediaItemsPerRow());
+                const medias_per_row = getMediaItemsPerRow();
+
+                if (medias_per_row == null) {
+                    console.warn("In MediaExplorerGallery.handleGalleryReset: No media items per row available. Cannot determine if confirmation is required.");
+                    return;
+                }
 
                 const requires_confirmation = changes_count >= (1.5 * medias_per_row);
 
@@ -874,24 +880,19 @@
 
         /**
          * Returns the amount of medias that fit in a single row of the gallery's grid.
-         * @returns {number} - a float number most likely.
+         * @returns {number | undefined} - a float number most likely.
          */
         const getMediaItemsPerRow = () => {
-            const meg_gallery_container = document.querySelector('#meg-gallery');
-            const meg_gallery_item = document.querySelector(`.${media_item_html_class}`);
+            const DEFULT_VALUE_WHICH_WILL_BE_DEPRCATED = 6;
 
-            if (meg_gallery_container == null || meg_gallery_item == null){
-                if (meg_gallery_container == null) console.error("#meg-gallery not found");
-                if (meg_gallery_item == null) console.error(`.${media_item_html_class} not found`);
-                return 0;
-            };
+            if (the_grid_navigation_wrapper == null || !the_grid_navigation_wrapper.MovementController.Grid.isUsable()) {
+                console.warn(`In MediaExplorerGallery.getMediaItemsPerRow: No grid navigation wrapper available. Returning default value '${DEFULT_VALUE_WHICH_WILL_BE_DEPRCATED}'`);
+                return DEFULT_VALUE_WHICH_WILL_BE_DEPRCATED;
+            }
 
-            const container_style = window.getComputedStyle(meg_gallery_container);
+            const current_row = the_grid_navigation_wrapper.MovementController.Grid.getCurrentRow();
 
-            const container_padding_left = parseFloat(container_style.paddingLeft);
-            const container_padding_right = parseFloat(container_style.paddingRight);
-
-            return (meg_gallery_container.clientWidth - (container_padding_left + container_padding_right)) / meg_gallery_item.clientWidth;
+            return current_row.length
         }
 
         /**
@@ -1143,6 +1144,11 @@
             }
 
             const media_per_row = getMediaItemsPerRow();
+            if (media_per_row == null) {
+                console.error("In MediaExplorerGallery.manageInfiniteScroll: No media per row data available.");
+                return;
+            }
+
             const active_media_range = getLoadedMediaRange();
             
             if (media_focus_index < active_media_range.start + media_per_row) {
@@ -1741,7 +1747,7 @@
     }
     
     /*=============================================
-     =            Gallery Header            =
+    =            Gallery Header            =
     =============================================*/
     
         header#meg-gallery-header {
@@ -1779,9 +1785,9 @@
     /*=====  End of Gallery Header  ======*/
     
    
-   /*=============================================
-   =            Control overlays            =
-   =============================================*/
+    /*=============================================
+    =            Control overlays            =
+    =============================================*/
    
         :has(> #meg-gw-floating-controls-overlay) {
             position: relative;
@@ -1805,7 +1811,7 @@
             }
         }
    
-   /*=====  End of Control overlays  ======*/
+    /*=====  End of Control overlays  ======*/
    
     
 
