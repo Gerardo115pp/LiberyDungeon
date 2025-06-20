@@ -435,12 +435,11 @@
                     was_media_display_as_gallery.set(false);
                 }
 
-
-                if (key_event.shiftKey) {
-                    recover_gallery_focus = true;
-                }
+                recover_gallery_focus = key_event.shiftKey;
 
                 console.debug('Current_category:', $current_category);
+                console.debug('was_media_display_as_gallery:', $was_media_display_as_gallery);
+                console.debug('recover_gallery_focus:', recover_gallery_focus);
             }
 
             const handleGoToParentCategory = async () => {
@@ -939,6 +938,7 @@
             console.debug("Gallery close event received");
             disableGalleryHotkeys();
             media_display_as_gallery = false;
+            recover_gallery_focus = false;
             was_media_display_as_gallery.set(false);
         }
 
