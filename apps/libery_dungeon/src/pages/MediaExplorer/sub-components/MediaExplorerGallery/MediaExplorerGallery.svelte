@@ -1817,10 +1817,11 @@
 
     #meg-gallery {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         background: var(--grey);
-        gap: 2px;
-        padding: 4px;
+        gap: var(--spacing-1);
+        padding-block: var(--spacing-3);
+        padding-inline: var(--spacing-2);
         list-style: none;
         /* padding: 0; */
         margin: 0;
