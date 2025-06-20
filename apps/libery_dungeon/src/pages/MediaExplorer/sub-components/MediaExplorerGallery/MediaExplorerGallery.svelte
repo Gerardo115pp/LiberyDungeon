@@ -331,9 +331,9 @@
                     //     description: `<navigation> Move the focus to the first loaded media in the gallery.`,
                     // });
 
-                    // hotkeys_context.register(["\\d g"], handleJumpToMediaOrder, {
-                    //     description: "<navigate>Jump to the media in the \\d position.",
-                    // });
+                    hotkeys_context.register(["\\d g"], handleJumpToMediaOrder, {
+                        description: "<navigate>Jump to the media in the \\d position.",
+                    });
 
                     setGridNavigationWrapper(hotkeys_context);
 
@@ -414,25 +414,6 @@
                 emitCloseGallery();
             }
 
-            /**
-             * Jumps media focus to a specific media position by vim-motion.
-             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
-             */
-            const handleJumpToMediaOrder = async (event, hotkey) => {
-                if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
-
-                let requested_order = hotkey.MatchMetadata?.MotionMatches[0];
-
-                if (requested_order == null || isNaN(requested_order)) {
-                    console.log("Corrupted hotkey", hotkey);
-                    console.warn("Invalid media order requested.");
-                    return;
-                }
-
-                requested_order -= 1 // 1-based to 0-based index.
-
-                await jumpToMediaOrder(requested_order);
-            }
 
             /**
              * Handle Gallery Exit. This exists the gallery hotkeys control but doesn't close the gallery.
@@ -645,6 +626,28 @@
                 enable_gallery_heavy_rendering = !enable_gallery_heavy_rendering;
             }
 
+            /*----------  Navigation hotkey handlers  ----------*/
+            
+                /**
+                 * Jumps media focus to a specific media position by vim-motion.
+                 * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
+                 */
+                const handleJumpToMediaOrder = async (event, hotkey) => {
+                    if (!hotkey.WithVimMotion || !hotkey.HasMatch) return;
+
+                    let requested_order = hotkey.MatchMetadata?.MotionMatches[0];
+
+                    if (requested_order == null || isNaN(requested_order)) {
+                        console.log("Corrupted hotkey", hotkey);
+                        console.warn("Invalid media order requested.");
+                        return;
+                    }
+
+                    requested_order -= 1 // 1-based to 0-based index.
+
+                    await setMediaFocusIndex(requested_order, true);
+                }
+
         /*=====  End of Hotkeys  ======*/
         
         /*=============================================
@@ -698,7 +701,8 @@
                     sequence_item_name: ui_core_dungeon_references.MEDIA.EntityName,
                     sequence_item_name_plural: ui_core_dungeon_references.MEDIA.EntityNamePlural,
                     grid_member_selector: grid_selectors.grid_member_selector,
-                    on_mutation_cursor_correction_callback: correctCurrentCursor,
+                    goto_item_finalizer: "", // Disable goto item handler of the CursorMovementWASD wrapper.
+                    on_mutation_cursor_correction_callback: correctCurrentCursorCallback,
                 });
 
                 the_grid_navigation_wrapper.setup(hotkeys_context);
@@ -713,18 +717,27 @@
              * @type {import("@common/keybinds/CursorMovement").CursorPositionCallback}
              */
             const handleCursorUpdate = (cursor_wrapped_value) => {
+                const lost_hotkey_control = shouldMoveHotkeysContext(
+                    cursor_wrapped_value.overflowed_top,
+                    cursor_wrapped_value.overflowed_right,
+                    cursor_wrapped_value.overflowed_bottom,
+                    cursor_wrapped_value.overflowed_left
+                );
+
+                if (lost_hotkey_control) {
+                    return true;
+                }
+
                 const media_index_in_displayed_array = cursor_wrapped_value.value;
 
                 const focused_media = getMediaByDisplayIndex(media_index_in_displayed_array);
-
-                console.log(`Cursor updated to media index: ${media_index_in_displayed_array}, media:`, focused_media);
 
                 if (focused_media == null) {
                     console.error(`In @pages/MediaExplorer/sub-components/MediaExplorerGallery/MediaExplorerGallery.handleCursorUpdate: No media found at active_medias[${media_index_in_displayed_array}]`);
                     return;
                 }
 
-                setMediaFocusIndex(focused_media.Order);
+                setMediaFocusIndex(focused_media.Order, false);
             }
 
             /**
@@ -732,7 +745,7 @@
              * focused media when the gallery's content changes.
              * @type {import("@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils").CurrentCursorCorrectionProvider}
              */
-            const correctCurrentCursor = (cursor_value) => {
+            const correctCurrentCursorCallback = (cursor_value) => {
                 return getFocusedMediaDisplayIndex();
             }
 
@@ -856,14 +869,7 @@
 
             await tick();
 
-            const media_item_element = getMediaItemElementByOrder(order);
-
-            if (media_item_element != null) {
-                media_item_element.scrollIntoView({
-                    block: "center",
-                    behavior: "instant"
-                });
-            }
+            scrollToFocusedMedia("center", "instant");
         }
 
         /**
@@ -904,6 +910,14 @@
             }
 
             return focused_media;
+        }
+
+        /**
+         * Returns the Dom element that represents the focused media item in the gallery.
+         * @returns {HTMLElement | null}
+         */
+        const getFocusedMediaElement = () => {
+            return getMediaItemElementByOrder(media_focus_index);
         }
 
         /**
@@ -949,7 +963,16 @@
          * @returns {number}
          */
         const getFocusedMediaDisplayIndex = () => {
-            return active_medias.findIndex(media => media.Order === media_focus_index);
+            return getMediaDisplayIndexByOrder(media_focus_index);
+        }
+
+        /**
+         * Returns the display index of a media item by it's order.
+         * @param {number} order
+         * @returns {number}
+         */
+        const getMediaDisplayIndexByOrder = (order) => {
+            return active_medias.findIndex(media => media.Order === order);
         }
 
         /**
@@ -1019,22 +1042,6 @@
             const active_media_range = getLoadedMediaRange();
 
             return order >= active_media_range.start && order <= active_media_range.end;
-        }
-
-        /**
-         * Changes the focused media.
-         * @param {number} requested_order
-         */
-        const jumpToMediaOrder = async requested_order => {
-
-            const order_in_bounds = isMediaOrderInBounds(requested_order);
-
-            if (!order_in_bounds) {
-                emitPlatformMessage(`Media order ${requested_order + 1} is out of bounds.`);
-                return;
-            }
-
-            await focusMediaItemByOrder(requested_order);
         }
 
         /**
@@ -1343,6 +1350,23 @@
         }
 
         /**
+         * Scrolls the media focused item into view.
+         * @param {"center" | "start" | "end"} [block="center"] - The block position to scroll to.
+         * @param {"smooth" | "instant"} [behavior="smooth"] - The scroll behavior.
+         * @returns {void}
+         */
+        const scrollToFocusedMedia = (block = "center", behavior = "smooth") => {
+            const focused_media_element = getFocusedMediaElement();
+
+            if (focused_media_element != null) {
+                focused_media_element.scrollIntoView({
+                    block,
+                    behavior
+                });
+            }
+        }
+
+        /**
          * Is called when a movement the overflows media_focus_index. And it determines whether an overflow to that
          * direction should change the hotkeys context. Tipically that would be because there is another component in that direction that can handle the same type of movement.
          * returns true if an action was taken, in that case the caller is expected to not take any further action, that includes updating any component property. if false, the caller is free to take whatever action it
@@ -1385,9 +1409,10 @@
          * active_medias array, meaning is not is sequential position in the displayed gallery UI. but in the current
          * content list(as ordered by the server).
          * @param {number} new_media_focus_index
+         * @param {boolean} [update_cursor] Whether to update the cursor position in the_grid_navigation_wrapper, the update doesn't trigger the cursor position callback.
          * @returns {Promise<void>}
          */
-        const setMediaFocusIndex = async (new_media_focus_index) => {
+        const setMediaFocusIndex = async (new_media_focus_index, update_cursor=false) => {
             const media_in_bounds = isMediaOrderInBounds(new_media_focus_index);
 
             if (!media_in_bounds) {
@@ -1404,6 +1429,9 @@
                 await focusMediaItemByOrder(new_media_focus_index);
             }
 
+            if (update_cursor && the_grid_navigation_wrapper != null) {
+                the_grid_navigation_wrapper.updateCursorPositionSilently(media_focus_index);
+            }
         }
 
         /**
@@ -1439,7 +1467,7 @@
                     return;
                 }
 
-                await focusMediaItemByOrder(search_match.Order);
+                await setMediaFocusIndex(search_match.Order, true);
 
                 toggleMediaTitlesMode(true);
             }

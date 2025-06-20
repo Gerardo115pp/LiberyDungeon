@@ -321,7 +321,8 @@ export class CursorMovementWASD {
             throw e;
         }
 
-        // If an initial cursor position other than 0(which is the default) is set, try to set it or panic.
+        // If an initial cursor position other than 0(which is the default) is set,
+        // try to set it or panic.
         if (typeof this.#movement_options.initial_cursor_position === "number" && this.#movement_options.initial_cursor_position !== 0) {
             let cursor_set = this.#grid_navigation_wrapper.Grid.setCursor(this.#movement_options.initial_cursor_position);
 
@@ -392,7 +393,7 @@ export class CursorMovementWASD {
             let cursor_position;
 
             /**
-             * The function to call and rollback the cursor position if the callback returns true.
+             * The function to rollback the cursor position if the callback returns true.
              * @type {() => void}
              */
             let backward_move_function;
