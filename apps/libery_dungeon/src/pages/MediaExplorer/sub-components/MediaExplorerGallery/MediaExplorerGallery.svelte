@@ -103,19 +103,6 @@
             }
 
             /**
-             * Whether focused media items should be auto selected(usually for media yanking). Enabled on keydown for media select
-             * key(originally space) and disabled on key up.
-             * @type {boolean}
-             */
-            let auto_select_focused_media = false;
-
-            /**
-             * Whether focused media should automatically staged for deletion.
-             * @type {boolean}
-             */
-            let auto_stage_delete_focused_media = false;
-
-            /**
              * Whether to magnify/zoom the keyboard focused media item.
              * @type {boolean}
              * @default false
@@ -163,8 +150,49 @@
                  */
                 let media_focus_index = 0;
             
-            /*-----------------------------*/
             
+            /*----------  Selections  ----------*/
+            
+                /**
+                 * Whether focused media items should be auto selected(usually for media yanking). Enabled on keydown for media select
+                 * key(originally space) and disabled on key up.
+                 * @type {boolean}
+                 */
+                let auto_select_focused_media = false;
+
+                /**
+                 * Whether focused media should automatically staged for deletion.
+                 * @type {boolean}
+                 */
+                let auto_stage_delete_focused_media = false;           
+
+                /**
+                 * Whether the auto select mode is enabled. 
+                 * @type {boolean}
+                 */
+                let auto_select_mode_enabled = false;
+
+                /**
+                 * Whether the auto select mode should add or remove elements from selection.
+                 * @type {boolean}
+                 * @default true
+                 */
+                let auto_select_mode_adds = true;
+
+                /**
+                 * The last timestamp when an auto select key was pressed.
+                 * @type {number}
+                 * @default 0
+                 */
+                let auto_select_mode_last_keypress = 0;
+
+                /**
+                 * The time in milliseconds after which the auto select mode
+                 * will be enabled.
+                 * @type {number}
+                 */
+                const AUTO_SELECT_MODE_TIME = 100;
+                
             /*----------  Search media content  ----------*/
             
                 /**
@@ -265,13 +293,13 @@
                         mode: "keyup"
                     });
 
-                    hotkeys_context.register(["space"], handleMediaSelectMode, {
+                    hotkeys_context.register(["space"], handleMediaSelectAddMode, {
                         description: "<content>Selects the focused media.",
-                        mode: "keydown"
+                        mode: "keydown",
                     });
 
-                    hotkeys_context.register(["space"], handleMediaSelectMode, {
-                        description: "<content>Selects the focused media.",
+                    hotkeys_context.register(["space"], handleMediaSelectAddMode, {
+                        description: `<${common_action_groups.HIDDEN}> hidden`,
                         mode: "keyup"
                     });
 
@@ -487,7 +515,7 @@
                 await manageInfiniteScroll();
 
                 if (auto_select_focused_media) {
-                    selectFocusedMedia();
+                    // selectFocusedMedia();
                 } else if (auto_stage_delete_focused_media) {
                     let delete_range = (hotkey.KeyCombo === "w" || hotkey.KeyCombo === "s") && Math.abs(old_focus_index - new_focus_index) <= media_per_row + 1;
 
@@ -495,7 +523,7 @@
                         let start_index = Math.min(old_focus_index, new_focus_index);
                         let end_index = Math.max(old_focus_index, new_focus_index);
 
-                        stageMediaRangeDeletion(start_index, end_index);
+                        // stageMediaRangeDeletion(start_index, end_index);
                     } else {
                         stageFocusedMediaDeletion();
                     }
@@ -532,37 +560,69 @@
              * @param {KeyboardEvent} hotkey_event
              */
             const handleMediaStageDeletionMode = hotkey_event => {
-                hotkey_event.preventDefault();
-                if ($me_gallery_changes_manager === null) {
-                    console.warn("No changes manager available to stage the deletion of the focused media item.");
+                const focused_media = getFocusedMedia();
+                if (focused_media == null) {
+                    console.warn("In MediaExplorerGallery.handleMediaStageDeletionMode: No focused media available to select.");
                     return;
                 }
-                
-                if (hotkey_event.repeat || hotkey_event.type !== "keydown" && hotkey_event.type !== "keyup") return;
 
-                let new_auto_stage_delete_focused_media = hotkey_event.type === "keydown";
+                const is_keydown = hotkey_event.type === "keydown";
+                const is_keyup = hotkey_event.type === "keyup";
+                const is_unknown_event = !(is_keydown || is_keyup);
 
-                if (new_auto_stage_delete_focused_media) {
-                    stageFocusedMediaDeletion();
+                if (is_unknown_event) {
+                    console.warn("In MediaExplorerGallery.handleMediaStageDeletionMode: Unknown hotkey event type. Expected 'keydown' or 'keyup'.");
+                    return;
                 }
 
-                auto_stage_delete_focused_media = new_auto_stage_delete_focused_media;
+                if (is_keyup) {
+                    return disableAutoSelectMode();
+                }
+
+                if (!auto_select_mode_enabled) {
+                    determineAutoSelectActivation(hotkey_event, false);
+                } else {
+                    return;
+                }
+
+                auto_select_mode_adds = !isMediaStagedForDeletion(focused_media);
+
+                setMediaDeletionState(focused_media, auto_select_mode_adds);
             }
 
             /**
              * Handles the selection of the focused media item.
-             * @param {KeyboardEvent} hotkey_event
+             * @type {import('@libs/LiberyHotkeys/hotkeys').HotkeyCallback}
              */
-            const handleMediaSelectMode = hotkey_event => {
-                hotkey_event.preventDefault();
-                if (hotkey_event.type !== "keydown" && hotkey_event.type !== "keyup") return;
-                if (hotkey_event.repeat) return;
-                
-                auto_select_focused_media = hotkey_event.type === "keydown";
-
-                if (auto_select_focused_media) {
-                    selectFocusedMedia();
+            const handleMediaSelectAddMode = hotkey_event => {
+                const focused_media = getFocusedMedia();
+                if (focused_media == null) {
+                    console.warn("In MediaExplorerGallery.handleMediaSelectAddMode: No focused media available to select.");
+                    return;
                 }
+
+                const is_keydown = hotkey_event.type === "keydown";
+                const is_keyup = hotkey_event.type === "keyup";
+                const is_unknown_event = !(is_keydown || is_keyup);
+
+                if (is_unknown_event) {
+                    console.warn("In MediaExplorerGallery.handleMediaSelectAddMode: Unknown hotkey event type. Expected 'keydown' or 'keyup'.");
+                    return;
+                }
+
+                if (is_keyup) {
+                    return disableAutoSelectMode();
+                }
+
+                if (!auto_select_mode_enabled) {
+                    determineAutoSelectActivation(hotkey_event, true);
+                } else {
+                    return;
+                }
+
+                auto_select_mode_adds = !isMediaYanked(focused_media);
+
+                setMediaSelectedState(focused_media, auto_select_mode_adds);
             }
 
             /**
@@ -736,11 +796,16 @@
 
                 const media_index_in_displayed_array = cursor_wrapped_value.value;
 
+
                 const focused_media = getMediaByDisplayIndex(media_index_in_displayed_array);
 
                 if (focused_media == null) {
                     console.error(`In @pages/MediaExplorer/sub-components/MediaExplorerGallery/MediaExplorerGallery.handleCursorUpdate: No media found at active_medias[${media_index_in_displayed_array}]`);
                     return;
+                }
+
+                if (auto_select_mode_enabled) {
+                    handleCursorSelection(media_focus_index, focused_media.Order);
                 }
 
                 setMediaFocusIndex(focused_media.Order, false);
@@ -771,6 +836,383 @@
             }
         
         /*=====  End of Navigation  ======*/
+
+        
+        /*=============================================
+        =            Selection            =
+        =============================================*/
+
+            /**
+             * Activates the passed selection mode. Only one may be active at a time.
+             * @param {boolean} active_yank_select_mode
+             * @param {boolean} active_deletion_select_mode
+             * @returns {void}
+             */
+            const activateAutoSelectMode = (active_yank_select_mode, active_deletion_select_mode) => {
+                auto_select_focused_media = active_yank_select_mode && !active_deletion_select_mode;
+                auto_stage_delete_focused_media = active_deletion_select_mode && !active_yank_select_mode;
+
+                // @ts-ignore - ts is stupid. XOR works well with boolean values.
+                auto_select_mode_enabled = !!(auto_select_focused_media ^ auto_stage_delete_focused_media);
+                console.debug(`In MediaExplorerGallery.activateAutoSelectMode: ${getSelectionState()}`);
+            }
+
+            /**
+             * @returns {string}
+             */
+            const getSelectionState = () => {
+                return `
+                    \nauto_select_focused_media: ${auto_select_focused_media}, 
+                    \nauto_stage_delete_focused_media: ${auto_stage_delete_focused_media}, 
+                    \nauto_select_mode_enabled: ${auto_select_mode_enabled}
+                    \nauto_select_mode_adds: ${auto_select_mode_adds},
+                `;
+            }
+
+            /**
+             * Disables the auto select mode.
+             * @returns {void}
+             */
+            const disableAutoSelectMode = () => {
+                auto_select_focused_media = false;
+                auto_stage_delete_focused_media = false;
+                auto_select_mode_enabled = false;
+                auto_select_mode_adds = true;
+                auto_select_mode_last_keypress = 0;
+            }
+
+            /**
+             * Determines whether the keyboard event should activate the auto select mode. The 
+             * exact selection mode is determined by the parameter passed to this function. The
+             * function will not make an attempt to confirm whether the key represents a valid 
+             * selection mode, as it holds no such knowledge, therefore this is left up to the 
+             * caller.
+             * @param {KeyboardEvent} keyboard_event
+             * @param {boolean} [is_yank_select_mode=true]
+             * @returns {boolean} - Whether the auto select has been activated.
+             */
+            const determineAutoSelectActivation = (keyboard_event, is_yank_select_mode = true) => {
+
+                let is_activated = !auto_select_mode_enabled;
+
+                if ( is_activated ) {
+                    activateAutoSelectMode(is_yank_select_mode, !is_yank_select_mode);
+                }
+
+                console.debug(`In MediaExplorerGallery.determineAutoSelectActivation: Auto select mode activated: ${is_activated}. Yank select mode: ${is_yank_select_mode ? 'selection' : 'deletion'}.`);
+
+                return is_activated;
+            }
+
+            /**
+             * Called navigation handlers. Adds or removes all the medias between
+             * the old and new focus index(media order) to the active selection.
+             * @param {number} old_focus_index
+             * @param {number} new_focus_index
+             * @returns {void}
+             */
+            const handleCursorSelection = (old_focus_index, new_focus_index) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("In MediaExplorerGallery.handleCursorSelection: No changes manager available to handle the cursor selection.");
+                    return;
+                }
+
+                const no_diff = old_focus_index === new_focus_index;
+                const auto_select_mode_disabled = !auto_select_mode_enabled;
+
+                if (no_diff || auto_select_mode_disabled) return;
+
+                const start_index = Math.min(old_focus_index, new_focus_index);
+                const end_index = Math.max(old_focus_index, new_focus_index);
+
+                console.debug(`In MediaExplorerGallery.handleCursorSelection: Selecting media range [${start_index}, ${end_index}]: ${getSelectionState()}`);
+
+                if (auto_stage_delete_focused_media) {
+                    stageMediaRangeDeletion(start_index, end_index, auto_select_mode_adds);
+                } else {
+                    selectMediaRange(start_index, end_index, auto_select_mode_adds);
+                }
+            }
+
+            /**
+             * Returns whether the passed ordered media is yanked.
+             * @param {import('@models/Medias').OrderedMedia} ordered_media
+             * @return {boolean}
+             */
+            const isMediaYanked = (ordered_media) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("In MediaExplorerGallery.isMediaYanked: No changes manager available to check if the media is yanked.");
+                    return false;
+                }
+
+                const current_media_change = $me_gallery_changes_manager.getMediaChangeType(ordered_media.uuid);
+
+                return current_media_change === media_change_types.MOVED;
+            }
+
+            /**
+             * Returns whether the passed ordered media is staged for deletion.
+             * @param {import('@models/Medias').OrderedMedia} ordered_media
+             * @returns {boolean}
+             */
+            const isMediaStagedForDeletion = (ordered_media) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("In MediaExplorerGallery.isMediaStagedForDeletion: No changes manager available to check if the media is staged for deletion.");
+                    return false;
+                }
+
+                const current_media_change = $me_gallery_changes_manager.getMediaChangeType(ordered_media.uuid);
+
+                return current_media_change === media_change_types.DELETED;
+            }
+
+            /**
+             * Modifies the Media Selected state of the focused media item.
+             * Whether the media is added or removed from the selection is determined by the
+             * auto_select_mode_adds property.
+             * @returns {void}
+             */
+            const modifyFocusedMediaSelectedState = () => {
+                modifyMediaSelectedStateByOrder(media_focus_index)
+            }
+
+            /**
+             * Modifies the Media Deletion state of the focused media item.
+             * Whether the media is added or removed from the deletion is determined by the
+             * auto_select_mode_adds property.
+             * @returns {void}
+             */
+            const modifyFocusedMediaDeletionState = () => {
+                modifyMediaDeletionStateByOrder(media_focus_index);
+            }
+        
+            /**
+             * Modifies the Selected state of the media by its order. Whether the media is added
+             * or removed from the selection is determined by the auto_select_mode_adds property.
+             * @param {number} media_order
+             * @returns {void}
+             */
+            const modifyMediaSelectedStateByOrder = (media_order) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("In MediaExplorerGallery.addMediaToActiveSelectionByOrder: No changes manager available to add the media to the active selection.");
+                    return;
+                }
+
+                let ordered_media = getMediaByOrder(media_order);
+
+                if (ordered_media == null) {
+                    console.warn(`In MediaExplorerGallery.addMediaToActiveSelectionByOrder: No media found at order ${media_order}.`);
+                    return;
+                }
+
+                setMediaSelectedState(ordered_media, auto_select_mode_adds);
+            }
+
+            /**
+             * modifies the deletion state of the media by its order. Whether the media is added
+             * or removed from the deletion is determined by the auto_select_mode_adds property.
+             * @param {number} media_order
+             * @returns {void}
+             */
+            const modifyMediaDeletionStateByOrder = (media_order) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("In MediaExplorerGallery.addMediaToActiveSelectionByOrder: No changes manager available to add the media to the active selection.");
+                    return;
+                }
+
+                let ordered_media = getMediaByOrder(media_order);
+
+                if (ordered_media == null) {
+                    console.warn(`In MediaExplorerGallery.addMediaToActiveSelectionByOrder: No media found at order ${media_order}.`);
+                    return;
+                }
+
+                setMediaDeletionState(ordered_media, auto_select_mode_adds);
+            }
+
+            /**
+             * Stages the focused media to be deleted.
+             * @returns {void}
+             */
+            const stageFocusedMediaDeletion = () => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("No changes manager available to stage the deletion of the focused media item.");
+                    return;
+                }
+
+                let focused_media = getFocusedMedia();
+                if (focused_media === null) return;
+
+                let is_delete_already_staged = isMediaStagedForDeletion(focused_media);
+
+                if (is_delete_already_staged && auto_stage_delete_focused_media) return;
+
+                toggleMediaDeletion(focused_media);
+            }
+
+            /**
+             * Adds or removes a range of medias to the normal selection.
+             * @param {number} start_index
+             * @param {number} end_index
+             * @param {boolean} add_to_selection
+             * @returns {void}
+             */
+            const selectMediaRange = (start_index, end_index, add_to_selection) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("No changes manager available to stage the selection of the media range.");
+                    return;
+                }
+
+                if (start_index < 0 || end_index >= ordered_medias.length || start_index > end_index) {
+                    console.warn(`In MediaExplorerGallery.selectMediaRange: Invalid range ${start_index} - ${end_index}.`);
+                    return;
+                }
+
+                let media_range = ordered_medias.slice(start_index, end_index + 1);
+
+                for (let media_item of media_range) {
+                    setMediaSelectedState(media_item, add_to_selection);
+                }
+            }
+
+            /**
+             * Stages the deletion of the given media inclusive range. so if 4 - 10 are passed, medias on positions 4 to 10 will be staged for deletion.
+             * @param {number} start_index
+             * @param {number} end_index
+             * @param {boolean} add_to_selection
+             */
+            const stageMediaRangeDeletion = (start_index, end_index, add_to_selection) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("No changes manager available to stage the deletion of the media range.");
+                    return;
+                }
+
+                if (start_index < 0 || end_index >= ordered_medias.length || start_index > end_index) {
+                    console.warn(`In MediaExplorerGallery.stageMediaRangeDeletion: Invalid range ${start_index} - ${end_index}.`);
+                    return;
+                }
+
+                let media_range = ordered_medias.slice(start_index, end_index + 1);
+
+                for (let media_item of media_range) {
+                    setMediaDeletionState(media_item, add_to_selection);
+                }
+            }
+
+            /**
+             * Sets the given media Selection state. If the overwrite flag is set, this function will
+             * undo any other selection state(e.g Deletion). otherwise it will shy away if the media
+             * has other selection states.
+             * @param {import('@models/Medias').OrderedMedia} ordered_media
+             * @param {boolean} add_to_selection 
+             * @param {boolean} [overwrite=false] 
+             * @returns {void}
+             */
+            const setMediaSelectedState = (ordered_media, add_to_selection, overwrite=false) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("In MediaExplorerGallery.setMediaSelectedState: No changes manager available to set the media selection state.");
+                    return;
+                }
+
+                let is_media_deleted = isMediaStagedForDeletion(ordered_media);
+
+                if (is_media_deleted) {
+                    if (!overwrite) {
+                        console.debug(`In MediaExplorerGallery.setMediaSelectedState: Media ${ordered_media.uuid} is staged for deletion and overwrite was not set. Silently cowardly ignoring the request.`);
+                        return;
+                    }
+
+                    $me_gallery_changes_manager.unstageMediaDeletion(ordered_media.uuid);
+                }
+
+                let is_media_yanked = isMediaYanked(ordered_media);
+
+                if (is_media_yanked === add_to_selection) return; // Nothing to do
+
+                if (add_to_selection) {
+                    // on this meg gallery, we don't actually commit move media changes, only delete changes. instead of committing the move changes, we used them as
+                    // a select mechanism. if there are any move changes when committing, we will unstage them first.
+                    let fake_inner_category = new InnerCategory({
+                        name: "me-gallery-mock-category", 
+                        uuid: "me-gallery-mock-category", 
+                        fullpath: "me-gallery-mock-category",
+                        category_thumbnail: "me-gallery-mock-category",
+                    });
+
+                    $me_gallery_changes_manager.stageMediaMove(ordered_media.Media, fake_inner_category);
+                } else {
+                    $me_gallery_changes_manager.unstageMediaMove(ordered_media.uuid);
+                }
+            }
+
+            /**
+             * Sets the given media Stage Deletion state. If the media is currently in the regular
+             * selection set, then it will only overwrite said state if the overwrite flag is set.
+             * otherwise it will simply fail silently.
+             * @param {import('@models/Medias').OrderedMedia} ordered_media
+             * @param {boolean} staged_for_deletion
+             * @param {boolean} [overwrite=false] 
+             * @returns {void}
+             */
+            const setMediaDeletionState = (ordered_media, staged_for_deletion, overwrite=false) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("In MediaExplorerGallery.setMediaDeletionState: No changes manager available to set the media deletion state.");
+                    return;
+                }
+
+                let is_media_yanked = isMediaYanked(ordered_media);
+
+                if (is_media_yanked) {
+                    if (!overwrite) {
+                        console.debug(`In MediaExplorerGallery.setMediaDeletionState: Media ${ordered_media.uuid} is yanked and overwrite was not set. Silently cowardly ignoring the request.`);
+                        return;
+                    }
+
+                    $me_gallery_changes_manager.clearMediaChanges(ordered_media.uuid);
+                }
+
+                const was_already_staged_for_deletion = isMediaStagedForDeletion(ordered_media);
+
+                if (was_already_staged_for_deletion === staged_for_deletion) return; // Nothing to do
+
+                if (staged_for_deletion) {
+                    $me_gallery_changes_manager.stageMediaDeletion(ordered_media.Media);
+                } else {
+                    $me_gallery_changes_manager.unstageMediaDeletion(ordered_media.uuid);
+                }
+            }
+
+            /**
+             * Toggles the deletion state of a given media.
+             * @param {import('@models/Medias').OrderedMedia} ordered_media 
+             */
+            const toggleMediaDeletion = (ordered_media) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("In MediaExplorerGallery.toggleMediaDeletion: No changes manager available to stage the deletion of the media item.");
+                    return;
+                }
+
+                let is_media_deleted = isMediaStagedForDeletion(ordered_media);
+
+                setMediaDeletionState(ordered_media, !is_media_deleted);
+            }
+
+            /**
+             * Toggles the select stat of a given media.
+             * @param {import('@models/Medias').OrderedMedia} media_item 
+             */
+            const toggleMediaSelect = (media_item) => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("In MediaExplorerGallery.toggleMediaSelect: No changes manager available to stage the selection of the media item.");
+                    return;
+                }
+
+                let is_media_yanked = isMediaYanked(media_item);
+
+                setMediaSelectedState(media_item, !is_media_yanked);
+            }
+
+        /*=====  End of Selection  ======*/
     
         /**
          * Adds an amount of media N items to the active_medias. it starts appending from an
@@ -933,6 +1375,22 @@
             }
 
             return active_medias[display_index];
+        }
+
+        /**
+         * Returns an ordered media by it's order.
+         * @param {number} order
+         * @returns {import('@models/Medias').OrderedMedia | null}
+         */
+        const getMediaByOrder = (order) => {
+            const order_in_bounds = isMediaOrderInBounds(order);
+
+            if (!order_in_bounds) {
+                console.warn(`Media order ${order} is out of bounds for ordered_medias with length ${ordered_medias.length}`);
+                return null;
+            }
+
+            return ordered_medias[order] || null;
         }
 
         /**
@@ -1394,22 +1852,6 @@
         }
 
         /**
-         * Sets the current media as selected. if the media is already selected, it will be unselected.
-         * @returns {void}
-         */
-        const selectFocusedMedia = () => {
-            if ($me_gallery_changes_manager === null) {
-                console.warn("No changes manager available to stage the selection of the focused media item.");
-                return;
-            }
-
-            let focused_media = getFocusedMedia();
-            if (focused_media === null) return;
-
-            toggleMediaSelect(focused_media);
-        }
-
-        /**
          * Sets the media_focus_index to the given index. Remember that in the MEGallery component, when we talk
          * about media_focus_index, we are talking about the order of the media. Not its position in the 
          * active_medias array, meaning is not is sequential position in the displayed gallery UI. but in the current
@@ -1554,43 +1996,13 @@
         /*=====  End of Search content feature  ======*/
 
         /**
-         * Stages the focused media to be deleted.
+         * Toggles the renaming focused media state.
          * @returns {void}
          */
-        const stageFocusedMediaDeletion = () => {
-            if ($me_gallery_changes_manager === null) {
-                console.warn("No changes manager available to stage the deletion of the focused media item.");
-                return;
-            }
-
-            let focused_media = getFocusedMedia();
-            if (focused_media === null) return;
-
-            let is_delete_already_staged = $me_gallery_changes_manager.getMediaChangeType(focused_media.uuid) === media_change_types.DELETED;
-
-            if (is_delete_already_staged && auto_stage_delete_focused_media) return;
-
-            toggleMediaDeletion(focused_media);
+        const toggleRenamingFocusedMediaState = () => {
+            me_renaming_focused_media.set(!$me_renaming_focused_media);
         }
-
-        /**
-         * Stages the deletion of the given media inclusive range. so if 4 - 10 are passed, medias on positions 4 to 10 will be staged for deletion.
-         * @param {number} start_index
-         * @param {number} end_index
-         */
-        const stageMediaRangeDeletion = (start_index, end_index) => {
-            if ($me_gallery_changes_manager === null) {
-                console.warn("No changes manager available to stage the deletion of the media range.");
-                return;
-            }
-
-            let media_range = ordered_medias.slice(start_index, end_index + 1);
-
-            for (let media_item of media_range) {
-                toggleMediaDeletion(media_item, true);
-            }
-        }
-
+        
         /**
          * toggles the media titles mode.
          * @param {boolean} [force_state] - ensures the desired state is set instead of toggling it.
@@ -1601,66 +2013,6 @@
 
             show_media_titles_mode = new_state;
         }
-        
-
-        /**
-         * Toggles the select stat of a given media.
-         * @param {import('@models/Medias').OrderedMedia} media_item 
-         */
-        const toggleMediaSelect = (media_item) => {
-            if ($me_gallery_changes_manager === null) {
-                console.warn("In MediaExplorerGallery.toggleMediaSelect: No changes manager available to stage the selection of the media item.");
-                return;
-            }
-
-            let current_media_change = $me_gallery_changes_manager.getMediaChangeType(media_item.uuid);
-
-            if (current_media_change === media_change_types.MOVED) {
-                $me_gallery_changes_manager.unstageMediaMove(media_item.uuid);
-                return;
-            }
-
-            // on this meg gallery, we don't actually commit move media changes, only delete changes. instead of committing the move changes, we used them as
-            // a select mechanism. if there are any move changes when committing, we will unstage them first.
-            let fake_inner_category = new InnerCategory({
-                name: "me-gallery-mock-category", 
-                uuid: "me-gallery-mock-category", 
-                fullpath: "me-gallery-mock-category",
-                category_thumbnail: "me-gallery-mock-category",
-            });
-
-            $me_gallery_changes_manager.stageMediaMove(media_item.Media, fake_inner_category);
-        }
-
-        /**
-         * Toggles the deletion state of a given media.
-         * @param {import('@models/Medias').OrderedMedia} ordered_media 
-         * @param {boolean} [keep_deleted=true] - if true and the media is already staged for deletion, it will not be unstaged.
-         */
-        const toggleMediaDeletion = (ordered_media, keep_deleted=false) => {
-            if ($me_gallery_changes_manager === null) {
-                console.warn("In MediaExplorerGallery.toggleMediaDeletion: No changes manager available to stage the deletion of the media item.");
-                return;
-            }
-
-            let current_media_change = $me_gallery_changes_manager.getMediaChangeType(ordered_media.uuid);
-
-            if (current_media_change === media_change_types.DELETED && !keep_deleted) {
-                $me_gallery_changes_manager.unstageMediaDeletion(ordered_media.uuid);
-                return;
-            }
-
-            $me_gallery_changes_manager.stageMediaDeletion(ordered_media.Media);
-        }
-
-        /**
-         * Toggles the renaming focused media state.
-         * @returns {void}
-         */
-        const toggleRenamingFocusedMediaState = () => {
-            me_renaming_focused_media.set(!$me_renaming_focused_media);
-        }
-        
     /*=====  End of Methods  ======*/
 </script>
 
@@ -1817,10 +2169,10 @@
 
     #meg-gallery {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         background: var(--grey);
         gap: var(--spacing-1);
-        padding-block: var(--spacing-3);
+        padding-block: 0;
         padding-inline: var(--spacing-2);
         list-style: none;
         /* padding: 0; */
