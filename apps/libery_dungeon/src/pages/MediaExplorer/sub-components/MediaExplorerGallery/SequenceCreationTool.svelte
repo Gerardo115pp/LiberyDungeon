@@ -651,7 +651,7 @@
                         enable_magnify_on_keyboard_focus={magnify_mode}
                         container_selector="#sequence-members"
                         check_container_limits
-                        enable_video_titles
+                        enable_media_titles
                         enable_dragging
                     />
                 </li>
