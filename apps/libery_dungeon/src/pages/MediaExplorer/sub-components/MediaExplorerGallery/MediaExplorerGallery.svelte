@@ -70,7 +70,7 @@
          * a new batch of exactly this amount(or the remaining available) of medias will be appended to the gallery.
          * @type {number}
          */
-        export let media_batch_size = 30;
+        // let media_batch_size = 30;
 
         /**
          * an html class that is added to all the media items in the gallery.
@@ -212,7 +212,7 @@
              * Whether to use a masonry layout for the gallery.
              */
             export let use_masonry = false;
-            $: updateNavigationGrid(), use_masonry;
+            $: handleMasonryLayoutChange(), use_masonry;
         
 
         let dispatch = createEventDispatcher();
@@ -894,7 +894,6 @@
             }
         
         /*=====  End of Navigation  ======*/
-
         
         /*=============================================
         =            Selection            =
@@ -1270,6 +1269,198 @@
             }
 
         /*=====  End of Selection  ======*/
+        
+        /*=============================================
+        =            Gallery Layout analysis            =
+        =============================================*/
+            /**
+            *  NOTE: If in the future we end up supporting an additional method to determine
+             * column count, outside of gridTemplateColumns, we should turn the whole, 
+             * Determine CSS column count into a lib.
+            */
+
+            /**
+             * Returns the amount of medias that fit in a single row of the gallery's grid.
+             * @returns {number | undefined} - a float number most likely.
+             */
+            const getMediaItemsPerRow = () => {
+                if (the_grid_navigation_wrapper == null || !the_grid_navigation_wrapper.MovementController.Grid.isUsable()) {
+                    return getMediaItemsPerRowFromCSS();
+                }
+
+                const current_row = the_grid_navigation_wrapper.MovementController.Grid.getCurrentRow();
+
+                return current_row.length
+            }
+
+            /**
+             * Returns the optimal number of gallery rows to fit the screen.
+             * @param {CSSStyleDeclaration} [meg_gallery_style]
+             * @returns {number}
+             */
+            const getOptimalGalleryRowCount = (meg_gallery_style) => {
+                const FUZZY_ROW_COUNT = 5; // If no better value can be determined, use this.
+
+                if (!browser) return FUZZY_ROW_COUNT;
+
+                if (meg_gallery_style === undefined) {
+                    meg_gallery_style = getGalleryCSSStyle();
+
+                    if (meg_gallery_style === undefined) {
+                        console.warn("In MediaExplorerGallery.getOptimalGalleryRows: No gallery CSS style available.");
+                        return 1; // Default to 1 row if no style is available.
+                    }
+                }
+
+                let row_count = FUZZY_ROW_COUNT;
+
+                if (isGalleryLayoutGrid(meg_gallery_style)) {
+                    const row_height = getGridItemsHeightFromCSS(meg_gallery_style);
+
+                    if (row_height === undefined) {
+                        console.error(`In MediaExplorerGallery.getOptimalGalleryRows: No row height found in the gallery CSS style.`);
+                        return FUZZY_ROW_COUNT;
+                    }
+
+                    const viewport_height = window.innerHeight
+
+                    row_count = Math.ceil(viewport_height / row_height);
+                }
+
+                return row_count
+            }
+
+            /**
+             * Returns the optimal batch size of medias to load into the gallery.
+             * @param {CSSStyleDeclaration} [meg_gallery_style]
+             * @returns {number}
+             */
+            const getOptimalMediaBatchSize = (meg_gallery_style) => {
+                const DEFAULT_MEDIA_BATCH_SIZE = 30
+
+                if (!browser) return DEFAULT_MEDIA_BATCH_SIZE; 
+
+                const number_of_items_per_row = getMediaItemsPerRowFromCSS(meg_gallery_style);
+                if (number_of_items_per_row === undefined) {
+                    console.error(`In MediaExplorerGallery.getOptimalMediaBatchSize: No number of items per row found in the gallery CSS style.`);
+                    return DEFAULT_MEDIA_BATCH_SIZE;
+                }
+
+                const optimal_row_count = getOptimalGalleryRowCount(meg_gallery_style);
+                console.log(`optimal_row_count: ${optimal_row_count}\nnumber_of_items_per_row: ${number_of_items_per_row}`);
+
+                return number_of_items_per_row * optimal_row_count;
+            }
+            
+            /*----------  CSS column count  ----------*/
+            
+                /**
+                 * Returns the ItemsPerRow metric from the gallery's CSSStyleDeclaration. this is 
+                 * a fallback for getMediaItemsPerRow, used when the_grid_navigation_wrapper is not available.
+                 * @param {CSSStyleDeclaration} [meg_gallery_style]
+                 * @returns {number | undefined}
+                 */
+                const getMediaItemsPerRowFromCSS = (meg_gallery_style) => {
+                    if (meg_gallery_style === undefined) {
+                        meg_gallery_style = getGalleryCSSStyle();
+
+                        if (meg_gallery_style === undefined) {
+                            console.warn("In MediaExplorerGallery.getMediaItemsPerRowFromCSS: No gallery CSS style available.");
+                            return undefined;
+                        }
+                    }
+
+                    return getColumnCountFromGridElement(meg_gallery_style);
+                }
+
+                /**
+                 * Returns the grid items height determined from the gallery's template columns.
+                 * assumes the items have a 1/1 aspect ratio.
+                 * @param {CSSStyleDeclaration} [meg_gallery_style]
+                 * @returns {number | undefined}
+                 */
+                const getGridItemsHeightFromCSS = (meg_gallery_style) => {
+                    if (meg_gallery_style === undefined) {
+                        meg_gallery_style = getGalleryCSSStyle();
+
+                        if (meg_gallery_style === undefined) {
+                            console.warn("In MediaExplorerGallery.getGridItemsHeightFromCSS: No gallery CSS style available.");
+                            return undefined;
+                        }
+                    }
+
+                    const grid_template_columns = meg_gallery_style.gridTemplateColumns;
+
+                    if (grid_template_columns === '') {
+                        console.error(`In MediaExplorerGallery.getGridItemsHeightFromCSS: No grid template columns found in the element style.`);
+                        return undefined;
+                    }
+
+                    const column_widths = parseInt(grid_template_columns.split(/\s+/)[0], 10);
+
+                    if (isNaN(column_widths)) {
+                        console.error(`In MediaExplorerGallery.getGridItemsHeightFromCSS: Invalid column width found in the grid template columns: ${grid_template_columns}`);
+                        return undefined;
+                    }
+
+                    return column_widths; 
+                }
+
+                /**
+                 * Returns the grid column count of the gallery's CSSStyleDeclaration.
+                 * @param {CSSStyleDeclaration} element_style
+                 * @returns {number | undefined}
+                 */
+                const getColumnCountFromGridElement = (element_style) => {
+                    if (!isGalleryLayoutGrid(element_style)) {
+                        console.error(`In MediaExplorerGallery.getColumnCountFromGridElement: recieved element style.display = '${element_style.display}' not 'gird'`);
+                        return undefined;
+                    }
+
+                    const template_columns_string = element_style.gridTemplateColumns;
+
+                    if (template_columns_string === '') {
+                        console.error(`In MediaExplorerGallery.getColumnCountFromGridElement: No grid template columns found in the element style.`);
+                        return undefined;
+                    }
+
+                    const template_columns = template_columns_string.trim().split(/\s+/);
+
+                    return template_columns.length;
+                }
+
+                /**
+                 * Returns the CSSStyleDeclaration of the meg gallery ul element.
+                 * @returns {CSSStyleDeclaration | undefined}
+                 */
+                const getGalleryCSSStyle = () => {
+                    if (!browser) {
+                        console.warn("In MediaExplorerGallery.getGalleryCSSStyle: No browser environment available. Cannot get gallery CSS style.");
+                        return undefined;
+                    }
+
+                    const grid_selectors = getGridSelectors();
+
+                    const meg_gallery_element = document.querySelector(grid_selectors.grid_parent_selector);
+
+                    if (meg_gallery_element ===null) {
+                        console.error(`In MediaExplorerGallery.getGalleryCSSStyle: No meg gallery element found with selector "${grid_selectors.grid_parent_selector}".`);
+                        return undefined;
+                    }
+
+                    return getComputedStyle(meg_gallery_element);
+                }
+
+                /**
+                 * Returns whether the given CSSStyleDeclaration object has a display grid
+                 * @param {CSSStyleDeclaration} meg_gallery_style
+                 * @returns {boolean}
+                 */
+                const isGalleryLayoutGrid = (meg_gallery_style) => {
+                    return meg_gallery_style.display === "grid";
+                }
+        
+        /*=====  End of Gallery Layout analysis  ======*/
     
         /**
          * Adds an amount of media N items to the active_medias. it starts appending from an
@@ -1302,6 +1493,8 @@
          * and Math.min(media_batch_size, ordered_medias.length)
          */
         const addInitialMediaItems = () => {
+            const media_batch_size = getOptimalMediaBatchSize();
+            
             active_medias = [];
             sliceOrderedMedias(0, Math.min(media_batch_size, ordered_medias.length));
         }
@@ -1348,6 +1541,40 @@
         }
 
         /**
+         * Ensures the last row in the grid has as many items as it can. meaning that it will add
+         * elements to make the last row full unless there are no more medias to add.
+         * @returns {Promise<void>}
+         */
+        const ensureLastRowIsFull = async () => {
+            if (the_grid_navigation_wrapper == null) {
+                console.warn("In MediaExplorerGallery.ensureLastRowIsFull: No grid navigation wrapper available.");
+                return;
+            }
+
+            const last_media_item = ordered_medias[ordered_medias.length - 1];
+
+            isMediaOrderDisplayed(last_media_item.Order)
+
+            const css_row_size = getMediaItemsPerRowFromCSS();
+            if (css_row_size === undefined) {
+                console.warn("In MediaExplorerGallery.handleMasonryLayoutChange: No CSS row size found.");
+                return;
+            }
+
+            const last_gird_row = the_grid_navigation_wrapper.MovementController.Grid.getLastRow();
+            if (last_gird_row === null) {
+                console.warn("In MediaExplorerGallery.handleMasonryLayoutChange: No last grid row found.");
+                return;
+            }
+
+            const missing_items = css_row_size - last_gird_row.length;
+
+            if (missing_items <= 0) return;
+
+            appendMediaItems(missing_items);
+        }
+
+        /**
          * Focuses the a media item by it's order. if the order is not in the active_medias, it drops the current
          * active medias an loads a batch that contains the media item. Assuming the media is inside the bounds of ordered_medias
          * otherwise it will throw an error.
@@ -1375,23 +1602,6 @@
             await tick();
 
             scrollToFocusedMedia("center", "instant");
-        }
-
-        /**
-         * Returns the amount of medias that fit in a single row of the gallery's grid.
-         * @returns {number | undefined} - a float number most likely.
-         */
-        const getMediaItemsPerRow = () => {
-            const DEFULT_VALUE_WHICH_WILL_BE_DEPRCATED = 6;
-
-            if (the_grid_navigation_wrapper == null || !the_grid_navigation_wrapper.MovementController.Grid.isUsable()) {
-                console.warn(`In MediaExplorerGallery.getMediaItemsPerRow: No grid navigation wrapper available. Returning default value '${DEFULT_VALUE_WHICH_WILL_BE_DEPRCATED}'`);
-                return DEFULT_VALUE_WHICH_WILL_BE_DEPRCATED;
-            }
-
-            const current_row = the_grid_navigation_wrapper.MovementController.Grid.getCurrentRow();
-
-            return current_row.length
         }
 
         /**
@@ -1492,6 +1702,16 @@
         }
 
         /**
+         * Handles the change between masonary and normal layout.
+         * @returns {Promise<void>}
+         */
+        const handleMasonryLayoutChange = async () => {
+            await updateNavigationGrid();
+
+            await ensureLastRowIsFull();
+        }
+
+        /**
          * Handles the click event on a media item.
          * @param {MouseEvent} event
          */
@@ -1569,6 +1789,7 @@
             if (active_medias.length === 0) {
                 throw new Error("Attempted to load more medias when active_medias is empty. Use addInitialMediaItems or sliceOrderedMedias instead.");
             }
+            const media_batch_size = getOptimalMediaBatchSize();
 
             const lowest_order_media = active_medias[0];
             
@@ -1606,10 +1827,11 @@
             if (active_medias.length === 0) {
                 throw new Error("Attempted to load more medias when active_medias is empty. Use addInitialMediaItems or sliceOrderedMedias instead.");
             }
+            const media_batch_size = getOptimalMediaBatchSize();
 
-            const highest_order_media = active_medias[active_medias.length - 1];
+            const highest_order_media_active = active_medias[active_medias.length - 1];
 
-            if (highest_order_media.Order === media_items.length - 1) return false; // nothing more can be loaded.
+            if (highest_order_media_active.Order === media_items.length - 1) return false; // nothing more can be loaded.
 
             let succesful_append = appendMediaItems(media_batch_size);
 
@@ -1632,6 +1854,7 @@
                 console.error(`In MediaExplorerGallery.loadBatchWithMediaOrder: media_order ${media_order} is out of bounds for ordered_medias with length ${ordered_medias.length}`);
                 return false;
             }
+            const media_batch_size = getOptimalMediaBatchSize();
 
             active_medias = [];
 
@@ -2280,7 +2503,7 @@
 
             container-type: inline-size;
             width: 100%;
-            grid-template-columns: repeat(auto-fill, 15%);
+            /* grid-template-columns: repeat(auto-fill, 15%); */
             grid-auto-rows: 1.2vh;
             justify-content: center;
             gap: 12px;
