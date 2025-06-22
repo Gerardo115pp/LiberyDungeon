@@ -1299,7 +1299,12 @@
              * @returns {number}
              */
             const getOptimalGalleryRowCount = (meg_gallery_style) => {
-                const FUZZY_ROW_COUNT = 5; // If no better value can be determined, use this.
+                const load_frequency_reduction_factor = 2; // This is a factor how often we load the gallery rows.
+                if (load_frequency_reduction_factor <= 0) { // anti-dumb error assertion.
+                    throw new Error("In MediaExplorerGallery.getOptimalGalleryRowCount: load_frequency_reduction_factor must be greater than 0.");
+                }
+
+                const FUZZY_ROW_COUNT = Math.round(5 * load_frequency_reduction_factor); // If no better value can be determined, use this.
 
                 if (!browser) return FUZZY_ROW_COUNT;
 
@@ -1308,7 +1313,7 @@
 
                     if (meg_gallery_style === undefined) {
                         console.warn("In MediaExplorerGallery.getOptimalGalleryRows: No gallery CSS style available.");
-                        return 1; // Default to 1 row if no style is available.
+                        return FUZZY_ROW_COUNT
                     }
                 }
 
@@ -1324,7 +1329,7 @@
 
                     const viewport_height = window.innerHeight
 
-                    row_count = Math.ceil(viewport_height / row_height);
+                    row_count = Math.ceil((viewport_height / row_height) * load_frequency_reduction_factor);
                 }
 
                 return row_count
@@ -1811,8 +1816,14 @@
                 media_item_element.scrollIntoView({
                     block: "start",
                     behavior: "instant",
-
                 });
+
+                // setTimeout(() => {})
+
+                media_item_element.scrollIntoView({
+                    block: "center",
+                    behavior: "smooth",
+                }); // Simulate regular scrolling behavior.
             }
             
             return true;
