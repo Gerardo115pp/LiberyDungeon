@@ -440,6 +440,22 @@ class HM_GridRowSequence {
     }
 
     /**
+     * Returns the first row in the sequence.
+     * @returns {HM_GridRow | null}
+     */
+    getFirstRow() {
+        return this.#first_row;
+    }
+
+    /**
+     * Returns the last row in the sequence.
+     * @returns {HM_GridRow | null}
+     */
+    getLastRow() {
+        return this.#last_row;
+    }
+
+    /**
      * Returns whether a give sequence index is out of bounds of the entire sequence. It checks if the index is larger the the first_row's MinIndex and smaller than the last_row MaxIndex.
      * @param {number} sequence_index
      * @returns {boolean} 
