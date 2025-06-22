@@ -711,7 +711,15 @@
 
                     requested_order -= 1 // 1-based to 0-based index.
 
+                    const previous_media_focus_index = media_focus_index;
+
                     await setMediaFocusIndex(requested_order, true);
+
+                    if (auto_select_mode_enabled) {
+                        await tick();
+
+                        handleCursorSelection(previous_media_focus_index, media_focus_index);
+                    }
                 }
 
         /*=====  End of Hotkeys  ======*/
@@ -794,13 +802,26 @@
                     return true;
                 }
 
-                const media_index_in_displayed_array = cursor_wrapped_value.value;
+                let focused_media;
+                let cursor_correction_needed = false;
 
+                console.debug(`In MediaExplorerGallery.handleCursorUpdate: media_focus_index: ${media_focus_index}, cursor_wrapped_value:`, cursor_wrapped_value);
+                const should_jump_from_first_to_last = media_focus_index === 0 && cursor_wrapped_value.overflowed_left;
 
-                const focused_media = getMediaByDisplayIndex(media_index_in_displayed_array);
+                if (!should_jump_from_first_to_last) {
+                    const media_index_in_displayed_array = cursor_wrapped_value.value;
+
+                    focused_media = getMediaByDisplayIndex(media_index_in_displayed_array);
+                } else {
+
+                    focused_media = getMediaByOrder(ordered_medias.length - 1);
+                    cursor_correction_needed = true;
+
+                    console.debug(`In MediaExplorerGallery.handleCursorUpdate: Jumping from first to last media. Last media:`, focused_media);
+                }
 
                 if (focused_media == null) {
-                    console.error(`In @pages/MediaExplorer/sub-components/MediaExplorerGallery/MediaExplorerGallery.handleCursorUpdate: No media found at active_medias[${media_index_in_displayed_array}]`);
+                    console.error(`In @pages/MediaExplorer/sub-components/MediaExplorerGallery/MediaExplorerGallery.handleCursorUpdate: No media found at active_medias`);
                     return;
                 }
 
@@ -808,7 +829,7 @@
                     handleCursorSelection(media_focus_index, focused_media.Order);
                 }
 
-                setMediaFocusIndex(focused_media.Order, false);
+                setMediaFocusIndex(focused_media.Order, cursor_correction_needed);
             }
 
             /**
