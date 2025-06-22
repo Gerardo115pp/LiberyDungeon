@@ -178,20 +178,6 @@
                  * @default true
                  */
                 let auto_select_mode_adds = true;
-
-                /**
-                 * The last timestamp when an auto select key was pressed.
-                 * @type {number}
-                 * @default 0
-                 */
-                let auto_select_mode_last_keypress = 0;
-
-                /**
-                 * The time in milliseconds after which the auto select mode
-                 * will be enabled.
-                 * @type {number}
-                 */
-                const AUTO_SELECT_MODE_TIME = 100;
                 
             /*----------  Search media content  ----------*/
             
@@ -729,12 +715,38 @@
         =============================================*/
 
             /**
+             * Applies cursor navigation selection if the auto select mode is enabled.
+             * @param {number} previous_index
+             * @param {number} current_index
+             * @returns {void}
+             */
+            const applyCursorNavigationSelection = (previous_index, current_index) => {
+                if (!auto_select_mode_enabled) return;
+
+                handleCursorSelection(previous_index, current_index);
+            }
+
+            /**
              * Drops the grid navigation wrapper if it exists.
              */
             const dropGridNavigationWrapper = () => {
                 if (the_grid_navigation_wrapper != null) {
                     the_grid_navigation_wrapper.destroy();
                 }
+            }
+
+            /**
+             * Determines whether the cursors should be moved from an to one of the edges of
+             * the gallery grid.
+             * @param {import('@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils').GridWrappedValue} cursor_wrapped_value
+             * @param {number} current_focus_index
+             * @returns {boolean}
+             */
+            const cursorMovementHasOverflowedContent = (cursor_wrapped_value, current_focus_index) => {
+                return (
+                    (current_focus_index === 0 && cursor_wrapped_value.overflowed_left) ||
+                    (current_focus_index === (ordered_medias.length - 1) && cursor_wrapped_value.overflowed_right)
+                );
             }
         
             /**
@@ -776,7 +788,7 @@
                     sequence_item_name_plural: ui_core_dungeon_references.MEDIA.EntityNamePlural,
                     grid_member_selector: grid_selectors.grid_member_selector,
                     goto_item_finalizer: "", // Disable goto item handler of the CursorMovementWASD wrapper.
-                    on_mutation_cursor_correction_callback: correctCurrentCursorCallback,
+                    on_mutation_cursor_correction_callback: translateCursorAfterContentMutation,
                 });
 
                 the_grid_navigation_wrapper.setup(hotkeys_context);
@@ -802,34 +814,59 @@
                     return true;
                 }
 
-                let focused_media;
-                let cursor_correction_needed = false;
-
                 console.debug(`In MediaExplorerGallery.handleCursorUpdate: media_focus_index: ${media_focus_index}, cursor_wrapped_value:`, cursor_wrapped_value);
-                const should_jump_from_first_to_last = media_focus_index === 0 && cursor_wrapped_value.overflowed_left;
 
-                if (!should_jump_from_first_to_last) {
-                    const media_index_in_displayed_array = cursor_wrapped_value.value;
-
-                    focused_media = getMediaByDisplayIndex(media_index_in_displayed_array);
-                } else {
-
-                    focused_media = getMediaByOrder(ordered_medias.length - 1);
-                    cursor_correction_needed = true;
-
-                    console.debug(`In MediaExplorerGallery.handleCursorUpdate: Jumping from first to last media. Last media:`, focused_media);
+                if (cursorMovementHasOverflowedContent(cursor_wrapped_value, media_focus_index)) {
+                    return handleCursorUpdateFromEdgeToEdgeOfContent(cursor_wrapped_value);
                 }
+
+                const media_index_in_displayed_array = cursor_wrapped_value.value;
+
+                const focused_media = getMediaByDisplayIndex(media_index_in_displayed_array);
 
                 if (focused_media == null) {
                     console.error(`In @pages/MediaExplorer/sub-components/MediaExplorerGallery/MediaExplorerGallery.handleCursorUpdate: No media found at active_medias`);
                     return;
                 }
 
-                if (auto_select_mode_enabled) {
-                    handleCursorSelection(media_focus_index, focused_media.Order);
+                applyCursorNavigationSelection(media_focus_index, focused_media.Order);
+
+                setMediaFocusIndex(focused_media.Order, false);
+            }
+
+            /**
+             * called by handleCursorUpdate exclusively. handles the cursor update when the cursor overflows from one of the edges of the content. To
+             * be clear, this would be when 'from c = 0 and movement direction is left' or 'from c = last_index and movement direction is right'.
+             * @type {import("@common/keybinds/CursorMovement").CursorPositionCallback}
+             */
+            const handleCursorUpdateFromEdgeToEdgeOfContent = (cursor_wrapped_value) => {
+                if (the_grid_navigation_wrapper == null) {
+                    console.warn("In MediaExplorerGallery.handleCursorUpdateFromEdgeToEdgeOfContent: No grid navigation wrapper.");
+                    return;
                 }
 
-                setMediaFocusIndex(focused_media.Order, cursor_correction_needed);
+                const highest_order_media = getMediaByOrder(ordered_medias.length - 1);
+                const lowest_order_media = getMediaByOrder(0);
+
+                if (highest_order_media == null || lowest_order_media == null) {
+                    console.log("highest_order_media:", highest_order_media, "lowest_order_media:", lowest_order_media);
+                    console.error("In MediaExplorerGallery.handleCursorUpdateFromEdgeToEdgeOfContent: No highest order media available. This is impossible.");
+                    return;
+                }
+
+                const should_jump_from_first_to_last = media_focus_index === lowest_order_media.Order && cursor_wrapped_value.overflowed_left;
+                const should_jump_from_last_to_first = media_focus_index === highest_order_media.Order && cursor_wrapped_value.overflowed_right;
+
+                if (!(should_jump_from_first_to_last || should_jump_from_last_to_first)) {
+                    console.warn("In MediaExplorerGallery.handleCursorUpdateFromEdgeToEdgeOfContent: No edge overflow detected. Nothing to do.");
+                    return;
+                }
+
+                const correct_media = should_jump_from_first_to_last ? highest_order_media : lowest_order_media;
+
+                applyCursorNavigationSelection(media_focus_index, correct_media.Order);
+
+                setMediaFocusIndex(correct_media.Order, true);
             }
 
             /**
@@ -837,7 +874,7 @@
              * focused media when the gallery's content changes.
              * @type {import("@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils").CurrentCursorCorrectionProvider}
              */
-            const correctCurrentCursorCallback = (cursor_value) => {
+            const translateCursorAfterContentMutation = (cursor_value) => {
                 return getFocusedMediaDisplayIndex();
             }
 
@@ -899,7 +936,6 @@
                 auto_stage_delete_focused_media = false;
                 auto_select_mode_enabled = false;
                 auto_select_mode_adds = true;
-                auto_select_mode_last_keypress = 0;
             }
 
             /**
