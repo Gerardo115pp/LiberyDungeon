@@ -2449,7 +2449,11 @@
 
     #meg-gallery {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        /* CRITICAL: grid-template columns most not change in different layouts, like the masonry.
+         This is so loaded batch sizes, specially prepended ones, don't shift the focused media horizontally.
+         It's not ideal but it is preferable to having this disorientating behavior. 
+        */
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
         background: var(--grey);
         gap: var(--spacing-1);
         padding-block: 0;
