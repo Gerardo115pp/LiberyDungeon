@@ -480,6 +480,14 @@
     
 </script>
 
+<!-- TODO: 
+    Scrap out use:viewport for a custom solution that is more performant.
+    We need to be able to disable the viewport observation when the media list becomes too big.
+    After a couple of hundred items, this viewport action becomes a huge performance bottleneck.
+    The only way i see to fix this(and likely the best one) is to implement the same logic 
+    viewport uses, but within this component, that way we can have much more control over when
+    to disable the observation.
+-->
 <div bind:this={this_dom_element} class="meg-display-item-wrapper"
     class:use-masonry={use_masonry}
     class:meg-di-keyboard-focused={is_keyboard_focused}
