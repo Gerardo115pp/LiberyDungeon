@@ -1,6 +1,11 @@
 <script>
     import { LabeledError, VariableEnvironmentContextError } from '@libs/LiberyFeedback/lf_models';
-    import { me_gallery_changes_manager, me_gallery_yanked_medias, me_renaming_focused_media } from './me_gallery_state';
+    import { 
+        me_gallery_changes_manager,
+        me_gallery_yanked_medias,
+        me_renaming_focused_media,
+        meg_intersection_observer_event_names
+    } from './me_gallery_state';
     import { media_change_types } from '@models/WorkManagers';
     import { onMount, onDestroy } from 'svelte';
     import { lf_errors } from '@libs/LiberyFeedback/lf_errors';
@@ -24,7 +29,7 @@
         /**
          * This component's DOM node
          * @type {HTMLDivElement}         
-        */
+         */
         let this_dom_element;
 
         /**
@@ -40,6 +45,18 @@
          * @default false
          */
         export let enable_dragging = false;
+
+        /**
+         * A callback to request the media item node to be observed.
+         * @type {import('./media_explorer_gallery').ObserveMEGalleryCallback}
+         */
+        export let requestObserveMediaItem = (item, media_item) => {};
+
+        /**
+         * A callback to request the media item node to stop being observed.
+         * @type {import('./media_explorer_gallery').UnobserveMEGalleryCallback}
+         */
+        export let requestUnobserveMediaItem = (item, media_item) => {};
 
         /*----------  State  ----------*/
         
@@ -186,12 +203,17 @@
 
     onMount(() => {
         suscribeToMediaChanges();
+
+        enableViewportObservation();
+
         yanked_medias_unsubscriber = me_gallery_yanked_medias.subscribe(handleYankedMediasChange);
         renaming_focused_media_unsubscriber = me_renaming_focused_media.subscribe(handleRenamingFocusedMediaChange);
     });
 
     onDestroy(() => {
         unsuscribeFromMediaChanges();
+
+        disableViewportObservation();
 
         yanked_medias_unsubscriber();
         renaming_focused_media_unsubscriber();
@@ -272,6 +294,67 @@
             }
         
         /*=====  End of Drag handlers  ======*/
+        
+        /*=============================================
+        =            Viewport observation.            =
+        =============================================*/
+        
+            /**
+             * disables the viewport observation dom listener events.
+             * @returns {void}
+             */
+            const disableViewportObservation = () => {
+                if (this_dom_element == null) return;
+
+                this_dom_element.removeEventListener(
+                    meg_intersection_observer_event_names.VIEWPORT_ENTER,
+                    handleViewportEnter
+                );
+                this_dom_element.removeEventListener(
+                    meg_intersection_observer_event_names.VIEWPORT_LEAVE,
+                    handleViewportLeave
+                );
+
+                requestUnobserveMediaItem(this_dom_element, ordered_media);
+            }
+
+            /**
+             * enables viewport intersection changes events.
+             * @returns {void}
+             */
+            const enableViewportObservation = () => {
+                if (this_dom_element == null) return;
+
+
+                this_dom_element.addEventListener(
+                    meg_intersection_observer_event_names.VIEWPORT_ENTER,
+                    handleViewportEnter
+                );
+                this_dom_element.addEventListener(
+                    meg_intersection_observer_event_names.VIEWPORT_LEAVE,
+                    handleViewportLeave
+                );
+
+                requestObserveMediaItem(this_dom_element, ordered_media);
+            }
+        
+            /**
+             * Hanldes viewport enter event emitted by the viewport action.
+             * @requires media_inside_viewport
+             */
+            const handleViewportEnter = () => {
+                media_inside_viewport = true;
+            }
+
+            /**
+             * Hanldes viewport leave event emitted by the viewport action.
+             * @requires media_inside_viewport
+             */
+            const handleViewportLeave = () => {
+                media_inside_viewport = false;
+            }
+        
+        /*=====  End of Viewport observation.  ======*/
 
         /**
          * Defines the element position modifiers based on the container limits.
@@ -396,23 +479,6 @@
             is_media_deleted = false;   
         }
 
-        /**
-         * Hanldes viewport enter event emitted by the viewport action.
-         * @requires viewport
-         * @requires media_inside_viewport
-         */
-        const handleViewportEnter = () => {
-            media_inside_viewport = true;
-        }
-
-        /**
-         * Hanldes viewport leave event emitted by the viewport action.
-         * @requires viewport
-         * @requires media_inside_viewport
-         */
-        const handleViewportLeave = () => {
-            media_inside_viewport = false;
-        }
 
         /**
          * Checks if the media item is in the yanked media uuids list and sets the status accordingly.
@@ -510,9 +576,6 @@
     on:dragleave={handleMediaItemDragLeave}
     on:drop={handleMediaItemDrop}
     data-media-order={ordered_media.Order}
-    on:viewportEnter={handleViewportEnter}
-    on:viewportLeave={handleViewportLeave}
-    use:viewport
 >
     <div class="media-status-overlay"></div>
     <div class="media-type-label-overlay">

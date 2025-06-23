@@ -11,7 +11,7 @@
         import { hotkeys_sheet_visible, layout_properties } from "@stores/layout";
         import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
-        import { me_gallery_changes_manager, me_gallery_yanked_medias, me_renaming_focused_media } from './me_gallery_state';
+        import { me_gallery_changes_manager, me_gallery_yanked_medias, me_renaming_focused_media, meg_intersection_observer_event_names } from './me_gallery_state';
         import MeGalleryDisplayItem from './MEGalleryDisplayItem.svelte';
         import GridLoader from '@components/UI/Loaders/GridLoader.svelte';
         import CoverSlide from '@components/Animations/HoverEffects/CoverSlide.svelte';
@@ -66,18 +66,20 @@
         $: ordered_medias = media_items.map((mi, order_position) => new OrderedMedia(mi, order_position));
 
         /**
-         * the amount of medias to display render at a time. If the end of the viewport is reached,
-         * a new batch of exactly this amount(or the remaining available) of medias will be appended to the gallery.
-         * @type {number}
-         */
-        // let media_batch_size = 30;
-
-        /**
          * an html class that is added to all the media items in the gallery.
          * @type {string}
          */
         const media_item_html_class = "meg-gallery-grid-cell";
        
+        
+        /*----------  Intersection observer  ----------*/
+        
+            /**
+             * The intersection observer passed to the gallery items.
+             * @type {IntersectionObserver | null}
+             */
+            let gallery_item_intersection_observer = null;
+        
         /*----------  State  ----------*/
         
             /**
@@ -128,6 +130,13 @@
              * @type {boolean}
              */
             export let enable_gallery_heavy_rendering = false;
+
+            /**
+             * Whether to enable performance mode for the gallery. Completely controlled by
+             * it's managing function based on fuzzy logic.
+             * @type {boolean}
+             */
+            let enable_gallery_performance_mode = false;
 
             /**
              * Whether to enable the sequence creation tool.
@@ -232,6 +241,7 @@
     onDestroy(() => {
         if (!browser) return;
         resetGalleryState();
+        console.debug("In MediaExplorerGallery.onDestroy: Gallery component was destroyed.");
     });
     
     /*=============================================
@@ -675,6 +685,11 @@
              * Toggles the heavy rendering of the medias in the gallery.
              */
             const handleToggleHeavyRendering = () => {
+                if (enable_gallery_performance_mode) {
+                    emitPlatformMessage("Heavy rendering is disabled because the amount of medias loaded would likely kill your CPU with heavy rendering.");
+                    return;
+                }
+
                 enable_gallery_heavy_rendering = !enable_gallery_heavy_rendering;
             }
 
@@ -1466,7 +1481,198 @@
                 }
         
         /*=====  End of Gallery Layout analysis  ======*/
-    
+        
+        /*=============================================
+        =            Intersection observer            =
+        =============================================*/
+        
+            /**
+             * Adds an item to the gallery item intersection observer.
+             * @param {Element} gallery_item_node - The gallery item node to observe.
+             * @param {import('@models/Medias').OrderedMedia} ordered_media
+             * @returns {void}
+             */
+            const addMEGItemToObservationList = (gallery_item_node, ordered_media) => {
+                if (gallery_item_intersection_observer == null) {
+                    console.warn("In MediaExplorerGallery.addMEGItemToObservationList: No intersection observer available to observe the gallery item.");
+                    return;
+                }
+
+                gallery_item_intersection_observer.observe(gallery_item_node);
+            }
+                
+            /**
+             * Drops the gallery item intersection observer.
+             * @returns {void}
+             */
+            const dropGalleryItemsIntersectionObserver = () => {
+                if (gallery_item_intersection_observer == null) {
+                    return;
+                }
+
+                gallery_item_intersection_observer.disconnect();
+                gallery_item_intersection_observer = null;
+            }
+
+            /**
+             * Defines the intersection observer. If it's already 
+             * returns immediately and does nothing. The intersection
+             * observer reference is gallery_item_intersection_observer.
+             * @returns {void}
+             */
+            const initializeGalleryItemsIntesectionObserver = () => {
+                if (gallery_item_intersection_observer != null) {
+                    return;
+                }
+
+                /**
+                 * The intersection observer options.
+                 * @type {IntersectionObserverInit}
+                 */
+                const intersection_observer_options = {
+                    threshold: 0.2,
+                }
+
+                gallery_item_intersection_observer = new IntersectionObserver(
+                    megGalleryIntersectionObserverCallback, 
+                    intersection_observer_options
+                );
+            }
+
+            /**
+             * Intersection observer callback. set by initializeGalleryItemsIntesectionObserver.
+             * don't call it anywhere.
+             * @type {IntersectionObserverCallback}
+             */
+            const megGalleryIntersectionObserverCallback = (entries, observer) => {
+                console.debug(`In MediaExplorerGallery.megGalleryIntersectionObserverCallback: entires count = ${entries.length}`);
+
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        let event_name = meg_intersection_observer_event_names.VIEWPORT_LEAVE;
+
+                        if (entry.isIntersecting) {
+                            event_name = meg_intersection_observer_event_names.VIEWPORT_ENTER;
+                        }
+
+                        if (event_name !== '') {
+                            const event = new CustomEvent(event_name);
+
+                            entry.target.dispatchEvent(event);
+                        }
+                    }
+                });
+            }
+
+            /**
+             * Methods provided to gallery item. It adds a gallery item node to the observation list.
+             * @type {import('./media_explorer_gallery').ObserveMEGalleryCallback}
+             */
+            const observeGalleryItemCallbackForItems = (gallery_item_node, ordered_media) => {
+                if (gallery_item_intersection_observer == null) {
+                    console.warn("In MediaExplorerGallery.observeGalleryItem: No intersection observer available to observe the gallery item.");
+                    return;
+                }  
+
+                addMEGItemToObservationList(gallery_item_node, ordered_media);
+            }
+
+            /**
+             * Methods provided to gallery items. It removes a gallery item node from the observation list.
+             * @type {import('./media_explorer_gallery').UnobserveMEGalleryCallback}
+             */
+            const unobserveGalleryItemCallbackForItems = (gallery_item_node, ordered_media) => {
+                if (gallery_item_intersection_observer == null) {
+                    console.warn("In MediaExplorerGallery.unobserveGalleryItem: No intersection observer available to unobserve the gallery item.");
+                    return;
+                }
+
+                removeMEGItemFromObservationList(gallery_item_node, ordered_media);
+            }
+
+            /**
+             * Removes a gallery item node from the observation list.
+             * @param {Element} gallery_item_node - The gallery item node to unobserve.
+             * @param {import('@models/Medias').OrderedMedia} ordered_media
+             * @returns {void}
+             */
+            const removeMEGItemFromObservationList = (gallery_item_node, ordered_media) => {
+                if (gallery_item_intersection_observer == null) {
+                    console.warn("In MediaExplorerGallery.removeMEGItemFromObservationList: No intersection observer available to unobserve the gallery item.");
+                    return;
+                }
+
+                gallery_item_intersection_observer.unobserve(gallery_item_node);
+            }
+        
+        /*=====  End of Intersection observer  ======*/
+
+        /*=============================================
+        =            Performance Mode            =
+        =============================================*/
+        
+            /**
+             * Disables performance mode. This MOST not be called by anything else that is not 
+             * performanceModeWatchdog.
+             * @returns {void}
+             */
+            const disablePerformanceMode = () => {
+                if (!enable_gallery_performance_mode) return;
+
+                console.debug("In MediaExplorerGallery.disablePerformanceMode: Disabling performance mode.");
+
+                enable_gallery_performance_mode = false;
+
+                if (gallery_item_intersection_observer == null) {
+                    initializeGalleryItemsIntesectionObserver();
+                }
+            }
+
+            /**
+             * Enables performance mode. This MOST not be called by anything else that is not
+             * performanceModeWatchdog.
+             * @returns {void}
+             */
+            const enablePerformanceMode = () => {
+                if (enable_gallery_performance_mode) return;
+
+                console.debug("In MediaExplorerGallery.enablePerformanceMode: Enabling performance mode.");
+
+                enable_gallery_performance_mode = true;
+
+                if (gallery_item_intersection_observer != null) {
+                    dropGalleryItemsIntersectionObserver();
+                }
+
+                if (enable_gallery_heavy_rendering) {
+                    enable_gallery_heavy_rendering = false;
+                }
+            }
+
+            /**
+             * Determines whether the gallery is in performance mode should be enabled.
+             * @returns {void}
+             */
+            const performanceModeWatchdog = () => {
+                const ACTIVE_MEDIAS_THRESHOLD = 300;
+
+                let new_performance_mode_value = false;
+
+                if (active_medias.length >= ACTIVE_MEDIAS_THRESHOLD) {
+                    new_performance_mode_value = true;
+                }
+
+                if (enable_gallery_performance_mode === new_performance_mode_value) return;
+
+                if (new_performance_mode_value) {
+                    enablePerformanceMode();
+                } else {
+                    disablePerformanceMode();
+                }
+            }
+        
+        /*=====  End of Performance Mode  ======*/
+        
         /**
          * Adds an amount of media N items to the active_medias. it starts appending from an
          * index == active_medias[active_medias.length - 1].Order + 1 * if there are no new
@@ -1485,10 +1691,10 @@
 
             console.debug(`Appending media items from ${start_index} to ${end_index}`)
 
-            active_medias = [
+            setActiveMedias([
                 ...active_medias,
                 ...ordered_medias.slice(start_index, end_index)
-            ];
+            ]);
 
             return true;
         }
@@ -1500,13 +1706,17 @@
         const addInitialMediaItems = () => {
             const media_batch_size = getOptimalMediaBatchSize();
             
-            active_medias = [];
+            setActiveMedias([], true);
             sliceOrderedMedias(0, Math.min(media_batch_size, ordered_medias.length));
         }
 
         const defineGalleryState = () => {
             if ($me_gallery_changes_manager === null) {
                 me_gallery_changes_manager.set(new MediaChangesEmitter());
+            }
+
+            if (gallery_item_intersection_observer == null) {
+                initializeGalleryItemsIntesectionObserver();
             }
 
             if (recovering_gallery_state) {
@@ -1867,7 +2077,7 @@
             }
             const media_batch_size = getOptimalMediaBatchSize();
 
-            active_medias = [];
+            setActiveMedias([], true);
 
             await tick();
 
@@ -2001,10 +2211,10 @@
 
             console.debug(`Prepending media items from ${start_index} to ${end_index}`);
 
-            active_medias = [
+            setActiveMedias([
                 ...ordered_medias.slice(start_index, end_index),
                 ...active_medias
-            ];
+            ]);
 
             return true;
         }
@@ -2017,6 +2227,9 @@
                 console.error("In MediaExplorerGallery.resetGalleryState: No hotkeys manager available.");
                 return;
             }
+            console.debug("In MediaExplorerGallery.resetGalleryState: Resetting gallery state.");
+
+            dropGalleryItemsIntersectionObserver();
             
             media_focus_index = 0;
             global_hotkeys_manager.dropContext(hotkeys_context_name);
@@ -2174,6 +2387,21 @@
         }
 
         /**
+         * Sets the active_medias to the given array of ordered medias. It will make adjustments
+         * to the galleries settings in order to ensure good performance unless its specified otherwise.
+         * @param {import('@models/Medias').OrderedMedia[]} new_active_medias
+         * @param {boolean} [skip_performance_check=false] - Use this flag for example if you are going to clear the array and immediately re-populate it.
+         * @returns {void}
+         */
+        const setActiveMedias = (new_active_medias, skip_performance_check = false) => {
+            active_medias = new_active_medias;
+
+            if (!skip_performance_check) {
+                performanceModeWatchdog();
+            }
+        }
+
+        /**
          * If and only if the active_medias array is empty it adds a range/slice of ordered medias from ordered_medias to active_medias.
          * @param {number} start_index
          * @param {number} end_index
@@ -2187,7 +2415,7 @@
                 throw new Error(`Invalid start_index(${start_index}) or end_index(${end_index}) for the ordered_medias with length ${ordered_medias.length}`);
             }
 
-            active_medias = ordered_medias.slice(start_index, end_index);
+            setActiveMedias(ordered_medias.slice(start_index, end_index));
         }
         
         /*=============================================
@@ -2360,6 +2588,8 @@
                             container_selector="#meg-gallery"
                             enable_heavy_rendering={enable_gallery_heavy_rendering}
                             enable_media_titles={show_media_titles_mode}
+                            requestObserveMediaItem={observeGalleryItemCallbackForItems}
+                            requestUnobserveMediaItem={unobserveGalleryItemCallbackForItems}
                             {use_masonry}
                         />
                         <CoverSlide 

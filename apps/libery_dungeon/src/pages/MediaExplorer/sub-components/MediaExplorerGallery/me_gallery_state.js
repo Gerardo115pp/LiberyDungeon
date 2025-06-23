@@ -2,6 +2,14 @@ import { MediaChangesEmitter } from '@models/WorkManagers';
 import { writable } from 'svelte/store';
 
 /**
+ * Grid items intersection observer related event names.
+ */
+export const meg_intersection_observer_event_names = {
+    VIEWPORT_ENTER: 'me-gallery-viewport-enter',
+    VIEWPORT_LEAVE: 'me-gallery-viewport-leave',
+}
+
+/**
  * A Media changes manager used to edit the media gallery.
  * @type {import('svelte/store').Writable<MediaChangesEmitter | null>}
  * @default null
