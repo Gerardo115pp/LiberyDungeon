@@ -456,6 +456,29 @@ class HM_GridRowSequence {
     }
 
     /**
+     * Returns the row at the given index.
+     *  @param {number} row_index - the index of the row to get
+     * @returns {HM_GridRow | null} - the row at the given index
+     */
+    getRowAtIndex(row_index) {
+        if (row_index < 0 || row_index >= this.#row_count) {
+            return null;
+        }
+
+        let current_row = this.#first_row;
+
+        for (let h = 0; h < row_index; h++) {
+            if (current_row === null) {
+                return null;
+            }
+
+            current_row = current_row.NextRow;
+        }
+
+        return current_row;
+    }
+
+    /**
      * Returns whether a give sequence index is out of bounds of the entire sequence. It checks if the index is larger the the first_row's MinIndex and smaller than the last_row MaxIndex.
      * @param {number} sequence_index
      * @returns {boolean} 
