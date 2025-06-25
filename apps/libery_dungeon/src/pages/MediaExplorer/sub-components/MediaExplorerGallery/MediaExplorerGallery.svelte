@@ -1984,7 +1984,7 @@
 
                 focused_media_element.scrollIntoView({
                     behavior: "instant",
-                    block: addition_direction_right ? "start" : "end",
+                    block: !addition_direction_right ? "start" : "end",
                 });
 
                 focused_media_element.scrollIntoView({
