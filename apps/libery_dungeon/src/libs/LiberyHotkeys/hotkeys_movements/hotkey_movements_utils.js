@@ -546,8 +546,6 @@ class HM_GridRowSequence {
      */
     moveRight() {
         if (this.#current_row == null) {
-            console.error(`No current row focused having ${this.#row_count} rows. Focusing the first row.`);
-
             if (this.#first_row === null) {
                 throw new Error("No rows in the sequence");
             }
@@ -727,12 +725,9 @@ class HM_GridRowSequence {
             this.#focusFirstRow();
         }
 
-        console.log("seek rowid", row_index);
-
         let infinite_loop_guard = 0;
 
         while (row_index !== this.#current_rowid) {
-            console.log("Rowid", this.#current_rowid);
             this.#traverseForward();
             infinite_loop_guard++;
 
@@ -740,8 +735,6 @@ class HM_GridRowSequence {
                 throw new Error("Infinite loop detected");
             }
         }
-
-        console.log("Rowid", this.#current_rowid);
 
         // @ts-ignore
         this.#current_column_index = this.#current_row.clampColumnIndex(this.#current_column_index);
@@ -977,8 +970,6 @@ export class GridNavigationWrapper {
      * @param {Event} event
      */
     #onResize(event) {
-        console.log("Resize event detected", event);
-
         const usable_before_resize = this.#grid_sequence.isUsable();
 
         let current_cursor = 0;
@@ -1026,7 +1017,9 @@ export class GridNavigationWrapper {
     }
 
     /**
-     * Scans and creates the HM_GridRowSequence from the matching grid members. Determines which element belong to the same row by checking their .getBoundingClientRect().y value.
+     * Scans and creates the HM_GridRowSequence from the matching grid members.
+     * Determines which element belong to the same row by checking their .getBoundingClientRect().y value.
+     * Cursor state is reset.
      */
     scanGridMembers() {
         if (!this.#grid_parent?.hasChildNodes()) {
@@ -1047,8 +1040,6 @@ export class GridNavigationWrapper {
             let current_element_rect = grid_members[h].getBoundingClientRect();
 
             if (isNaN(previous_element_y) || current_element_rect.y > previous_element_y) {
-                console.log("Adding row");
-
                 this.#grid_sequence.appendRow();
             }
                 
