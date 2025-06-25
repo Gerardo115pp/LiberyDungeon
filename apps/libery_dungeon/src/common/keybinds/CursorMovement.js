@@ -328,7 +328,7 @@ export class CursorMovementWASD {
 
             if (!cursor_set) {
                 throw new Error("The initial cursor position is out of bounds or there was a problem setting it.");
-            }
+            } 
         }
 
         this.#defineWASDMovementHotkeys(hotkeys_context);

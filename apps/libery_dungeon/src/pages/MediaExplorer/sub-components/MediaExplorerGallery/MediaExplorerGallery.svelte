@@ -80,6 +80,11 @@
              */
             let gallery_item_intersection_observer = null;
         
+            /**
+             * Last media items orders that have entered the viewport.
+             * @type {Set<number>}
+             */
+            let last_orders_unveiled = new Set();
         /*----------  State  ----------*/
         
             /**
@@ -124,25 +129,42 @@
             export let recovering_gallery_state = true;
 
             /**
-             * Whether to enable heavy rendering of the medias in the gallery. This will force the media item in the gallery to render in higher quality and
-             * if they are videos, those will be loaded instead of their thumbnails(which is the default behavior) they will however only load when they are on 
-             * the viewport.
-             * @type {boolean}
-             */
-            export let enable_gallery_heavy_rendering = false;
-
-            /**
-             * Whether to enable performance mode for the gallery. Completely controlled by
-             * it's managing function based on fuzzy logic.
-             * @type {boolean}
-             */
-            let enable_gallery_performance_mode = false;
-
-            /**
              * Whether to enable the sequence creation tool.
              * @type {boolean}
              */
             let enable_sequence_creation_tool = false;
+
+            /**
+             * The last media that was added to the active_medias array. If it was added
+             * by prepending, then it should be the first media on the batch that was added.
+             * If it was added by appending, then it should be the last media on the batch that was added.
+             * @type {import('@models/Medias').OrderedMedia | undefined}
+             */
+            let last_media_added_to_active_medias = undefined;
+
+            
+            /*----------  Performance regulation  ----------*/
+            
+                /**
+                 * Whether to enable performance mode for the gallery. Completely controlled by
+                 * it's managing function based on fuzzy logic.
+                 * @type {boolean}
+                 */
+                let enable_gallery_performance_mode = false;
+            
+                /**
+                 * Whether to enable heavy rendering of the medias in the gallery. This will force the media item in the gallery to render in higher quality and
+                 * if they are videos, those will be loaded instead of their thumbnails(which is the default behavior) they will however only load when they are on 
+                 * the viewport.
+                 * @type {boolean}
+                 */
+                export let enable_gallery_heavy_rendering = false;
+
+                /**
+                 * Whether the process of regulating the active media load is running.
+                 * @type {boolean}
+                 */
+                let regulating_active_medias_load = false;
 
             /*----------  Navigation  ----------*/
 
@@ -226,16 +248,23 @@
 
         let dispatch = createEventDispatcher();
     
+
+        /**
+         * Enables or disables(manually) the debug mode.
+         * @type {boolean}
+         */
+        let debug_mode = true;
+
     /*=====  End of Properties  ======*/
 
-    onMount(() => {
-        if (browser) {
-            // @ts-ignore - globalThis is not defined in the but is always available despite the environment.
-            globalThis.meg_gallery_page = $page;
-        }
+    onMount(async () => {
 
+        await defineGalleryState();
         defineComponentHotkeys();
-        defineGalleryState();
+
+        if (debug_mode) {
+            debugMEG__attachDebugMethods();
+        }
     });
 
     onDestroy(() => {
@@ -364,7 +393,7 @@
                     global_hotkeys_manager.declareContext(hotkeys_context_name, hotkeys_context);
                 }
 
-                if (enable_gallery_hotkeys) {
+                if (enable_gallery_hotkeys && global_hotkeys_manager.ContextName !== hotkeys_context_name) {
                     global_hotkeys_manager.loadContext(hotkeys_context_name);
                 };
             }
@@ -726,6 +755,131 @@
         /*=====  End of Hotkeys  ======*/
         
         /*=============================================
+        =            Debug            =
+        =============================================*/
+
+                /**
+                 * Returns the object where all the gallery debug state is stored.
+                 * @returns {Object}
+                 */
+                const debugMEG__getGalleryState = () => {
+                    if (!browser || !debug_mode) return {};
+
+                    const GALLERY_DEBUG_STATE_NAME = "meg_gallery_debug_state";
+
+                    // @ts-ignore
+                    if (!globalThis[GALLERY_DEBUG_STATE_NAME]) {
+                        // @ts-ignore
+                        globalThis[GALLERY_DEBUG_STATE_NAME] = {
+
+                        };   
+                    }
+
+                    // @ts-ignore
+                    return globalThis[GALLERY_DEBUG_STATE_NAME];
+                }
+        
+                /**
+                 * Attaches debug methods to the globalThis object for debugging purposes.
+                 * @returns {void}
+                 */
+                const debugMEG__attachDebugMethods = () => {
+                    if (!browser || !debug_mode) return;
+
+                    const meg_gallery_debug_state = debugMEG__getGalleryState();
+
+                    // @ts-ignore - for debugging purposes we do not care whether the globalThis object has the method name. same reason for all other ts-ignore in this function.
+                    meg_gallery_debug_state.printGalleryState = debugMEG__printGalleryState;
+
+                    // @ts-ignore
+                    meg_gallery_debug_state.Page = $page;
+
+                    // @ts-ignore - state retrieval functions.
+                    meg_gallery_debug_state.State = {
+                        getActiveMedias: () => active_medias,
+                        getGridNavigationWrapper: () => the_grid_navigation_wrapper,
+                        getLastMediaAddedToActiveMedias: () => last_media_added_to_active_medias,
+                        getMediaFocusIndex: () => media_focus_index,
+                        getOrderedMedias: () => ordered_medias,
+                    }
+
+                    // @ts-ignore - Internal method references.
+                    meg_gallery_debug_state.Methods = {
+                        getMediaItemsPerRow,
+                        getOptimalGalleryRowCount,
+                        getOptimalMediaBatchSize,
+                        getLoadedMediaRange,
+                        getFocusedMediaElement,
+                        getMediaDisplayIndexByOrder,
+                        getMediaItemElementByOrder,
+                        getFocusedMedia,
+                    }
+                }
+
+                /**
+                 * Prints the whole gallery state to the console.
+                 * @returns {void}
+                 */
+                const debugMEG__printGalleryState = () => {
+                    console.log("%cMediaExplorerGallery State", "color: green; font-weight: bold;");
+                    console.group("Properties");
+                    console.log(`active_medias.length: ${active_medias.length}`);
+                    console.log("active_medias:", active_medias);
+                    console.log(`ordered_medias.length: ${ordered_medias.length}`);
+                    console.log("ordered_medias:", ordered_medias);
+                    console.log(`media_focus_index: ${media_focus_index}`);
+                    console.groupEnd();
+                    console.group("Navigation");
+                    console.log(`has_proceeding_medias: ${has_proceeding_medias}`);
+                    console.log("last_media_added_to_active_medias: %O", last_media_added_to_active_medias);
+                    console.log(`enable_gallery_hotkeys: ${enable_gallery_hotkeys}`);
+                    console.log("the_grid_navigation_wrapper: %O", the_grid_navigation_wrapper);
+                    console.groupEnd();
+                    console.group("Performance");
+                    console.log(`enable_gallery_performance_mode: ${enable_gallery_performance_mode}`);
+                    console.log(`regulating_active_medias_load: ${regulating_active_medias_load}`);
+                }
+
+                /**
+                 * Attaches an arbitrary object as a globalThis.meg_timeline_states.<group_name>{...timestamp -> object }.
+                 * @param {string} group_name
+                 * @param {object} object_to_snapshot
+                 * @returns {void}
+                 */
+                const debugMEG__attachSnapshot = (group_name, object_to_snapshot) => {
+                    if (!browser || !debug_mode) return;
+
+                    const stack = new Error().stack;
+                    const datetime_obj = new Date();
+                    const timestamp = `${datetime_obj.toISOString()}-${datetime_obj.getTime()}`;
+
+                    const snapshot = {
+                        timestamp,
+                        stack,
+                        object_to_snapshot,
+                    }
+
+                    const debug_object = debugMEG__getGalleryState();
+
+                    // @ts-ignore - that meg_timeline_states exists on globalThis if not, create it.
+                    if (!debug_object.timeline_states) {
+                        // @ts-ignore
+                        debug_object.timeline_states = {};
+                    }
+
+                    // @ts-ignore
+                    if (!debug_object.timeline_states[group_name]) {
+                        // @ts-ignore
+                        debug_object.timeline_states[group_name] = [];
+                    }
+
+                    // @ts-ignore
+                    debug_object.timeline_states[group_name].push(snapshot);
+                }
+        
+        /*=====  End of Debug  ======*/
+        
+        /*=============================================
         =            Navigation            =
         =============================================*/
 
@@ -795,10 +949,13 @@
                 if (matching_elements_count !== 1) {
                     throw new Error(`Expected 1 element matching the grid member selector "${grid_selectors.grid_member_selector}" but found ${matching_elements_count}.`);
                 }
+ 
+                const initial_cursor_position = getFocusedMediaDisplayIndex();
 
+                console.log(`In MediaExplorerGallery.setGridNavigationWrapper: Initial cursor position is ${initial_cursor_position}.`);
 
                 the_grid_navigation_wrapper = new CursorMovementWASD(grid_selectors.grid_parent_selector, handleCursorUpdate, {
-                    initial_cursor_position: media_focus_index,
+                    initial_cursor_position: initial_cursor_position,
                     sequence_item_name: ui_core_dungeon_references.MEDIA.EntityName,
                     sequence_item_name_plural: ui_core_dungeon_references.MEDIA.EntityNamePlural,
                     grid_member_selector: grid_selectors.grid_member_selector,
@@ -808,9 +965,9 @@
 
                 the_grid_navigation_wrapper.setup(hotkeys_context);
 
-
-                // @ts-ignore
-                window.meg_gallery_grid_navigation_wrapper = the_grid_navigation_wrapper; // Debugging purposes.
+                console.debug("In MediaExplorerGallery.setGridNavigationWrapper: active_medias.length:", active_medias.length);
+                console.debug("row_count:", the_grid_navigation_wrapper.MovementController.Grid.length);
+                console.log("Grid navigation wrapper setup FINISHED.")
             }
 
             /**
@@ -906,6 +1063,12 @@
                 await tick();
 
                 the_grid_navigation_wrapper.MovementController.scanGridMembers();
+
+                if (media_focus_index !== 0) {
+                    const display_index = getMediaDisplayIndexByOrder(media_focus_index);
+                    
+                    the_grid_navigation_wrapper.updateCursorPositionSilently(display_index);
+                }
             }
         
         /*=====  End of Navigation  ======*/
@@ -1547,21 +1710,33 @@
             const megGalleryIntersectionObserverCallback = (entries, observer) => {
                 console.debug(`In MediaExplorerGallery.megGalleryIntersectionObserverCallback: entires count = ${entries.length}`);
 
+                /**
+                 * @type {IntersectionObserverEntry[]}
+                 */
+                const visible_entries = [];
+
                 entries.forEach(entry => {
+                    if (!(entry.target instanceof HTMLElement)) return;
+
+                    let event_name = meg_intersection_observer_event_names.VIEWPORT_LEAVE;
+
                     if (entry.isIntersecting) {
-                        let event_name = meg_intersection_observer_event_names.VIEWPORT_LEAVE;
+                        event_name = meg_intersection_observer_event_names.VIEWPORT_ENTER;
+                        visible_entries.push(entry);
+                    }
 
-                        if (entry.isIntersecting) {
-                            event_name = meg_intersection_observer_event_names.VIEWPORT_ENTER;
-                        }
+                    if (event_name !== '') {
+                        const event = new CustomEvent(event_name);
 
-                        if (event_name !== '') {
-                            const event = new CustomEvent(event_name);
-
-                            entry.target.dispatchEvent(event);
-                        }
+                        entry.target.dispatchEvent(event);
                     }
                 });
+
+                if (visible_entries.length > 0) {
+                    requestIdleCallback(() => {
+                        registerItemsUnveiled(visible_entries)
+                    });
+                }
             }
 
             /**
@@ -1604,13 +1779,33 @@
 
                 gallery_item_intersection_observer.unobserve(gallery_item_node);
             }
+
+            /**
+             * Registers an array of IntersectionObserverEntries to the last_orders_unveiled record.
+             * @param {IntersectionObserverEntry[]} entries
+             * @returns {void}
+             */
+            const registerItemsUnveiled = (entries) => {
+                if (entries.length === 0) return;
+
+                last_orders_unveiled.clear();
+
+                for (let entry of entries) {
+                    if (!(entry.target instanceof HTMLElement)) continue;
+
+                    const entry_order = getMediaOrderOutOfElement(entry.target);
+                    if (entry_order === null) continue;
+
+                    last_orders_unveiled.add(entry_order);
+                }
+            }
         
         /*=====  End of Intersection observer  ======*/
 
         /*=============================================
         =            Performance Mode            =
         =============================================*/
-        
+
             /**
              * Disables performance mode. This MOST not be called by anything else that is not 
              * performanceModeWatchdog.
@@ -1654,21 +1849,148 @@
              * @returns {void}
              */
             const performanceModeWatchdog = () => {
-                const ACTIVE_MEDIAS_THRESHOLD = 300;
+                const OBSERVATION_ACTIVE_MEDIAS_THRESHOLD = 300;
 
                 let new_performance_mode_value = false;
 
-                if (active_medias.length >= ACTIVE_MEDIAS_THRESHOLD) {
+                if (active_medias.length >= OBSERVATION_ACTIVE_MEDIAS_THRESHOLD) {
                     new_performance_mode_value = true;
                 }
 
-                if (enable_gallery_performance_mode === new_performance_mode_value) return;
+                // Apply changes related to performance mode if it's values has changed.
+                if (enable_gallery_performance_mode !== new_performance_mode_value) {
+                    if (new_performance_mode_value) {
+                        enablePerformanceMode();
+                    } else {
+                        disablePerformanceMode();
+                    }
+                };
 
-                if (new_performance_mode_value) {
-                    enablePerformanceMode();
-                } else {
-                    disablePerformanceMode();
+                if (!regulating_active_medias_load) {
+                    regulateActiveMediasLoadExcess();
                 }
+            }
+            
+            /**
+             * Regulates the active medias load excess. Ensures that the amount of medias displayed is 
+             * managable. If it's found to be excessive, it will attempt to drop some of the medias keeping in mind 
+             * continuity(not dropping medias from the middle series), preserving the focus media loaded and also the 
+             * currently visible medias(the ones on the viewport), there last ones should contain the focused media, but
+             * this may not be the case.
+             * @returns {Promise<void>}
+             */
+            const regulateActiveMediasLoadExcess = async () => {
+                const FUZZY_MAX_MEDIA_LOAD = 250;
+                if (active_medias.length <= FUZZY_MAX_MEDIA_LOAD) return;
+
+                console.log("%c"+"Regulating active medias", "color: orange; font-weight: bold; font-size: 72px");
+                
+                const pivot_media = getFocusedMedia();
+                const last_media_added = last_media_added_to_active_medias;
+                const grid_navigation_wrapper = the_grid_navigation_wrapper; // TS is retarded.
+
+                const cannot_regulate_active_medias = pivot_media == null || last_media_added == null || grid_navigation_wrapper == null; 
+                
+                if (cannot_regulate_active_medias) {
+                    console.debug("In MediaExplorerGallery.regulateActiveMediasLoadExcess: Cannot regulate active medias because one or more required variables are missing: pivot_media, last_media_added_to_active_medias, or the_grid_navigation_wrapper.");
+                    return;
+                }
+
+                // We most not remove medias from the side they were added the last time.
+                const addition_direction_right = last_media_added.Order > pivot_media.Order; 
+
+                // NOTE: Only unmount full rows
+
+                const ROW_OFFSET = 3; // The amount of rows to keep from the current row to the unmount direction.
+
+                const current_grid_row_index = grid_navigation_wrapper.MovementController.Grid.CursorRow;
+                const total_grid_rows = grid_navigation_wrapper.MovementController.Grid.length;
+
+                const desired_grid_row_index = addition_direction_right ? current_grid_row_index - ROW_OFFSET : current_grid_row_index + ROW_OFFSET;
+
+                if (desired_grid_row_index < 0 && desired_grid_row_index >= total_grid_rows) {
+                    console.warn(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: Could not offset the current grid row index by ${ROW_OFFSET} because it would go out of bounds.`);
+                    console.debug(`Current grid row index: ${current_grid_row_index}\nTotal grid rows: ${total_grid_rows}\nDesired grid row index: ${desired_grid_row_index}`);
+                    return;
+                }
+                // debugMEG__attachSnapshot(regulateActiveMediasLoadExcess.name, {
+                //     addition_direction_right: addition_direction_right,
+                //     current_grid_row_index: current_grid_row_index,
+                //     total_grid_rows: total_grid_rows,
+                //     desired_grid_row_index: desired_grid_row_index,
+                // });
+
+                const desired_row = grid_navigation_wrapper.MovementController.Grid.getRowAtIndex(desired_grid_row_index);
+                if (desired_row == null) {
+                    throw new Error(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: Could not get the row at index ${desired_grid_row_index}. Even though last check indicated that it was in bounds.`);
+                }
+
+                let mount_pivot = addition_direction_right ? desired_row.MinIndex : 0;
+                let mount_untill = addition_direction_right ? (active_medias.length - 1) : desired_row.MaxIndex;
+                
+                let regulated_active_medias = [];
+
+                // debugMEG__attachSnapshot(regulateActiveMediasLoadExcess.name, {
+                //     desired_row: desired_row,
+                //     mount_pivot: mount_pivot,
+                //     mount_untill: mount_untill,
+                // });
+
+                for (let h = mount_pivot; h <= mount_untill; h++) {
+                    if (regulated_active_medias.length >= FUZZY_MAX_MEDIA_LOAD) {
+                        console.error(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: Logical error detected, the regulated active medias exceeded the maximum load of ${FUZZY_MAX_MEDIA_LOAD}.`);
+                        break;
+                    }
+
+                    const media_item = active_medias[h];
+                    if (media_item == null) continue;
+
+
+                    regulated_active_medias.push(media_item);
+                }
+
+                regulating_active_medias_load = true;
+
+                try {
+                    setActiveMedias(regulated_active_medias);
+                } catch {
+                    console.error("In MediaExplorerGallery.regulateActiveMediasLoadExcess: Failed to set the active medias with the regulated ones.");
+                    return;
+                } finally {
+                    regulating_active_medias_load = false;
+                }
+
+                // debugMEG__attachSnapshot(regulateActiveMediasLoadExcess.name, {
+                //     regulated_active_medias: regulated_active_medias,
+                //     active_medias_length: active_medias.length,
+                // });
+            
+                await tick();
+
+                await setMediaFocusIndex(pivot_media.Order, true);
+                //-- Compensate scrolling 
+
+                const focused_media_element = getFocusedMediaElement();
+                if (focused_media_element == null) {
+                    console.warn("In MediaExplorerGallery.regulateActiveMediasLoadExcess: No focused media element found after regulating the active medias load.");
+                    return;
+                }
+
+                // debugMEG__attachSnapshot(regulateActiveMediasLoadExcess.name, {
+                //     focused_media_element: focused_media_element,
+                //     media_focus_index: media_focus_index,
+                //     grid_cursor: the_grid_navigation_wrapper?.MovementController.Grid.Cursor,
+                // });
+
+                focused_media_element.scrollIntoView({
+                    behavior: "instant",
+                    block: addition_direction_right ? "start" : "end",
+                });
+
+                focused_media_element.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
             }
         
         /*=====  End of Performance Mode  ======*/
@@ -1710,7 +2032,11 @@
             sliceOrderedMedias(0, Math.min(media_batch_size, ordered_medias.length));
         }
 
-        const defineGalleryState = () => {
+        /**
+         * Defines the gallery state. It will initialize the gallery items intersection observer
+         * and set the initial media items to be displayed in the gallery.
+         */
+        const defineGalleryState = async () => {
             if ($me_gallery_changes_manager === null) {
                 me_gallery_changes_manager.set(new MediaChangesEmitter());
             }
@@ -1725,7 +2051,7 @@
                 // - Loads enough media items into `active_medias` to ensure the focused media is visible.
                 // - Scrolls the focused media into view.
                 // - Sets `recovering_gallery_state` to false after recovery is complete.
-                recoverGalleryFocusItem();
+                await recoverGalleryFocusItem();
             } else {
                 // addInitialMediaItems:
                 // - Clears the `active_medias` array.
@@ -1892,6 +2218,10 @@
          * @return {LoadedMediaRange}
          */
         const getLoadedMediaRange = () => {
+            if (active_medias.length === 0) {
+                return {start: 0, end: 0};
+            }
+
             let start = active_medias[0].Order;
             let end = active_medias[active_medias.length - 1].Order;
 
@@ -1917,6 +2247,28 @@
         }
 
         /**
+         * Extracts and returns a media order out of a an HTMLElement that is under the gallery container element.
+         * @param {HTMLElement} element
+         * @returns {number | null}
+         */
+        const getMediaOrderOutOfElement = element => {
+            const media_order_data = element.dataset.mediaOrder;
+
+            if (media_order_data === undefined) {
+                return null;
+            }
+
+            const media_order = parseInt(media_order_data, 10);
+
+            if (isNaN(media_order)) {
+                console.error(`In MediaExplorerGallery.getMediaOrderOutOfElement: media_order_data "${media_order_data}" is not a valid number.`);
+                return null;
+            }
+
+            return media_order;
+        }
+
+        /**
          * Handles the change between masonary and normal layout.
          * @returns {Promise<void>}
          */
@@ -1924,6 +2276,21 @@
             await updateNavigationGrid();
 
             await ensureLastRowIsFull();
+        }
+
+        /**
+         * Returns the distance between to media orders.
+         * @param {number} order_a
+         * @param {number} order_b
+         * @returns {number}
+         */
+        const getMediaOrderDistance = (order_a, order_b) => {
+            if (!isMediaOrderInBounds(order_a) || !isMediaOrderInBounds(order_b)) {
+                console.error(`In MediaExplorerGallery.getMediaOrderDistance: One of the orders is out of bounds. order_a: ${order_a}, order_b: ${order_b}`);
+                return -1;
+            }
+
+            return Math.abs(order_a - order_b);
         }
 
         /**
@@ -1990,6 +2357,9 @@
          * @param {number} order
          */
         const isMediaOrderDisplayed = (order) => {
+            if (active_medias.length === 0) {
+                return false;
+            }
             const active_media_range = getLoadedMediaRange();
 
             return order >= active_media_range.start && order <= active_media_range.end;
@@ -2228,6 +2598,7 @@
                 return;
             }
             console.debug("In MediaExplorerGallery.resetGalleryState: Resetting gallery state.");
+            dropGridNavigationWrapper();
 
             dropGalleryItemsIntersectionObserver();
             
@@ -2237,7 +2608,6 @@
             me_gallery_changes_manager.set(null);
             me_renaming_focused_media.set(false);
 
-            dropGridNavigationWrapper();
         }
 
         /**
@@ -2255,7 +2625,6 @@
                 return;
             }
 
-            
             /** @type {number | undefined} */
             let cached_media_index = await category_cache.getCategoryIndex($current_category.uuid); 
 
@@ -2289,7 +2658,8 @@
                 return;
             }
             
-            media_focus_index = cached_media_index;
+            // media_focus_index = cached_media_index;
+            setMediaFocusIndex(cached_media_index, true);
             
             await tick();
 
@@ -2371,18 +2741,22 @@
                 throw new Error(`Media focus index ${new_media_focus_index} is out of bounds for media_items with length ${media_items.length}`);
             }
 
-            const media_is_loaded = isMediaOrderDisplayed(new_media_focus_index);
-
-            if (media_is_loaded) {
-                media_focus_index = new_media_focus_index;
-                
-                await manageInfiniteScroll();
-            } else {
-                await focusMediaItemByOrder(new_media_focus_index);
+            if (new_media_focus_index !== media_focus_index) {
+                const media_is_loaded = isMediaOrderDisplayed(new_media_focus_index);
+    
+                if (media_is_loaded) {
+                    media_focus_index = new_media_focus_index;
+                    
+                    await manageInfiniteScroll();
+                } else {
+                    await focusMediaItemByOrder(new_media_focus_index);
+                }
             }
 
             if (update_cursor && the_grid_navigation_wrapper != null) {
-                the_grid_navigation_wrapper.updateCursorPositionSilently(media_focus_index);
+                const display_index = getMediaDisplayIndexByOrder(new_media_focus_index);
+
+                the_grid_navigation_wrapper.updateCursorPositionSilently(display_index);
             }
         }
 
@@ -2394,6 +2768,8 @@
          * @returns {void}
          */
         const setActiveMedias = (new_active_medias, skip_performance_check = false) => {
+            updateLastMediaAdded(new_active_medias, active_medias);
+            
             active_medias = new_active_medias;
 
             if (!skip_performance_check) {
@@ -2532,6 +2908,45 @@
 
             show_media_titles_mode = new_state;
         }
+
+        /**
+         * Updates the last_media_added_to_active_medias, recieves the new and old values of active medias. 
+         * Determines if the change occurred at the start or end of the active_medias. If it can't determine,
+         * sets the last_media_added_to_active_medias to undefined.
+         * @param {import('@models/Medias').OrderedMedia[]} new_active_medias
+         * @param {import('@models/Medias').OrderedMedia[]} old_active_medias
+         * @returns {void}
+         */
+        const updateLastMediaAdded = (new_active_medias, old_active_medias) => {
+            /**
+             *  @type {import('@models/Medias').OrderedMedia | undefined}
+             */
+            let updated_last_added_media = undefined;
+
+            
+            if (new_active_medias.length > 0) {
+                // Keep in mind: if arr = [1,2,3,4], arr[4] is undefined(no overflow error thrown in js). so if
+                // for example, both arrays are empty, all of these variables will be undefined, which is 
+                // the default value of last_media_added_to_active_medias.
+                const last_media_in_new = new_active_medias[new_active_medias.length - 1];
+                const first_media_in_new = new_active_medias[0];
+                const last_media_in_old = old_active_medias[old_active_medias.length - 1];
+                const first_media_in_old = old_active_medias[0];
+
+                if (old_active_medias.length === 0) {
+                    updated_last_added_media = last_media_in_new;
+                } else if (first_media_in_old.Order === first_media_in_new.Order && last_media_in_old.Order !== last_media_in_new.Order) {
+                    // New media was added to the end of the active medias.
+                    updated_last_added_media = last_media_in_new;
+                } else if (last_media_in_old.Order === last_media_in_new.Order && first_media_in_old.Order !== first_media_in_new.Order) {
+                    // New media was added to the start of the active medias.
+                    updated_last_added_media = first_media_in_new;
+                }
+            }
+
+            last_media_added_to_active_medias = updated_last_added_media;
+        }
+
     /*=====  End of Methods  ======*/
 </script>
 
