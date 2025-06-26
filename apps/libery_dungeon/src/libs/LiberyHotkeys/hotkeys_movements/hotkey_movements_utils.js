@@ -801,11 +801,20 @@ class HM_GridRowSequence {
 }
 
 /**
- * current cursor correction provider function. An optional function that can be passed to the GridNavigationWrapper to determine 
- * what the current cursor should be after a mutation of the grid's contents.
+ * current cursor correction provider function. An optional function that can be passed
+ * to the GridNavigationWrapper to determine what the current cursor should
+ * be after a mutation of the grid's contents.
 * @callback CurrentCursorCorrectionProvider
  * @param {number} current_cursor - the current cursor before the mutation
  * @returns {number} - the new cursor after the mutation if NaN or non-positive number is returned, the cursor will remain unchanged.
+*/
+
+/**
+ * A function that is called whenever the griNavigation wrapper finishes constructing the grid 
+ * sequence. This can be after resize, mutation or initial setup.
+* @callback GridSequenceReadyCallback
+ * @param {HM_GridRowSequence} grid_sequence
+ * @returns {void}
 */
 
 /**
@@ -855,6 +864,12 @@ export class GridNavigationWrapper {
      * @type {EventListener}
      */
     #onresize_bounded;
+
+    /**
+     * an optional function that is called whenever the grid sequence is ready.
+     *  @type {GridSequenceReadyCallback | null}
+     */
+    #grid_sequence_ready_callback = null;
 
     /**
      * If set, when there is a mutation of the grid's contents, the mutation
@@ -938,6 +953,7 @@ export class GridNavigationWrapper {
      * @param {MutationObserver} observer
      */
     #onMutation(mutations, observer) {
+        console.log("Grid mutation processing started");
         const usable_before_mutation = this.#grid_sequence.isUsable();
 
         let current_cursor = 0;
@@ -950,6 +966,7 @@ export class GridNavigationWrapper {
 
         if (!this.#grid_sequence.isUsable()) return;
 
+        // Apply the cursor correction if the provider function is set.
         if (this.#cursor_correction_provider !== null) {
             let suggested_current_cursor = this.#cursor_correction_provider(current_cursor);
 
@@ -963,6 +980,9 @@ export class GridNavigationWrapper {
         current_cursor = this.#grid_sequence.clampSequenceIndex(current_cursor);
     
         this.#grid_sequence.setCursor(current_cursor);
+        console.log("Grid mutation processing finished");
+
+        this.#triggerGridSequenceReadyCallback();
     }
 
     /**
@@ -985,6 +1005,8 @@ export class GridNavigationWrapper {
         current_cursor = this.#grid_sequence.clampSequenceIndex(current_cursor);
 
         this.#grid_sequence.setCursor(current_cursor);
+
+        this.#triggerGridSequenceReadyCallback();
     }
 
     /**
@@ -1014,12 +1036,14 @@ export class GridNavigationWrapper {
         this.#mutation_observer.observe(this.#grid_parent, this.#mutation_config);
 
         window.addEventListener("resize", this.#onresize_bounded);
+
+        this.#triggerGridSequenceReadyCallback();
     }
 
     /**
      * Scans and creates the HM_GridRowSequence from the matching grid members.
      * Determines which element belong to the same row by checking their .getBoundingClientRect().y value.
-     * Cursor state is reset.
+     * Cursor state is reset, no callbacks are called.
      */
     scanGridMembers() {
         if (!this.#grid_parent?.hasChildNodes()) {
@@ -1061,6 +1085,32 @@ export class GridNavigationWrapper {
         }
 
         this.#cursor_correction_provider = cursor_provider_callback;
+    }
+
+    /**
+     * Sets a callback to be called when the grid sequence is ready. This can be after resize, mutation or initial setup.
+     * @param {GridSequenceReadyCallback} callback
+     */
+    setGridSequenceReadyCallback(callback) {
+        if (callback.constructor.name !== "Function" && callback.constructor.name !== "AsyncFunction") {
+            throw new Error("In @libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils.GridNavigationWrapper.setGridSequenceReadyCallback: callback was not a function");
+        }
+
+        this.#grid_sequence_ready_callback = callback;
+
+        if (this.#grid_sequence.isUsable()) {
+            this.#grid_sequence_ready_callback(this.#grid_sequence);
+        }
+    }
+
+    /**
+     * Triggers the sequence ready callback if it is set and appropriate(the grid is usable).
+     * @returns {void}
+     */
+    #triggerGridSequenceReadyCallback() {
+        if (this.#grid_sequence.isUsable() && this.#grid_sequence_ready_callback !== null) {
+            this.#grid_sequence_ready_callback(this.#grid_sequence);
+        }
     }
 }
 
