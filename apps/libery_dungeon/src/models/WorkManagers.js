@@ -394,7 +394,6 @@ import { NULLISH_MEDIA } from "./Medias";
             }
         }
 
-
         /**
          * Clears all the move changes and calls the callbacks with the NORMAL change type.
          * @returns {void}
@@ -416,6 +415,14 @@ import { NULLISH_MEDIA } from "./Medias";
         clearAllChanges() {
             this.clearAllDeletionChanges();
             this.clearAllMoveChanges();
+        }
+
+        /**
+         * Clears all changes subscriptions.
+         * @returns {void}
+         */
+        clearAllChangeSubscriptions() {
+            this.#on_changes_callbacks = {};
         }
 
         /**
