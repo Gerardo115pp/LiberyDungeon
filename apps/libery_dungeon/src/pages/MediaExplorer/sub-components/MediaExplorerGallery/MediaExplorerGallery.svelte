@@ -181,6 +181,12 @@
                  */
                 let media_focus_index = 0;
             
+                /**
+                 * A list of functions that are called when the_grid_navigation_wrapper's Grid 
+                 * changes. Managed by waitForGridSync function.
+                 * @type {Array<() => void | Promise<void>>}
+                 */
+                let grid_navigation_change_callbacks = [];
             
             /*----------  Selections  ----------*/
             
@@ -930,45 +936,6 @@
                     grid_member_selector: `> .${media_item_html_class}`,
                 }
             }
-            
-            /**
-             * Sets the grid navigation wrapper required data.
-             * @param {import("@libs/LiberyHotkeys/hotkeys_context").default} hotkeys_context
-             */
-            const setGridNavigationWrapper = (hotkeys_context) => {
-                if (!browser) return;
-
-                if (the_grid_navigation_wrapper != null) {
-                    the_grid_navigation_wrapper.destroy();
-                }
-
-                const grid_selectors = getGridSelectors();
-
-                const matching_elements_count = document.querySelectorAll(grid_selectors.grid_parent_selector).length;
-
-                if (matching_elements_count !== 1) {
-                    throw new Error(`Expected 1 element matching the grid member selector "${grid_selectors.grid_member_selector}" but found ${matching_elements_count}.`);
-                }
- 
-                const initial_cursor_position = getFocusedMediaDisplayIndex();
-
-                console.log(`In MediaExplorerGallery.setGridNavigationWrapper: Initial cursor position is ${initial_cursor_position}.`);
-
-                the_grid_navigation_wrapper = new CursorMovementWASD(grid_selectors.grid_parent_selector, handleCursorUpdate, {
-                    initial_cursor_position: initial_cursor_position,
-                    sequence_item_name: ui_core_dungeon_references.MEDIA.EntityName,
-                    sequence_item_name_plural: ui_core_dungeon_references.MEDIA.EntityNamePlural,
-                    grid_member_selector: grid_selectors.grid_member_selector,
-                    goto_item_finalizer: "", // Disable goto item handler of the CursorMovementWASD wrapper.
-                    on_mutation_cursor_correction_callback: translateCursorAfterContentMutation,
-                });
-
-                the_grid_navigation_wrapper.setup(hotkeys_context);
-
-                console.debug("In MediaExplorerGallery.setGridNavigationWrapper: active_medias.length:", active_medias.length);
-                console.debug("row_count:", the_grid_navigation_wrapper.MovementController.Grid.length);
-                console.log("Grid navigation wrapper setup FINISHED.")
-            }
 
             /**
              * Handles the Cursor update event emitted by the_grid_navigation_wrapper.
@@ -1007,6 +974,27 @@
             }
 
             /**
+             * callback passed to the grid navigation wrapper. is triggered after it's grid sequence 
+             * is reconstructed.
+             * @type {import("@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils").GridSequenceReadyCallback}
+             */
+            const handleGridSequenceReady = async new_sequence => {
+                if (grid_navigation_change_callbacks.length === 0) return;
+
+                for (const callback of grid_navigation_change_callbacks) {
+                    if (callback.constructor.name === "AsyncFunction") {
+                        await callback();
+                    } else if (callback.constructor.name === "Function") {
+                        callback();
+                    }
+                }
+
+                console.debug(`In MediaExplorerGallery.handleGridSequenceReady: Grid sequence ready. Executed ${grid_navigation_change_callbacks.length} callbacks.`);
+
+                grid_navigation_change_callbacks = [];
+            }
+
+            /**
              * called by handleCursorUpdate exclusively. handles the cursor update when the cursor overflows from one of the edges of the content. To
              * be clear, this would be when 'from c = 0 and movement direction is left' or 'from c = last_index and movement direction is right'.
              * @type {import("@common/keybinds/CursorMovement").CursorPositionCallback}
@@ -1039,6 +1027,89 @@
                 applyCursorNavigationSelection(media_focus_index, correct_media.Order);
 
                 setMediaFocusIndex(correct_media.Order, true);
+            }
+
+            /**
+             * Returns whether the current navigation grid in sync with the active_medias array.
+             * This means that the grid doesn't have the same amount of items as the active_medias array.
+             * @returns {boolean}
+             */
+            const navigationGridOutdated = () => {
+                if (the_grid_navigation_wrapper == null) {
+                    console.warn("No grid navigation wrapper available to check if the navigation grid is outdated.");
+                    return true;
+                }
+
+                const active_medias_length = active_medias.length;
+                const grid_2D_sequence_length = the_grid_navigation_wrapper.MovementController.Grid.SequenceLength;
+
+                return active_medias_length !== grid_2D_sequence_length;
+            }
+
+            /**
+             * Returns a promise that is resolved when the grid navigation wrapper finishes reconstructing the grid.
+             * If the navigation grid is in sync with the active_medias array, the promise is resolved immediately.
+             * Additionally, a timeout parameter(in milliseconds) can be passed to. If the grid doesn't update in that time, the promise is rejected.
+             * @param {number} [timeout=-1]
+             * @returns {Promise<void>}
+             */
+            const waitForGirdSync = (timeout = -1) => {
+                return new Promise((resolve, reject) => {
+                    const grid_outdated = navigationGridOutdated();
+                    if (!grid_outdated)  {
+                        resolve();
+                        return;
+                    }
+
+                    if (timeout > 0) {
+                        setTimeout(() => {
+                            reject(new Error("Grid navigation wrapper didn't update in time."));
+                        }, timeout);
+                    }
+
+                    grid_navigation_change_callbacks.push(() => resolve());
+                });
+            }
+
+            /**
+             * Sets the grid navigation wrapper required data.
+             * @param {import("@libs/LiberyHotkeys/hotkeys_context").default} hotkeys_context
+             */
+            const setGridNavigationWrapper = (hotkeys_context) => {
+                if (!browser) return;
+
+                if (the_grid_navigation_wrapper != null) {
+                    the_grid_navigation_wrapper.destroy();
+                }
+
+                const grid_selectors = getGridSelectors();
+
+                const matching_elements_count = document.querySelectorAll(grid_selectors.grid_parent_selector).length;
+
+                if (matching_elements_count !== 1) {
+                    throw new Error(`Expected 1 element matching the grid member selector "${grid_selectors.grid_member_selector}" but found ${matching_elements_count}.`);
+                }
+ 
+                const initial_cursor_position = getFocusedMediaDisplayIndex();
+
+                console.log(`In MediaExplorerGallery.setGridNavigationWrapper: Initial cursor position is ${initial_cursor_position}.`);
+
+                the_grid_navigation_wrapper = new CursorMovementWASD(grid_selectors.grid_parent_selector, handleCursorUpdate, {
+                    initial_cursor_position: initial_cursor_position,
+                    sequence_item_name: ui_core_dungeon_references.MEDIA.EntityName,
+                    sequence_item_name_plural: ui_core_dungeon_references.MEDIA.EntityNamePlural,
+                    grid_member_selector: grid_selectors.grid_member_selector,
+                    goto_item_finalizer: "", // Disable goto item handler of the CursorMovementWASD wrapper.
+                    on_mutation_cursor_correction_callback: translateCursorAfterContentMutation,
+                });
+
+                the_grid_navigation_wrapper.MovementController.setGridSequenceReadyCallback(handleGridSequenceReady);
+
+                the_grid_navigation_wrapper.setup(hotkeys_context);
+
+                console.debug("In MediaExplorerGallery.setGridNavigationWrapper: active_medias.length:", active_medias.length);
+                console.debug("row_count:", the_grid_navigation_wrapper.MovementController.Grid.length);
+                console.log("Grid navigation wrapper setup FINISHED.")
             }
 
             /**
