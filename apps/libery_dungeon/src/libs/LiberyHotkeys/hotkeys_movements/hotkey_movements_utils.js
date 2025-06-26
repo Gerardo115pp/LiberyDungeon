@@ -516,6 +516,18 @@ class HM_GridRowSequence {
     }
 
     /**
+     * Returns the amount of indexes in the sequence.
+     * @type {number}
+     */
+    get SequenceLength() {
+        if (this.#last_row === null || this.#first_row === null) {
+            return 0;
+        }
+
+        return this.#last_row.MaxIndex - this.#first_row.MinIndex + 1;
+    }
+
+    /**
      * Moves the cursor to the row above the current row and returns the new index of the sequence. 
      * @returns {GridWrappedValue}
      */
