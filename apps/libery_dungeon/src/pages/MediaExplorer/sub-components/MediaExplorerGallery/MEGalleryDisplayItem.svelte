@@ -122,6 +122,26 @@
                  */
                 let is_dragged = false;
         
+            
+            /*----------  Selection  ----------*/
+
+                /**
+                 * Whether the media items is selected.
+                 * @type {boolean}
+                 */
+                let is_media_selected = false;
+
+                /**
+                 * Whether the media item is set as deleted.
+                 * @type {boolean}
+                 */
+                let is_media_deleted = false;
+
+                /**
+                 * Whether the media item is among the yanked medias.
+                 * @type {boolean}
+                 */
+                let is_media_yanked = false;
         /*----------  Style  ----------*/
 
             /**
@@ -130,23 +150,6 @@
              */
             export let use_masonry = false;
 
-            /**
-             * Whether the media items is selected.
-             * @type {boolean}
-             */
-            export let is_media_selected = false;
-
-            /**
-             * Whether the media item is set as deleted.
-             * @type {boolean}
-             */
-            export let is_media_deleted = false;
-
-            /**
-             * Whether the media item is among the yanked medias.
-             * @type {boolean}
-             */
-            export let is_media_yanked = false;
 
         
             /*----------  container border modifiers.  ----------*/
