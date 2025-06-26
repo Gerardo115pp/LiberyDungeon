@@ -253,7 +253,6 @@
         
 
         let dispatch = createEventDispatcher();
-    
 
         /**
          * Enables or disables(manually) the debug mode.
@@ -1034,7 +1033,7 @@
              * This means that the grid doesn't have the same amount of items as the active_medias array.
              * @returns {boolean}
              */
-            const navigationGridOutdated = () => {
+            const isNavigationGridOutdated = () => {
                 if (the_grid_navigation_wrapper == null) {
                     console.warn("No grid navigation wrapper available to check if the navigation grid is outdated.");
                     return true;
@@ -1053,9 +1052,9 @@
              * @param {number} [timeout=-1]
              * @returns {Promise<void>}
              */
-            const waitForGirdSync = (timeout = -1) => {
+            const waitForGridSync = (timeout = -1) => {
                 return new Promise((resolve, reject) => {
-                    const grid_outdated = navigationGridOutdated();
+                    const grid_outdated = isNavigationGridOutdated();
                     if (!grid_outdated)  {
                         resolve();
                         return;
@@ -1917,9 +1916,9 @@
 
             /**
              * Determines whether the gallery is in performance mode should be enabled.
-             * @returns {void}
+             * @returns {Promise<void>}
              */
-            const performanceModeWatchdog = () => {
+            const performanceModeWatchdog = async () => {
                 const OBSERVATION_ACTIVE_MEDIAS_THRESHOLD = 300;
 
                 let new_performance_mode_value = false;
@@ -1938,6 +1937,7 @@
                 };
 
                 if (!regulating_active_medias_load) {
+                    await tick();
                     regulateActiveMediasLoadExcess();
                 }
             }
@@ -1951,10 +1951,24 @@
              * @returns {Promise<void>}
              */
             const regulateActiveMediasLoadExcess = async () => {
+                // TODO: Remove debugMEG__attachSnapshot before merging to master.
+                // TODO: Break down this function before merging to master.
                 const FUZZY_MAX_MEDIA_LOAD = 250;
                 if (active_medias.length <= FUZZY_MAX_MEDIA_LOAD) return;
 
-                console.log("%c"+"Regulating active medias", "color: orange; font-weight: bold; font-size: 72px");
+                if (isNavigationGridOutdated()) {
+                    await tick();
+                    if (isNavigationGridOutdated()) {
+                        await waitForGridSync(300); // Wait for the grid to sync or 300ms to pass.
+                    }                    
+
+                    if (isNavigationGridOutdated()) {
+                        console.error(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: The navigation grid is taking too long to update. Cowardly refusing to regulate active medias without accurate grid data.`);
+                        return;
+                    }
+                }
+
+                console.debug("%c"+"Regulating active medias", "color: orange; font-weight: bold; font-size: 46px");
                 
                 const pivot_media = getFocusedMedia();
                 const last_media_added = last_media_added_to_active_medias;
@@ -1966,6 +1980,12 @@
                     console.debug("In MediaExplorerGallery.regulateActiveMediasLoadExcess: Cannot regulate active medias because one or more required variables are missing: pivot_media, last_media_added_to_active_medias, or the_grid_navigation_wrapper.");
                     return;
                 }
+                // debugMEG__attachSnapshot(regulateActiveMediasLoadExcess.name, {
+                //     pivot_media: pivot_media,
+                //     last_media_added: last_media_added,
+                //     active_medias: [...active_medias],
+                //     media_focus_index: media_focus_index,
+                // });
 
                 // We most not remove medias from the side they were added the last time.
                 const addition_direction_right = last_media_added.Order > pivot_media.Order; 
@@ -2039,29 +2059,8 @@
                 await tick();
 
                 await setMediaFocusIndex(pivot_media.Order, true);
-                //-- Compensate scrolling 
 
-                const focused_media_element = getFocusedMediaElement();
-                if (focused_media_element == null) {
-                    console.warn("In MediaExplorerGallery.regulateActiveMediasLoadExcess: No focused media element found after regulating the active medias load.");
-                    return;
-                }
-
-                // debugMEG__attachSnapshot(regulateActiveMediasLoadExcess.name, {
-                //     focused_media_element: focused_media_element,
-                //     media_focus_index: media_focus_index,
-                //     grid_cursor: the_grid_navigation_wrapper?.MovementController.Grid.Cursor,
-                // });
-
-                focused_media_element.scrollIntoView({
-                    behavior: "instant",
-                    block: !addition_direction_right ? "start" : "end",
-                });
-
-                focused_media_element.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                });
+                scrollCompensateToFocusedMedia(addition_direction_right);
             }
         
         /*=====  End of Performance Mode  ======*/
@@ -2773,6 +2772,32 @@
                     behavior
                 });
             }
+        }
+
+        /**
+         * Scrolls to the focused media with a keyboard navigation 
+         * simulation. This is useful to give the illusion of
+         * continuous motion even when the cursor position is drastically
+         * changed.
+         * @param {boolean} [forward_motion=true] 
+         * @returns {void}
+         */
+        const scrollCompensateToFocusedMedia = (forward_motion = true) => {
+            const focused_media_element = getFocusedMediaElement();
+            if (focused_media_element == null) {
+                console.warn("In MediaExplorerGallery.scrollCompensateToFocusedMedia: No focused media element found");
+                return;
+            }
+
+            focused_media_element.scrollIntoView({
+                behavior: "instant",
+                block: forward_motion ? "end" : "start",
+            });
+
+            focused_media_element.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
         }
 
         /**
