@@ -806,6 +806,7 @@
                         getLastMediaAddedToActiveMedias: () => last_media_added_to_active_medias,
                         getMediaFocusIndex: () => media_focus_index,
                         getOrderedMedias: () => ordered_medias,
+                        getChangesManager: () => $me_gallery_changes_manager,
                     }
 
                     // @ts-ignore - Internal method references.
@@ -917,6 +918,7 @@
              * @returns {boolean}
              */
             const cursorMovementHasOverflowedContent = (cursor_wrapped_value, current_focus_index) => {
+                // TODO: manage bottom overflow from the last row when there are no more medias that can be loaded.
                 return (
                     (current_focus_index === 0 && cursor_wrapped_value.overflowed_left) ||
                     (current_focus_index === (ordered_medias.length - 1) && cursor_wrapped_value.overflowed_right)
@@ -1163,9 +1165,11 @@
             }
 
             /**
+             * returns the current selection state as human readable text.
              * @returns {string}
              */
             const getSelectionState = () => {
+                // TODO: move this to the debug section.
                 return `
                     \nauto_select_focused_media: ${auto_select_focused_media}, 
                     \nauto_stage_delete_focused_media: ${auto_stage_delete_focused_media}, 
@@ -1236,6 +1240,19 @@
                 } else {
                     selectMediaRange(start_index, end_index, auto_select_mode_adds);
                 }
+            }
+
+            /**
+             * handles the state of the changes emitter and it's subscribers.
+             * @returns {void}
+             */
+            const handleChangesEmitterState = () => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn("In MediaExplorerGallery.handleChangesEmitterState: No changes manager available to handle the changes emitter state.");
+                    return;
+                }
+
+                $me_gallery_changes_manager.clearAllChangeSubscriptions();
             }
 
             /**
@@ -1915,7 +1932,7 @@
             }
 
             /**
-             * Determines whether the gallery is in performance mode should be enabled.
+             * Determines whether the gallery's performance mode should be enabled.
              * @returns {Promise<void>}
              */
             const performanceModeWatchdog = async () => {
@@ -1934,7 +1951,7 @@
                     } else {
                         disablePerformanceMode();
                     }
-                };
+                }
 
                 if (!regulating_active_medias_load) {
                     await tick();
@@ -2436,6 +2453,28 @@
         }
 
         /**
+         * Returns whether an array of ordered medias containes a different range of
+         * medias from the one in the active_medias array.
+         * @param {import('@models/Medias').OrderedMedia[]} other_medias
+         * @returns {boolean}
+         */
+        const isActiveMediasDifferentFrom = (other_medias) => {
+            const active_medias_length = active_medias.length;
+            const other_medias_length = other_medias.length;
+
+            if (active_medias_length !== other_medias_length) {
+                return true;
+            }
+
+            const current_max_order = active_medias[active_medias_length - 1]?.Order || 0;
+            const current_min_order = active_medias[0]?.Order || 0;
+            const other_max_order = other_medias[other_medias_length - 1]?.Order || 0;
+            const other_min_order = other_medias[0]?.Order || 0;
+
+            return current_max_order !== other_max_order || current_min_order !== other_min_order;
+        }
+
+        /**
          * Loads medias preceding active_medias[0].Order. Returns a promise that resolves to true if more medias were loaded, false otherwise.
          * Throws an error if called when active_medias is empty as the propouse of this function is to fetch more medias for the infinite scroll.
          * @returns {Promise<boolean>}
@@ -2581,6 +2620,20 @@
             has_proceeding_medias = keep_watching;
 
             return keep_watching;
+        }
+
+        /**
+         * Manages state that has to be revaluated when the active_medias change. called by
+         * setActiveMedias exclusively.
+         * @param {import('@models/Medias').OrderedMedia[]} current_active_medias
+         * @param {import('@models/Medias').OrderedMedia[]} new_active_medias
+         */
+        const manageActiveMediasState = (current_active_medias, new_active_medias) => {
+            if (new_active_medias.length !== 0 && isActiveMediasDifferentFrom(new_active_medias)) {
+                updateLastMediaAdded(new_active_medias, current_active_medias);
+                
+                handleChangesEmitterState();
+            }
         }
 
         /**
@@ -2864,7 +2917,7 @@
          * @returns {void}
          */
         const setActiveMedias = (new_active_medias, skip_performance_check = false) => {
-            updateLastMediaAdded(new_active_medias, active_medias);
+            manageActiveMediasState(active_medias, new_active_medias);
             
             active_medias = new_active_medias;
 

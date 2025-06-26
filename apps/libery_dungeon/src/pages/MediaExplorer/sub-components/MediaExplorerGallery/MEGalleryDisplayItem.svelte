@@ -126,6 +126,12 @@
             /*----------  Selection  ----------*/
 
                 /**
+                 * The media_changes subscription id.
+                 * @type {string}
+                 */
+                let media_changes_subscription_id = "";
+
+                /**
                  * Whether the media items is selected.
                  * @type {boolean}
                  */
@@ -205,8 +211,6 @@
     /*=====  End of Properties  ======*/
 
     onMount(() => {
-        suscribeToMediaChanges();
-
         enableViewportObservation();
 
         yanked_medias_unsubscriber = me_gallery_yanked_medias.subscribe(handleYankedMediasChange);
@@ -214,7 +218,7 @@
     });
 
     onDestroy(() => {
-        unsuscribeFromMediaChanges();
+        unsubscribeFromMediaChanges(media_changes_subscription_id);
 
         disableViewportObservation();
 
@@ -515,33 +519,75 @@
             me_renaming_focused_media.set(false);
         }
 
+
+        /**
+         * Refreshes the media change state.
+         * @returns {void}
+         */
+        const refreshChangeState = () => {
+            if ($me_gallery_changes_manager == null) {
+                console.error("In MEGalleryDisplayItem.refreshChangeState: me_gallery_changes_manager is null");
+                return;
+            }
+
+            const current_media_change = $me_gallery_changes_manager.getMediaChangeType(ordered_media.uuid);
+
+            switch (current_media_change) {
+                case media_change_types.DELETED:
+                    is_media_deleted = true;
+                    is_media_selected = false;
+                    break;
+                case media_change_types.MOVED:
+                    is_media_selected = true;
+                    is_media_deleted = false;
+                    break;
+                case media_change_types.NORMAL:
+                    is_media_deleted = false;
+                    is_media_selected = false;
+                    break;
+                default:
+                    console.warn(`In MEGalleryDisplayItem.refreshChangeState: Unknown media change type '${current_media_change}' for media item with uuid '${ordered_media.uuid}'`);
+            }
+
+            return;
+        }
+
+            
+
         /**
          * Cancels current media changes suscription and creates a new one.
-         * @requires me_gallery_changes_manager
-         * @requires handleMediaChanges
          */
-        const refreshMediaChangesSubscription = () => {
-            unsuscribeFromMediaChanges();
-            suscribeToMediaChanges();
+        function refreshMediaChangesSubscription() {
+            if (is_media_yanked) return;
+
+            let new_media_changes_sub_id = generateMediaChangesUuid(ordered_media);
+
+            refreshChangeState();
+
+            if (new_media_changes_sub_id === media_changes_subscription_id) return; // Nothing to do.
+
+            suscribeToMediaChanges(new_media_changes_sub_id);
+
+            media_changes_subscription_id = new_media_changes_sub_id;
         }
 
         /**
          * Suscribe to media changes events emitted by the me_gallery_changes_manager.
+         * @param {string} element_media_uuid
          */
-        const suscribeToMediaChanges = () => {
+        const suscribeToMediaChanges = (element_media_uuid) => {
             if ($me_gallery_changes_manager == null) return;
 
-            let element_media_uuid = generateMediaChangesUuid(ordered_media);
             $me_gallery_changes_manager.suscribeToChanges(element_media_uuid, handleMediaChanges)
         }
 
         /**
          * Unsuscribe from media changes events emitted by the me_gallery_changes_manager.
+         * @param {string} element_media_uuid
          */
-        const unsuscribeFromMediaChanges = () => {
+        const unsubscribeFromMediaChanges = (element_media_uuid) => {
             if ($me_gallery_changes_manager == null) return;
 
-            let element_media_uuid = generateMediaChangesUuid(ordered_media);
             $me_gallery_changes_manager.unsubscribeToChanges(element_media_uuid);   
         }
     
@@ -549,14 +595,6 @@
     
 </script>
 
-<!-- TODO: 
-    Scrap out use:viewport for a custom solution that is more performant.
-    We need to be able to disable the viewport observation when the media list becomes too big.
-    After a couple of hundred items, this viewport action becomes a huge performance bottleneck.
-    The only way i see to fix this(and likely the best one) is to implement the same logic 
-    viewport uses, but within this component, that way we can have much more control over when
-    to disable the observation.
--->
 <div bind:this={this_dom_element} class="meg-display-item-wrapper"
     class:use-masonry={use_masonry}
     class:meg-di-keyboard-focused={is_keyboard_focused}
