@@ -1,15 +1,14 @@
 <script>
-    import { LabeledError, VariableEnvironmentContextError } from '@libs/LiberyFeedback/lf_models';
     import { 
+    generateMEGalleryItemCSSIdentifier,
         me_gallery_changes_manager,
         me_gallery_yanked_medias,
         me_renaming_focused_media,
-        meg_intersection_observer_event_names
+        meg_intersection_observer_event_names,
+        meg_media_change_state_event_names
     } from './me_gallery_state';
     import { media_change_types } from '@models/WorkManagers';
     import { onMount, onDestroy } from 'svelte';
-    import { lf_errors } from '@libs/LiberyFeedback/lf_errors';
-    import viewport from '@components/viewport_actions/useViewportActions';
     import { ensureElementVisible } from '@libs/utils';
     import MediaRenamingInput from './MediaRenamingInput.svelte';
     
@@ -23,7 +22,7 @@
          */
         export let ordered_media;
         $: if (ordered_media && $me_gallery_changes_manager != null) {
-            refreshMediaChangesSubscription();
+            syncMediaChangeState();
         }
 
         /**
@@ -115,21 +114,20 @@
                  */
                 let media_dragged_over = false;
 
-
                 /**
                  * Whether this media item is being dragged.
                  * @type {boolean}
                  */
                 let is_dragged = false;
-        
-            
             /*----------  Selection  ----------*/
 
                 /**
-                 * The media_changes subscription id.
+                 * The UUID of the media item that has been synced with this component's state.
+                 * Useful to figure out whether a change on the ordered_media reference requires
+                 * a re-synchronization of state.
                  * @type {string}
                  */
-                let media_changes_subscription_id = "";
+                let synced_media_uuid = "";
 
                 /**
                  * Whether the media items is selected.
@@ -156,8 +154,15 @@
              */
             export let use_masonry = false;
 
+            /**
+             * The CSS id for the component instance.
+             * The default is null cause svelte will not add the id attribute if it's null.
+             * @see {@link https://github.com/sveltejs/svelte/issues/3993#issuecomment-558319605}
+             * @type {string | null}
+             */
+            let media_based_css_id = null;
+            
 
-        
             /*----------  container border modifiers.  ----------*/
 
                 /**
@@ -211,16 +216,14 @@
     /*=====  End of Properties  ======*/
 
     onMount(() => {
-        enableViewportObservation();
+        enableMEGalleryItemEventListeners();
 
         yanked_medias_unsubscriber = me_gallery_yanked_medias.subscribe(handleYankedMediasChange);
         renaming_focused_media_unsubscriber = me_renaming_focused_media.subscribe(handleRenamingFocusedMediaChange);
     });
 
     onDestroy(() => {
-        unsubscribeFromMediaChanges(media_changes_subscription_id);
-
-        disableViewportObservation();
+        disableMEGalleryItemEventListeners();
 
         yanked_medias_unsubscriber();
         renaming_focused_media_unsubscriber();
@@ -229,6 +232,28 @@
     /*=============================================
     =            Methods            =
     =============================================*/
+
+        /**
+         * enables event listeners for the component.
+         * @returns {void}  
+         */
+        function enableMEGalleryItemEventListeners() {
+            if (this_dom_element == null) return;
+
+            enableViewportObservationListeners();
+            enableMediaChangeStateListeners();
+        }
+
+        /**
+         * disables event listeners for the component.
+         * @returns {void}
+         */
+        function disableMEGalleryItemEventListeners() {
+            if (this_dom_element == null) return;
+
+            disableViewportObservationListeners();
+            disableMediaChangeStateListeners();
+        }
         
         /*=============================================
         =            Drag handlers            =
@@ -303,14 +328,87 @@
         /*=====  End of Drag handlers  ======*/
         
         /*=============================================
+        =            Media change state.            =
+        =============================================*/
+            /**
+             * Adjusts the media change state based on the passed media change type.
+             * @param {import('@models/WorkManagers').MediaChangeType} change_type
+             * @returns {void}
+             */
+            function adjustMediaChangeState(change_type) {
+                if (change_type == null) return;
+
+                switch (change_type) {
+                    case media_change_types.MOVED:
+                        is_media_selected = true;
+                        is_media_deleted = false;
+                        break;
+                    case media_change_types.DELETED:
+                        is_media_selected = false;
+                        is_media_deleted = true;
+                        break;
+                    case media_change_types.NORMAL:
+                        is_media_selected = false;
+                        is_media_deleted = false;
+                        break;
+                }
+            }
+
+            /**
+             * Disables media change state event listeners.
+             * @returns {void}
+             */
+            function disableMediaChangeStateListeners() {
+                if (this_dom_element == null) return;
+
+                this_dom_element.removeEventListener(meg_media_change_state_event_names.ALTERED_MEDIA_CHANGE_STATE, handleMediaChangeStateEvent);
+            }
+        
+            /**
+             * Enables media change state events.
+             * @returns {void}
+             */
+            function enableMediaChangeStateListeners() {
+                if (this_dom_element == null) return;
+
+                this_dom_element.addEventListener(meg_media_change_state_event_names.ALTERED_MEDIA_CHANGE_STATE, handleMediaChangeStateEvent);
+            }
+
+            /**
+             * Handles the media change state dom event.
+             * @param {CustomEvent<import('@models/WorkManagers').MediaChangeType>} event
+             * @returns {void}
+             */
+            const handleMediaChangeStateEvent = event => {
+                if (event == null || event.detail == null) return;
+
+                const change_type = event.detail;
+
+                switch (change_type) {
+                    case media_change_types.MOVED:
+                        is_media_selected = true;
+                        is_media_deleted = false;
+                        break;
+                    case media_change_types.DELETED:
+                        is_media_selected = false;
+                        is_media_deleted = true;
+                        break;
+                    case media_change_types.NORMAL:
+                        is_media_selected = false;
+                        is_media_deleted = false;
+                        break;
+                }
+            }
+        /*=====  End of Media change state.  ======*/
+        
+        /*=============================================
         =            Viewport observation.            =
         =============================================*/
-        
             /**
              * disables the viewport observation dom listener events.
              * @returns {void}
              */
-            const disableViewportObservation = () => {
+            const disableViewportObservationListeners = () => {
                 if (this_dom_element == null) return;
 
                 this_dom_element.removeEventListener(
@@ -329,7 +427,7 @@
              * enables viewport intersection changes events.
              * @returns {void}
              */
-            const enableViewportObservation = () => {
+            const enableViewportObservationListeners = () => {
                 if (this_dom_element == null) return;
 
 
@@ -346,7 +444,7 @@
             }
         
             /**
-             * Hanldes viewport enter event emitted by the viewport action.
+             * Handles viewport enter event emitted by the viewport action.
              * @requires media_inside_viewport
              */
             const handleViewportEnter = () => {
@@ -354,7 +452,7 @@
             }
 
             /**
-             * Hanldes viewport leave event emitted by the viewport action.
+             * Handles viewport leave event emitted by the viewport action.
              * @requires media_inside_viewport
              */
             const handleViewportLeave = () => {
@@ -362,6 +460,8 @@
             }
         
         /*=====  End of Viewport observation.  ======*/
+
+        
 
         /**
          * Defines the element position modifiers based on the container limits.
@@ -402,56 +502,6 @@
         }
 
         /**
-         * Generates a media changes uuid based on the media item passed.
-         * @param {import('@models/Medias').OrderedMedia} media_item
-         * @returns {string}
-         */
-        const generateMediaChangesUuid = media_item => media_item.uuid + '_changes_callback';
-
-        /**
-         * Handles media change events emitted by the me_gallery_changes_manager. These are emitted every time there is any change for any media,
-         * so we have to check if the change is for this media item.
-         * @param {string} change_type
-         * @param {string} media_uuid
-         * @returns {void}
-         */
-        const handleMediaChanges = (change_type, media_uuid) => {
-            if (media_uuid !== ordered_media.uuid) return;
-
-            if ($me_gallery_changes_manager == null) {
-                throw new Error("In MEGalleryDisplayItem.handleMediaChanges: me_gallery_changes_manager is null");
-            }
-            
-            let trusted_change_type = $me_gallery_changes_manager.getMediaChangeType(media_uuid);
-            if (trusted_change_type !== change_type) {
-                console.warn(`Received a wrong change type '${change_type}' does not match the real change type registered in media changes manager: '${trusted_change_type}'`);
-            }
-
-            switch (trusted_change_type) {
-                case media_change_types.DELETED:
-                    handleMediaChangeToDeleted();
-                    break;
-                case media_change_types.MOVED:
-                    handleMediaChangeToSelected();  
-                    break;
-                case media_change_types.NORMAL:
-                    handleMediaChangeToNormal();
-                    break;
-                default:
-                    let variable_environment_error = new VariableEnvironmentContextError("In MEGalleryDisplayItem.handleMediaChanges")
-                    variable_environment_error.addVariable("change_type", change_type)
-                    variable_environment_error.addVariable("trusted_change_type", trusted_change_type)
-                    // @ts-ignore
-                    variable_environment_error.addVariable("this", this)
-                    variable_environment_error.addVariable("media_item", ordered_media)
-                    let labeled_err = new LabeledError(variable_environment_error, `Something weird happened. Received unknown change type: ${change_type}`, lf_errors.ERR_PROCESSING_ERROR);
-
-                    labeled_err.alert();
-                    break;
-            }
-        }
-
-        /**
          * Handles the acquisition of keyboard focus.
          */
         function handleKeyboardFocusAcquired() {
@@ -461,31 +511,6 @@
                 renaming_current_media = true;
             }
         }
-
-        /**
-         * handles a media change that sets the media item normal.
-         */
-        const handleMediaChangeToNormal = () => {
-            is_media_deleted = false;
-            is_media_selected = false;
-        }
-
-        /**
-         * handles a media change that sets the media item as deleted.
-         */
-        const handleMediaChangeToDeleted = () => {
-            is_media_deleted = true;
-            is_media_selected = false;  
-        }
-
-        /**
-         * Handles a media change that sets the media item as selected.
-         */
-        const handleMediaChangeToSelected = () => {
-            is_media_selected = true;
-            is_media_deleted = false;   
-        }
-
 
         /**
          * Checks if the media item is in the yanked media uuids list and sets the status accordingly.
@@ -511,14 +536,13 @@
         }
 
         /**
-         * Handles the media renamed event emited by the MediaRenamingInput
+         * Handles the media renamed event emitted by the MediaRenamingInput
          * @param {boolean} renamed_successfully
          * @returns {void}
          */
         const handleMediaRenamed = renamed_successfully => {
             me_renaming_focused_media.set(false);
         }
-
 
         /**
          * Refreshes the media change state.
@@ -532,70 +556,34 @@
 
             const current_media_change = $me_gallery_changes_manager.getMediaChangeType(ordered_media.uuid);
 
-            switch (current_media_change) {
-                case media_change_types.DELETED:
-                    is_media_deleted = true;
-                    is_media_selected = false;
-                    break;
-                case media_change_types.MOVED:
-                    is_media_selected = true;
-                    is_media_deleted = false;
-                    break;
-                case media_change_types.NORMAL:
-                    is_media_deleted = false;
-                    is_media_selected = false;
-                    break;
-                default:
-                    console.warn(`In MEGalleryDisplayItem.refreshChangeState: Unknown media change type '${current_media_change}' for media item with uuid '${ordered_media.uuid}'`);
-            }
+            adjustMediaChangeState(current_media_change);
 
             return;
         }
 
-            
-
         /**
-         * Cancels current media changes suscription and creates a new one.
+         * Synchronizes the media change state with the current media item.
          */
-        function refreshMediaChangesSubscription() {
-            if (is_media_yanked) return;
+        function syncMediaChangeState() {
+            let new_media_uuid = ordered_media.uuid;
 
-            let new_media_changes_sub_id = generateMediaChangesUuid(ordered_media);
+            if (new_media_uuid === synced_media_uuid) return; // Nothing to do.
 
-            refreshChangeState();
+            media_based_css_id = generateMEGalleryItemCSSIdentifier(ordered_media);
 
-            if (new_media_changes_sub_id === media_changes_subscription_id) return; // Nothing to do.
+            if (!is_media_yanked) {
+                refreshChangeState();
+            }
 
-            suscribeToMediaChanges(new_media_changes_sub_id);
-
-            media_changes_subscription_id = new_media_changes_sub_id;
-        }
-
-        /**
-         * Suscribe to media changes events emitted by the me_gallery_changes_manager.
-         * @param {string} element_media_uuid
-         */
-        const suscribeToMediaChanges = (element_media_uuid) => {
-            if ($me_gallery_changes_manager == null) return;
-
-            $me_gallery_changes_manager.suscribeToChanges(element_media_uuid, handleMediaChanges)
-        }
-
-        /**
-         * Unsuscribe from media changes events emitted by the me_gallery_changes_manager.
-         * @param {string} element_media_uuid
-         */
-        const unsubscribeFromMediaChanges = (element_media_uuid) => {
-            if ($me_gallery_changes_manager == null) return;
-
-            $me_gallery_changes_manager.unsubscribeToChanges(element_media_uuid);   
+            synced_media_uuid = new_media_uuid;
         }
     
     /*=====  End of Methods  ======*/
     
 </script>
 
-<div bind:this={this_dom_element} class="meg-display-item-wrapper"
+<div bind:this={this_dom_element} class="meg-display-item-wrapper meg-item-{ordered_media.uuid}"
+    id={media_based_css_id}
     class:use-masonry={use_masonry}
     class:meg-di-keyboard-focused={is_keyboard_focused}
     class:status-magnified={enable_magnify_on_keyboard_focus && is_keyboard_focused}

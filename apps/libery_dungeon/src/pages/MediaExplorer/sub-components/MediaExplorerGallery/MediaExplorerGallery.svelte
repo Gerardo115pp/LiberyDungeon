@@ -11,7 +11,7 @@
         import { hotkeys_sheet_visible, layout_properties } from "@stores/layout";
         import { HOTKEYS_HIDDEN_GROUP, HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
-        import { me_gallery_changes_manager, me_gallery_yanked_medias, me_renaming_focused_media, meg_intersection_observer_event_names } from './me_gallery_state';
+        import { generateMEGalleryItemCSSIdentifier, me_gallery_changes_manager, me_gallery_yanked_medias, me_renaming_focused_media, meg_intersection_observer_event_names, meg_media_change_state_event_names } from './me_gallery_state';
         import MeGalleryDisplayItem from './MEGalleryDisplayItem.svelte';
         import GridLoader from '@components/UI/Loaders/GridLoader.svelte';
         import CoverSlide from '@components/Animations/HoverEffects/CoverSlide.svelte';
@@ -345,7 +345,7 @@
                         description: "<content>Pastes the yanked medias if they were not yanked from the current category.",
                     });
 
-                    hotkeys_context.register(["alt+n"], handleGalleryReset, {
+                    hotkeys_context.register(["alt+n"], handleGallerySelectionReset, {
                         description: "<content>Deselects all selected medias and restores deleted medias that have not been committed(they are committed when you close the gallery).",
                     });
 
@@ -419,7 +419,7 @@
                 $me_gallery_changes_manager.clearAllMoveChanges();
 
                 // FIXME: This 
-                // @ts-ignore - this could be an issue but it's complex so, i will Fix it later.
+                // @ts-ignore - this could be an issue but it's complex so, i will Fix it later. That's just great lalo from the past. I have no idea what you were talking about.
                 me_gallery_yanked_medias.set([
                     ...yanked_medias,
                     ...selected_medias
@@ -682,9 +682,9 @@
             }
 
             /**
-             * handles gallery changes reset.
+             * handles the reset of gallery media changes.
              */
-            const handleGalleryReset = async () => {
+            const handleGallerySelectionReset = async () => {
                 if ($me_gallery_changes_manager === null) return;
 
                 const changes_count = $me_gallery_changes_manager.ChangesAmount;
@@ -692,7 +692,7 @@
                 const medias_per_row = getMediaItemsPerRow();
 
                 if (medias_per_row == null) {
-                    console.warn("In MediaExplorerGallery.handleGalleryReset: No media items per row available. Cannot determine if confirmation is required.");
+                    console.warn(`In MediaExplorerGallery.${handleGallerySelectionReset.name}: No media items per row available. Cannot determine if confirmation is required.`);
                     return;
                 }
 
@@ -712,7 +712,7 @@
                     }
                 }
 
-                $me_gallery_changes_manager.clearAllChanges();
+                clearAllSelectionChanges();
             }
 
             /**
@@ -1165,17 +1165,26 @@
             }
 
             /**
-             * returns the current selection state as human readable text.
-             * @returns {string}
+             * Clears all selection changes made by the user. Except for the yanked medias.
+             * @returns {void}
              */
-            const getSelectionState = () => {
-                // TODO: move this to the debug section.
-                return `
-                    \nauto_select_focused_media: ${auto_select_focused_media}, 
-                    \nauto_stage_delete_focused_media: ${auto_stage_delete_focused_media}, 
-                    \nauto_select_mode_enabled: ${auto_select_mode_enabled}
-                    \nauto_select_mode_adds: ${auto_select_mode_adds},
-                `;
+            const clearAllSelectionChanges = () => {
+                if ($me_gallery_changes_manager === null) {
+                    console.warn(`In MediaExplorerGallery.${clearAllSelectionChanges.name}: No changes manager available to clear all selection changes.`);
+                    return;
+                }
+
+                const selected_medias = active_medias.filter(media => {
+                    return $me_gallery_changes_manager.getMediaChangeType(media.uuid) !== media_change_types.NORMAL;
+                });
+
+                requestIdleCallback(() => {
+                    selected_medias.forEach(media => {
+                        notifyMediaChangeToGalleryItem(media, media_change_types.NORMAL);
+                    });
+                }, { timeout: 800 });
+                
+                $me_gallery_changes_manager.clearAllChanges();
             }
 
             /**
@@ -1210,6 +1219,20 @@
                 console.debug(`In MediaExplorerGallery.determineAutoSelectActivation: Auto select mode activated: ${is_activated}. Yank select mode: ${is_yank_select_mode ? 'selection' : 'deletion'}.`);
 
                 return is_activated;
+            }
+
+            /**
+             * returns the current selection state as human readable text.
+             * @returns {string}
+             */
+            const getSelectionState = () => {
+                // TODO: move this to the debug section.
+                return `
+                    \nauto_select_focused_media: ${auto_select_focused_media}, 
+                    \nauto_stage_delete_focused_media: ${auto_stage_delete_focused_media}, 
+                    \nauto_select_mode_enabled: ${auto_select_mode_enabled}
+                    \nauto_select_mode_adds: ${auto_select_mode_adds},
+                `;
             }
 
             /**
@@ -1352,6 +1375,22 @@
             }
 
             /**
+             * Notifies a MEGalleryDisplayItem of changes occurred to the media item.
+             * @param {import('@models/Medias').OrderedMedia} ordered_media
+             * @param {import('@models/WorkManagers').MediaChangeType} change_type
+             */
+            const notifyMediaChangeToGalleryItem = (ordered_media, change_type) => {
+                const notification_event = new CustomEvent(
+                    meg_media_change_state_event_names.ALTERED_MEDIA_CHANGE_STATE,
+                    {
+                        detail: change_type,
+                    }
+                )
+
+                emitMediaItemEvent(ordered_media, notification_event);
+            }
+
+            /**
              * Stages the focused media to be deleted.
              * @returns {void}
              */
@@ -1461,8 +1500,10 @@
                     });
 
                     $me_gallery_changes_manager.stageMediaMove(ordered_media.Media, fake_inner_category);
+                    notifyMediaChangeToGalleryItem(ordered_media, media_change_types.MOVED);
                 } else {
                     $me_gallery_changes_manager.unstageMediaMove(ordered_media.uuid);
+                    notifyMediaChangeToGalleryItem(ordered_media, media_change_types.NORMAL);
                 }
             }
 
@@ -1498,8 +1539,10 @@
 
                 if (staged_for_deletion) {
                     $me_gallery_changes_manager.stageMediaDeletion(ordered_media.Media);
+                    notifyMediaChangeToGalleryItem(ordered_media, media_change_types.DELETED);
                 } else {
                     $me_gallery_changes_manager.unstageMediaDeletion(ordered_media.uuid);
+                    notifyMediaChangeToGalleryItem(ordered_media, media_change_types.NORMAL);
                 }
             }
 
@@ -2169,6 +2212,23 @@
         }
 
         /**
+         * Emits an event on a gallery item.
+         * @param {import('@models/Medias').OrderedMedia} ordered_media
+         * @param {Event} event
+         * @returns {void}
+         */
+        const emitMediaItemEvent = (ordered_media, event) => {
+            const gallery_item_component_element = getMEGalleryItemComponentElement(ordered_media);
+            if (gallery_item_component_element === null) {
+                console.warn(`In MediaExplorerGallery.emitMediaItemEvent: No MEGalleryItem component found
+                for media with order ${ordered_media.Order}`);
+                return;
+            }
+
+            gallery_item_component_element.dispatchEvent(event);
+        }
+
+        /**
          * Ensures the last row in the grid has as many items as it can. meaning that it will add
          * elements to make the last row full unless there are no more medias to add.
          * @returns {Promise<void>}
@@ -2295,6 +2355,18 @@
          */
         const getMediaItemElementByOrder = (order) => {
             return document.querySelector(`.meg-gallery-item[data-media-order="${order}"]`);
+        }
+
+        /**
+         * Returns the HTMLElement that is mounted by an instance of the MEGalleryDisplayItem
+         * component and is the element that has EventListeners these components register.
+         * @param {import('@models/Medias').OrderedMedia} media
+         * @returns {HTMLElement | null}
+         */
+        const getMEGalleryItemComponentElement = (media) => {
+            const component_element_css_id = generateMEGalleryItemCSSIdentifier(media);
+
+            return document.getElementById(component_element_css_id);
         }
 
         /**
