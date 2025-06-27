@@ -236,6 +236,15 @@
             let cinema_mode = false;
 
             
+            /*----------  Has Unsaved changes  ----------*/
+            
+                /**
+                 * Whether the user has selected any medias or has any other unsaved changes.
+                 * used to determine whether to attach a beforeunload.
+                 *  @type {boolean}
+                 */
+                let has_unsaved_changes = false;
+            
             /*----------  Sub components state  ----------*/
             
                 
@@ -339,6 +348,7 @@
 
         parseQueryParams();
 
+        $media_changes_manager.setOnChangesMade(determineHasUnsavedChanges);
         // tagged_medias_tool_mounted.set(true);
     });
 
@@ -900,6 +910,7 @@
                 await $media_changes_manager.commitChanges($current_category.uuid);
                 await $categories_tree.updateCurrentCategory();
                 media_changes_manager.set(new MediaChangesManager());
+                determineHasUnsavedChanges();
 
                 // wait to set the active media index to the new value after async operations so the user doens't see weird image switching
                 await setActiveMediaIndex(new_active_media_index, false);
@@ -1262,6 +1273,67 @@
             }
         
         /*=====  End of Media modifiers  ======*/
+
+        /*=============================================
+        =            Media Changes            =
+        =============================================*/
+        
+            /*----------  Unsaved changes  ----------*/
+
+                /**
+                 * Attaches a beforeunload event listener to the window to
+                 * warn the user about unsaved changes.
+                 * @returns {void}
+                 */
+                const attachBeforeUnloadListener = () => {
+                    globalThis.addEventListener('beforeunload', handleBeforeUnload);
+                }
+
+                /**
+                 * Sets the has_unsaved_changes flag based on the meg_gallery_changes_manager 
+                 * state.
+                 * @returns {void}
+                 */
+                const determineHasUnsavedChanges = () => {
+                    let new_unsaved_changes_state = false;
+
+                    if ($media_changes_manager !== null) {
+                        new_unsaved_changes_state = $media_changes_manager.ChangesAmount > 0;
+                    }
+
+                    if (has_unsaved_changes === new_unsaved_changes_state) return;
+
+                    if (new_unsaved_changes_state) {
+                        console.debug("In MediaViewer.setHasUnsavedChanges: Attaching beforeunload listener.");
+                        attachBeforeUnloadListener();
+                    } else {
+                        console.debug("In MediaViewer.setHasUnsavedChanges: Removing beforeunload listener.");
+                        removeBeforeUnloadListener();
+                    }
+
+                    has_unsaved_changes = new_unsaved_changes_state;
+                }
+
+                /**
+                 * handles the beforeunload event to warn the user about unsaved changes.
+                 * @param {BeforeUnloadEvent} event
+                 */
+                const handleBeforeUnload = (event) => {
+                    if (!has_unsaved_changes) return;
+
+                    event.preventDefault();
+                    event.returnValue = '';  // Legacy support for some browsers.
+                }
+            
+                /**
+                 * Removes the beforeunload event listener from the window.
+                 * @returns {void}
+                 */
+                const removeBeforeUnloadListener = () => {
+                    globalThis.removeEventListener('beforeunload', handleBeforeUnload);
+                }
+        
+        /*=====  End of Media Changes  ======*/
 
         const automoveMedia = () => {
             if ($current_category == null) {
@@ -1782,8 +1854,6 @@
             $previous_medias.Clear();
             $static_next_medias.Clear();
         }
-
-
 
         /**
          * Enters or exists fullscreen mode.
