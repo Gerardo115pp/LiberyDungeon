@@ -67,7 +67,7 @@ export const linearCycleNavigationWrap = (current, max, direction, min=0) => {
 /**
  * An Row in the GridRowSequence. hold references to the previous and next row and an array with all the indexes of the original sequence the row contains.
  */
-class HM_GridRow {
+export class HM_GridRow {
     /**
      * The previous row in the sequence
      * @type {HM_GridRow | null}
@@ -234,7 +234,7 @@ class HM_GridRow {
 /**
  * A class to represent a sequence of rows with different lengths, each row represents an index of the sequence
  */
-class HM_GridRowSequence {
+export class HM_GridRowSequence {
     // Golden rule of this class: NEVER, expose rows to the outside world. That way we ensure that the sequence is always in a valid state. (or that if it's wrong, then thats because of a programming error)
 
     /**
