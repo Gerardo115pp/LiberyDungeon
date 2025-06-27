@@ -2010,7 +2010,133 @@
                     regulateActiveMediasLoadExcess();
                 }
             }
+
             
+            /*----------  Media Rendering load regulation  ----------*/
+            
+            /**
+             * Ensures that the navigation grid is up to date. Returns a boolean
+             * indicating whether the grid is guaranteed to be up to date.
+             * @returns {Promise<boolean>}
+             */
+            const regulate__ensureNavigationGridIsUpToDate = async () => {
+                let is_updated = isNavigationGridOutdated();
+
+                if (!is_updated) {
+                    await tick();
+                    is_updated = isNavigationGridOutdated();
+                    if (!is_updated) {
+                        await waitForGridSync(300); // Wait for the grid to sync or 300ms to pass.
+                    }                    
+
+                    is_updated = isNavigationGridOutdated();
+                }
+
+                return is_updated;
+            }
+
+            /**
+             * Returns the regulation data: focused_media, last_media_added_to_active_medias, and the_grid_navigation_wrapper.
+             * If any are missing, it returns null.
+             * @returns {Promise<BaseRegulationData | null>}
+             * @typedef {Object} BaseRegulationData
+             * @property {import('@models/Medias').OrderedMedia} pivot_media
+             * @property {import('@models/Medias').OrderedMedia} last_media_added
+             * @property {CursorMovementWASD} grid_navigation_wrapper
+             * @property {boolean} addition_direction_right
+             * @property {import('@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils').HM_GridRow} desired_row
+             */
+            const regulate__getBaseRegulationData = async () => {
+                const grid_updated = await regulate__ensureNavigationGridIsUpToDate();
+                if (!grid_updated) {
+                    console.warn(`In MediaExplorerGallery.${regulateActiveMediasLoadExcess.name}: The navigation grid is not up to date. Cowardly refusing to regulate active medias based on innacurate grid data.`);
+                    return null;
+                }
+
+                const pivot_media = getFocusedMedia();
+                const last_media_added = last_media_added_to_active_medias;
+                const grid_navigation_wrapper = the_grid_navigation_wrapper; // TS is retarded.
+
+                const cannot_regulate_active_medias = pivot_media == null || last_media_added == null || grid_navigation_wrapper == null; 
+                
+                if (cannot_regulate_active_medias) {
+                    console.debug("In MediaExplorerGallery.regulateActiveMediasLoadExcess: Cannot regulate active medias because one or more required variables are missing: pivot_media, last_media_added_to_active_medias, or the_grid_navigation_wrapper.");
+                    return null;
+                }
+
+                // -- Determine whether the user is scrolling away from the pivot media.
+                // And if so, stop the regulation process.
+                const user_is_scrolling_with_mouse = regulate__isUserScrollingWithMouse(pivot_media.Order, last_media_added.Order);
+                if (user_is_scrolling_with_mouse) {
+                    console.debug("In MediaExplorerGallery.regulateActiveMediasLoadExcess: Cannot regulate active medias because the user is scrolling with the mouse. Removing medias in this condition could break the state of the gallery.");
+                    return null;
+                }
+
+                // We must not remove medias from the side they were added the last time.
+                const addition_direction_right = regulate__wasLastMediaAddedToRight(pivot_media.Order, last_media_added.Order);
+
+                const desired_row = regulate__getDesiredRow(grid_navigation_wrapper, addition_direction_right);
+                if (desired_row == null) {
+                    console.error(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: Could not get the row at desired index.`);
+                    return null;
+                }
+
+                return {
+                    pivot_media,
+                    last_media_added,
+                    grid_navigation_wrapper,
+                    addition_direction_right,
+                    desired_row
+                };
+            }
+
+            /**
+             * Returns whether the user is scrolling with the mouse away from the focused media.
+             * @param {number} pivot_order
+             * @param {number} last_media_order
+             * @returns {boolean}
+             */
+            const regulate__isUserScrollingWithMouse = (pivot_order, last_media_order) => {
+                const distance_from_pivot_to_content_edge = getMediaOrderDistance(pivot_order, last_media_order);
+                const current_batch_size = getOptimalMediaBatchSize();
+                return distance_from_pivot_to_content_edge >= (current_batch_size * 1.3);
+            }
+
+            /**
+             * Returns whether the last media addtion was to the right(end of the content)
+             * the left(start of the content).
+             * @param {number} pivot_order
+             * @param {number} last_media_order
+             * @returns {boolean}
+             */
+            const regulate__wasLastMediaAddedToRight = (pivot_order, last_media_order) => {
+                return last_media_order > pivot_order;
+            }
+
+            /**
+             * Returns the diserd row from which to keep medias in a media load regulation process.
+             * @param {CursorMovementWASD} grid_navigation_wrapper
+             * @param {boolean} removal_from_left
+            */
+            const regulate__getDesiredRow = (grid_navigation_wrapper, removal_from_left) => {
+                const ROW_OFFSET = 3; // The amount of rows to keep from the current row to the unmount direction.
+
+                const current_grid_row_index = grid_navigation_wrapper.MovementController.Grid.CursorRow;
+                const total_grid_rows = grid_navigation_wrapper.MovementController.Grid.length;
+
+                const desired_grid_row_index = removal_from_left ? current_grid_row_index - ROW_OFFSET : current_grid_row_index + ROW_OFFSET;
+
+                if (desired_grid_row_index < 0 || desired_grid_row_index >= total_grid_rows) {
+                    console.warn(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: Could not offset the current grid row index by ${ROW_OFFSET} because it would go out of bounds.`);
+                    console.debug(`Current grid row index: ${current_grid_row_index}\nTotal grid rows: ${total_grid_rows}\nDesired grid row index: ${desired_grid_row_index}`);
+                    return null;
+                }
+
+                const desired_row = grid_navigation_wrapper.MovementController.Grid.getRowAtIndex(desired_grid_row_index);
+
+                return desired_row;
+            }
+
             /**
              * Regulates the active medias load excess. Ensures that the amount of medias displayed is 
              * managable. If it's found to be excessive, it will attempt to drop some of the medias keeping in mind 
@@ -2021,69 +2147,20 @@
              * @returns {Promise<void>}
              */
             const regulateActiveMediasLoadExcess = async (max_media_load = 250) => {
-                // TODO: Break down this function before merging to master.
-                if (active_medias.length <= max_media_load) return;
+                if (active_medias.length <= max_media_load || regulating_active_medias_load) return;
 
-                // Ensure the navigation grid is up to date before proceeding.
-                if (isNavigationGridOutdated()) {
-                    await tick();
-                    if (isNavigationGridOutdated()) {
-                        await waitForGridSync(300); // Wait for the grid to sync or 300ms to pass.
-                    }                    
 
-                    if (isNavigationGridOutdated()) {
-                        console.error(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: The navigation grid is taking too long to update. Cowardly refusing to regulate active medias without accurate grid data.`);
-                        return;
-                    }
-                }
-
-                console.debug("%c"+"Regulating active medias", "color: orange; font-weight: bold; font-size: 46px");
+                console.debug("%c"+"Regulating active medias", "color: orange; font-weight: bold; font-size: 32px");
                 
-                const pivot_media = getFocusedMedia();
-                const last_media_added = last_media_added_to_active_medias;
-                const grid_navigation_wrapper = the_grid_navigation_wrapper; // TS is retarded.
-
-                const cannot_regulate_active_medias = pivot_media == null || last_media_added == null || grid_navigation_wrapper == null; 
-                
-                if (cannot_regulate_active_medias) {
-                    console.debug("In MediaExplorerGallery.regulateActiveMediasLoadExcess: Cannot regulate active medias because one or more required variables are missing: pivot_media, last_media_added_to_active_medias, or the_grid_navigation_wrapper.");
-                    return;
-                }
-                
-                // -- Determine whether the user is scrolling away from the pivot media.
-                // And if so, stop the regulation process.
-                const distance_from_pivot_to_content_edge = getMediaOrderDistance(pivot_media.Order, last_media_added.Order);
-                const current_batch_size = getOptimalMediaBatchSize();
-                const user_is_scrolling_with_mouse = distance_from_pivot_to_content_edge >= (current_batch_size * 1.3);
-
-                if (user_is_scrolling_with_mouse) {
-                    console.debug("In MediaExplorerGallery.regulateActiveMediasLoadExcess: Cannot regulate active medias because the user is scrolling with the mouse. Removing medias in this condition could break the state of the gallery.");
+                const regulation_data = await regulate__getBaseRegulationData();
+                if (regulation_data === null) {
+                    console.warn("In MediaExplorerGallery.regulateActiveMediasLoadExcess: Cannot regulate active medias because the base regulation data is missing.");
                     return;
                 }
 
-                // We must not remove medias from the side they were added the last time.
-                const addition_direction_right = last_media_added.Order > pivot_media.Order;
-
-                // NOTE: Only unmount full rows
-
-                const ROW_OFFSET = 3; // The amount of rows to keep from the current row to the unmount direction.
-
-                const current_grid_row_index = grid_navigation_wrapper.MovementController.Grid.CursorRow;
-                const total_grid_rows = grid_navigation_wrapper.MovementController.Grid.length;
-
-                const desired_grid_row_index = addition_direction_right ? current_grid_row_index - ROW_OFFSET : current_grid_row_index + ROW_OFFSET;
-
-                if (desired_grid_row_index < 0 && desired_grid_row_index >= total_grid_rows) {
-                    console.warn(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: Could not offset the current grid row index by ${ROW_OFFSET} because it would go out of bounds.`);
-                    console.debug(`Current grid row index: ${current_grid_row_index}\nTotal grid rows: ${total_grid_rows}\nDesired grid row index: ${desired_grid_row_index}`);
-                    return;
-                }
-
-                const desired_row = grid_navigation_wrapper.MovementController.Grid.getRowAtIndex(desired_grid_row_index);
-                if (desired_row == null) {
-                    throw new Error(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: Could not get the row at index ${desired_grid_row_index}. Even though last check indicated that it was in bounds.`);
-                }
-
+                // NOTE: Only unmount full rows.
+                const { addition_direction_right, desired_row } = regulation_data;
+ 
                 let mount_pivot = addition_direction_right ? desired_row.MinIndex : 0;
                 let mount_untill = addition_direction_right ? (active_medias.length - 1) : desired_row.MaxIndex;
                 
@@ -2115,7 +2192,7 @@
             
                 await tick();
 
-                await setMediaFocusIndex(pivot_media.Order, true);
+                await setMediaFocusIndex(regulation_data.pivot_media.Order, true);
 
                 scrollCompensateToFocusedMedia(addition_direction_right);
             }
