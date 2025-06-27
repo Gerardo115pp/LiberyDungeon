@@ -45,11 +45,19 @@ import { NULLISH_MEDIA } from "./Medias";
          */
         #used_categories
 
+        /**
+         * A callback triggered when changes of any kind are made.
+         * @type {Function | null}
+         */
+        #on_changes_made = null;
+
         constructor() {
             this.#deleted_medias = new Map();
             this.#moved_medias = new Map();
             this.#moved_medias_data = {};
             this.#used_categories = [];
+
+            this.#on_changes_made = null;
         }
 
         /**
@@ -141,26 +149,38 @@ import { NULLISH_MEDIA } from "./Medias";
          * @param {string} media_uuid the uuid of the media
          */
         clearMediaChanges(media_uuid) {
-            this.unstageMediaDeletion(media_uuid);
-            this.unstageMediaMove(media_uuid);
+            this.unstageMediaDeletion(media_uuid, true);
+            this.unstageMediaMove(media_uuid, true);
+
+            this.triggerOnChangesMade();
         }
 
         /**
          * Clears all the deletion changes.
+         * @param {boolean} [skip_callbacks=false] 
          * @returns {void}
          */
-        clearAllDeletionChanges() {
+        clearAllDeletionChanges(skip_callbacks = false) {
             this.#deleted_medias.clear();
+
+            if (!skip_callbacks) {
+                this.triggerOnChangesMade();
+            }
         }
 
         /**
          * Clears all the move changes.
+         * @param {boolean} [skip_callbacks=false]
          * @returns {void}
          */
-        clearAllMoveChanges() {
+        clearAllMoveChanges(skip_callbacks = false) {
             this.#moved_medias.clear();
             this.#moved_medias_data = {};
             this.#used_categories = [];
+
+            if (!skip_callbacks) {
+                this.triggerOnChangesMade();
+            }
         }
 
         /**
@@ -168,8 +188,10 @@ import { NULLISH_MEDIA } from "./Medias";
          * @returns {void}
          */
         clearAllChanges() {
-            this.clearAllDeletionChanges();
-            this.clearAllMoveChanges();
+            this.clearAllDeletionChanges(true);
+            this.clearAllMoveChanges(true);
+
+            this.triggerOnChangesMade();
         }
 
         /**
@@ -209,30 +231,32 @@ import { NULLISH_MEDIA } from "./Medias";
         /**
          * Adds a media to the deleted medias set
          * @param {Media} media the media to be deleted
-        */
+         */
         stageMediaDeletion(media) {
                 // check if media is staged to be moved to another category, if so, unstage it from the move staging
                 if (this.#moved_medias.has(media.uuid)) {
-                    this.unstageMediaMove(media.uuid);
+                    this.unstageMediaMove(media.uuid, true);
                 }
 
                 this.#deleted_medias.set(media.uuid, media);
+
+                this.triggerOnChangesMade();
         }
 
         /**
          * Adds a media to the moved medias map
          * @param {Media} media the media to be moved 
          * @param {InnerCategory} new_category the uuid of the new category
-        */
+         */
         stageMediaMove(media, new_category) {
                 // check if media is already staged for move to another category
                 if (this.#moved_medias.has(media.uuid)) {
-                    this.unstageMediaMove(media.uuid);
+                    this.unstageMediaMove(media.uuid, true);
                 }
 
                 // check if media is staged for deletion, if so, remove it from the deleted medias set
                 if (this.#deleted_medias.has(media.uuid)) {
-                    this.unstageMediaDeletion(media.uuid);
+                    this.unstageMediaDeletion(media.uuid, false);
                 }
 
 
@@ -246,21 +270,48 @@ import { NULLISH_MEDIA } from "./Medias";
                 if ((this.#used_categories.find(category => category.uuid === new_category.uuid)) === undefined) {
                     this.#used_categories.push(new_category);
                 }
+
+                this.triggerOnChangesMade();
+        }
+
+        /**
+         * Sets a callback to be called when changes are made to the medias.
+         * @param {Function | null} callback
+         * @returns {void}
+         */
+        setOnChangesMade(callback) {
+            this.#on_changes_made = callback;
+        }
+
+        /**
+         * Triggers the on_changes_made callback if it is set.
+         * @returns {void}
+         */
+        triggerOnChangesMade() {
+            if (this.#on_changes_made) {
+                this.#on_changes_made();
+            }
         }
 
         /**
          * Removes a media from the delete staging set
          * @param {string} media_uuid the uuid of the media
+         * @param {boolean} [skip_callbacks=false]
          */
-        unstageMediaDeletion(media_uuid){
+        unstageMediaDeletion(media_uuid, skip_callbacks=false){
             this.#deleted_medias.delete(media_uuid);
+
+            if (!skip_callbacks) {
+                this.triggerOnChangesMade();
+            }
         }
 
         /**
          * Removes a media from the move staging map and the move staging data
          * @param {string} media_uuid the uuid of the media
-        */
-        unstageMediaMove(media_uuid) {
+         * @param {boolean} [skip_callbacks=false]
+         */
+        unstageMediaMove(media_uuid, skip_callbacks=false) {
             if (!this.#moved_medias.has(media_uuid)) {
                 return;
             }
@@ -277,6 +328,10 @@ import { NULLISH_MEDIA } from "./Medias";
                 delete this.#moved_medias_data[new_category_uuid];
 
                 this.#used_categories = this.#used_categories.filter(category => category.uuid !== new_category_uuid);
+            }
+
+            if (!skip_callbacks) {
+                this.triggerOnChangesMade();
             }
         }
     }
