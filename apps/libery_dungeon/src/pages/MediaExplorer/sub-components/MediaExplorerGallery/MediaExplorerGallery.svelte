@@ -1653,6 +1653,15 @@
 
                 if (!browser) return DEFAULT_MEDIA_BATCH_SIZE; 
 
+                if (meg_gallery_style === undefined) {
+                    meg_gallery_style = getGalleryCSSStyle();
+
+                    if (meg_gallery_style === undefined) {
+                        console.warn("In MediaExplorerGallery.getOptimalMediaBatchSize: No gallery CSS style available.");
+                        return DEFAULT_MEDIA_BATCH_SIZE;
+                    }
+                }
+
                 const number_of_items_per_row = getMediaItemsPerRowFromCSS(meg_gallery_style);
                 if (number_of_items_per_row === undefined) {
                     console.error(`In MediaExplorerGallery.getOptimalMediaBatchSize: No number of items per row found in the gallery CSS style.`);
@@ -2008,14 +2017,14 @@
              * continuity(not dropping medias from the middle series), preserving the focus media loaded and also the 
              * currently visible medias(the ones on the viewport), there last ones should contain the focused media, but
              * this may not be the case.
+             * @param {number} [max_media_load=250]
              * @returns {Promise<void>}
              */
-            const regulateActiveMediasLoadExcess = async () => {
-                // TODO: Remove debugMEG__attachSnapshot before merging to master.
+            const regulateActiveMediasLoadExcess = async (max_media_load = 250) => {
                 // TODO: Break down this function before merging to master.
-                const FUZZY_MAX_MEDIA_LOAD = 250;
-                if (active_medias.length <= FUZZY_MAX_MEDIA_LOAD) return;
+                if (active_medias.length <= max_media_load) return;
 
+                // Ensure the navigation grid is up to date before proceeding.
                 if (isNavigationGridOutdated()) {
                     await tick();
                     if (isNavigationGridOutdated()) {
@@ -2040,15 +2049,20 @@
                     console.debug("In MediaExplorerGallery.regulateActiveMediasLoadExcess: Cannot regulate active medias because one or more required variables are missing: pivot_media, last_media_added_to_active_medias, or the_grid_navigation_wrapper.");
                     return;
                 }
-                // debugMEG__attachSnapshot(regulateActiveMediasLoadExcess.name, {
-                //     pivot_media: pivot_media,
-                //     last_media_added: last_media_added,
-                //     active_medias: [...active_medias],
-                //     media_focus_index: media_focus_index,
-                // });
+                
+                // -- Determine whether the user is scrolling away from the pivot media.
+                // And if so, stop the regulation process.
+                const distance_from_pivot_to_content_edge = getMediaOrderDistance(pivot_media.Order, last_media_added.Order);
+                const current_batch_size = getOptimalMediaBatchSize();
+                const user_is_scrolling_with_mouse = distance_from_pivot_to_content_edge >= (current_batch_size * 1.3);
 
-                // We most not remove medias from the side they were added the last time.
-                const addition_direction_right = last_media_added.Order > pivot_media.Order; 
+                if (user_is_scrolling_with_mouse) {
+                    console.debug("In MediaExplorerGallery.regulateActiveMediasLoadExcess: Cannot regulate active medias because the user is scrolling with the mouse. Removing medias in this condition could break the state of the gallery.");
+                    return;
+                }
+
+                // We must not remove medias from the side they were added the last time.
+                const addition_direction_right = last_media_added.Order > pivot_media.Order;
 
                 // NOTE: Only unmount full rows
 
@@ -2064,12 +2078,6 @@
                     console.debug(`Current grid row index: ${current_grid_row_index}\nTotal grid rows: ${total_grid_rows}\nDesired grid row index: ${desired_grid_row_index}`);
                     return;
                 }
-                // debugMEG__attachSnapshot(regulateActiveMediasLoadExcess.name, {
-                //     addition_direction_right: addition_direction_right,
-                //     current_grid_row_index: current_grid_row_index,
-                //     total_grid_rows: total_grid_rows,
-                //     desired_grid_row_index: desired_grid_row_index,
-                // });
 
                 const desired_row = grid_navigation_wrapper.MovementController.Grid.getRowAtIndex(desired_grid_row_index);
                 if (desired_row == null) {
@@ -2081,15 +2089,9 @@
                 
                 let regulated_active_medias = [];
 
-                // debugMEG__attachSnapshot(regulateActiveMediasLoadExcess.name, {
-                //     desired_row: desired_row,
-                //     mount_pivot: mount_pivot,
-                //     mount_untill: mount_untill,
-                // });
-
                 for (let h = mount_pivot; h <= mount_untill; h++) {
-                    if (regulated_active_medias.length >= FUZZY_MAX_MEDIA_LOAD) {
-                        console.error(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: Logical error detected, the regulated active medias exceeded the maximum load of ${FUZZY_MAX_MEDIA_LOAD}.`);
+                    if (regulated_active_medias.length >= max_media_load) {
+                        console.error(`In MediaExplorerGallery.regulateActiveMediasLoadExcess: Logical error detected, the regulated active medias exceeded the maximum load of ${max_media_load}.`);
                         break;
                     }
 
@@ -2110,11 +2112,6 @@
                 } finally {
                     regulating_active_medias_load = false;
                 }
-
-                // debugMEG__attachSnapshot(regulateActiveMediasLoadExcess.name, {
-                //     regulated_active_medias: regulated_active_medias,
-                //     active_medias_length: active_medias.length,
-                // });
             
                 await tick();
 
