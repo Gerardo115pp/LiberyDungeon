@@ -189,6 +189,13 @@
                 let grid_navigation_change_callbacks = [];
             
             /*----------  Selections  ----------*/
+
+                /**
+                 * Whether the user has selected any medias or has any other unsaved changes.
+                 * used to determine whether to attach a beforeunload.
+                 *  @type {boolean}
+                 */
+                let has_unsaved_changes = false;
             
                 /**
                  * Whether focused media items should be auto selected(usually for media yanking). Enabled on keydown for media select
@@ -1185,6 +1192,8 @@
                 }, { timeout: 800 });
                 
                 $me_gallery_changes_manager.clearAllChanges();
+
+                setHasUnsavedChanges();
             }
 
             /**
@@ -1505,6 +1514,8 @@
                     $me_gallery_changes_manager.unstageMediaMove(ordered_media.uuid);
                     notifyMediaChangeToGalleryItem(ordered_media, media_change_types.NORMAL);
                 }
+
+                setHasUnsavedChanges();
             }
 
             /**
@@ -1544,6 +1555,8 @@
                     $me_gallery_changes_manager.unstageMediaDeletion(ordered_media.uuid);
                     notifyMediaChangeToGalleryItem(ordered_media, media_change_types.NORMAL);
                 }
+
+                setHasUnsavedChanges();
             }
 
             /**
@@ -1575,6 +1588,61 @@
 
                 setMediaSelectedState(media_item, !is_media_yanked);
             }
+
+            /*----------  Unsaved changes  ----------*/
+
+                /**
+                 * Attaches a beforeunload event listener to the window to
+                 * warn the user about unsaved changes.
+                 * @returns {void}
+                 */
+                const attachBeforeUnloadListener = () => {
+                    globalThis.addEventListener('beforeunload', handleBeforeUnload);
+                }
+
+                /**
+                 * handles the beforeunload event to warn the user about unsaved changes.
+                 * @param {BeforeUnloadEvent} event
+                 */
+                const handleBeforeUnload = (event) => {
+                    if (!has_unsaved_changes) return;
+
+                    event.preventDefault();
+                    event.returnValue = '';  // Legacy support for some browsers.
+                }
+            
+                /**
+                 * Removes the beforeunload event listener from the window.
+                 * @returns {void}
+                 */
+                const removeBeforeUnloadListener = () => {
+                    globalThis.removeEventListener('beforeunload', handleBeforeUnload);
+                }
+
+                /**
+                 * Sets the has_unsaved_changes flag based on the meg_gallery_changes_manager 
+                 * state.
+                 * @returns {void}
+                 */
+                const setHasUnsavedChanges = () => {
+                    let new_unsaved_changes_state = false;
+
+                    if ($me_gallery_changes_manager !== null) {
+                        new_unsaved_changes_state = $me_gallery_changes_manager.ChangesAmount > 0;
+                    }
+
+                    if (has_unsaved_changes === new_unsaved_changes_state) return;
+
+                    if (new_unsaved_changes_state) {
+                        console.debug("In MediaExplorerGallery.setHasUnsavedChanges: Attaching beforeunload listener.");
+                        attachBeforeUnloadListener();
+                    } else {
+                        console.debug("In MediaExplorerGallery.setHasUnsavedChanges: Removing beforeunload listener.");
+                        removeBeforeUnloadListener();
+                    }
+
+                    has_unsaved_changes = new_unsaved_changes_state;
+                }
 
         /*=====  End of Selection  ======*/
         
@@ -2877,6 +2945,7 @@
             me_gallery_changes_manager.set(null);
             me_renaming_focused_media.set(false);
 
+            setHasUnsavedChanges(); // if me_gallery_changes_manager is null, the function will automatically assume there are no unsaved changes.
         }
 
         /**
