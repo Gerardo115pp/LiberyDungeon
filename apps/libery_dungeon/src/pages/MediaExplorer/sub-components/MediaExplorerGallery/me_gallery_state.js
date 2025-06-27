@@ -10,6 +10,25 @@ export const meg_intersection_observer_event_names = {
 }
 
 /**
+ * Media change state related event names.
+ */
+export const meg_media_change_state_event_names = {
+    ALTERED_MEDIA_CHANGE_STATE: 'me-gallery-altered-media-change-state',
+}
+
+/**
+ * Generates an ID for a MEGallery item that is a confirming CSS identifier.
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/id#syntax}
+ * @param {import('@models/Medias').OrderedMedia} media
+ * @returns {string}
+ */
+export const generateMEGalleryItemCSSIdentifier = (media) => {
+    const generated_id = `meg-item-${media.Media.main_category}-${media.Media.uuid}`;
+
+    return CSS.escape(generated_id);
+}
+
+/**
  * A Media changes manager used to edit the media gallery.
  * @type {import('svelte/store').Writable<MediaChangesEmitter | null>}
  * @default null
