@@ -166,7 +166,6 @@ export const isUrlMediaFile = media_url => {
     return isUrlVideo(media_url) || isUrlImage(media_url);
 }
 
-
 /*=============================================
 =            Paths            =
 =============================================*/
@@ -348,10 +347,10 @@ export const encodeVideoTime = video_time => {
     /**
      * @template T
      */
-    class StackNode {
+    class LinkedNode {
         /** @type {T} */
         #value;
-        /** @type {StackNode<T> | null} */
+        /** @type {LinkedNode<T> | null} */
         #next;
         
         /**
@@ -382,12 +381,12 @@ export const encodeVideoTime = video_time => {
     /**
      * @template T
      */
-    export class DoublyLinkedStackNode {
+    export class DoublyLinkedNode {
         /** @type {T} */
         #value;
-        /** @type {DoublyLinkedStackNode<T> | null} */
+        /** @type {DoublyLinkedNode<T> | null} */
         #next;
-        /** @type {DoublyLinkedStackNode<T> | null} */
+        /** @type {DoublyLinkedNode<T> | null} */
         #prev;
 
         /**
@@ -429,7 +428,7 @@ export const encodeVideoTime = video_time => {
      */
     export class Stack {
         /** 
-         * @type {StackNode<T> | null} 
+         * @type {LinkedNode<T> | null} 
          */
         #top;
 
@@ -448,7 +447,7 @@ export const encodeVideoTime = video_time => {
          * @param {T} value - the value to add to the stack
          */
         Add(value) {
-            let new_node = new StackNode(value);
+            let new_node = new LinkedNode(value);
             new_node.Next = this.#top;
             this.#top = new_node;
             this.#size++;
@@ -542,19 +541,19 @@ export const encodeVideoTime = video_time => {
 
         /**
          * The top of the stack
-         * @type {DoublyLinkedStackNode<T> | null}
+         * @type {DoublyLinkedNode<T> | null}
          */
         #top;
 
         /**
          * The bottom of the stack
-         * @type {DoublyLinkedStackNode<T> | null}
+         * @type {DoublyLinkedNode<T> | null}
          */
         #bottom;
 
         /**
          * A node for traversing the stack from the top
-         * @type {DoublyLinkedStackNode<T> | null} 
+         * @type {DoublyLinkedNode<T> | null} 
          */
         #traversing_node;
 
@@ -578,8 +577,8 @@ export const encodeVideoTime = video_time => {
          * @param {T} value 
          */
         Add(value) {
-            /** @type {DoublyLinkedStackNode<T>} */
-            let new_node = new DoublyLinkedStackNode(value);
+            /** @type {DoublyLinkedNode<T>} */
+            let new_node = new DoublyLinkedNode(value);
 
             new_node.Next = this.#top;
 
@@ -673,7 +672,7 @@ export const encodeVideoTime = video_time => {
             let current_value;
 
             if (this.#traversing_node === null) {
-                current_value = /** @type {DoublyLinkedStackNode<T>} */ (this.#top).Value;
+                current_value = /** @type {DoublyLinkedNode<T>} */ (this.#top).Value;
             } else {
                 current_value = this.#traversing_node.Value;
             }
@@ -779,10 +778,10 @@ export const encodeVideoTime = video_time => {
             if (this.#traversing_node == null) {
                 this.#traversing_node = this.#top;
             } else {
-                this.#traversing_node = /** @type {DoublyLinkedStackNode<T>} */ (this.#traversing_node).Next;
+                this.#traversing_node = /** @type {DoublyLinkedNode<T>} */ (this.#traversing_node).Next;
             }
 
-            const current_value = /** @type {DoublyLinkedStackNode<T>} */ (this.#traversing_node).Value;
+            const current_value = /** @type {DoublyLinkedNode<T>} */ (this.#traversing_node).Value;
 
             return current_value;
         }
@@ -797,7 +796,6 @@ export const encodeVideoTime = video_time => {
     }
 /*=====  End of Data structures  ======*/
 
-
 /*=============================================
 =            Environment capabilities detection            =
 =============================================*/
@@ -808,7 +806,6 @@ export const encodeVideoTime = video_time => {
     export const canUseDOMEvents = () => hasWindowContext() && typeof window.addEventListener === 'function';
 
 /*=====  End of Environment capabilities detection  ======*/
-
 
 /*=============================================
 =            Feature Permission            =
@@ -840,6 +837,3 @@ export const encodeVideoTime = video_time => {
     }
 
 /*=====  End of Feature Permission  ======*/
-
-
-
