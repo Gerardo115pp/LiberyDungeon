@@ -1,5 +1,6 @@
 <script>
     import { layout_properties, navbar_ethereal, navbar_solid } from "@stores/layout";
+    import { current_cluster } from "@stores/clusters";
     import { writable } from "svelte/store";
     import MainLogo from "@components/UI/MainLogo.svelte";
     import BurgerBtn from "@components/UI/BurgerBTN.svelte";
@@ -11,6 +12,7 @@
     import { current_user_identity } from "@stores/user";
     import { onDestroy, onMount } from "svelte";
     import { browser } from "$app/environment";
+    import NavCategoryHistory from "./sub-components/user_nav_section/NavCategoryHistory.svelte";
 
     
     /*=============================================
@@ -128,6 +130,11 @@
         </div>
         <div id="ldn-right-content">
             <div class="ldn-rc-item">
+                {#if $current_cluster != null}
+                    <NavCategoryHistory />
+                {/if}
+            </div>
+            <div class="ldn-rc-item">
                 <NavUserMenu />
             </div>
         </div>
@@ -184,6 +191,12 @@
     }
 
     #ldn-left-content {
+        display: flex;
+        align-items: center;
+        gap: var(--navoptions-gap);
+    }
+
+    #ldn-right-content {
         display: flex;
         align-items: center;
         gap: var(--navoptions-gap);
