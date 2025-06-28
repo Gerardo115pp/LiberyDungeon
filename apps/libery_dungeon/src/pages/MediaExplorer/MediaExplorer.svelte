@@ -113,6 +113,12 @@
          * @type {CursorMovementWASD | null}
          */
         let the_wasd_dungeon_explorer_navigator = null;
+
+        /**
+         * Used to turn on(manually) development debugging features.
+         * @type {boolean}
+         */
+        const debug_mode = true;
         
         /*----------  Child component properties  ----------*/
         
@@ -277,6 +283,9 @@
 
         definePlatformEventHandlers();
 
+        if (debug_mode) {
+            debugME__attachDebugMethods();
+        }
     });
 
     onDestroy(() => {
@@ -710,7 +719,129 @@
             }
 
         /*=====  End of Keybinding  ======*/
+            
+        /*=============================================
+        =            Debug            =
+        =============================================*/
+
+                /**
+                 * Returns the object where all the media explorer debug state is stored.
+                 * @returns {Object}
+                 */
+                const debugME__getMediaExplorerState = () => {
+                    if (!browser || !debug_mode) return {};
+
+                    const MEDIA_EXPLORER_DEBUG_STATE_NAME = "media_explorer_debug_state";
+
+                    // @ts-ignore
+                    if (!globalThis[MEDIA_EXPLORER_DEBUG_STATE_NAME]) {
+                        // @ts-ignore
+                        globalThis[MEDIA_EXPLORER_DEBUG_STATE_NAME] = {
+
+                        };   
+                    }
+
+                    // @ts-ignore
+                    return globalThis[MEDIA_EXPLORER_DEBUG_STATE_NAME];
+                }
         
+                /**
+                 * Attaches debug methods to the globalThis object for debugging purposes.
+                 * @returns {void}
+                 */
+                const debugME__attachDebugMethods = () => {
+                    if (!browser || !debug_mode) return;
+
+                    const me_media_explorer_debug_state = debugME__getMediaExplorerState();
+
+                    // @ts-ignore - for debugging purposes we do not care whether the globalThis object has the method name. same reason for all other ts-ignore in this function.
+                    me_media_explorer_debug_state.printMediaExplorerState = debugME__printMediaExplorerState;
+
+                    // @ts-ignore
+                    me_media_explorer_debug_state.Page = $page;
+
+                    // @ts-ignore - state retrieval functions.
+                    me_media_explorer_debug_state.State = {
+                        CurrentCluster: () => $current_cluster,
+                        CurrentCategory: () => $current_category,
+                        CategoriesTree: () => $categories_tree,
+                    }
+
+                    // @ts-ignore - Internal method references.
+                    me_media_explorer_debug_state.Methods = {
+                        getDisplayCategories,
+                        getFocusedCategory,
+                        navigateToSelectedCategory,
+                    }
+                }
+
+                /**
+                 * Prints the whole gallery state to the console.
+                 * @returns {void}
+                 */
+                const debugME__printMediaExplorerState = () => {
+                    console.log("%cMediaExplorer State", "color: green; font-weight: bold;");
+                    console.group("Properties");
+                    console.log(`category_id: ${category_id}`);
+                    console.log("keyboard_focused_category:", keyboard_focused_category);
+                    console.log(`the_wasd_dungeon_explorer_navigator: %O`, the_wasd_dungeon_explorer_navigator);
+                    console.groupEnd();
+                    console.group("State");
+                    console.log(`$current_category: %O`, $current_category);
+                    console.log(`$current_cluster: %O`, $current_cluster);
+                    console.log(`$categories_tree: %O`, $categories_tree);
+                    console.log(`category_over_parent_label: ${category_over_parent_label}`);
+                    console.log(`media_display_as_gallery: ${media_display_as_gallery}`);
+                    console.log(`recover_gallery_focus: ${recover_gallery_focus}`);
+                    console.log(`enable_gallery_hotkeys: ${enable_gallery_hotkeys}`);
+                    console.log(`is_category_resyncing: ${is_category_resyncing}`);
+                    console.groupEnd();
+                    console.group("Category Search");
+                    console.log(`category_name_search_query: ${category_name_search_query}`);
+                    console.log(`capturing_category_name_search: ${capturing_category_name_search}`);
+                    console.log(`the_category_search_results_wrapper: %O`, the_category_search_results_wrapper);
+                    console.log(`category_local_search_results_lookup: %O`, category_local_search_results_lookup);
+                }
+
+                /**
+                 * Attaches an arbitrary object as a globalThis.media_explorer_debug_state.<group_name>{...timestamp -> object }.
+                 * @param {string} group_name
+                 * @param {object} object_to_snapshot
+                 * @returns {void}
+                 */
+                const debugME__attachSnapshot = (group_name, object_to_snapshot) => {
+                    if (!browser || !debug_mode) return;
+
+                    const stack = new Error().stack;
+                    const datetime_obj = new Date();
+                    const timestamp = `${datetime_obj.toISOString()}-${datetime_obj.getTime()}`;
+
+                    const snapshot = {
+                        timestamp,
+                        stack,
+                        object_to_snapshot,
+                    }
+
+                    const debug_object = debugME__getMediaExplorerState();
+
+                    // @ts-ignore - that meg_timeline_states exists on globalThis if not, create it.
+                    if (!debug_object.timeline_states) {
+                        // @ts-ignore
+                        debug_object.timeline_states = {};
+                    }
+
+                    // @ts-ignore
+                    if (!debug_object.timeline_states[group_name]) {
+                        // @ts-ignore
+                        debug_object.timeline_states[group_name] = [];
+                    }
+
+                    // @ts-ignore
+                    debug_object.timeline_states[group_name].push(snapshot);
+                }
+        
+        /*=====  End of Debug  ======*/
+    
         /*=============================================
         =            PlatformEvents            =
         =============================================*/
