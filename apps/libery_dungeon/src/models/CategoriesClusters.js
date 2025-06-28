@@ -20,6 +20,10 @@ import {
     deleteVideoMoment,
     getAllClusterVideoMoments
 } from "./Metadata";
+import { 
+    InnerCategory
+} from "./Categories";
+import { UUIDHistory } from "@models/WorkManagers";
 
 export class CategoriesCluster {
     
@@ -66,6 +70,12 @@ export class CategoriesCluster {
          */
         #media_identity_dictionary
 
+        /**
+         * The category usage history.
+         * @type {import("@models/WorkManagers").UUIDHistory<import('@models/Categories').InnerCategory>}
+         */
+        #category_usage_history;
+
     /**
      * @param {CategoriesClusterParams} param0 
      * @typedef {Object} CategoriesClusterParams
@@ -88,7 +98,31 @@ export class CategoriesCluster {
 
         this.#cluster_video_moments = new Map();
         this.#media_identity_dictionary = new Map();
+
+        this.#category_usage_history = new UUIDHistory(30);
     }
+    
+    /*=============================================
+    =            Category usage history            =
+    =============================================*/
+    
+        /**
+         * Adds or refreshes a category usage record.
+         * @param {import('@models/Categories').InnerCategory} category
+         */
+        touchCategoryUsage = category => {
+            this.#category_usage_history.Add(category);
+        }
+
+        /**
+         * The category usage history of this cluster.
+         * @returns {import("@models/WorkManagers").UUIDHistory<import('@models/Categories').InnerCategory>}
+         */
+        get CategoryUsageHistory() {
+            return this.#category_usage_history;
+        }
+    
+    /*=====  End of Category usage history  ======*/
     
     /*=============================================
     =            Media identities dictionary            =
@@ -517,7 +551,7 @@ export const getNewClusterDirectoryOptions = async (subdirectory) => {
 }
 
 /**
- * @typedef {Object} PathAvailability
+* @typedef {Object} PathAvailability
  * @property {boolean} is_path_valid
  * @property {string} reason
 */
