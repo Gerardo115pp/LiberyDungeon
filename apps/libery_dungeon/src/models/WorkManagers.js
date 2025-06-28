@@ -824,6 +824,49 @@ import { DoublyLinkedNode } from "@libs/utils";
         }
 
         /**
+         * Returns a human readable string representation of the history records. 
+         * @returns {string}
+         */
+        toString() {
+            let history_string = "UUIDHistory: ";
+
+            let infinite_loop_guard = 1000000;
+
+            let current_node = this.#first_node;
+
+            while (current_node !== null && infinite_loop_guard > 0) {
+                history_string += current_node.Value.uuid;
+
+                if (current_node.Next !== null) {
+                    history_string += " -> ";
+                }
+
+                current_node = current_node.Next;
+                infinite_loop_guard--;
+            }
+
+            return history_string;            
+        }
+
+        /**
+         * Returns a non-live array of the history records in the order they exist within
+         * the usage history.
+         * @returns {T[]}
+         */
+        toArray() {
+            const history_array = [];
+
+            let current_node = this.#first_node;
+
+            while (current_node !== null) {
+                history_array.push(current_node.Value);
+                current_node = current_node.Next;
+            }
+
+            return history_array;
+        }
+
+        /**
          * Returns whether the uuid in question is already in the history.
          * @param {string} uuid
          * @returns {boolean}
@@ -832,9 +875,6 @@ import { DoublyLinkedNode } from "@libs/utils";
             return this.#duplicate_lookup_map.has(uuid);
         }
     }
-
-    //@ts-ignore - testing the UUIDHistory
-    globalThis.UUIDHistory = UUIDHistory;
 
 /*=====  End of Category  ======*/
 
