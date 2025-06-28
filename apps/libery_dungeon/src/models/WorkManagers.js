@@ -628,14 +628,36 @@ import { DoublyLinkedNode } from "@libs/utils";
          */
         #last_node;
 
+        /** 
+         * A list of callbacks called when the history records is updated.
+         * @type {Function[]}
+         */
+        #on_history_updated_callbacks;
+
         /**
          * @param {number} buffer_size - the max amount of history records after which to start discarding old records.
          */
         constructor(buffer_size) {
             this.#buffer_size = buffer_size;
-            this.#duplicate_lookup_map = new Map();
+
             this.#first_node = null;
             this.#last_node = null;
+
+            this.#duplicate_lookup_map = new Map();
+            this.#on_history_updated_callbacks = [];
+        }
+
+        /**
+         * Adds a callback to be called when the history records is updated.
+         * @param {Function} callback
+         * @returns {void}
+         */
+        addHistoryUpdatedListener(callback) {
+            if (callback.constructor.name !== "Function" && callback.constructor.name !== "AsyncFunction") {
+                throw new Error(`In @models/WorkManagers.UUIDHistory.subscribeToChanges: callback must be a function, received ${callback.constructor.name}`);
+            }
+
+            this.#on_history_updated_callbacks.push(callback);
         }
 
         /**
@@ -658,11 +680,13 @@ import { DoublyLinkedNode } from "@libs/utils";
                 this.#first_node.Prev = new_node;
             }
 
-            if (this.#first_node === null) {
-                this.#first_node = new_node
+            if (this.#last_node  === null) {
+                this.#last_node = new_node
             }
 
             this.#first_node = new_node;
+
+            this.#addNodeToHistory(value.uuid, new_node);
 
             this.#maintainSize();
             return;
@@ -787,6 +811,19 @@ import { DoublyLinkedNode } from "@libs/utils";
         }
 
         /**
+         * Removes a callback for the history updated event. If not found,
+         * fails silently.
+         * @param {Function} callback
+         */
+        removeHistoryUpdatedListener(callback) {
+            const callback_index = this.#on_history_updated_callbacks.indexOf(callback);
+
+            if (callback_index !== -1) {
+                this.#on_history_updated_callbacks.splice(callback_index, 1);
+            }
+        }
+
+        /**
          * Returns whether the uuid in question is already in the history.
          * @param {string} uuid
          * @returns {boolean}
@@ -795,7 +832,9 @@ import { DoublyLinkedNode } from "@libs/utils";
             return this.#duplicate_lookup_map.has(uuid);
         }
     }
-    
+
+    //@ts-ignore - testing the UUIDHistory
+    globalThis.UUIDHistory = UUIDHistory;
 
 /*=====  End of Category  ======*/
 
