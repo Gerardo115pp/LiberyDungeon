@@ -92,7 +92,7 @@
         /**
          * @type {import('svelte/store').Unsubscriber}
          */
-        let empty_categories_subscriber;
+        let category_change_unsubscriber;
 
         const hotkey_context_name = "categories_explorer";
         
@@ -191,11 +191,6 @@
             let capturing_category_name_search = false;
 
             /**
-             * @type {import('svelte/store').Unsubscriber}
-             */
-            let filtered_category_selected_unsubscriber;
-
-            /**
              * The inner category search results hotkey wrapper.
              * @type {SearchResultsWrapper<import('@models/Categories').InnerCategory> | null}
              */
@@ -272,14 +267,12 @@
         }
 
 
-        filtered_category_selected_unsubscriber = current_category.subscribe(resetCategoryFiltersOnCategoryChange);
-
         if (!$layout_properties.IS_MOBILE) {
             defineDesktopKeybinds();
         }
 
 
-        empty_categories_subscriber = current_category.subscribe(handleEmptyCategories); // this has to run after defining the desktop keybinds.
+        category_change_unsubscriber = current_category.subscribe(handleCurrentCategoryChange); // this has to run after defining the desktop keybinds.
 
         definePlatformEventHandlers();
 
@@ -295,12 +288,8 @@
             global_hotkeys_manager.dropContext(hotkey_context_name);
         }
 
-        if (empty_categories_subscriber != null) {
-            empty_categories_subscriber();  
-        }
-
-        if (filtered_category_selected_unsubscriber != null) {
-            filtered_category_selected_unsubscriber();
+        if (category_change_unsubscriber != null) {
+            category_change_unsubscriber();
         }
 
         dropGridNavigationWrapper();
@@ -1059,6 +1048,20 @@
                 const category_to_delete = category.uuid;
                 await handleGoToParentCategory();
                 $categories_tree.deleteChildCategory(category_to_delete);
+            }
+        }
+
+        /**
+         * Handles the change of the current_category store.
+         * @param {CategoryLeaf | null} category   
+         */
+        const handleCurrentCategoryChange = async (category) => {
+            resetCategoryFiltersOnCategoryChange();
+
+            await handleEmptyCategories(category);
+
+            if ($current_cluster != null && category != null) {
+                $current_cluster.touchCategoryUsage(category.asInnerCategory());
             }
         }
 
