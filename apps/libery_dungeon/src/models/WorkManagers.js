@@ -7,6 +7,7 @@ import { Media } from "./Medias";
 import { stringifyDungeonTags } from "@models/DungeonTags";
 import { Category, InnerCategory } from "./Categories";
 import { NULLISH_MEDIA } from "./Medias";
+import { DoublyLinkedNode } from "@libs/utils";
 
 /*=============================================
 =            Media Changes            =
@@ -376,7 +377,6 @@ import { NULLISH_MEDIA } from "./Medias";
             this.#panic_on_before_callback_error = true;
         }
 
-
         /**
          * Sets a callback to be called before the changes are committed. further calls to this method will overwrite the previous callback.
          * @param {beforeCommitCallback} callback the callback function
@@ -560,7 +560,6 @@ import { NULLISH_MEDIA } from "./Medias";
 
 /*=====  End of Media Changes  ======*/
 
-
 /*=============================================
 =            Category Search            =
 =============================================*/
@@ -591,6 +590,217 @@ import { NULLISH_MEDIA } from "./Medias";
 
 /*=====  End of Category Search  ======*/
 
+
+/*=============================================
+=            UUID usage history            =
+=============================================*/
+
+    /**
+     * Models a history system for organizing 'last used uuid' for models that are UUID
+     * identifiable. Whenever a new element is added, it's put at the top of the history. if the
+     * element already exists, then is not duplicated, but rather 'pushed' to the top. The history
+     * system has a buffer size defined at instantiation, adding elements push previous elements further
+     * down the history and after overflowing the buffer size, they are discarded automatically.
+     * @template {{ uuid: string }} T
+     */
+    export class UUIDHistory {
+        /**
+         * The size of the history buffer.
+         * @type {number}
+         */
+        #buffer_size;
+
+        /**
+         * A duplication lookup map that maps uuids -> DoublyLinkedNode<T>.
+         * @type {Map<string, DoublyLinkedNode<T>>}
+         */
+        #duplicate_lookup_map;
+
+        /**
+         * First node in the history record list.
+         * @type {DoublyLinkedNode<T> | null}
+         */
+        #first_node;
+
+        /**
+         * Last node in the history record list.
+         * @type {DoublyLinkedNode<T> | null}
+         */
+        #last_node;
+
+        /**
+         * @param {number} buffer_size - the max amount of history records after which to start discarding old records.
+         */
+        constructor(buffer_size) {
+            this.#buffer_size = buffer_size;
+            this.#duplicate_lookup_map = new Map();
+            this.#first_node = null;
+            this.#last_node = null;
+        }
+
+        /**
+         * Adds a value to the stack.
+         * @param {T} value 
+         */
+        Add(value) {
+            if (this.#uuidInHistory(value.uuid)) {
+                const member_node = this.#getUUIDNode(value.uuid);
+
+                return this.#bubbleUpNode(member_node);
+            }
+
+            /** @type {DoublyLinkedNode<T>} */
+            let new_node = new DoublyLinkedNode(value);
+
+            new_node.Next = this.#first_node;
+
+            if (this.#first_node != null) {
+                this.#first_node.Prev = new_node;
+            }
+
+            if (this.#first_node === null) {
+                this.#first_node = new_node
+            }
+
+            this.#first_node = new_node;
+
+            this.#maintainSize();
+            return;
+        }
+
+        /**
+         * Adds the uuid passed to the history.
+         * @param {string} uuid
+         * @param {DoublyLinkedNode<T>} node
+         */
+        #addNodeToHistory(uuid, node) {
+            this.#duplicate_lookup_map.set(uuid, node);
+        }
+
+        /**
+         * Clears all the history records.
+         * @returns {void}
+         */
+        #clearHistory() {
+            this.#duplicate_lookup_map.clear();
+            this.#first_node = null;
+            this.#last_node = null;
+        }
+
+        /**
+         * Bubbles the given node to the top of the history.
+         * @param {DoublyLinkedNode<T>} node
+         * @returns {void}
+         */
+        #bubbleUpNode(node) {
+            if (this.#first_node === this.#last_node) return; // we wither have a node or no node, but not a list yet.
+
+            if (node.isDoubleBounded()) {
+                this.#extractNodeAndRebindList(node);
+            } else if (this.#last_node === node) {
+                const new_last = node.Prev
+
+                if (new_last) {
+                    new_last.Next = null;
+                }
+
+                this.#last_node = new_last;
+            } else if (this.#first_node === node) return; // Nothing to do
+
+            node.clearReferences();
+            node.Next = this.#first_node;
+
+            this.#first_node = node;
+        }
+
+        /**
+         * Extracts the given node by attaching it's previous node to the previous node 
+         * of it's next node and next node to the previous's next node. e.g:
+         * A -> B -> C, and B is Passed, then the result is A -> C. If instead either A or C are
+         * passed, then it just returns and no changes are made to any reference on any
+         * node.
+         * 
+         * It does not modify this.#first_node or this.#last_node.
+         * @param {DoublyLinkedNode<T>} node_to_extract
+         */
+        #extractNodeAndRebindList(node_to_extract) {
+            if (!node_to_extract.isDoubleBounded()) return;
+
+            const previous_node = node_to_extract.Prev;
+            const next_node = node_to_extract.Next;
+
+            previous_node.Next = next_node;
+            next_node.Prev = previous_node;
+        }
+
+        /**
+         * Returns the node associated with the given uuid. panics if it doesn't exist.
+         * @param {string} uuid
+         * @returns {DoublyLinkedNode<T>}
+         */
+        #getUUIDNode(uuid) {
+            const uuid_node = this.#duplicate_lookup_map.get(uuid)
+
+            if (uuid_node === undefined) {
+                throw new Error(`In @models/WorkManagers.UUIDHistory.#getUUIDNode: requested and unregistered node<${uuid}>. you must verify membership before calling this function.`);
+            }
+
+            return uuid_node;
+        }
+
+        /**
+         * Returns the element associated with a given uuid.
+         * @param {string} uuid
+         * @returns {T | null}
+         */
+        getElementByUUID (uuid) {
+            if (!this.#uuidInHistory(uuid)) return null;
+
+            const target_node = this.#getUUIDNode(uuid);
+
+            return target_node.Value;
+        }
+
+        /**
+         * maintains the size of the history records below the specified buffer size.
+         * @returns {void}
+         */
+        #maintainSize() {
+            let size_overflow = this.#duplicate_lookup_map.size - this.#buffer_size;
+
+            if (size_overflow <= 0) return; // nothing to do, we are under the buffer size.
+
+            while (this.#last_node !== null && size_overflow > 0) {
+                const node_to_remove = this.#last_node;
+                this.#last_node = node_to_remove.Prev;
+
+                this.#duplicate_lookup_map.delete(node_to_remove.Value.uuid);
+
+                size_overflow--;
+            }
+
+            if (this.#last_node !== null) {
+                this.#last_node.Next = null;
+            } else {
+                this.#clearHistory();
+            }
+        }
+
+        /**
+         * Returns whether the uuid in question is already in the history.
+         * @param {string} uuid
+         * @returns {boolean}
+         */
+        #uuidInHistory(uuid) {
+            return this.#duplicate_lookup_map.has(uuid);
+        }
+    }
+    
+
+/*=====  End of Category  ======*/
+
+
+
 /**
  * Requests the resyncronization of a cluster branch by it's category uuid. if one wants to resync the entire cluster, the root category uuid should be used.
  * @param {string} category_uuid
@@ -609,7 +819,6 @@ export const resyncClusterBranch = async (category_uuid, cluster_id) => {
 
     return sync_success;
 }
-
 
 /*=============================================
 =            Tagged Content Catcher            =

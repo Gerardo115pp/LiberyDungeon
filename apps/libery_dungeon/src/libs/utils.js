@@ -398,12 +398,30 @@ export const encodeVideoTime = video_time => {
             this.#prev = null;
         }
 
-        get Value() {
-            return this.#value;
+        /**
+         * Clears out both pointers.
+         * @returns {void}
+         */
+        clearReferences() {
+            this.#next = null;
+            this.#prev = null;
         }
 
-        set Value(value) {
-            this.#value = value;
+        /**
+         * Returns whether the node is double bounded. meaning it has a non-null reference
+         * on both the next and previous pointers.
+         * @returns {this is {#next: DoublyLinkedNode<T>, #prev: DoublyLinkedNode<T>, Prev: DoublyLinkedNode<T>, Next: DoublyLinkedNode<T>}}
+         */
+        isDoubleBounded() {
+            return this.#next !== null && this.#prev !== null;
+        }
+
+        get Prev() {
+            return this.#prev;
+        }
+
+        set Prev(prev) {
+            this.#prev = prev;
         }
 
         get Next() {
@@ -414,12 +432,12 @@ export const encodeVideoTime = video_time => {
             this.#next = next;
         }
 
-        get Prev() {
-            return this.#prev;
+        get Value() {
+            return this.#value;
         }
 
-        set Prev(prev) {
-            this.#prev = prev;
+        set Value(value) {
+            this.#value = value;
         }
     }
 

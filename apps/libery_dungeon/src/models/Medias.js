@@ -541,8 +541,6 @@ export const media_types = {
     VIDEO: "VIDEO"
 }
 
-
-
 /* ----------------------------- Nullish models ----------------------------- */
 
     export const NULLISH_MEDIA = new Media({

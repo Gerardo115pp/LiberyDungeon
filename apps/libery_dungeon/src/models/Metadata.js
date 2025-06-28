@@ -14,11 +14,11 @@ import { encodeVideoTime, decodeVideoTime } from "@libs/utils";
 =============================================*/
 
 /**
- * @typedef {Object} WatchPoint
+* @typedef {Object} WatchPoint
  * @property {number} ord
  * @property {string} media_uuid
  * @property {number} start_time
- */
+*/
 
 /**
  * Requests the last watch point of a media with a time dimension(video, audio, that kind of thing). 

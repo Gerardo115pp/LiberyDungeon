@@ -98,6 +98,14 @@ export class Category {
         return this.#uuid;
     }
 
+    /**
+     * Alias for UUID. exists solely to make it compatible with the UUID_identifiable interface.
+     * @returns {string}
+     */
+    get uuid() {
+        return this.#uuid;
+    }
+
     get Cluster() {
         return this.#cluster;
     }
