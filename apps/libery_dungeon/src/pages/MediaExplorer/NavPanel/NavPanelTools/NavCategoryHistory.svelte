@@ -1,4 +1,5 @@
 <script>
+    import { browser } from "$app/environment";
     import { current_category } from "@stores/categories_tree";
     import { current_cluster } from "@stores/clusters";
     import { onDestroy, onMount } from "svelte";
@@ -31,6 +32,12 @@
          * @type {boolean}
          */
         let categories_history_pinned = false;
+
+        /**
+         * Enables development mode debugging features.
+         * @type {boolean}
+         */
+        const debug_mode = true;
         
     
     /*=====  End of Properties  ======*/
@@ -43,6 +50,9 @@
         updateCategoriesHistoryIfOutdated();
 
         attachCategoryHistoryEventListeners();
+
+
+        debug__attachDebugMethods();
     });
 
     onDestroy(() => {
@@ -52,14 +62,108 @@
     /*=============================================
     =            Methods            =
     =============================================*/
+            
+        /*=============================================
+        =            Debug            =
+        =============================================*/
 
-        /**
-         * Attaches category history event listeners.
-         * @returns {void}
-         */
-        const attachCategoryHistoryEventListeners = () => {
-            $current_cluster.CategoryUsageHistory.UUIDHistory.addHistoryUpdatedListener(handleCategoryHistoryChange);
-        }
+                /**
+                 * Returns the object where all the debug state is stored.
+                 * @returns {Object}
+                 */
+                const debug__getComponentDebugState = () => {
+                    if (!browser || !debug_mode) return {};
+
+                    const NAV_CATEGORY_HISTORY_DEBUG_STATE_NAME = "nav_category_history_debug_state";
+
+                    // @ts-ignore
+                    if (!globalThis[NAV_CATEGORY_HISTORY_DEBUG_STATE_NAME]) {
+                        // @ts-ignore
+                        globalThis[NAV_CATEGORY_HISTORY_DEBUG_STATE_NAME] = {
+
+                        };   
+                    }
+
+                    // @ts-ignore
+                    return globalThis[NAV_CATEGORY_HISTORY_DEBUG_STATE_NAME];
+                }
+        
+                /**
+                 * Attaches debug methods to the globalThis object for debugging purposes.
+                 * @returns {void}
+                 */
+                const debug__attachDebugMethods = () => {
+                    if (!debug_mode || !browser) return;
+
+                    const me_component_debug_state = debug__getComponentDebugState();
+
+                    // @ts-ignore - for debugging purposes we do not care whether the globalThis object has the method name. same reason for all other ts-ignore in this function.
+                    me_component_debug_state.printDebugState = debug__printComponentState;
+
+                    // @ts-ignore - state retrieval functions.
+                    me_component_debug_state.State = {
+                        CurrentCluster: () => $current_cluster,
+                        CurrentCategory: () => $current_category,
+                    }
+
+                    // @ts-ignore - Internal method references.
+                    me_component_debug_state.Methods = {
+                        isCategoriesHistoryVisible,
+                    }
+                }
+
+                /**
+                 * Prints the whole gallery state to the console.
+                 * @returns {void}
+                 */
+                const debug__printComponentState = () => {
+                    console.log("%NavCategoryHistory State", "color: green; font-weight: bold;");
+                    console.group("Properties");
+                    console.log("categories_history_array: %O", categories_history_array);
+                    console.log(`categories_history_mutated: ${categories_history_mutated}`);
+                    console.log(`history_button_hovered: ${history_button_hovered}`);
+                    console.log(`categories_history_pinned: ${categories_history_pinned}`);
+                    console.groupEnd();
+                }
+
+                /**
+                 * Attaches an arbitrary object as a globalThis.media_explorer_debug_state.<group_name>{...timestamp -> object }.
+                 * @param {string} group_name
+                 * @param {object} object_to_snapshot
+                 * @returns {void}
+                 */
+                const debug__attachSnapshot = (group_name, object_to_snapshot) => {
+                    if (!browser || !debug_mode) return;
+
+                    const stack = new Error().stack;
+                    const datetime_obj = new Date();
+                    const timestamp = `${datetime_obj.toISOString()}-${datetime_obj.getTime()}`;
+
+                    const snapshot = {
+                        timestamp,
+                        stack,
+                        object_to_snapshot,
+                    }
+
+                    const debug_object = debug__getComponentDebugState();
+
+                    // @ts-ignore - that meg_timeline_states exists on globalThis if not, create it.
+                    if (!debug_object.timeline_states) {
+                        // @ts-ignore
+                        debug_object.timeline_states = {};
+                    }
+
+                    // @ts-ignore
+                    if (!debug_object.timeline_states[group_name]) {
+                        // @ts-ignore
+                        debug_object.timeline_states[group_name] = [];
+                    }
+
+                    // @ts-ignore
+                    debug_object.timeline_states[group_name].push(snapshot);
+                }
+        
+        /*=====  End of Debug  ======*/
 
         /*=============================================
         =            DOM Event handlers            =
@@ -129,10 +233,19 @@
         /*=====  End of DOM Event handlers  ======*/
 
         /**
+         * Attaches category history event listeners.
+         * @returns {void}
+         */
+        const attachCategoryHistoryEventListeners = () => {
+            $current_cluster.CategoryUsageHistory.UUIDHistory.addHistoryUpdatedListener(handleCategoryHistoryChange);
+        }
+
+        /**
          * Handles changes in the Category history.
          * @returns {void}
          */
         function handleCategoryHistoryChange() {
+            console.debug("In NavCategoryHistory.handleCategoryHistoryChange: Category history has changed.");
             categories_history_mutated = true;
 
             const is_history_visible = isCategoriesHistoryVisible();
