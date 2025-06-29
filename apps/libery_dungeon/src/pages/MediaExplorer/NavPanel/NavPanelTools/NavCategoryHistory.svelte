@@ -435,7 +435,8 @@
 
             position: absolute;
             overflow-y: auto;
-            width: max-content;
+            width: 100%;
+            min-width: max-content;
             height: min(calc(6 * var(--ldn-category-history-item-height)), 45dvh);
             background: hsl(from var(--grey-8) h s calc(l * 0.7) / 0.88);
             font-size: calc(var(--ldn-nav-ch-font-size) * 0.9);
