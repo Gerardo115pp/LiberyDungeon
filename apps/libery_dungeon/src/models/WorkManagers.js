@@ -977,11 +977,11 @@ import { DoublyLinkedNode } from "@libs/utils";
         }
 
         /**
-         * The UUID history.
-         * @type {UUIDHistory<import('@models/Categories').InnerCategory>}
+         * returns whether there are any listeners for the on_category_uuid_selected callback.
+         * @returns {boolean}
          */
-        get UUIDHistory() {
-            return this.#category_uuid_history;
+        hasOnCategoryUUIDSelectedListeners() {
+            return this.#on_category_uuid_selected !== null;
         }
 
         /**
@@ -1080,6 +1080,14 @@ import { DoublyLinkedNode } from "@libs/utils";
             if (this.#on_category_uuid_selected !== null) {
                 this.#on_category_uuid_selected(category);
             }
+        }
+
+        /**
+         * The UUID history.
+         * @type {UUIDHistory<import('@models/Categories').InnerCategory>}
+         */
+        get UUIDHistory() {
+            return this.#category_uuid_history;
         }
     }
 

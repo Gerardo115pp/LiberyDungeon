@@ -32,6 +32,14 @@
          * @type {boolean}
          */
         let categories_history_pinned = false;
+        
+        /**
+         * Whether the categories history has any event listener. if it doesn't
+         * then there is no point in showing the history as clicking it's items will
+         * have no effect
+         * @type {boolean}
+         */
+        let categories_history_has_event_listeners = false;
 
         /**
          * Enables development mode debugging features.
@@ -46,6 +54,8 @@
         if ($current_cluster === null) {
             throw new Error("In NavCategoryHistory.onMount: $current_cluster is null.");
         }
+
+        checkCategoryHistoryEventListeners();
 
         updateCategoriesHistoryIfOutdated();
 
@@ -204,6 +214,11 @@
              * @param {MouseEvent} event
              */
             const handleHistoryItemClick = (event) => {
+                if ($current_cluster === null || !categories_history_has_event_listeners) {
+                    console.debug("In NavCategoryHistory.handleHistoryItemClick: $current_cluster is null or categories_history_has_event_listeners is false.");
+                    return;
+                }
+
                 const history_item = event.currentTarget;
                 if (history_item == null || !(history_item instanceof HTMLElement)) {
                     console.error("In NavCategoryHistory.handleHistoryItemClick: history_item is null.");
@@ -222,12 +237,7 @@
                     return;
                 }
 
-                // TODO: Find a way to ubiquitously propagate the selected category. And remember, the idea
-                // is that the behavior of the button click is going to be left to the active app page.
-                // Meaning that this likely should be an event. but the delivery of that event needs to be
-                // carefully considered.
-
-                console.debug("Clicked on:", inner_category);
+                $current_cluster.CategoryUsageHistory.triggerOnCategoryUUIDSelected(inner_category);
             }
 
         /*=====  End of DOM Event handlers  ======*/
@@ -238,6 +248,23 @@
          */
         const attachCategoryHistoryEventListeners = () => {
             $current_cluster.CategoryUsageHistory.UUIDHistory.addHistoryUpdatedListener(handleCategoryHistoryChange);
+
+            $current_cluster.CategoryUsageHistory.setOnCategorySelectedListenerChange(handleCategorySelectedListenerChange);
+        }
+
+        /**
+         * Checks whether the category history feature has any event listeners and sets
+         * `categories_history_has_event_listeners` accordingly.
+         * @returns {void}
+         */
+        const checkCategoryHistoryEventListeners = () => {
+            if ($current_cluster === null) {
+                console.debug("In NavCategoryHistory.checkCategoryHistoryEventListeners: $current_cluster is null.");
+                categories_history_has_event_listeners = false;
+                return;
+            }
+
+            categories_history_has_event_listeners = $current_cluster.CategoryUsageHistory.hasOnCategoryUUIDSelectedListeners();
         }
 
         /**
@@ -252,6 +279,16 @@
             if (is_history_visible) {
                 updateCategoriesHistoryIfOutdated();
             }
+        }
+
+        /**
+         * Handles the category_selected_listener_change event emitted by the CategoryUsageHistory.
+         * @type {import('@models/WorkManagers').CategorySelectedListenerChangeCallback} 
+         */
+        const handleCategorySelectedListenerChange = (has_listeners) => {
+            console.debug(`In NavCategoryHistory.handleCategorySelectedListenerChange: has_listeners<${has_listeners}>`);
+
+            categories_history_has_event_listeners = has_listeners; 
         }
 
         /**
@@ -300,6 +337,8 @@
             }
 
             $current_cluster.CategoryUsageHistory.UUIDHistory.removeHistoryUpdatedListener(handleCategoryHistoryChange);
+
+            $current_cluster.CategoryUsageHistory.removeOnCategorySelectedListenerChange(handleCategorySelectedListenerChange);
         }
 
     /*=====  End of Methods  ======*/
@@ -317,7 +356,7 @@
                 {$current_category.name}
             </h3>
         </button>
-        {#if categories_history_array.length > 0}
+        {#if categories_history_has_event_listeners && categories_history_array.length > 0}
             <menu id="ldn-nch-category-history-container"
                 class="dungeon-scroll"
                 class:history-always-visible={categories_history_pinned}
