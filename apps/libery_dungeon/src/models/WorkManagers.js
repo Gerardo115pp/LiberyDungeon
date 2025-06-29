@@ -719,6 +719,10 @@ import { DoublyLinkedNode } from "@libs/utils";
         #bubbleUpNode(node) {
             if (this.#first_node === this.#last_node) return; // we wither have a node or no node, but not a list yet.
 
+            if (this.#first_node === null || this.#last_node === null) {
+                throw new Error(`In @models/WorkManagers.UUIDHistory.#bubbleUpNode: first_node or last_node is null. and apparently only one of the is null, which means the state is broken.`);
+            }
+
             if (node.isDoubleBounded()) {
                 this.#extractNodeAndRebindList(node);
             } else if (this.#last_node === node) {
@@ -733,6 +737,7 @@ import { DoublyLinkedNode } from "@libs/utils";
 
             node.clearReferences();
             node.Next = this.#first_node;
+            this.#first_node.Prev = node;
 
             this.#first_node = node;
         }
@@ -811,6 +816,31 @@ import { DoublyLinkedNode } from "@libs/utils";
         }
 
         /**
+         * Returns a string version of the passed node's uuid.
+         * @param {DoublyLinkedNode<T> | null} node
+         * @returns {string}
+         */
+        #nodeName(node) {
+            if (node === null) return "null";
+
+            return node.Value.uuid.slice(0, 4);
+        }
+
+        /**
+         * Returns a string representation of the node and it's links.
+         * @param {DoublyLinkedNode<T>} node
+         * @returns {string}
+         */
+        #nodeToString(node) {
+            const prev = this.#nodeName(node.Prev);
+            const next = this.#nodeName(node.Next);
+
+            const node_name = this.#nodeName(node);
+
+            return `(${prev} <- ["${node_name}"] -> ${next})`;
+        }
+
+        /**
          * Removes a callback for the history updated event. If not found,
          * fails silently.
          * @param {Function} callback
@@ -830,15 +860,15 @@ import { DoublyLinkedNode } from "@libs/utils";
         toString() {
             let history_string = "UUIDHistory: ";
 
-            let infinite_loop_guard = 1000000;
+            let infinite_loop_guard = this.#duplicate_lookup_map.size * 2; 
 
             let current_node = this.#first_node;
 
             while (current_node !== null && infinite_loop_guard > 0) {
-                history_string += current_node.Value.uuid;
+                history_string += this.#nodeToString(current_node);
 
                 if (current_node.Next !== null) {
-                    history_string += " -> ";
+                    history_string += " => ";
                 }
 
                 current_node = current_node.Next;
