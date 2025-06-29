@@ -112,6 +112,11 @@ import { DoublyLinkedNode } from "@libs/utils";
             return this.#moved_medias_data;
         }
 
+        /**
+         * A list of categories used to move at least one media into. Sorted by the amount
+         * of medias that will be moved into them.
+         * @returns {InnerCategory[]}
+         */
         get UsedCategories() {
             let sorted_used_categories = this.#used_categories.sort((a, b) => {
                 let medias_on_a = this.#moved_medias_data[a.uuid].length;
