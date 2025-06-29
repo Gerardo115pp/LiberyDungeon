@@ -907,10 +907,7 @@
                 // change the active media index so that onComponentExit will save the correct updated index(saves the current value of active_media_index)
                 let new_active_media_index = resolveNewMediaIndex($media_changes_manager, media_index, displayed_medias);
                 
-                await $media_changes_manager.commitChanges($current_category.uuid);
-                await $categories_tree.updateCurrentCategory();
-                media_changes_manager.set(new MediaChangesManager());
-                removeBeforeUnloadListener();
+                await commitCurreentMediaChanges();
 
                 // wait to set the active media index to the new value after async operations so the user doens't see weird image switching
                 await setActiveMediaIndex(new_active_media_index, false);
@@ -1278,6 +1275,27 @@
         =            Media Changes            =
         =============================================*/
         
+            /**
+             * Commits the media changes in the `media_changes_manager`
+             * updates the current category tree leaf and resets the
+             * `media_changes_manager` to a new instance. 
+             * ATTENTION: Also removes the beforeunload event listener 
+             * @returns {Promise<void>}
+             */
+            const commitCurreentMediaChanges = async () => {
+                if ($media_changes_manager !== null && $current_category !== null) {
+                    await $media_changes_manager.commitChanges($current_category.uuid);
+                    
+                    if ($categories_tree !== null) {
+                        await $categories_tree.updateCurrentCategory();
+                    }
+                }
+
+                media_changes_manager.set(new MediaChangesManager());
+
+                removeBeforeUnloadListener();
+            }
+
             /*----------  Unsaved changes  ----------*/
 
                 /**
