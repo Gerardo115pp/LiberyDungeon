@@ -5,6 +5,8 @@
     import CategorySearchBar from "@components/CategorySearchBar/CategorySearchBar.svelte";
     import { confirmPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
     import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
+    import { current_cluster } from "@stores/clusters";
+    import NavCategoryHistory from "./NavPanelTools/NavCategoryHistory.svelte";
 
     
     /*=============================================
@@ -68,6 +70,11 @@
 </script>
 
 <ul class="page-nav-menu" id="media-explorer-nav-menu-wrapper">
+    {#if $current_category != null && $current_cluster != null}
+        <li id="menmw-category-usage-history">
+            <NavCategoryHistory />
+        </li>
+    {/if}
     {#if $current_category != null}
         <li id="menmw-upload-medias">
             <button on:click={() => media_upload_tool_mounted.set(!$media_upload_tool_mounted)} id="upload-medias-btn" class="sketch-btn">

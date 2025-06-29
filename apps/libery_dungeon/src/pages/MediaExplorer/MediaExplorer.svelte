@@ -1061,7 +1061,7 @@
             await handleEmptyCategories(category);
 
             if ($current_cluster != null && category != null) {
-                $current_cluster.touchCategoryUsage(category.asInnerCategory());
+                $current_cluster.CategoryUsageHistory.touchCategoryUsage(category.asInnerCategory());
             }
         }
 

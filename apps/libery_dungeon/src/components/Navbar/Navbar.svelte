@@ -12,8 +12,6 @@
     import { current_user_identity } from "@stores/user";
     import { onDestroy, onMount } from "svelte";
     import { browser } from "$app/environment";
-    import NavCategoryHistory from "./sub-components/user_nav_section/NavCategoryHistory.svelte";
-
     
     /*=============================================
     =            Properties            =
@@ -130,11 +128,6 @@
         </div>
         <div id="ldn-right-content">
             <div class="ldn-rc-item">
-                {#if $current_cluster != null}
-                    <NavCategoryHistory />
-                {/if}
-            </div>
-            <div class="ldn-rc-item">
                 <NavUserMenu />
             </div>
         </div>
@@ -145,7 +138,6 @@
 </nav>
 
 <style>
-
     #libery-dungeon-navbar {
         --navoptions-gap: 81px;
 

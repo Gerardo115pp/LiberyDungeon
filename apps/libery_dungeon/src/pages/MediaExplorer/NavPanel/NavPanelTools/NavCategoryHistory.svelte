@@ -31,6 +31,7 @@
          * @type {boolean}
          */
         let categories_history_pinned = false;
+        
     
     /*=====  End of Properties  ======*/
 
@@ -41,18 +42,24 @@
 
         updateCategoriesHistoryIfOutdated();
 
-        $current_cluster.CategoryUsageHistory.addHistoryUpdatedListener(handleCategoryHistoryChange);
+        attachCategoryHistoryEventListeners();
     });
 
     onDestroy(() => {
-        if ($current_cluster !== null) {
-            $current_cluster.CategoryUsageHistory.removeHistoryUpdatedListener(handleCategoryHistoryChange);
-        }
+        removeCategoryHistoryEventListeners();
     });
     
     /*=============================================
     =            Methods            =
     =============================================*/
+
+        /**
+         * Attaches category history event listeners.
+         * @returns {void}
+         */
+        const attachCategoryHistoryEventListeners = () => {
+            $current_cluster.CategoryUsageHistory.UUIDHistory.addHistoryUpdatedListener(handleCategoryHistoryChange);
+        }
 
         /*=============================================
         =            DOM Event handlers            =
@@ -105,7 +112,7 @@
                     return;
                 }
 
-                const inner_category = $current_cluster.CategoryUsageHistory.getElementByUUID(history_element_uuid);
+                const inner_category = $current_cluster.CategoryUsageHistory.UUIDHistory.getElementByUUID(history_element_uuid);
                 if (inner_category == null) {
                     console.error("In NavCategoryHistory.handleHistoryItemClick: inner_category is null for uuid <%s>.", history_element_uuid);
                     return;
@@ -118,9 +125,6 @@
 
                 console.debug("Clicked on:", inner_category);
             }
-
-
-
 
         /*=====  End of DOM Event handlers  ======*/
 
@@ -155,7 +159,7 @@
                 return;
             }
 
-            const new_history = $current_cluster.CategoryUsageHistory.toArray();
+            const new_history = $current_cluster.CategoryUsageHistory.UUIDHistory.toArray();
             new_history.shift(); // Remove the current category from the history
 
             categories_history_array = new_history;
@@ -170,6 +174,19 @@
             if (categories_history_mutated) {
                 updateCategoriesHistory();
             }
+        }
+
+        /**
+         * Removes category history event listeners.
+         * @returns {void}
+         */
+        const removeCategoryHistoryEventListeners = () => {
+            if ($current_cluster === null) {
+                console.debug("In NavCategoryHistory.removeCategoryHistoryEventListeners: $current_cluster is null.");
+                return;
+            }
+
+            $current_cluster.CategoryUsageHistory.UUIDHistory.removeHistoryUpdatedListener(handleCategoryHistoryChange);
         }
 
     /*=====  End of Methods  ======*/
@@ -204,7 +221,7 @@
                     </li>
                 {/each}
             </menu>
-    {/if}
+        {/if}
     </div>
 {/if}
 
