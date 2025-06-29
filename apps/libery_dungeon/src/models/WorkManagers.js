@@ -699,6 +699,8 @@ import { DoublyLinkedNode } from "@libs/utils";
          */
         #addNodeToHistory(uuid, node) {
             this.#duplicate_lookup_map.set(uuid, node);
+
+            this.#triggerHistoryUpdatedCallbacks();
         }
 
         /**
@@ -709,6 +711,8 @@ import { DoublyLinkedNode } from "@libs/utils";
             this.#duplicate_lookup_map.clear();
             this.#first_node = null;
             this.#last_node = null;
+
+            this.#triggerHistoryUpdatedCallbacks();
         }
 
         /**
@@ -740,6 +744,8 @@ import { DoublyLinkedNode } from "@libs/utils";
             this.#first_node.Prev = node;
 
             this.#first_node = node;
+
+            this.#triggerHistoryUpdatedCallbacks();
         }
 
         /**
@@ -894,6 +900,24 @@ import { DoublyLinkedNode } from "@libs/utils";
             }
 
             return history_array;
+        }
+
+        /**
+         * Triggers the history updated callbacks.
+         * @returns {void}
+         */
+        #triggerHistoryUpdatedCallbacks() {
+            for (const callback of this.#on_history_updated_callbacks) {
+                try {
+                    callback();
+                } catch (error) {
+                    if (error instanceof Error) {
+                        console.error(`Error occurred in history updated callback: ${error.stack}`, error);
+                    } else {
+                        console.error(`Error occurred in history updated callback: ${error}`);
+                    }
+                }
+            }
         }
 
         /**
