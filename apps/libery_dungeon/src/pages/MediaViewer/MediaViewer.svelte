@@ -1274,6 +1274,25 @@
         /*=============================================
         =            Media Changes            =
         =============================================*/
+
+            /**
+             * Adds the categories in `media_changes_manager` to the
+             * category cluster CategoryUsageHistory.
+             * @returns {void}
+             */
+            const addMediaChangesToCategoryUsageHistory = () => {
+                if ($media_changes_manager === null || $current_cluster === null) {
+                    console.error("In MediaViewer.addMediaChangesToCategoryUsageHistory: $media_changes_manager or $current_cluster is null.");
+                    return;
+                }
+
+                const used_categories = $media_changes_manager.UsedCategories;
+                used_categories.reverse(); // makes sure the most used category appears at the top of the history.
+
+                for (const category of used_categories) {
+                    $current_cluster.CategoryUsageHistory.touchCategoryUsage(category);
+                }
+            }
         
             /**
              * Commits the media changes in the `media_changes_manager`
@@ -1284,6 +1303,8 @@
              */
             const commitCurreentMediaChanges = async () => {
                 if ($media_changes_manager !== null && $current_category !== null) {
+                    addMediaChangesToCategoryUsageHistory();
+
                     await $media_changes_manager.commitChanges($current_category.uuid);
                     
                     if ($categories_tree !== null) {
