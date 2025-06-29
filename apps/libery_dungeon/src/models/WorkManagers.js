@@ -996,16 +996,35 @@ import { DoublyLinkedNode } from "@libs/utils";
         #setOnCategoryUUIDSelected(callback) {
             this.#on_category_uuid_selected = callback;
 
-            this.triggerOnCategorySelectedListenerChange();
+            this.#triggerOnCategorySelectedListenerChange();
+        }
+
+        /**
+         * Adds or refreshes a category usage record.
+         * @param {import('@models/Categories').InnerCategory} category
+         */
+        touchCategoryUsage = category => {
+            this.#category_uuid_history.Add(category);
         }
 
         /**
          * Triggers the on_category_selected_listener_change callback if it is set.
          * @returns {void}
          */
-        triggerOnCategorySelectedListenerChange() {
+        #triggerOnCategorySelectedListenerChange() {
             if (this.#on_category_selected_listener_change) {
                 this.#on_category_selected_listener_change(this.#on_category_uuid_selected !== null);
+            }
+        }
+
+        /**
+         * Triggers the on_category_uuid_selected callback if it is set.
+         * @param {import('@models/Categories').InnerCategory} category
+         * @returns {void}
+         */
+        triggerOnCategoryUUIDSelected(category) {
+            if (this.#on_category_uuid_selected !== null) {
+                this.#on_category_uuid_selected(category);
             }
         }
     }

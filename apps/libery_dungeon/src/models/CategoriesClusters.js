@@ -20,10 +20,7 @@ import {
     deleteVideoMoment,
     getAllClusterVideoMoments
 } from "./Metadata";
-import { 
-    InnerCategory
-} from "./Categories";
-import { UUIDHistory } from "@models/WorkManagers";
+import { CategoryUUIDHistoryManager } from "@models/WorkManagers";
 
 export class CategoriesCluster {
     
@@ -72,7 +69,7 @@ export class CategoriesCluster {
 
         /**
          * The category usage history.
-         * @type {import("@models/WorkManagers").UUIDHistory<import('@models/Categories').InnerCategory>}
+         * @type {CategoryUUIDHistoryManager}
          */
         #category_usage_history;
 
@@ -99,24 +96,16 @@ export class CategoriesCluster {
         this.#cluster_video_moments = new Map();
         this.#media_identity_dictionary = new Map();
 
-        this.#category_usage_history = new UUIDHistory(30);
+        this.#category_usage_history = new CategoryUUIDHistoryManager(30);
     }
     
     /*=============================================
     =            Category usage history            =
     =============================================*/
-    
-        /**
-         * Adds or refreshes a category usage record.
-         * @param {import('@models/Categories').InnerCategory} category
-         */
-        touchCategoryUsage = category => {
-            this.#category_usage_history.Add(category);
-        }
 
         /**
          * The category usage history of this cluster.
-         * @returns {import("@models/WorkManagers").UUIDHistory<import('@models/Categories').InnerCategory>}
+         * @returns {CategoryUUIDHistoryManager}
          */
         get CategoryUsageHistory() {
             return this.#category_usage_history;
