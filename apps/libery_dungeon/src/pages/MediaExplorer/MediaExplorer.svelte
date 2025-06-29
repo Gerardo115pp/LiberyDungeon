@@ -274,7 +274,7 @@
 
         category_change_unsubscriber = current_category.subscribe(handleCurrentCategoryChange); // this has to run after defining the desktop keybinds.
 
-        definePlatformEventHandlers();
+        attachMediaExplorerEventListeners();
 
         if (debug_mode) {
             debugME__attachDebugMethods();
@@ -296,7 +296,7 @@
 
         resetMediaExplorerState();
 
-        global_platform_events_manager.dropContext(app_page_name);
+        removeMediaExplorerEventListeners();
     });
     
     /*=============================================
@@ -832,51 +832,114 @@
         /*=====  End of Debug  ======*/
     
         /*=============================================
-        =            PlatformEvents            =
+        =            Event Listeners            =
         =============================================*/
         
-            const definePlatformEventHandlers = () => {
-                if ($current_category == null) {
-                    console.error("In MediaExplorer.definePlatformEventHandlers , current_category is null");
-                    return;
-                }
-                
-                const dungeon_explorer_handlers = new PlatformEventContext();
-                if (!global_platform_events_manager.hasContext(app_page_name)) {
-                    dungeon_explorer_handlers.addEventHandler(platform_well_known_events.FS_CHANGED, handleFsChangedPlatformEvent);
-                    
-                    global_platform_events_manager.declareContext(app_page_name, dungeon_explorer_handlers);
-                }
-
-                global_platform_events_manager.loadContext(app_page_name);
-
-            }
-
             /**
-             * Reloads the current category when the platform event FS_CHANGED is received.
-             * @param {import("@libs/DungeonsCommunication/transmissors/platform_events_transmisor").PlatformEventMessage<import('@libs/LiberyEvents/well_known_events').ClusterFsChangeEvent>} event
+             * Attaches the media explorer listener events.
+             * TODO: Add all the other listener event methods here.
+             * @returns {void}
              */
-            const handleFsChangedPlatformEvent = async (event) => {
-                if ($categories_tree == null) {
-                    console.error("In MediaExplorer.handleFsChangedPlatformEvent , categories_tree is null");
-                    return;
-                }
-                
+            const attachMediaExplorerEventListeners = () => {
+                attachCategoryHistoryEventListeners();
 
-                const fs_change_message = event?.EventPayload.payload;
-
-                if (fs_change_message == null) {
-                    console.error("FS_CHANGED event received with no payload");
-                    return;
-                }
-
-                if (fs_change_message.cluster_uuid === $current_cluster.UUID && (fs_change_message.medias_added + fs_change_message.medias_deleted + fs_change_message.medias_updated) !== 0) {
-                    await $categories_tree.updateCurrentCategory();
-                } 
+                definePlatformEventHandlers();
             }
+            
+            /**
+             * Removes the media explorer listener events.
+             * @returns {void}
+             */
+            const removeMediaExplorerEventListeners = () => {
+                removeCategoryHistoryEventListeners();
+
+                dropPlatformEventHandlers();
+            }
+
+            /*----------  Category History events  ----------*/
+            
+                /**
+                 * Attaches event listeners to handle the category history events.
+                 * @returns {void}
+                 */
+                const attachCategoryHistoryEventListeners = () => {
+                    if ($current_cluster != null) {
+                        $current_cluster.CategoryUsageHistory.setOnCategoryUUIDSelected(handleCategoryUsageHistorySelected);
+                    }
+                }
+
+                /**
+                 * Handles the category selected event from the category usage history.
+                 * @param {InnerCategory} category
+                 */
+                const handleCategoryUsageHistorySelected = (category) => {
+                    if (category instanceof InnerCategory) {
+                        navigateToSelectedCategory(category.uuid);
+                    }
+                }
+
+                /**
+                 * Removes the event listeners for the category history events.
+                 * @returns {void}
+                 */
+                const removeCategoryHistoryEventListeners = () => {
+                    if ($current_cluster != null) {
+                        $current_cluster.CategoryUsageHistory.removeOnCategoryUUIDSelected(handleCategoryUsageHistorySelected);
+                    }
+                }
+            
+            /*----------  PlatformEvents  ----------*/
                 
+                const definePlatformEventHandlers = () => {
+                    if ($current_category == null) {
+                        console.error("In MediaExplorer.definePlatformEventHandlers , current_category is null");
+                        return;
+                    }
+                    
+                    const dungeon_explorer_handlers = new PlatformEventContext();
+                    if (!global_platform_events_manager.hasContext(app_page_name)) {
+                        dungeon_explorer_handlers.addEventHandler(platform_well_known_events.FS_CHANGED, handleFsChangedPlatformEvent);
+                        
+                        global_platform_events_manager.declareContext(app_page_name, dungeon_explorer_handlers);
+                    }
+
+                    global_platform_events_manager.loadContext(app_page_name);
+
+                }
+
+                /**
+                 * Drops platform event handlers for the media explorer.
+                 * @returns {void}
+                 */
+                const dropPlatformEventHandlers = () => {
+                    global_platform_events_manager.dropContext(app_page_name);
+                }
+                
+
+                /**
+                 * Reloads the current category when the platform event FS_CHANGED is received.
+                 * @param {import("@libs/DungeonsCommunication/transmissors/platform_events_transmisor").PlatformEventMessage<import('@libs/LiberyEvents/well_known_events').ClusterFsChangeEvent>} event
+                 */
+                const handleFsChangedPlatformEvent = async (event) => {
+                    if ($categories_tree == null) {
+                        console.error("In MediaExplorer.handleFsChangedPlatformEvent , categories_tree is null");
+                        return;
+                    }
+                    
+
+                    const fs_change_message = event?.EventPayload.payload;
+
+                    if (fs_change_message == null) {
+                        console.error("FS_CHANGED event received with no payload");
+                        return;
+                    }
+
+                    if (fs_change_message.cluster_uuid === $current_cluster.UUID && (fs_change_message.medias_added + fs_change_message.medias_deleted + fs_change_message.medias_updated) !== 0) {
+                        await $categories_tree.updateCurrentCategory();
+                    } 
+                }
         
-        /*=====  End of PlatformEvents  ======*/
+        /*=====  End of Event Listeners ======*/
 
         /**
          * Restores hotkeys control to the categories explorer.
