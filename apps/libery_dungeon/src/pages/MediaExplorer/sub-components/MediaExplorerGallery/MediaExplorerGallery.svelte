@@ -1616,6 +1616,8 @@
                  * @returns {void}
                  */
                 const removeBeforeUnloadListener = () => {
+                    if (globalThis.removeEventListener === undefined) return;
+
                     globalThis.removeEventListener('beforeunload', handleBeforeUnload);
                 }
 
@@ -2945,7 +2947,7 @@
             me_gallery_changes_manager.set(null);
             me_renaming_focused_media.set(false);
 
-            setHasUnsavedChanges(); // if me_gallery_changes_manager is null, the function will automatically assume there are no unsaved changes.
+            removeBeforeUnloadListener();
         }
 
         /**

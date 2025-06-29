@@ -910,7 +910,7 @@
                 await $media_changes_manager.commitChanges($current_category.uuid);
                 await $categories_tree.updateCurrentCategory();
                 media_changes_manager.set(new MediaChangesManager());
-                determineHasUnsavedChanges();
+                removeBeforeUnloadListener();
 
                 // wait to set the active media index to the new value after async operations so the user doens't see weird image switching
                 await setActiveMediaIndex(new_active_media_index, false);
@@ -1330,6 +1330,8 @@
                  * @returns {void}
                  */
                 const removeBeforeUnloadListener = () => {
+                    if (globalThis.removeEventListener === undefined) return;
+
                     globalThis.removeEventListener('beforeunload', handleBeforeUnload);
                 }
         
