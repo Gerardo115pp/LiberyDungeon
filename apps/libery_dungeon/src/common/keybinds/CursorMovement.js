@@ -327,7 +327,7 @@ export class CursorMovementWASD {
             let cursor_set = this.#grid_navigation_wrapper.Grid.setCursor(this.#movement_options.initial_cursor_position);
 
             if (!cursor_set) {
-                throw new Error("The initial cursor position is out of bounds or there was a problem setting it.");
+                throw new Error(`The initial cursor position<${this.#movement_options.initial_cursor_position}> is out of bounds or there was a problem setting it.`);
             } 
         }
 
