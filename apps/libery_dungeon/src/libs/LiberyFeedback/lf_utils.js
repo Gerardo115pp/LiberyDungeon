@@ -83,7 +83,6 @@ export const emitPlatformMessage = message => {
  * @returns {() => void} - unsubscribe function
  * @callback PlatformMessageHandler
  * @param {string} message
- * @returns {void}
  */
 export const subscribeToPlatformMessages = callback => {
     if (globalThis.addEventListener == null) {

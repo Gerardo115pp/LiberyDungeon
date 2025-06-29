@@ -876,6 +876,140 @@ import { DoublyLinkedNode } from "@libs/utils";
         }
     }
 
+    /**
+     * A callback for when a category uuid is selected.
+    * @callback CategoryUUIDSelectedCallback
+     * @param {import('@models/Categories').InnerCategory} category - The selected category.
+     * @returns {void}
+    */
+
+    /**
+     * A callback for whenever there is a listener change for the CategoryUUIDSelectedCallback.
+    * @callback CategorySelectedListenerChangeCallback
+     * @param {boolean} has_listeners
+     * @returns {void}
+    */
+
+    /**
+     * Uuid history manager for category uuids. Composes UUIDHistory and adds callback
+     * functionality for developing features around categories history.
+     */
+    export class CategoryUUIDHistoryManager {
+        /**
+         * The history of category uuids.
+         * @type {UUIDHistory<import('@models/Categories').InnerCategory>}
+         */
+        #category_uuid_history;
+
+        /**
+         * A callback for when a category uuid is selected.
+         * @type {CategoryUUIDSelectedCallback | null}
+         */
+        #on_category_uuid_selected;
+
+        /**
+         * A callback for when the callback for on_category_uuid_selected is changed.
+         * @type {CategorySelectedListenerChangeCallback | null}
+         */
+        #on_category_selected_listener_change;
+
+        /**
+         * @param {number} [buffer_size=30] - The size of the history buffer.
+         */
+        constructor(buffer_size = 30) {
+            this.#category_uuid_history = new UUIDHistory(buffer_size);
+            this.#on_category_uuid_selected = null;
+            this.#on_category_selected_listener_change = null;
+        }
+
+        /**
+         * The UUID history.
+         * @type {UUIDHistory<import('@models/Categories').InnerCategory>}
+         */
+        get UUIDHistory() {
+            return this.#category_uuid_history;
+        }
+
+        /**
+         * Removes the current event listener for category_selected_listener_change.
+         * @param {CategorySelectedListenerChangeCallback} current_callback
+         * @returns {void}
+         */
+        removeOnCategorySelectedListenerChange(current_callback) {
+            if (current_callback !== this.#on_category_selected_listener_change) return;
+
+            this.#setOnCategorySelectedListenerChange(null);
+        }
+
+        /**
+         * Removes the current event listener for on_category_uuid_selected.
+         * @param {CategoryUUIDSelectedCallback} current_callback
+         * @returns {void}
+         */
+        removeOnCategoryUUIDSelected(current_callback) {
+            if (current_callback !== this.#on_category_uuid_selected) return;
+
+            this.#setOnCategoryUUIDSelected(null);
+        }
+
+        /**
+         * Sets a listener for on_category_selected_listener_change.
+         * @param {CategorySelectedListenerChangeCallback} callback - The callback to be called when the listener changes.
+         * @returns {void}
+         */
+        setOnCategorySelectedListenerChange(callback) {
+            if (callback.constructor.name !== "Function" && callback.constructor.name !== "AsyncFunction") {
+                throw new Error(`In @models/WorkManagers.CategoryUUIDHistoryManager.setOnCategorySelectedListenerChange: callback must be a function, received ${callback.constructor.name}`);
+            }
+
+            this.#setOnCategorySelectedListenerChange(callback);
+        }
+
+        /**
+         * Sets a listener for on_category_selected_listener_change allows null to be passed.
+         * @param {CategorySelectedListenerChangeCallback | null} callback 
+         * @returns {void}
+         */
+        #setOnCategorySelectedListenerChange(callback) {
+            this.#on_category_selected_listener_change = callback;
+        }
+
+        /**
+         * Sets the on_category_uuid_selected callback.
+         * @param {CategoryUUIDSelectedCallback} callback
+         * @returns {void}
+         */
+        setOnCategoryUUIDSelected(callback) {
+            if (callback.constructor.name !== "Function" && callback.constructor.name !== "AsyncFunction") {
+                throw new Error(`In @models/WorkManagers.CategoryUUIDHistoryManager.setOnCategoryUUIDSelected: callback must be a function, received ${callback.constructor.name}`);
+            }
+
+            this.#setOnCategoryUUIDSelected(callback);
+        }
+
+        /**
+         * Sets the on_category_uuid_selected callback allows null to be passed and triggers 
+         * the on_category_selected_listener_change callback.
+         * @param {CategoryUUIDSelectedCallback | null} callback
+         * @returns {void}
+         */
+        #setOnCategoryUUIDSelected(callback) {
+            this.#on_category_uuid_selected = callback;
+
+            this.triggerOnCategorySelectedListenerChange();
+        }
+
+        /**
+         * Triggers the on_category_selected_listener_change callback if it is set.
+         * @returns {void}
+         */
+        triggerOnCategorySelectedListenerChange() {
+            if (this.#on_category_selected_listener_change) {
+                this.#on_category_selected_listener_change(this.#on_category_uuid_selected !== null);
+            }
+        }
+    }
+
 /*=====  End of Category  ======*/
 
 
