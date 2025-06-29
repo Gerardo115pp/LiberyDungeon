@@ -111,6 +111,10 @@
 
 <style>
     #media-explorer-nav-menu-wrapper {
-        gap: var(--vspacing-1);    
+        gap: var(--spacing-1);    
+    }
+
+    li#menmw-category-usage-history {
+        margin-right: var(--spacing-1);
     }
 </style>

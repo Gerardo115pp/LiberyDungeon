@@ -340,10 +340,11 @@
 
 <style>
     #ldn-nav-category-history {
+        --ldn-nav-ch-font-size: var(--font-size-1);
+
         position: relative;
         display: grid;
         place-items: center;
-        height: 100%;
         transition: background 0.3s ease-out;
 
         &:hover button#ldn-nch-history-pin-btn, 
@@ -363,8 +364,8 @@
     button#ldn-nch-history-pin-btn {
         width: 100%;
         background: var(--body-bg-color);
-        padding-block: var(--spacing-2);
-        padding-inline: var(--spacing-4);
+        padding-block: calc(var(--spacing-1) + 1px);
+        padding-inline: var(--spacing-1);
         border-radius: var(--border-radius);
         transition: background 0.3s ease-out;
         color: var(--main-dark);
@@ -375,9 +376,9 @@
 
         & h3 {
             font-family: var(--font-read);
-            font-size: var(--font-size-2);
+            font-size: var(--ldn-nav-ch-font-size);
             text-transform: none;
-            line-height: 1;
+            line-height: normal;
             color: inherit;
         }
     }
@@ -398,6 +399,7 @@
             width: 100%;
             height: min(calc(6 * var(--ldn-category-history-item-height)), 45dvh);
             background: hsl(from var(--grey-8) h s calc(l * 0.7) / 0.88);
+            font-size: calc(var(--ldn-nav-ch-font-size) * 0.9);
             top: 100%;
             right: 0;
             translate: 0 -10%;
@@ -408,9 +410,9 @@
         }
 
         li.ldn-nch-history-record {
+            height: 2.4em;
             line-height: 1;
-            height: 48px;
-            padding: 0 var(--spacing-1);
+            padding: 0 0;
 
             &:not(:last-child) {
                 border-bottom: 1px solid var(--grey-9);
@@ -428,6 +430,8 @@
                 cursor: default;
                 display: flex;
                 width: 100%;
+                font-size: inherit;
+                font-weight: 600;
                 height: 100%;
                 align-items: center;
                 padding: 0 var(--spacing-1);
