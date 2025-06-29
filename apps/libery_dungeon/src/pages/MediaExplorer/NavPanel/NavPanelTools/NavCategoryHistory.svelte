@@ -435,12 +435,12 @@
 
             position: absolute;
             overflow-y: auto;
-            width: 100%;
+            width: max-content;
             height: min(calc(6 * var(--ldn-category-history-item-height)), 45dvh);
             background: hsl(from var(--grey-8) h s calc(l * 0.7) / 0.88);
             font-size: calc(var(--ldn-nav-ch-font-size) * 0.9);
             top: 100%;
-            right: 0;
+            left: 0;
             translate: 0 -10%;
             visibility: hidden;
             overscroll-behavior-y: contain;
@@ -449,16 +449,19 @@
         }
 
         li.ldn-nch-history-record {
+            width: 100%;
+            min-width: max-content;
             height: 2.4em;
             line-height: 1;
             padding: 0 0;
+            transition: background 0.3s ease-out;
 
             &:not(:last-child) {
                 border-bottom: 1px solid var(--grey-9);
             }
 
             &:hover {
-                background: hsl(from var(--main-9) h s l / 0.1);
+                background: hsl(from var(--main-9) h s l / 0.4);
             }
 
             &:has(p):hover {
