@@ -1082,21 +1082,24 @@
          * the user that the category is empty and ask if they want to delete it. If so, go back to the parent category
          * and send a request to the server to delete the category.
          * @param {CategoryLeaf | null} category   
+         * @returns {Promise<boolean>}
          */
         const handleEmptyCategories = async (category) => {
             if ($categories_tree == null) {
                 console.error("In MediaExplorer.handleEmptyCategories , categories_tree is null");
-                return;
+                return false;
             }
 
-            if (category === null) return;
+            if (category === null) return false;
 
             const category_param_valid = !(category === null && category === undefined)
             const category_protected = category.uuid === $current_cluster.RootCategoryID || category.uuid === $current_cluster.DownloadCategoryID;  
 
             if (!category_param_valid || !category?.isEmpty() || category_protected) {
-                return;
+                return false;
             }            
+
+            let category_deleted = false; 
 
             const delete_category_choice = await confirmPlatformMessage({
                 message_title: "Empty category",
@@ -1108,10 +1111,14 @@
             });
 
             if (delete_category_choice === confirm_question_responses.CONFIRM) {
-                const category_to_delete = category.uuid;
+                const category_to_delete_uuid = category.uuid;
                 await handleGoToParentCategory();
-                $categories_tree.deleteChildCategory(category_to_delete);
+                $categories_tree.deleteChildCategory(category_to_delete_uuid);
+                $current_cluster.CategoryUsageHistory.UUIDHistory.removeElementFromHistory(category_to_delete_uuid);
+                category_deleted = true;
             }
+
+            return category_deleted;
         }
 
         /**
@@ -1121,9 +1128,9 @@
         const handleCurrentCategoryChange = async (category) => {
             resetCategoryFiltersOnCategoryChange();
 
-            await handleEmptyCategories(category);
+            const category_was_deleted = await handleEmptyCategories(category);
 
-            if ($current_cluster != null && category != null) {
+            if ($current_cluster != null && category != null && !category_was_deleted) {
                 $current_cluster.CategoryUsageHistory.touchCategoryUsage(category.asInnerCategory());
             }
         }

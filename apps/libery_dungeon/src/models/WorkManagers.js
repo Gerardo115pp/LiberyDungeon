@@ -865,6 +865,33 @@ import { DoublyLinkedNode } from "@libs/utils";
         }
 
         /**
+         * Removes an element from the history records.
+         * @param {string} uuid
+         * @returns {void}
+         */
+        removeElementFromHistory(uuid) {
+            if (!this.#uuidInHistory(uuid)) {
+                return;
+            };
+
+            const target_node = this.#getUUIDNode(uuid);
+            if (target_node.isDoubleBounded()) {
+                this.#extractNodeAndRebindList(target_node);
+            } else {
+                if (this.#first_node === target_node) {
+                    this.#first_node = target_node.Next;
+                }
+
+                if (this.#last_node === target_node) {
+                    this.#last_node = target_node.Prev;
+                }
+            }
+
+            this.#duplicate_lookup_map.delete(uuid)
+            this.#triggerHistoryUpdatedCallbacks();
+        }
+
+        /**
          * Returns a human readable string representation of the history records. 
          * @returns {string}
          */
