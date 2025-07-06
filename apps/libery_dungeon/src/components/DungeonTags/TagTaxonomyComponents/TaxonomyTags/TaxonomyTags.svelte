@@ -782,8 +782,6 @@
         
         /*=====  End of Previously selected indexes  ======*/
 
-
-
         /**
          * Drops the grid navigation wrapper if it exists.
          */
@@ -982,11 +980,13 @@
         /**
          * Sets up the taxonomy tags state when the component gains hotkey control.
          */
-        const setupTaxonomyTagComponentState = () => {
+        const setupTaxonomyTagComponentState = async () => {
             const focused_tag = getFocusedTag();
 
             if (focused_tag != null) {
                 last_keyboard_focused_tag.set(focused_tag);
+
+                await ensureFocusedTagVisible();
             }
 
             defineDesktopKeybinds();
