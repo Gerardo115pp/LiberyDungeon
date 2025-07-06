@@ -1,10 +1,20 @@
 <script>
-    import { MediaFile, MediaUploader } from "@libs/LiberyUploads/models";
+    import {
+        MediaFile,
+        MediaUploader
+    } from "@libs/LiberyUploads/models";
     import { current_category, categories_tree } from "@stores/categories_tree";
     import MediaFileItem from "./MediaFileItem.svelte";
     import { media_upload_tool_mounted } from "@pages/MediaExplorer/app_page_store";
     import GridLoader from "@components/UI/Loaders/GridLoader.svelte";
-    import { mediaFilesReadableSize } from "@libs/LiberyUploads/utils";
+    import {
+        mediaFilesReadableSize, 
+        isMediaFileSupported,
+        isFile
+    } from "@libs/LiberyUploads/utils";
+    import { emitLabeledError, emitPlatformMessage } from "@libs/LiberyFeedback/lf_utils";
+    import { LabeledError, VariableEnvironmentContextError } from "@libs/LiberyFeedback/lf_models";
+    import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
 
     
     /*=============================================
@@ -76,6 +86,32 @@
         }
 
         /**
+         * Returns whether the given file is supported and a human-readable 
+         * reason why it is not(if the file is supported the reason is an empty string)
+         * @param {File} file
+         * @returns {Promise<SupportedFileReason>}
+         * @typedef {Object} SupportedFileReason
+         * @property {boolean} is_supported
+         * @property {string} reason
+         */
+        const getFileSupportedWithReason = async file => {
+            let is_supported = isMediaFileSupported(file);
+            let reason = is_supported ? "" : `${file.type} is not supported.`
+
+            if (!is_supported) {
+                const is_directory = !(await isFile(file));
+                if (is_directory) {
+                    reason = "Is a directory.";
+                }
+            }
+
+            return {
+                is_supported,
+                reason
+            }
+        }
+
+        /**
          * Handles the file uploaded event from the MediaUploader
          * @param {import('@libs/LiberyUploads/models').MediaFile} file
          * @param {number} index
@@ -136,15 +172,46 @@
         }
 
         /**
+         * Takes a Map<string, string> as a list of unsupported files and outputs them for
+         * user feedback.
+         * @param {Map<string, string>} unsupported_files
+         * @returns {void}
+         */
+        const outputUnsupportedFiles = (unsupported_files) => {
+            if (unsupported_files.size === 0) return;
+
+            let human_feedback = "The following could not be uploaded:\n";
+
+            unsupported_files.forEach((reason, file_name) => {
+                human_feedback += `\n${file_name}: ${reason}\n`;
+            });
+
+            const error_environment = new VariableEnvironmentContextError("In MediaUploadTool.outputUnsupportedFiles");
+            error_environment.addVariable("unsupported_files", unsupported_files);
+
+            const labeled_error = new LabeledError(error_environment, human_feedback, lf_errors.ERR_HUMAN_ERROR)
+
+            emitLabeledError(labeled_error)
+        }
+
+        /**
          * Reads a FileList and loads them on the new_media_files array.
          * @param {FileList} file_list
          */
         const readFileList = async (file_list) => {
             /** @type {MediaFile[]} */
             const opened_files = [];
+            const unsupported_files = new Map();
             files_been_read = true;
 
             for (let f of file_list) {
+                const supported_file = await getFileSupportedWithReason(f);
+
+                if (!supported_file.is_supported) {
+                    unsupported_files.set(f.name, supported_file.reason);
+                    continue;
+                }
+
                 let new_media_file = new MediaFile(f);
              
                 if (!new_media_file.IsFileTooLarge) {
@@ -154,10 +221,11 @@
                 opened_files.push(new_media_file);
             }
 
+            outputUnsupportedFiles(unsupported_files);
+
             new_media_files = [...new_media_files, ...opened_files];
             files_been_read = false;
         }
-
         
         const endUpload = async () => {
             onClose();
