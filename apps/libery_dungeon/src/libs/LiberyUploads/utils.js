@@ -1,3 +1,6 @@
+
+/*----------  Size  ----------*/
+
 /**
  * Returns a human readable string of the size of a give list of MediaFile
  * @param {import('./models').MediaFile[]} files 
@@ -36,4 +39,54 @@ export const humanReadableSize = byte_size => {
     }
 
     return size_str;
+}
+
+
+/*----------  File type validators  ----------*/
+
+/**
+ * Checks if the given file is a video.
+ * @param {File} file
+ * @returns {boolean}
+ */
+export const isVideoFile = file => {
+    return file.type.startsWith('video/');
+}
+
+/**
+ * Checks if the given file is an image.
+ * @param {File} file
+ * @returns {boolean}
+ */
+export const isImageFile = file => {
+    return file.type.startsWith('image/');
+}
+
+/**
+ * Returns whether the file is a supported media file.
+ * @param {File} file
+ * @returns {boolean}
+ */
+export const isMediaFileSupported = file => {
+    return isVideoFile(file) || isImageFile(file);
+}
+
+/**
+ * Returns whether the given file is a file and not a directory.
+ * @param {File} file
+ * @returns {Promise<boolean>} 
+ */
+export const isFile = async file => {
+    let is_file = true;
+    let is_possibly_a_directory = file.type === '' || file.size % 4096 === 0;
+
+    if (is_possibly_a_directory) {
+        try {
+            await file.slice(0, 1).arrayBuffer(); // If reading the first byte fails, it's not a file.
+        } catch (e) {
+            is_file = false;
+        }
+    }
+
+    return is_file;
 }
