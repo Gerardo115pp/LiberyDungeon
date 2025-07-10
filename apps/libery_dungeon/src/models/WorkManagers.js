@@ -823,6 +823,14 @@ import { DoublyLinkedNode } from "@libs/utils";
         }
 
         /**
+         * The item count in the history records.
+         * @returns {number}
+         */
+        get length() {
+            return this.#duplicate_lookup_map.size;
+        }
+
+        /**
          * maintains the size of the history records below the specified buffer size.
          * @returns {void}
          */

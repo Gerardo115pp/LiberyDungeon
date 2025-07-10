@@ -26,7 +26,7 @@
         <ol id="qmmt-used-categories">
             {#each used_categories as uc, h}
                 <li class="qmmt-uc-category-item" class:qmmt-uc-category-selected={quick_selected_category_index === h}>
-                    {uc.name}
+                    {uc.NameAlias}
                 </li>
             {/each}
         </ol>

@@ -201,6 +201,10 @@ export const isUrlMediaFile = media_url => {
      * @returns {string}
      */
     export const getParentPathBasename = path => {
+        if (path.endsWith('/')) {
+            path = path.slice(0, -1); // remove trailing slash
+        }
+
         const path_fragments = path.split('/');
 
         if (path_fragments.length < 2) {

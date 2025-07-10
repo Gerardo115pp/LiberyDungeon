@@ -26,7 +26,7 @@
         import { HOTKEYS_GENERAL_GROUP } from "@libs/LiberyHotkeys/hotkeys_consts";
         import { browser } from "$app/environment";
         import { linearCycleNavigationWrap } from "@libs/LiberyHotkeys/hotkeys_movements/hotkey_movements_utils";
-    import { current_cluster } from "@stores/clusters";
+        import { current_cluster } from "@stores/clusters";
     
     /*=====  End of Imports  ======*/
     
@@ -110,12 +110,12 @@
     /*=====  End of Properties  ======*/
     
     onMount(async () => {
+        console.log("MediaMovementsTool mounted");
+
         if ($current_category == null) {
             console.error("MediaMovementsTool: current category is null");
             return;
         }
-        
-        console.log("MediaMovementsTool mounted");
 
         root_short_categories = await getShortCategoryTree($current_cluster.RootCategoryID, $current_category.ClusterUUID);
 
@@ -130,6 +130,10 @@
                 // media_viewer_hotkeys_context_name_unsub();
             })
         }
+
+        updateRecentlyUsedCategories();
+
+        addMediaChangesManagerEventListeners();
     });
 
     onDestroy(() => {
@@ -139,6 +143,8 @@
             global_hotkeys_manager.dropContext(quick_move_context_name);
             global_hotkeys_manager.dropContext(search_results_context_name);
         }
+
+        removeMediaChangesManagerEventListeners();
     });
     
     /*=============================================
@@ -174,6 +180,14 @@
             const handleQuickMoveToolActivationHotkey = (event, trigger_hotkey) => {
                 setQuickMoveToolState(true);
             }
+
+            /**
+             * Handles the QuickMovementsTools deactivation hotkey
+             * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+             */
+            const handleQuickMoveToolDeactivationHotkey = (event, trigger_hotkey) => {
+                setQuickMoveToolState(false);
+            }
             
             /*=============================================
             =            Quick movements tools            =
@@ -189,7 +203,7 @@
                         can_repeat: true
                     });
                     
-                    quick_move_tool_context.register("c", () => setQuickMoveToolState(false), {
+                    quick_move_tool_context.register("c", handleQuickMoveToolDeactivationHotkey, {
                         mode: "keyup",
                         description: `<${HOTKEYS_GENERAL_GROUP}>Release the key to close the quick move tool`
                     });
@@ -205,12 +219,11 @@
                 const handleQuickMoveToolNavigation = (event, hotkey) => {
                     let direction = event.key === "d" ? 1 : -1;
 
-                    const used_categories_count = $media_changes_manager.UsedCategories.length - 1; // -1 because the index is 0 based
-
+                    const used_categories_count = recently_used_categories.length;
 
                     if (used_categories_count === 0) return;
 
-                    quick_selected_category_index = linearCycleNavigationWrap(quick_selected_category_index,used_categories_count, direction).value;
+                    quick_selected_category_index = linearCycleNavigationWrap(quick_selected_category_index, used_categories_count - 1, direction).value;
                 }
 
             /*=====  End of Quick movements tools  ======*/
@@ -305,11 +318,28 @@
         /*=====  End of Keybinds  ======*/
 
         /**
+         * Adds the event listeners the media_changes_manager.
+         * @returns {void}
+         */
+        const addMediaChangesManagerEventListeners = () => {
+            if ($media_changes_manager === null) return;
+
+            $media_changes_manager.addOnChangesMadeCallback(handleChangesMade);
+        }
+
+        /**
          * Focuses the search bar input. Bounded from the CategorySearchBar component
          * @type {() => void}   
          */
         let focusSearchBarComponent = () => {}
 
+        /**
+         * Returns the category corresponding to the curren `quick_selected_category_index`.
+         * @returns {InnerCategory | null}
+         */
+        const getQuickSelectedCategory = () => {
+            return recently_used_categories[quick_selected_category_index] ?? null;
+        }
 
         /**
          * @param {CustomEvent<CategorySelectedDetails>} event
@@ -345,7 +375,7 @@
 
             active_media_change.set(media_change_types.MOVED);
 
-            recently_used_categories = $media_changes_manager.UsedCategories;
+            updateRecentlyUsedCategories();
             tree_view_enabled = false;
 
             // Reset search results after a category is selected from them
@@ -417,6 +447,14 @@
         }
 
         /**
+         * Handles the changes_made event from the `media_changes_manager`.
+         * @returns {void}
+         */
+        function handleChangesMade() {
+            updateRecentlyUsedCategories();
+        }
+
+        /**
          * @param {number} steps
          */
         const moveSearchResultFocus = steps => {
@@ -430,6 +468,16 @@
 
             focused_result_element.scrollIntoView({ behavior: "instant", block: "nearest" });
         }   
+
+        /**
+         * Removes the media changes manager event listeners
+         * @returns {void}
+         */
+        const removeMediaChangesManagerEventListeners = () => {
+            if ($media_changes_manager === null) return;
+
+            $media_changes_manager.removeOnChangesMadeCallback(handleChangesMade);
+        }
 
         /**
          * Stages the active media to be moved to the provided category
@@ -456,7 +504,7 @@
 
             active_media_change.set(media_change_types.MOVED);
 
-            recently_used_categories = $media_changes_manager.UsedCategories;
+            updateRecentlyUsedCategories();
             tree_view_enabled = false;
 
             // Reset search results after a category is selected from them
@@ -469,18 +517,21 @@
          * Sets the quick move tool state, if state is the same as the current state then does nothing.
          * if the new state is true, then sets the quick move tool hotkeys context as the current context before setting the state.
          * if the new state is false, then sets the previous context back after setting the state.
-         * @param {boolean} state the new state of the quick move tool
-        */
-        const setQuickMoveToolState = state => {
+         * @param {boolean} quick_move_tool_enabled the new state of the quick move tool
+         */
+        const setQuickMoveToolState = quick_move_tool_enabled => {
             if (global_hotkeys_manager == null) return;
 
-            if (state === show_quick_move_tool) return;
+            if (quick_move_tool_enabled === show_quick_move_tool) return;
 
-            if (state) {
+            if (quick_move_tool_enabled) {
                 defineQuickMoveHotkeys();
                 global_hotkeys_manager.loadContext(quick_move_context_name);
             } else {
-                stageMediaMoved($media_changes_manager.UsedCategories[quick_selected_category_index]); // move the active media to the last category selected on the quick move tool
+                const selected_category = getQuickSelectedCategory();
+                if (selected_category !== null) {
+                    stageMediaMoved(selected_category); // move the active media to the last category selected on the quick move tool
+                }
 
                 quick_selected_category_index = 0;
 
@@ -489,7 +540,7 @@
                 registerExtraHotkeys();
             }
 
-            show_quick_move_tool = state;
+            show_quick_move_tool = quick_move_tool_enabled;
         }
 
         /**
@@ -508,7 +559,7 @@
                 }
             });
 
-            handleCategoryItemSelected(category_item_selected_event);
+            handleCategoryItemSelected(category_item_selected_event); 
         }
 
         /**
@@ -521,6 +572,49 @@
 
             auto_move_on.set(new_state);
         }
+
+        /**
+         * Updates the `recently_used_categories`.
+         * @returns {void}
+         */
+        function updateRecentlyUsedCategories() {
+            /**
+             * @type {Map<string, InnerCategory>}
+             */
+            const new_categories_list = new Map();
+            /**
+             * Names of the categories already in `new_categories_list`.
+             * @type {Set<string>}
+             */
+            const new_categories_names = new Set();
+
+            if ($media_changes_manager !== null) {
+                $media_changes_manager.UsedCategories.forEach(category => {
+                    new_categories_list.set(category.uuid, category);
+                    new_categories_names.add(category.name);
+                });
+            }
+
+            if ($current_cluster.CategoryUsageHistory.UUIDHistory.length > 0) {
+                const MAX_CLUSTER_HISTORY_ITEMS_TO_USE = 5;
+                const cluster_history = $current_cluster.CategoryUsageHistory.UUIDHistory.toArray();
+
+                for (let h = 0; h < cluster_history.length && h < MAX_CLUSTER_HISTORY_ITEMS_TO_USE; h++) {
+                    const category = cluster_history[h];
+
+                    if (category.uuid === $current_category?.uuid) continue; 
+
+                    if (new_categories_names.has(category.name)) {
+                        category.setUniqueNameAlias(); 
+                    }
+
+                    new_categories_list.set(category.uuid, category);
+                    new_categories_names.add(category.NameAlias);
+                }
+            }
+
+            recently_used_categories = Array.from(new_categories_list.values());
+        }
     
     /*=====  End of Methods  ======*/
 
@@ -528,7 +622,7 @@
 
 {#if show_quick_move_tool}
     <QuickMovementsTools
-        used_categories={$media_changes_manager.UsedCategories}
+        used_categories={recently_used_categories}
         {quick_selected_category_index}
     />
 {/if}
@@ -549,7 +643,7 @@
             <button id="mv-ctm-tree-view-btn" on:click={() => tree_view_enabled = true} >Tree mode</button>
         {:else if recently_used_categories.length > 0}
             <button id="mv-ctm-recently-used-btn" on:click={() => tree_view_enabled = false}>
-                Recently used
+                Recent
             </button>
         {/if}
     </menu>
