@@ -33,38 +33,75 @@
     /*=============================================
     =            Properties            =
     =============================================*/
-
+        
         let global_hotkeys_manager = getHotkeysManager();
     
-        /** @type {boolean} whether the component is visible */
-        export let is_component_visible = false;
-
-        /** @type{boolean} the state of the quick media move tool*/
-        let show_quick_move_tool = false;
-
-        /** @type{number} the index of the selected category on the quick move tool*/
-        let quick_selected_category_index = 0;
-
-        /** @type {number} the index of the focused search result */
-        let focused_search_result_index = 0;
-
-        /** @type{string} the name of the quick move tool hotkey context */
+        /**
+         * the name of the quick move tool hotkey context 
+         * @type {string}
+         */
         const quick_move_context_name = "quick_media_move_tool";
 
-        /** @type {string} the name of the hotkey context that is active when results from the search bar are shown and exits when one of the results is selected */
+        /**
+         * the name of the hotkey context that is active when results from the search bar are shown and exits when one of the results is selected 
+         * @type {string}
+         */
         const search_results_context_name = "search_results_context";
 
-        /** @type { InnerCategory[] } */
-        let root_short_categories = [];
+        /*----------  State  ----------*/
 
-        /** @type {boolean} wheter the category tree is showing the actual tree or the recently used categories, as in the categories that had medias moved to them on the current session */
-        let tree_view_enabled = true;
+            /**
+             * whether the component is visible 
+             * @type {boolean}
+             */
+            export let is_component_visible = false;
 
-        /** @type {InnerCategory[]} the recently used categories */
-        let recently_used_categories = [];
+            /**
+             * The categories that are direct leafs of the root category.
+             * @type { InnerCategory[] }
+             */
+            let root_short_categories = [];
 
-        /** @type {InnerCategory[]} the search results */
-        let search_results = [];
+            /**  
+             * the recently used categories 
+             * @type {InnerCategory[]}
+             */
+            let recently_used_categories = [];
+
+            /**
+             * whether the category tree is showing the actual tree or the recently used categories, as in the categories that had medias moved to them on the current session
+             * @type {boolean}
+             */
+            let tree_view_enabled = true;
+
+            /*----------  Quick movements state  ----------*/
+                /**
+                 * the state of the quick media move tool
+                 * @type {boolean}
+                 */
+                let show_quick_move_tool = false;
+
+                /**
+                 * the index of the selected category on the quick move tool
+                 * @type {number}
+                 */
+                let quick_selected_category_index = 0;
+        /*----------  Search results  ----------*/
+        
+            /**
+             * the index of the focused search result 
+             * @type {number}
+             */
+            let focused_search_result_index = 0;
+
+            /**
+             * the search results 
+             * @type {InnerCategory[]}
+             */
+            let search_results = [];
+        
+
+
         
         /*----------  Unsuscribers  ----------*/
         
@@ -486,7 +523,10 @@
 </script>
 
 {#if show_quick_move_tool}
-    <QuickMovementsTools used_categories={$media_changes_manager.UsedCategories} {quick_selected_category_index}/>
+    <QuickMovementsTools
+        used_categories={$media_changes_manager.UsedCategories}
+        {quick_selected_category_index}
+    />
 {/if}
 <div id="mv-category-tree-model" class:adebug={false} class="dungeon-scroll libery-dungeon-window-transparent" style:visibility={is_component_visible ? "visible" : "hidden"}>
     <div class="mv-ctm-category" id="mv-ctm-searh-bar-section">
