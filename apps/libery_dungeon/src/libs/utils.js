@@ -194,6 +194,31 @@ export const isUrlMediaFile = media_url => {
 
         return basename;
     }
+    
+    /**
+     * Returns the base name of the parent directory of a given unix-like path.
+     * @param {string} path
+     * @returns {string}
+     */
+    export const getParentPathBasename = path => {
+        const path_fragments = path.split('/');
+
+        if (path_fragments.length < 2) {
+            return "";
+        }
+
+        let parent_basename = "";
+
+        for (let h = (path_fragments.length - 2); h >= 0; h--) {
+            parent_basename = path_fragments[h];
+
+            if (parent_basename !== "") {
+                break;
+            }
+        }
+
+        return parent_basename;
+    }
 
     /**
      * Joins a list of paths into a single path. It will remove any duplicate slashes and

@@ -23,7 +23,7 @@ import {
 } from "@libs/DungeonsCommunication/services_requests/metadata_requests/category_metadata_requests";
 import { browser } from "$app/environment";
 import { getRandomMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
-import { getPathBasename } from "@libs/utils";
+import { getParentPathBasename } from "@libs/utils";
 
 const ROOT_CATEGORY_PROXY_UUID = "main";
 
@@ -521,14 +521,15 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
         }
 
         /**
-         * Sets the name alias to include the stem(last fullpath segment) at the end alias(as a modifier).
+         * Sets the name alias to include the parent directory name at
+         * the end alias(as a modifier).
          * @returns {void}
          */
-        setNameAliasWithStem = () => {
+        setNameAliasWithParentName = () => {
             if (this.fullpath !== InnerCategory.EMPTY_FULLPATH) {
-                const stem = getPathBasename(this.fullpath);
+                const parent_stem = getParentPathBasename(this.fullpath);
 
-                this.setNameAliasMod(stem);
+                this.setNameAliasMod(parent_stem);
             }
         }
 
@@ -546,7 +547,7 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
          */
         setUniqueNameAlias = () => {
             if (this.fullpath !== InnerCategory.EMPTY_FULLPATH) {
-                this.setNameAliasWithStem();
+                this.setNameAliasWithParentName();
             } else {
                 this.setNameAliasWithUUID();
             }
