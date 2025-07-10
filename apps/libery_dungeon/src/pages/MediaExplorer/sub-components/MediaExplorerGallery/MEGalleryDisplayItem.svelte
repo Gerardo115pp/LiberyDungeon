@@ -384,20 +384,7 @@
 
                 const change_type = event.detail;
 
-                switch (change_type) {
-                    case media_change_types.MOVED:
-                        is_media_selected = true;
-                        is_media_deleted = false;
-                        break;
-                    case media_change_types.DELETED:
-                        is_media_selected = false;
-                        is_media_deleted = true;
-                        break;
-                    case media_change_types.NORMAL:
-                        is_media_selected = false;
-                        is_media_deleted = false;
-                        break;
-                }
+                adjustMediaChangeState(change_type);
             }
         /*=====  End of Media change state.  ======*/
         
