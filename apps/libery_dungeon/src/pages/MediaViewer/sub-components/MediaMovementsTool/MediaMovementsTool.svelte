@@ -581,7 +581,7 @@
             /**
              * @type {Map<string, InnerCategory>}
              */
-            const new_categories_list = new Map();
+            const new_categories_map = new Map();
             /**
              * Names of the categories already in `new_categories_list`.
              * @type {Set<string>}
@@ -590,32 +590,35 @@
 
             if ($media_changes_manager !== null) {
                 $media_changes_manager.UsedCategories.forEach(category => {
-                    new_categories_list.set(category.uuid, category);
+                    new_categories_map.set(category.uuid, category);
                     new_categories_names.add(category.name);
                 });
             }
 
             if ($current_cluster.CategoryUsageHistory.UUIDHistory.length > 0) {
-                const MAX_CLUSTER_HISTORY_ITEMS_TO_USE = new_categories_list.size > 0 ? 5 : Infinity;
+                const MAX_CLUSTER_HISTORY_ITEMS_TO_USE = new_categories_map.size > 0 ? 5 : Infinity;
 
                 const cluster_history = $current_cluster.CategoryUsageHistory.UUIDHistory.toArray();
 
+                let history_item_used = 0;
 
-                for (let h = 0; h < cluster_history.length && h < MAX_CLUSTER_HISTORY_ITEMS_TO_USE; h++) {
+                for (let h = 0; h < cluster_history.length && history_item_used < MAX_CLUSTER_HISTORY_ITEMS_TO_USE; h++) {
                     const category = cluster_history[h];
 
-                    if (category.uuid === $current_category?.uuid) continue; 
+                    if (category.uuid === $current_category?.uuid || new_categories_map.has(category.uuid)) continue; 
+
+                    history_item_used++;
 
                     if (new_categories_names.has(category.name)) {
                         category.setUniqueNameAlias(); 
                     }
 
-                    new_categories_list.set(category.uuid, category);
+                    new_categories_map.set(category.uuid, category);
                     new_categories_names.add(category.NameAlias);
                 }
             }
 
-            recently_used_categories = Array.from(new_categories_list.values());
+            recently_used_categories = Array.from(new_categories_map.values());
         }
     
     /*=====  End of Methods  ======*/
