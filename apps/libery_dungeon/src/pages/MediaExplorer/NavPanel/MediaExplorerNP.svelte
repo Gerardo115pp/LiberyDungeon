@@ -87,7 +87,6 @@
             </button>
         </li>
     {/if}
-
     {#if $current_category !== null && $current_category.hasContent() && !$current_category.hasInnerCategories()}
         <li id="menmw-upload-medias">
             <button on:click={handleDeleteCategoryContent} id="delete-content-btn" class="sketch-btn">

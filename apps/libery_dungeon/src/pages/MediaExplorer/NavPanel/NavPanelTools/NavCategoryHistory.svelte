@@ -310,6 +310,22 @@
             }
 
             const new_history = $current_cluster.CategoryUsageHistory.UUIDHistory.toArray();
+            
+            /**
+             * @type {Set<string>}
+             */
+            const category_names_in_history = new Set();
+
+            for (const history_item of new_history) {
+                // NOTE: NameAlias will return `name` if the alias has not been set.
+
+                if (category_names_in_history.has(history_item.name)) {
+                    history_item.setUniqueNameAlias();
+                }
+
+                category_names_in_history.add(history_item.NameAlias)
+            }
+
             new_history.shift(); // Remove the current category from the history
 
             categories_history_array = new_history;
@@ -368,7 +384,7 @@
                         on:click={handleHistoryItemClick}
                     >
                         <p class="ldn-nch-hr-category-name">
-                            {history_item.name}
+                            {history_item.NameAlias}
                         </p>
                     </li>
                 {/each}
