@@ -144,7 +144,6 @@
     /*=============================================
     =            Methods            =
     =============================================*/
-
         
         /*=============================================
         =            Keybinds            =
@@ -162,10 +161,18 @@
 
 
                 // register the hotkeys for the quick move tool
-                global_hotkeys_manager.registerHotkeyOnContext("c", () => setQuickMoveToolState(true), {
+                global_hotkeys_manager.registerHotkeyOnContext("c", handleQuickMoveToolActivationHotkey, {
                     mode: "keydown",
                     description: "<media_modification>Press the key to open the quick move tool. Release to close it."
                 });
+            }
+
+            /**
+             * Handles the QuickMovementsTools activation hotkey
+             * @type {import("@libs/LiberyHotkeys/hotkeys").HotkeyCallback}
+             */
+            const handleQuickMoveToolActivationHotkey = (event, trigger_hotkey) => {
+                setQuickMoveToolState(true);
             }
             
             /*=============================================
@@ -283,9 +290,6 @@
             
             /*=====  End of Search Results hotkeys  ======*/
             
-            
-
-
             const exitSearchResultsHotkeysContext = () => {
                 if (global_hotkeys_manager == null) return;
 

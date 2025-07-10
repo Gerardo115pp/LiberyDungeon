@@ -348,7 +348,7 @@
 
         parseQueryParams();
 
-        $media_changes_manager.setOnChangesMade(determineHasUnsavedChanges);
+        $media_changes_manager.addOnChangesMadeCallback(determineHasUnsavedChanges);
         // tagged_medias_tool_mounted.set(true);
     });
 
@@ -1570,7 +1570,7 @@
         }
         
         /*=============================================
-        =            Active media state modifiers            =
+        =            Active media            =
         =============================================*/
 
             /**

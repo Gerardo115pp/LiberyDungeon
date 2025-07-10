@@ -48,9 +48,9 @@ import { DoublyLinkedNode } from "@libs/utils";
 
         /**
          * A callback triggered when changes of any kind are made.
-         * @type {Function | null}
+         * @type {Set<Function>}
          */
-        #on_changes_made = null;
+        #on_changes_made;
 
         constructor() {
             this.#deleted_medias = new Map();
@@ -58,7 +58,7 @@ import { DoublyLinkedNode } from "@libs/utils";
             this.#moved_medias_data = {};
             this.#used_categories = [];
 
-            this.#on_changes_made = null;
+            this.#on_changes_made = new Set();
         }
 
         /**
@@ -282,11 +282,23 @@ import { DoublyLinkedNode } from "@libs/utils";
 
         /**
          * Sets a callback to be called when changes are made to the medias.
-         * @param {Function | null} callback
+         * @param {Function} callback
          * @returns {void}
          */
-        setOnChangesMade(callback) {
-            this.#on_changes_made = callback;
+        addOnChangesMadeCallback(callback) {
+            if (callback.constructor.name !== "Function" && callback.constructor.name !== "AsyncFunction") {
+                throw new Error(`In @models/WorkManagers.MediaChangesManager.removeOnChangesMadeCallback: callback must be a function, received ${callback.constructor.name}`);
+            }
+            this.#on_changes_made.add(callback);
+        }
+
+        /**
+         * Remove the given listener callback from the on_changes_made event.
+         * @param {Function} callback
+         * @returns {void}
+         */
+        removeOnChangesMadeCallback(callback) {
+            this.#on_changes_made.delete(callback);
         }
 
         /**
@@ -294,9 +306,19 @@ import { DoublyLinkedNode } from "@libs/utils";
          * @returns {void}
          */
         triggerOnChangesMade() {
-            if (this.#on_changes_made) {
-                this.#on_changes_made();
-            }
+            this.#on_changes_made.forEach(callback => {
+                try {
+                    callback();
+                } catch (error) {
+                    let error_stack = "";
+
+                    if (error instanceof Error) {
+                        error_stack = error.stack || "No stack trace available";
+                    }
+
+                    console.error(`${error_stack}\nIn @models/WorkManagers.MediaChangesManager.triggerOnChangesMade: Error calling callback on '${callback.constructor.name}:: %O`, error)
+                }
+            });
         }
 
         /**
@@ -594,7 +616,6 @@ import { DoublyLinkedNode } from "@libs/utils";
     }
 
 /*=====  End of Category Search  ======*/
-
 
 /*=============================================
 =            UUID usage history            =
