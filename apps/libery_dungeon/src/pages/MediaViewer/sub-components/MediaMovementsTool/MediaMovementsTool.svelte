@@ -596,8 +596,10 @@
             }
 
             if ($current_cluster.CategoryUsageHistory.UUIDHistory.length > 0) {
-                const MAX_CLUSTER_HISTORY_ITEMS_TO_USE = 5;
+                const MAX_CLUSTER_HISTORY_ITEMS_TO_USE = new_categories_list.size > 0 ? 5 : Infinity;
+
                 const cluster_history = $current_cluster.CategoryUsageHistory.UUIDHistory.toArray();
+
 
                 for (let h = 0; h < cluster_history.length && h < MAX_CLUSTER_HISTORY_ITEMS_TO_USE; h++) {
                     const category = cluster_history[h];
