@@ -23,6 +23,7 @@ import {
 } from "@libs/DungeonsCommunication/services_requests/metadata_requests/category_metadata_requests";
 import { browser } from "$app/environment";
 import { getRandomMediaUrl } from "@libs/DungeonsCommunication/services_requests/media_requests";
+import { getPathBasename } from "@libs/utils";
 
 const ROOT_CATEGORY_PROXY_UUID = "main";
 
@@ -335,6 +336,16 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
         #config;
 
         /**
+         * An alias for the category name. This is only exists in the InnerCategory instance, is not saved anywhere. 
+         * It is meant to apply a name modifier based on context.
+         * 
+         * on potential use case is adding the path stem to the alias to differentiate it from another category
+         * with the same name.
+         * @type {string}
+         */
+        #name_alias = "";
+
+        /**
          * @param {InnerCategoryParams} param0 
          */
         constructor ({name, uuid, fullpath, category_thumbnail}) {
@@ -343,6 +354,7 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
             }
 
             this.name = name;
+            this.#name_alias = name;
 
             this.uuid = uuid;
             
@@ -356,11 +368,36 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
         }
 
         /**
+         * The alias for the category name. This is only exists in the InnerCategory instance.
+         * It's purpose is to make a category humanly differentiable from another category with the same name.
+         */
+        get NameAlias() {
+            return this.#name_alias !== "" ? this.#name_alias : this.name;
+        }
+
+        /**
          * The category configuration. It has to be loaded first by calling loadCategoryConfig.
          * @type {CategoryConfig | null}
          */
         get Config() {
             return this.#config;
+        }
+
+        /**
+         * Returns a copy of the InnerCategory.
+         * @returns {InnerCategory}
+         */
+        copy = () => {
+            const inner_category_copy = new InnerCategory({
+                uuid: this.uuid,
+                name: this.name,
+                fullpath: this.fullpath,
+                category_thumbnail: this.#category_thumbnail
+            });
+
+            inner_category_copy.setNameAlias(this.#name_alias);
+
+            return inner_category_copy;
         }
 
         /**
@@ -457,6 +494,62 @@ export const changeCategoryThumbnail = async (category_id, media_id) => {
             this.#category_thumbnail = new_thumbnail.uuid;
 
             this.#the_thumbnail = new_thumbnail;
+        }
+
+        /**
+         * Sets an alias for the category name. overwrites the current alias.
+         * @param {string} new_alias
+         */
+        setNameAlias = (new_alias) => {
+            this.#name_alias = new_alias;
+        }
+
+        /**
+         * Adds a modifier to as an extension to the name alias. the resulting alias 
+         * will be `<this.name>(<state_mod>)`.
+         * @param {string} state_mod
+         * @returns {void} 
+         */
+        setNameAliasMod = state_mod => {
+            let new_alias = this.name;
+            const mod_is_nullish = state_mod === undefined || state_mod === null || state_mod === "";
+            if (!mod_is_nullish) {
+                new_alias += ` (${state_mod})`;
+            }
+
+            this.setNameAlias(new_alias);
+        }
+
+        /**
+         * Sets the name alias to include the stem(last fullpath segment) at the end alias(as a modifier).
+         * @returns {void}
+         */
+        setNameAliasWithStem = () => {
+            if (this.fullpath !== InnerCategory.EMPTY_FULLPATH) {
+                const stem = getPathBasename(this.fullpath);
+
+                this.setNameAliasMod(stem);
+            }
+        }
+
+        /**
+         * sets the name alias to include the first 5 characters of the category uuid.
+         */
+        setNameAliasWithUUID = () => {
+            this.setNameAliasMod(this.uuid.slice(0, 5)); // UUID are never empty.
+        }
+
+        /**
+         * Adds an available unique identifier to the name alias. prioritizing human readable
+         * identifiers.
+         * @returns {void}
+         */
+        setUniqueNameAlias = () => {
+            if (this.fullpath !== InnerCategory.EMPTY_FULLPATH) {
+                this.setNameAliasWithStem();
+            } else {
+                this.setNameAliasWithUUID();
+            }
         }
             
         /**
