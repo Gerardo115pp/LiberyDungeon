@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	dungeon_helpers "libery-dungeon-libs/helpers"
 	"libery-dungeon-libs/libs/libery_networking"
 	dungeon_models "libery-dungeon-libs/models"
 	"libery_categories_service/repository"
@@ -58,10 +59,16 @@ func getSearchHandler(response http.ResponseWriter, request *http.Request) {
 	}
 
 	// Exclude categories such that category.uuid == ignore
+	echo.Echo(echo.GreenFG, fmt.Sprintf("Excluding categories with UUID: %s", ignore))
 	if ignore != "" {
+		var excluded_categories map[string]struct{} = dungeon_helpers.SplitCommaSeparatedUUIDs(ignore)
+		echo.Echo(echo.YellowFG, fmt.Sprintf("Excluding categories: %v", excluded_categories))
+
 		filtered_categories := make([]dungeon_models.Category, 0)
 		for _, category := range all_categories {
-			if category.Parent != ignore {
+			_, in_excluded := excluded_categories[category.Uuid]
+			_, parent_in_excluded := excluded_categories[category.Parent]
+			if !in_excluded && !parent_in_excluded {
 				filtered_categories = append(filtered_categories, category)
 			}
 		}
