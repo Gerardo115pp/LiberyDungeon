@@ -15,7 +15,7 @@
     }
 
     .back-rect {
-        position: absolute;
+        position: absolute ;
         top: 0;
         left: 0;
         transform: rotate(-1.175deg);

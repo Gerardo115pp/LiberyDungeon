@@ -19,7 +19,7 @@
         import { lf_errors } from "@libs/LiberyFeedback/lf_errors";
         import { CursorMovementWASD } from "@app/common/keybinds/CursorMovement";
         import { ui_core_dungeon_references } from "@app/common/ui_references/core_ui_references";
-    import { ensureElementVisible } from "@libs/utils";
+        import { ensureElementVisible } from "@libs/utils";
     
     /*=====  End of Imports  ======*/
     

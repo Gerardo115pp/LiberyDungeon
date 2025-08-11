@@ -595,16 +595,25 @@ import { DoublyLinkedNode } from "@libs/utils";
      * Searches for categories based on the query
      * @param {string} query the query to search for
      * @param {string} cluster_id the cluster id to search in
-     * @param {string} [ignore] an optional parameter to ignore a category by its uuid
+     * @param {...string} ignore_category_uuids an optional list of category uuids. no results that match the uuid or are direct children of a category with the uuid will be returned.
      * @returns {Promise<import('@models/Categories').Category[]>} the response of the request
      */
-    export const searchCategories = async (query, cluster_id, ignore="") => {
+    export const searchCategories = async (query, cluster_id, ...ignore_category_uuids) => {
         /**
          * @type {import('@models/Categories').Category[]}
          */
         let category_search_results = [];
 
-        const request = new GetCategorySearchResultsRequest(query, cluster_id, ignore);
+        let ignore_category_uuids_param = "";
+        console.log(`In @models/WorkManagers.searchCategories: ignore_category_uuids: %O`, ignore_category_uuids);
+
+        if (ignore_category_uuids.length > 0) {
+            ignore_category_uuids_param = ignore_category_uuids.join(",");
+        }
+
+        console.debug(`In @models/WorkManagers.searchCategories: Searching for categories with query '${query}' in cluster '${cluster_id}' ignoring categories ${ignore_category_uuids_param}`);
+
+        const request = new GetCategorySearchResultsRequest(query, cluster_id, ignore_category_uuids_param);
 
         let response = await request.do();
 

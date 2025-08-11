@@ -803,6 +803,30 @@
             border: none;
             outline: none;
         }
+
+        & > input[type="checkbox"] {
+            appearance: none;
+            display: grid;
+            place-items: center;
+            font-size: var(--font-size-1);
+            border: 1px solid hsl(from var(--main) h s calc(l * .8) / 0.7);
+            border-radius: 0.2em;
+            background: var(--grey);
+        }
+
+        & > input[type="checkbox"]::before {
+            content: '';
+            width: 1em;
+            aspect-ratio: 1 / 1;
+            background-color: var(--success-3);
+            clip-path: inset( 14% 14% round 0.1em);
+            scale: 0;
+            transition: scale 0.3s cubic-bezier(0.215, 0.610, 0.355, 1);
+        }
+
+        & > input[type="checkbox"]:checked::before {
+            scale: 1;
+        }
         
         &:has(> input:user-valid) {
             border-color: var(--success);

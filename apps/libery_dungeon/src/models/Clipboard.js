@@ -98,7 +98,8 @@ export class ClipboardContent {
     }
 
     /**
-     * Copies this clipboard content object to the actual clipboard. Has to be called in a context with web api's available.
+     * Copies this clipboard content object to the actual clipboard.
+     * Has to be called in a context with web api's available.
      * @return {Promise<void>}
      */
     async copy() {
