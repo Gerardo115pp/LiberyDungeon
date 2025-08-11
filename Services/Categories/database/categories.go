@@ -171,7 +171,7 @@ func (categories_repo *CategoriesMysql) GetMediaIdentity(ctx context.Context, me
 func (categories_repo *CategoriesMysql) GetMediaIdentityList(ctx context.Context, media_uuids []string) ([]dungeon_models.MediaIdentity, error) {
 	var media_identities []dungeon_models.MediaIdentity = make([]dungeon_models.MediaIdentity, len(media_uuids))
 
-	stmt, err := categories_repo.db.PrepareContext(ctx, `
+	var stmt_sql_query string = `
 		SELECT
 			m.uuid, m.name, m.last_seen, m.main_category, m.media_thumbnail, m.type, m.downloaded_from,
 			c.uuid, c.fullpath,
@@ -180,7 +180,9 @@ func (categories_repo *CategoriesMysql) GetMediaIdentityList(ctx context.Context
 		INNER JOIN categorys c ON m.main_category=c.uuid
 		INNER JOIN categories_clusters cc ON c.cluster=cc.uuid
 		WHERE m.uuid = ?
-	`)
+	`
+
+	stmt, err := categories_repo.db.PrepareContext(ctx, stmt_sql_query)
 	if err != nil {
 		return nil, errors.Join(err, fmt.Errorf("In CategoriesService.CategoriesMysql.GetMediaIdentityList: Error preparing statement"))
 	}
@@ -210,7 +212,7 @@ func (categories_repo *CategoriesMysql) GetMediaIdentityList(ctx context.Context
 			&media_identity.ClusterPath,
 		)
 		if err != nil {
-			return nil, errors.Join(err, fmt.Errorf("In CategoriesService.CategoriesMysql.GetMediaIdentityList: Error scanning row"))
+			return nil, errors.Join(err, fmt.Errorf("In CategoriesService.CategoriesMysql.GetMediaIdentityList: Error scanning row for media UUID(%s)", media_uuid))
 		}
 
 		if time_reciever.Valid {
