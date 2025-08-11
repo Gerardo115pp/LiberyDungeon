@@ -20,7 +20,7 @@
 </script>
 
 <div id="quick-media-movement-tool"
-    class="libery-dungeon-window"
+    class="libery-dungeon-window dungeon-scroll"
 >
     {#if used_categories.length !== 0}
         <ol id="qmmt-used-categories">
@@ -37,9 +37,10 @@
 
 <style>
     #quick-media-movement-tool {
+        overflow-y: auto;
         position: absolute;
-        width: 30vw;
-        max-height: 400px;
+        width: 25vw;
+        max-height: 600px;
         top: 50%;
         left: -150%;
         padding: var(--vspacing-3);
